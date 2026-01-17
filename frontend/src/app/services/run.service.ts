@@ -1,0 +1,41 @@
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+export interface Run {
+  _id?: string;
+  date: Date;
+  distance?: number;
+  duration?: number;
+  averagePace?: string;
+  averageHeartRate?: number;
+  maxHeartRate?: number;
+  averageCadence?: number;
+  elevationGain?: number;
+  sessionType?: string;
+  feeling?: number;
+  notes?: string;
+  analysis?: string;
+  analyzedAt?: Date;
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class RunService {
+  private apiUrl = 'http://localhost:3000/api/runs';
+
+  constructor(private http: HttpClient) {}
+
+  createRun(run: Partial<Run>): Observable<Run> {
+    return this.http.post<Run>(this.apiUrl, run);
+  }
+
+  getAllRuns(): Observable<Run[]> {
+    return this.http.get<Run[]>(this.apiUrl);
+  }
+
+  getRunById(id: string): Observable<Run> {
+    return this.http.get<Run>(`${this.apiUrl}/${id}`);
+  }
+}

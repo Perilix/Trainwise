@@ -1,0 +1,136 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <header>
+      <h1>RunIQ</h1>
+      <p class="subtitle">Inscription</p>
+    </header>
+
+    <!-- Progress indicator -->
+    <div class="steps-indicator">
+      <div class="step" [class.active]="currentStep() >= 1" [class.completed]="currentStep() > 1">
+        <span class="step-number">1</span>
+        <span class="step-label">Compte</span>
+      </div>
+      <div class="step-line" [class.active]="currentStep() > 1"></div>
+      <div class="step" [class.active]="currentStep() >= 2">
+        <span class="step-number">2</span>
+        <span class="step-label">Profil</span>
+      </div>
+    </div>
+
+    <!-- Step 1: Credentials -->
+    @if (currentStep() === 1) {
+      <form (ngSubmit)="nextStep()" class="auth-form">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            [(ngModel)]="email"
+            name="email"
+            placeholder="votre@email.com"
+            autocomplete="email"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="password">Mot de passe</label>
+          <input
+            type="password"
+            id="password"
+            [(ngModel)]="password"
+            name="password"
+            placeholder="Minimum 6 caractères"
+            autocomplete="new-password"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="confirmPassword">Confirmer le mot de passe</label>
+          <input
+            type="password"
+            id="confirmPassword"
+            [(ngModel)]="confirmPassword"
+            name="confirmPassword"
+            placeholder="Confirmez votre mot de passe"
+            autocomplete="new-password"
+          >
+        </div>
+
+        @if (error()) {
+          <div class="error-box">
+            {{ error() }}
+          </div>
+        }
+
+        <button type="submit" class="btn-primary">
+          Continuer
+        </button>
+      </form>
+    }
+
+    <!-- Step 2: Profile -->
+    @if (currentStep() === 2) {
+      <form (ngSubmit)="onSubmit()" class="auth-form">
+        <div class="form-group">
+          <label for="firstName">Prénom</label>
+          <input
+            type="text"
+            id="firstName"
+            [(ngModel)]="firstName"
+            name="firstName"
+            placeholder="Votre prénom"
+            autocomplete="given-name"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="lastName">Nom</label>
+          <input
+            type="text"
+            id="lastName"
+            [(ngModel)]="lastName"
+            name="lastName"
+            placeholder="Votre nom"
+            autocomplete="family-name"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="phone">Téléphone <span class="optional">(optionnel)</span></label>
+          <input
+            type="tel"
+            id="phone"
+            [(ngModel)]="phone"
+            name="phone"
+            placeholder="06 12 34 56 78"
+            autocomplete="tel"
+          >
+        </div>
+
+        @if (error()) {
+          <div class="error-box">
+            {{ error() }}
+          </div>
+        }
+
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="previousStep()">
+            Retour
+          </button>
+          <button type="submit" class="btn-primary" [disabled]="isLoading()">
+            @if (isLoading()) {
+              Inscription...
+            } @else {
+              S'inscrire
+            }
+          </button>
+        </div>
+      </form>
+    }
+
+    <p class="auth-link">
+      Déjà un compte ? <a routerLink="/login">Se connecter</a>
+    </p>
+  </div>
+</div>
