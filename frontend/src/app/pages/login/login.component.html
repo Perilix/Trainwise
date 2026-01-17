@@ -1,0 +1,52 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <header>
+      <h1>RunIQ</h1>
+      <p class="subtitle">Connexion</p>
+    </header>
+
+    <form (ngSubmit)="onSubmit()" class="auth-form">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input
+          type="email"
+          id="email"
+          [(ngModel)]="email"
+          name="email"
+          placeholder="votre@email.com"
+          autocomplete="email"
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="password">Mot de passe</label>
+        <input
+          type="password"
+          id="password"
+          [(ngModel)]="password"
+          name="password"
+          placeholder="Votre mot de passe"
+          autocomplete="current-password"
+        >
+      </div>
+
+      @if (error()) {
+        <div class="error-box">
+          {{ error() }}
+        </div>
+      }
+
+      <button type="submit" class="btn-primary" [disabled]="isLoading()">
+        @if (isLoading()) {
+          Connexion en cours...
+        } @else {
+          Se connecter
+        }
+      </button>
+    </form>
+
+    <p class="auth-link">
+      Pas encore de compte ? <a routerLink="/register">S'inscrire</a>
+    </p>
+  </div>
+</div>

@@ -1,0 +1,112 @@
+<div class="container">
+  <header>
+    <div class="header-content">
+      <div class="header-left">
+        <h1>RunIQ</h1>
+        <p class="subtitle">Analyse tes courses avec l'IA</p>
+      </div>
+      <div class="header-right">
+        <span class="user-name">{{ authService.currentUser()?.firstName }}</span>
+        <button class="btn-logout" (click)="logout()">Déconnexion</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <form (ngSubmit)="submitRun()" class="run-form">
+      <div class="form-grid">
+        <!-- Distance -->
+        <div class="form-group">
+          <label for="distance">Distance (km)</label>
+          <input type="number" id="distance" [(ngModel)]="runData.distance" name="distance" step="0.01" placeholder="10.5">
+        </div>
+
+        <!-- Durée -->
+        <div class="form-group">
+          <label for="duration">Durée (min)</label>
+          <input type="number" id="duration" [(ngModel)]="runData.duration" name="duration" placeholder="55">
+        </div>
+
+        <!-- Allure -->
+        <div class="form-group">
+          <label for="pace">Allure moyenne (min/km)</label>
+          <input type="text" id="pace" [(ngModel)]="runData.averagePace" name="averagePace" placeholder="5:15">
+        </div>
+
+        <!-- FC Moyenne -->
+        <div class="form-group">
+          <label for="avgHr">FC moyenne (bpm)</label>
+          <input type="number" id="avgHr" [(ngModel)]="runData.averageHeartRate" name="averageHeartRate" placeholder="145">
+        </div>
+
+        <!-- FC Max -->
+        <div class="form-group">
+          <label for="maxHr">FC max (bpm)</label>
+          <input type="number" id="maxHr" [(ngModel)]="runData.maxHeartRate" name="maxHeartRate" placeholder="165">
+        </div>
+
+        <!-- Cadence -->
+        <div class="form-group">
+          <label for="cadence">Cadence (ppm)</label>
+          <input type="number" id="cadence" [(ngModel)]="runData.averageCadence" name="averageCadence" placeholder="180">
+        </div>
+
+        <!-- Dénivelé -->
+        <div class="form-group">
+          <label for="elevation">Dénivelé + (m)</label>
+          <input type="number" id="elevation" [(ngModel)]="runData.elevationGain" name="elevationGain" placeholder="120">
+        </div>
+
+        <!-- Type de séance -->
+        <div class="form-group">
+          <label for="sessionType">Type de séance</label>
+          <select id="sessionType" [(ngModel)]="runData.sessionType" name="sessionType">
+            <option value="">-- Sélectionner --</option>
+            @for (type of sessionTypes; track type) {
+              <option [value]="type">{{ type }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Ressenti -->
+        <div class="form-group">
+          <label for="feeling">Ressenti (1-10)</label>
+          <input type="number" id="feeling" [(ngModel)]="runData.feeling" name="feeling" min="1" max="10" placeholder="7">
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="form-group full-width">
+        <label for="notes">Notes</label>
+        <textarea id="notes" [(ngModel)]="runData.notes" name="notes" rows="3" placeholder="Sensation de facilité, météo, terrain..."></textarea>
+      </div>
+
+      <!-- Actions -->
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" (click)="resetForm()">Réinitialiser</button>
+        <button type="submit" class="btn-primary" [disabled]="isLoading()">
+          @if (isLoading()) {
+            Analyse en cours...
+          } @else {
+            Analyser ma course
+          }
+        </button>
+      </div>
+    </form>
+
+    <!-- Erreur -->
+    @if (error()) {
+      <div class="error-box">
+        {{ error() }}
+      </div>
+    }
+
+    <!-- Résultat analyse -->
+    @if (analysis()) {
+      <div class="analysis-box">
+        <h2>Analyse</h2>
+        <p>{{ analysis() }}</p>
+      </div>
+    }
+  </main>
+</div>
