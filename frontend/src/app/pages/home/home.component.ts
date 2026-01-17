@@ -2,18 +2,19 @@ import { Component, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { RunService, Run } from '../../services/run.service';
-import { AuthService } from '../../services/auth.service';
+import { NavbarComponent } from '../../components/navbar/navbar.component';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [FormsModule, CommonModule],
+  imports: [FormsModule, CommonModule, NavbarComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
 })
 export class HomeComponent {
   // Form data
   runData = {
+    date: this.getTodayDate(),
     distance: null as number | null,
     duration: null as number | null,
     averagePace: '',
@@ -26,6 +27,10 @@ export class HomeComponent {
     notes: ''
   };
 
+  getTodayDate(): string {
+    return new Date().toISOString().split('T')[0];
+  }
+
   // State
   isLoading = signal(false);
   analysis = signal<string | null>(null);
@@ -33,10 +38,7 @@ export class HomeComponent {
 
   sessionTypes = ['Endurance', 'Fractionné', 'Tempo', 'Récupération', 'Sortie longue', 'Compétition'];
 
-  constructor(
-    private runService: RunService,
-    public authService: AuthService
-  ) {}
+  constructor(private runService: RunService) {}
 
   submitRun() {
     this.isLoading.set(true);
@@ -45,7 +47,7 @@ export class HomeComponent {
 
     // Convertir null en undefined pour le typage
     const payload: Partial<Run> = {
-      date: new Date(),
+      date: new Date(this.runData.date),
       distance: this.runData.distance ?? undefined,
       duration: this.runData.duration ?? undefined,
       averagePace: this.runData.averagePace || undefined,
@@ -77,6 +79,7 @@ export class HomeComponent {
 
   resetForm() {
     this.runData = {
+      date: this.getTodayDate(),
       distance: null,
       duration: null,
       averagePace: '',
@@ -90,9 +93,5 @@ export class HomeComponent {
     };
     this.analysis.set(null);
     this.error.set(null);
-  }
-
-  logout() {
-    this.authService.logout();
   }
 }

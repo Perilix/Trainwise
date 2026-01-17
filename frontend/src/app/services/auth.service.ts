@@ -3,6 +3,9 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
 
+export type DayOfWeek = 'lundi' | 'mardi' | 'mercredi' | 'jeudi' | 'vendredi' | 'samedi' | 'dimanche';
+export type PreferredTime = 'matin' | 'midi' | 'soir' | 'flexible';
+
 export interface User {
   id: string;
   email: string;
@@ -10,6 +13,26 @@ export interface User {
   lastName: string;
   phone?: string;
   role: 'user' | 'admin';
+  runningLevel?: 'debutant' | 'intermediaire' | 'confirme' | 'expert';
+  goal?: 'remise_en_forme' | '5km' | '10km' | 'semi_marathon' | 'marathon' | 'trail' | 'ultra' | 'autre';
+  goalDetails?: string;
+  weeklyFrequency?: number;
+  injuries?: string;
+  availableDays?: DayOfWeek[];
+  preferredTime?: PreferredTime;
+}
+
+export interface UpdateProfileData {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  runningLevel?: string;
+  goal?: string;
+  goalDetails?: string;
+  weeklyFrequency?: number;
+  injuries?: string;
+  availableDays?: string[];
+  preferredTime?: string;
 }
 
 export interface RegisterData {
@@ -80,5 +103,13 @@ export class AuthService {
 
   getUser(): User | null {
     return this.currentUser();
+  }
+
+  updateProfile(data: UpdateProfileData): Observable<User> {
+    return this.http.patch<User>(`${this.API_URL}/profile`, data)
+      .pipe(tap(user => {
+        localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+        this.currentUser.set(user);
+      }));
   }
 }

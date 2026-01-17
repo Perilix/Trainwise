@@ -1,0 +1,45 @@
+<nav class="navbar">
+  <div class="navbar-container">
+    <!-- Logo -->
+    <a routerLink="/" class="navbar-logo">
+      <span class="logo-icon">R</span>
+      <span class="logo-text">RunIQ</span>
+    </a>
+
+    <!-- Navigation links -->
+    <div class="navbar-links">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link">
+        Analyse
+      </a>
+      <a routerLink="/planning" routerLinkActive="active" class="nav-link">
+        Planning
+      </a>
+      <a routerLink="/profile" routerLinkActive="active" class="nav-link">
+        Profil
+      </a>
+    </div>
+
+    <!-- User menu -->
+    <div class="navbar-user">
+      <button class="user-avatar" (click)="toggleMenu()">
+        {{ getUserInitial() }}
+      </button>
+
+      @if (isMenuOpen) {
+        <div class="user-dropdown" (click)="closeMenu()">
+          <div class="dropdown-header">
+            <span class="dropdown-name">{{ authService.currentUser()?.firstName }} {{ authService.currentUser()?.lastName }}</span>
+            <span class="dropdown-email">{{ authService.currentUser()?.email }}</span>
+          </div>
+          <div class="dropdown-divider"></div>
+          <a routerLink="/profile" class="dropdown-item">Mon profil</a>
+          <button class="dropdown-item dropdown-logout" (click)="logout()">Déconnexion</button>
+        </div>
+      }
+    </div>
+  </div>
+</nav>
+
+@if (isMenuOpen) {
+  <div class="navbar-backdrop" (click)="closeMenu()"></div>
+}

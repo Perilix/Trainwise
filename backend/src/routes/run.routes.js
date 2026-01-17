@@ -18,4 +18,7 @@ router.get('/:id', runController.getRunById);
 // PATCH /api/runs/:id/analysis - Mettre à jour l'analyse (callback n8n)
 router.patch('/:id/analysis', runController.updateAnalysis);
 
+// DELETE /api/runs/:id - Supprimer une course
+router.delete('/:id', runController.deleteRun);
+
 module.exports = router;

@@ -38,4 +38,8 @@ export class RunService {
   getRunById(id: string): Observable<Run> {
     return this.http.get<Run>(`${this.apiUrl}/${id}`);
   }
+
+  deleteRun(id: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}`);
+  }
 }

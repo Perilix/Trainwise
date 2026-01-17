@@ -1,0 +1,241 @@
+<app-navbar></app-navbar>
+
+<div class="container">
+  <div class="page-header">
+    <div class="header-left">
+      <h1>Planning</h1>
+      <p class="subtitle">Planifie tes entraînements avec l'IA</p>
+    </div>
+    <div class="header-actions">
+      <button
+        class="btn-generate"
+        (click)="generatePlan(1)"
+        [disabled]="isGenerating()">
+        @if (isGenerating()) {
+          Génération...
+        } @else {
+          Générer 1 semaine
+        }
+      </button>
+    </div>
+  </div>
+
+  @if (successMessage()) {
+    <div class="success-box">{{ successMessage() }}</div>
+  }
+
+  @if (error()) {
+    <div class="error-box">{{ error() }}</div>
+  }
+
+  <main>
+    <!-- Navigation du calendrier -->
+    <div class="calendar-nav">
+      <button class="nav-btn" (click)="previousMonth()">←</button>
+      <span class="current-month">{{ getMonthName() }}</span>
+      <button class="nav-btn" (click)="nextMonth()">→</button>
+    </div>
+
+    <!-- Calendrier -->
+    <div class="calendar">
+      <!-- En-têtes des jours -->
+      <div class="calendar-header">
+        @for (day of weekDays; track day) {
+          <div class="calendar-header-cell">{{ day }}</div>
+        }
+      </div>
+
+      <!-- Grille du calendrier -->
+      @if (isLoading()) {
+        <div class="loading">Chargement...</div>
+      } @else {
+        <div class="calendar-grid">
+          @for (day of calendarDays(); track day.date.getTime()) {
+            <div
+              class="calendar-day"
+              [class.other-month]="!day.isCurrentMonth"
+              [class.today]="day.isToday"
+              [class.has-events]="day.runs.length > 0 || day.plannedRuns.length > 0"
+              (click)="selectDay(day)">
+              <span class="day-number">{{ day.dayOfMonth }}</span>
+
+              @if (day.runs.length > 0 || day.plannedRuns.length > 0) {
+                <div class="day-indicators">
+                  @for (indicator of getDayIndicators(day); track indicator.type) {
+                    <div class="indicator-badge" [class]="indicator.type">
+                      {{ indicator.count }}
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Légende -->
+    <div class="legend">
+      <div class="legend-item">
+        <span class="legend-dot completed"></span>
+        <span>Course effectuée</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-dot planned"></span>
+        <span>Séance planifiée</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-dot done"></span>
+        <span>Planifiée (complétée)</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-dot skipped"></span>
+        <span>Planifiée (passée)</span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal détail du jour -->
+@if (selectedDay()) {
+  <div class="modal-backdrop" (click)="closeDetail()"></div>
+  <div class="modal">
+    <div class="modal-header">
+      <h2>{{ formatDate(selectedDay()!.date) }}</h2>
+      <div class="modal-header-actions">
+        @if (!isAddingSession()) {
+          <button class="btn-add" (click)="openAddSession()" title="Ajouter une séance">+</button>
+        }
+        <button class="modal-close" (click)="closeDetail()">×</button>
+      </div>
+    </div>
+
+    <div class="modal-body">
+      <!-- Formulaire d'ajout de séance -->
+      @if (isAddingSession()) {
+        <div class="add-session-form">
+          <h3>Nouvelle séance</h3>
+
+          <div class="form-group">
+            <label>Type de séance</label>
+            <select [(ngModel)]="newSession.sessionType">
+              @for (type of sessionTypes; track type.value) {
+                <option [value]="type.value">{{ type.label }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Distance (km)</label>
+              <input type="number" [(ngModel)]="newSession.targetDistance" placeholder="Ex: 10">
+            </div>
+            <div class="form-group">
+              <label>Durée (min)</label>
+              <input type="number" [(ngModel)]="newSession.targetDuration" placeholder="Ex: 45">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Allure cible</label>
+            <input type="text" [(ngModel)]="newSession.targetPace" placeholder="Ex: 5:30">
+          </div>
+
+          <div class="form-group">
+            <label>Description</label>
+            <textarea [(ngModel)]="newSession.description" placeholder="Notes ou détails..."></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn-cancel" (click)="cancelAddSession()">Annuler</button>
+            <button class="btn-save" (click)="saveSession()" [disabled]="isSaving()">
+              @if (isSaving()) { Enregistrement... } @else { Enregistrer }
+            </button>
+          </div>
+        </div>
+      }
+
+      @if (!isAddingSession() && selectedDay()!.runs.length === 0 && selectedDay()!.plannedRuns.length === 0) {
+        <div class="empty-day">
+          <p>Aucune activité ce jour</p>
+          <button class="btn-add-empty" (click)="openAddSession()">+ Ajouter une séance</button>
+        </div>
+      }
+
+      <!-- Courses effectuées -->
+      @if (!isAddingSession() && selectedDay()!.runs.length > 0) {
+        <div class="section">
+          <h3>Courses effectuées</h3>
+          @for (run of selectedDay()!.runs; track run._id) {
+            <div class="event-card completed">
+              <button class="delete-btn" (click)="deleteRun(run)" title="Supprimer">×</button>
+              <div class="event-header">
+                <span class="event-type">{{ run.sessionType || 'Course' }}</span>
+              </div>
+              <div class="event-stats">
+                @if (run.distance) {
+                  <span>{{ run.distance }} km</span>
+                }
+                @if (run.duration) {
+                  <span>{{ run.duration }} min</span>
+                }
+                @if (run.averagePace) {
+                  <span>{{ run.averagePace }}/km</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Séances planifiées -->
+      @if (!isAddingSession() && selectedDay()!.plannedRuns.length > 0) {
+        <div class="section">
+          <h3>Séances planifiées</h3>
+          @for (planned of selectedDay()!.plannedRuns; track planned._id) {
+            <div class="event-card" [class.done]="planned.status === 'completed'" [class.skipped]="planned.status === 'skipped'">
+              <button class="delete-btn" (click)="deletePlannedRun(planned)" title="Supprimer">×</button>
+              <div class="event-header">
+                <span class="event-type">{{ getSessionTypeLabel(planned.sessionType) }}</span>
+                <span class="event-status" [class]="planned.status">
+                  @if (planned.status === 'planned') { À faire }
+                  @if (planned.status === 'completed') { Fait }
+                  @if (planned.status === 'skipped') { Passé }
+                </span>
+              </div>
+
+              <div class="event-stats">
+                @if (planned.targetDistance) {
+                  <span>{{ planned.targetDistance }} km</span>
+                }
+                @if (planned.targetDuration) {
+                  <span>{{ planned.targetDuration }} min</span>
+                }
+                @if (planned.targetPace) {
+                  <span>{{ planned.targetPace }}/km</span>
+                }
+              </div>
+
+              @if (planned.description) {
+                <p class="event-description">{{ planned.description }}</p>
+              }
+
+              @if (planned.mainWorkout) {
+                <div class="workout-detail">
+                  <strong>Séance :</strong> {{ planned.mainWorkout }}
+                </div>
+              }
+
+              @if (planned.status === 'planned') {
+                <div class="event-actions">
+                  <button class="btn-done" (click)="markAsCompleted(planned)">Marquer fait</button>
+                  <button class="btn-skip" (click)="markAsSkipped(planned)">Passer</button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+}

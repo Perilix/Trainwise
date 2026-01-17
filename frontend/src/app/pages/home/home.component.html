@@ -1,20 +1,20 @@
+<app-navbar></app-navbar>
+
 <div class="container">
-  <header>
-    <div class="header-content">
-      <div class="header-left">
-        <h1>RunIQ</h1>
-        <p class="subtitle">Analyse tes courses avec l'IA</p>
-      </div>
-      <div class="header-right">
-        <span class="user-name">{{ authService.currentUser()?.firstName }}</span>
-        <button class="btn-logout" (click)="logout()">Déconnexion</button>
-      </div>
-    </div>
-  </header>
+  <div class="page-header">
+    <h1>Nouvelle analyse</h1>
+    <p class="subtitle">Entre les données de ta course pour recevoir une analyse personnalisée</p>
+  </div>
 
   <main>
     <form (ngSubmit)="submitRun()" class="run-form">
       <div class="form-grid">
+        <!-- Date -->
+        <div class="form-group">
+          <label for="date">Date</label>
+          <input type="date" id="date" [(ngModel)]="runData.date" name="date">
+        </div>
+
         <!-- Distance -->
         <div class="form-group">
           <label for="distance">Distance (km)</label>
