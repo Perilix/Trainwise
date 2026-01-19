@@ -73,8 +73,12 @@ export class PlanningService {
     });
   }
 
-  generatePlan(weeks: number = 1): Observable<GeneratePlanResponse> {
-    return this.http.post<GeneratePlanResponse>(`${this.apiUrl}/generate`, { weeks });
+  generatePlan(weeks: number = 1, startDate?: string): Observable<GeneratePlanResponse> {
+    return this.http.post<GeneratePlanResponse>(`${this.apiUrl}/generate`, { weeks, startDate });
+  }
+
+  confirmPlan(sessions: Partial<PlannedRun>[]): Observable<GeneratePlanResponse> {
+    return this.http.post<GeneratePlanResponse>(`${this.apiUrl}/confirm`, { sessions });
   }
 
   getCalendarData(month: number, year: number): Observable<CalendarData> {

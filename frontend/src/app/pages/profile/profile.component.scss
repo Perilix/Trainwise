@@ -2,10 +2,10 @@
   max-width: 800px;
   margin: 0 auto;
   padding: 2rem;
-  padding-top: calc(64px + 2rem); // Navbar height + spacing
+  padding-top: calc(64px + 2rem);
   font-family: 'Poppins', sans-serif;
   min-height: 100vh;
-  background: #fafafa;
+  background: #f5f7fa;
 }
 
 .page-header {
@@ -13,9 +13,9 @@
 
   h1 {
     font-size: 1.75rem;
-    color: #1a1a1a;
+    color: #051923;
     margin: 0 0 0.5rem;
-    font-weight: 600;
+    font-weight: 700;
   }
 
   .subtitle {
@@ -31,23 +31,23 @@
   align-items: center;
   gap: 1.5rem;
   background: #fff;
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
-  border: 1px solid #e5e5e5;
+  box-shadow: 0 4px 20px rgba(5, 25, 35, 0.06);
+  border: 1px solid #e5e7eb;
   margin-bottom: 1.5rem;
 
   .user-avatar {
-    width: 64px;
-    height: 64px;
+    width: 70px;
+    height: 70px;
     border-radius: 50%;
-    background: #1a1a1a;
+    background: #00a6fb;
     color: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.5rem;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
   }
 
@@ -55,8 +55,8 @@
     h2 {
       margin: 0;
       font-size: 1.25rem;
-      color: #1a1a1a;
-      font-weight: 600;
+      color: #051923;
+      font-weight: 700;
     }
 
     .user-email {
@@ -70,10 +70,10 @@
 // Runner profile section
 .runner-profile {
   background: #fff;
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
-  border: 1px solid #e5e5e5;
+  box-shadow: 0 4px 20px rgba(5, 25, 35, 0.06);
+  border: 1px solid #e5e7eb;
   margin-bottom: 1.5rem;
 
   .section-header {
@@ -85,36 +85,36 @@
     h3 {
       margin: 0;
       font-size: 1rem;
-      color: #1a1a1a;
-      font-weight: 600;
+      color: #051923;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
 
     .btn-edit {
       padding: 0.4rem 0.75rem;
-      border-radius: 6px;
+      border-radius: 8px;
       font-size: 0.8rem;
-      font-weight: 500;
+      font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
       background: transparent;
-      color: #666;
-      border: 1px solid #ddd;
+      color: #0582ca;
+      border: 2px solid #e5e7eb;
 
       &:hover {
-        background: #f5f5f5;
-        color: #1a1a1a;
+        background: rgba(0, 166, 251, 0.1);
+        border-color: #00a6fb;
       }
     }
   }
 
   .success-box {
     padding: 0.75rem 1rem;
-    background: #f0fdf4;
-    border: 1px solid #bbf7d0;
-    border-radius: 8px;
-    color: #166534;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    border-radius: 10px;
+    color: #065f46;
     margin-bottom: 1rem;
     font-size: 0.9rem;
   }
@@ -130,8 +130,8 @@
 
     .profile-item {
       padding: 0.75rem;
-      background: #f8f8f8;
-      border-radius: 8px;
+      background: #f8f9fa;
+      border-radius: 10px;
 
       &.full-width {
         grid-column: 1 / -1;
@@ -140,16 +140,17 @@
       .profile-label {
         display: block;
         font-size: 0.75rem;
-        font-weight: 600;
-        color: #666;
+        font-weight: 700;
+        color: #0582ca;
         text-transform: uppercase;
         letter-spacing: 0.5px;
         margin-bottom: 0.25rem;
       }
 
       .profile-value {
-        color: #1a1a1a;
+        color: #051923;
         font-size: 0.95rem;
+        font-weight: 500;
       }
     }
   }
@@ -175,8 +176,8 @@
 
       label {
         font-size: 0.8rem;
-        font-weight: 600;
-        color: #444;
+        font-weight: 700;
+        color: #051923;
         margin-bottom: 0.5rem;
         text-transform: uppercase;
         letter-spacing: 0.5px;
@@ -184,17 +185,15 @@
 
       input, select, textarea {
         padding: 0.75rem 1rem;
-        border: 1px solid #ddd;
-        border-radius: 8px;
+        border: 2px solid #e5e7eb;
+        border-radius: 10px;
         font-size: 1rem;
-        background: #fafafa;
         transition: all 0.2s;
 
         &:focus {
           outline: none;
-          border-color: #333;
-          background: #fff;
-          box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+          border-color: #00a6fb;
+          box-shadow: 0 0 0 3px rgba(0, 166, 251, 0.1);
         }
 
         &::placeholder {
@@ -214,23 +213,23 @@
 
       .day-btn {
         padding: 0.5rem 0.75rem;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        background: #fafafa;
+        border: 2px solid #e5e7eb;
+        border-radius: 10px;
+        background: #fff;
         color: #666;
         font-size: 0.85rem;
-        font-weight: 500;
+        font-weight: 600;
         cursor: pointer;
         transition: all 0.2s;
 
         &:hover {
-          border-color: #1a1a1a;
-          color: #1a1a1a;
+          border-color: #00a6fb;
+          color: #00a6fb;
         }
 
         &.selected {
-          background: #1a1a1a;
-          border-color: #1a1a1a;
+          background: #00a6fb;
+          border-color: #00a6fb;
           color: #fff;
         }
       }
@@ -247,18 +246,18 @@
 
 .btn-secondary {
   padding: 0.6rem 1.25rem;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
   background: #fff;
   color: #666;
-  border: 1px solid #ddd;
+  border: 2px solid #e5e7eb;
 
   &:hover {
-    background: #f5f5f5;
-    border-color: #ccc;
+    border-color: #051923;
+    color: #051923;
   }
 }
 
@@ -275,23 +274,30 @@
 
   .stat-card {
     background: #fff;
-    border-radius: 12px;
+    border-radius: 16px;
     padding: 1.5rem;
     text-align: center;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
-    border: 1px solid #e5e5e5;
+    box-shadow: 0 4px 20px rgba(5, 25, 35, 0.06);
+    border: 1px solid #e5e7eb;
+    transition: all 0.2s;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(5, 25, 35, 0.1);
+    }
 
     .stat-value {
       display: block;
-      font-size: 1.75rem;
+      font-size: 2rem;
       font-weight: 700;
-      color: #1a1a1a;
+      color: #051923;
       margin-bottom: 0.25rem;
     }
 
     .stat-label {
-      color: #666;
+      color: #0582ca;
       font-size: 0.8rem;
+      font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
@@ -303,8 +309,8 @@
   h3 {
     margin: 0 0 1rem;
     font-size: 1rem;
-    color: #1a1a1a;
-    font-weight: 600;
+    color: #051923;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
@@ -319,8 +325,8 @@
     text-align: center;
     padding: 3rem;
     background: #fff;
-    border-radius: 12px;
-    border: 1px solid #e5e5e5;
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
 
     p {
       color: #666;
@@ -333,7 +339,7 @@
   padding: 1rem;
   background: #fef2f2;
   border: 1px solid #fecaca;
-  border-radius: 8px;
+  border-radius: 10px;
   color: #dc2626;
 }
 
@@ -346,15 +352,15 @@
 
 .run-card {
   background: #fff;
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 1.25rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e5e5e5;
+  box-shadow: 0 4px 20px rgba(5, 25, 35, 0.06);
+  border: 1px solid #e5e7eb;
   transition: all 0.2s;
 
   &:hover {
-    border-color: #ccc;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: #00a6fb;
+    box-shadow: 0 8px 30px rgba(5, 25, 35, 0.1);
   }
 
   .run-header {
@@ -364,18 +370,18 @@
     margin-bottom: 0.5rem;
 
     .run-date {
-      font-weight: 600;
-      color: #1a1a1a;
+      font-weight: 700;
+      color: #051923;
       font-size: 0.95rem;
     }
 
     .run-type {
-      background: #f0f0f0;
-      color: #444;
+      background: rgba(0, 166, 251, 0.1);
+      color: #006494;
       padding: 0.25rem 0.75rem;
       border-radius: 20px;
       font-size: 0.75rem;
-      font-weight: 500;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.3px;
     }
@@ -399,24 +405,24 @@
   .run-notes {
     margin: 0.75rem 0 0;
     padding: 0.75rem;
-    background: #f8f8f8;
-    border-radius: 8px;
+    background: #f8f9fa;
+    border-radius: 10px;
     color: #555;
     font-size: 0.9rem;
     font-style: italic;
-    border-left: 3px solid #ddd;
+    border-left: 3px solid #0582ca;
   }
 
   .run-analysis {
     margin-top: 0.75rem;
     padding: 0.75rem;
-    background: #f8f8f8;
-    border-radius: 8px;
-    border-left: 3px solid #1a1a1a;
+    background: rgba(0, 166, 251, 0.05);
+    border-radius: 10px;
+    border-left: 3px solid #00a6fb;
 
     .analysis-label {
-      font-weight: 600;
-      color: #1a1a1a;
+      font-weight: 700;
+      color: #051923;
       font-size: 0.75rem;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -437,17 +443,19 @@
 .btn-primary {
   display: inline-block;
   padding: 0.75rem 1.5rem;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 0.95rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  background: #1a1a1a;
+  background: #00a6fb;
   color: #fff;
   border: none;
   text-decoration: none;
 
   &:hover {
-    background: #333;
+    background: #0582ca;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 166, 251, 0.3);
   }
 }

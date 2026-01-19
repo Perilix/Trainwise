@@ -9,12 +9,12 @@
     <div class="header-actions">
       <button
         class="btn-generate"
-        (click)="generatePlan(1)"
+        (click)="openGenerateOptions()"
         [disabled]="isGenerating()">
         @if (isGenerating()) {
           Génération...
         } @else {
-          Générer 1 semaine
+          Générer une semaine
         }
       </button>
     </div>
@@ -193,15 +193,18 @@
         <div class="section">
           <h3>Séances planifiées</h3>
           @for (planned of selectedDay()!.plannedRuns; track planned._id) {
-            <div class="event-card" [class.done]="planned.status === 'completed'" [class.skipped]="planned.status === 'skipped'">
+            <div class="event-card" [class.done]="planned.status === 'completed'" [class.skipped]="planned.status === 'skipped'" [class.ai-generated]="planned.generatedBy === 'ai'">
               <button class="delete-btn" (click)="deletePlannedRun(planned)" title="Supprimer">×</button>
+              <span class="event-status" [class]="planned.status">
+                @if (planned.status === 'planned') { À faire }
+                @if (planned.status === 'completed') { Fait }
+                @if (planned.status === 'skipped') { Passé }
+              </span>
+              @if (planned.generatedBy === 'ai') {
+                <span class="coach-badge">Séance du coach</span>
+              }
               <div class="event-header">
                 <span class="event-type">{{ getSessionTypeLabel(planned.sessionType) }}</span>
-                <span class="event-status" [class]="planned.status">
-                  @if (planned.status === 'planned') { À faire }
-                  @if (planned.status === 'completed') { Fait }
-                  @if (planned.status === 'skipped') { Passé }
-                </span>
               </div>
 
               <div class="event-stats">
@@ -236,6 +239,85 @@
           }
         </div>
       }
+    </div>
+  </div>
+}
+
+<!-- Modal options de génération -->
+@if (showGenerateOptions()) {
+  <div class="modal-backdrop" (click)="closeGenerateOptions()"></div>
+  <div class="modal generate-modal">
+    <div class="modal-header">
+      <h2>Générer un plan</h2>
+      <button class="modal-close" (click)="closeGenerateOptions()">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Semaine du</label>
+        <input type="date" [(ngModel)]="generateStartDate">
+        <p class="form-hint">Les séances seront générées sur tes jours d'entraînement à partir de cette date</p>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="closeGenerateOptions()">Annuler</button>
+      <button class="btn-confirm" (click)="generatePlan(1)">
+        Générer
+      </button>
+    </div>
+  </div>
+}
+
+<!-- Modal preview des séances générées -->
+@if (showPreview()) {
+  <div class="modal-backdrop" (click)="cancelPreview()"></div>
+  <div class="modal preview-modal">
+    <div class="modal-header">
+      <h2>Séances générées</h2>
+      <button class="modal-close" (click)="cancelPreview()">×</button>
+    </div>
+
+    <div class="modal-body">
+      <p class="preview-intro">
+        <span class="coach-badge">Séances du coach</span>
+        L'IA a généré {{ previewSessions().length }} séance(s) pour toi. Confirme pour les ajouter à ton planning.
+      </p>
+
+      <div class="preview-list">
+        @for (session of previewSessions(); track session.date) {
+          <div class="preview-card">
+            <div class="preview-date">{{ formatPreviewDate(session.date!) }}</div>
+            <div class="preview-content">
+              <span class="preview-type">{{ getSessionTypeLabel(session.sessionType!) }}</span>
+              <div class="preview-stats">
+                @if (session.targetDistance) {
+                  <span>{{ session.targetDistance }} km</span>
+                }
+                @if (session.targetDuration) {
+                  <span>{{ session.targetDuration }} min</span>
+                }
+                @if (session.targetPace) {
+                  <span>{{ session.targetPace }}/km</span>
+                }
+              </div>
+              @if (session.description) {
+                <p class="preview-description">{{ session.description }}</p>
+              }
+              @if (session.mainWorkout) {
+                <p class="preview-workout">{{ session.mainWorkout }}</p>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="cancelPreview()">Annuler</button>
+      <button class="btn-confirm" (click)="confirmPlan()" [disabled]="isConfirming()">
+        @if (isConfirming()) { Confirmation... } @else { Confirmer }
+      </button>
     </div>
   </div>
 }

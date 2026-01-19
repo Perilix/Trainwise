@@ -11,6 +11,7 @@ router.get('/calendar', planningController.getCalendarData);
 
 // Génération de plan IA
 router.post('/generate', planningController.generatePlan);
+router.post('/confirm', planningController.confirmPlan);
 
 // CRUD séances planifiées
 router.get('/', planningController.getPlannedRuns);

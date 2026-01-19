@@ -37,6 +37,15 @@ export class PlanningComponent implements OnInit {
   isAddingSession = signal(false);
   isSaving = signal(false);
 
+  // Preview modal
+  showPreview = signal(false);
+  previewSessions = signal<Partial<PlannedRun>[]>([]);
+  isConfirming = signal(false);
+
+  // Generate options
+  showGenerateOptions = signal(false);
+  generateStartDate = this.getNextMonday();
+
   newSession = {
     sessionType: 'endurance' as SessionType,
     targetDistance: null as number | null,
@@ -104,17 +113,21 @@ export class PlanningComponent implements OnInit {
     for (let i = 0; i < 42; i++) {
       const date = new Date(startDate);
       date.setDate(startDate.getDate() + i);
+      date.setHours(12, 0, 0, 0); // Midi pour éviter les problèmes de timezone
 
-      const dateStr = date.toISOString().split('T')[0];
+      // Utiliser la date locale pour la comparaison
+      const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
       const dayRuns = data.runs.filter(r => {
-        const runDate = new Date(r.date).toISOString().split('T')[0];
-        return runDate === dateStr;
+        const d = new Date(r.date);
+        const runDateStr = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+        return runDateStr === dateStr;
       });
 
       const dayPlanned = data.plannedRuns.filter(p => {
-        const plannedDate = new Date(p.date).toISOString().split('T')[0];
-        return plannedDate === dateStr;
+        const d = new Date(p.date);
+        const plannedDateStr = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+        return plannedDateStr === dateStr;
       });
 
       days.push({
@@ -163,23 +176,73 @@ export class PlanningComponent implements OnInit {
     this.selectedDay.set(null);
   }
 
+  getNextMonday(): string {
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const daysUntilMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek);
+    const nextMonday = new Date(today);
+    nextMonday.setDate(today.getDate() + daysUntilMonday);
+    return nextMonday.toISOString().split('T')[0];
+  }
+
+  openGenerateOptions() {
+    this.showGenerateOptions.set(true);
+  }
+
+  closeGenerateOptions() {
+    this.showGenerateOptions.set(false);
+  }
+
   generatePlan(weeks: number = 1) {
     this.isGenerating.set(true);
     this.error.set(null);
     this.successMessage.set(null);
+    this.showGenerateOptions.set(false);
 
-    this.planningService.generatePlan(weeks).subscribe({
+    this.planningService.generatePlan(weeks, this.generateStartDate).subscribe({
       next: (response) => {
         this.isGenerating.set(false);
-        this.successMessage.set(response.message);
-        this.loadCalendar();
-        setTimeout(() => this.successMessage.set(null), 5000);
+        this.previewSessions.set(response.sessions);
+        this.showPreview.set(true);
       },
       error: (err) => {
         this.isGenerating.set(false);
         this.error.set(err.error?.error || 'Erreur lors de la génération');
         console.error(err);
       }
+    });
+  }
+
+  confirmPlan() {
+    this.isConfirming.set(true);
+
+    this.planningService.confirmPlan(this.previewSessions()).subscribe({
+      next: (response) => {
+        this.isConfirming.set(false);
+        this.showPreview.set(false);
+        this.previewSessions.set([]);
+        this.successMessage.set(response.message);
+        this.loadCalendar();
+        setTimeout(() => this.successMessage.set(null), 5000);
+      },
+      error: (err) => {
+        this.isConfirming.set(false);
+        this.error.set(err.error?.error || 'Erreur lors de la confirmation');
+        console.error(err);
+      }
+    });
+  }
+
+  cancelPreview() {
+    this.showPreview.set(false);
+    this.previewSessions.set([]);
+  }
+
+  formatPreviewDate(date: string | Date): string {
+    return new Date(date).toLocaleDateString('fr-FR', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short'
     });
   }
 

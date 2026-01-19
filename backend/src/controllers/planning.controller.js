@@ -51,8 +51,16 @@ exports.getPlannedRunById = async (req, res) => {
 // Créer une séance planifiée manuellement
 exports.createPlannedRun = async (req, res) => {
   try {
+    const data = { ...req.body };
+
+    // Fixer le problème de timezone si date est une string
+    if (data.date && typeof data.date === 'string' && data.date.match(/^\d{4}-\d{2}-\d{2}/)) {
+      const dateStr = data.date.split('T')[0];
+      data.date = parseDateUTC(dateStr);
+    }
+
     const plannedRun = new PlannedRun({
-      ...req.body,
+      ...data,
       user: req.user._id,
       generatedBy: 'manual'
     });
@@ -131,10 +139,56 @@ exports.updateStatus = async (req, res) => {
   }
 };
 
-// Générer un plan d'entraînement via IA
+// Helper: Convertir jour français en index JS (0 = dimanche, 1 = lundi, ..., 6 = samedi)
+const dayToJsIndex = {
+  'dimanche': 0,
+  'lundi': 1,
+  'mardi': 2,
+  'mercredi': 3,
+  'jeudi': 4,
+  'vendredi': 5,
+  'samedi': 6
+};
+
+// Helper: Calculer les dates disponibles pour les séances
+const calculateAvailableDates = (startDate, availableDays, weeks = 1) => {
+  const dates = [];
+  const start = new Date(startDate);
+  start.setHours(0, 0, 0, 0);
+
+  // Pour chaque semaine
+  for (let week = 0; week < weeks; week++) {
+    for (const day of availableDays) {
+      const targetDayIndex = dayToJsIndex[day.toLowerCase()];
+      if (targetDayIndex === undefined) continue;
+
+      // Calculer la date du jour dans cette semaine
+      const weekStart = new Date(start);
+      weekStart.setDate(start.getDate() + (week * 7));
+
+      const currentDayIndex = weekStart.getDay();
+      let daysToAdd = targetDayIndex - currentDayIndex;
+
+      // Si le jour est déjà passé cette semaine (pour la première semaine), passer
+      if (week === 0 && daysToAdd < 0) continue;
+
+      const targetDate = new Date(weekStart);
+      targetDate.setDate(weekStart.getDate() + daysToAdd);
+
+      // Vérifier que la date est >= à la date de début
+      if (targetDate >= start) {
+        dates.push(targetDate.toISOString().split('T')[0]);
+      }
+    }
+  }
+
+  return dates.sort();
+};
+
+// Générer un plan d'entraînement via IA (preview)
 exports.generatePlan = async (req, res) => {
   try {
-    const { weeks = 1 } = req.body;
+    const { weeks = 1, startDate } = req.body;
 
     // Récupérer le profil utilisateur
     const user = await User.findById(req.user._id);
@@ -144,6 +198,13 @@ exports.generatePlan = async (req, res) => {
         error: 'Configure tes jours disponibles dans ton profil avant de générer un plan'
       });
     }
+
+    // Calculer les dates exactes des séances
+    const sessionDates = calculateAvailableDates(
+      startDate || new Date().toISOString().split('T')[0],
+      user.availableDays,
+      weeks
+    );
 
     // Récupérer l'historique récent
     const recentRuns = await Run.find({ user: req.user._id })
@@ -175,6 +236,10 @@ exports.generatePlan = async (req, res) => {
       date: { $gte: new Date() }
     });
 
+    // Filtrer les dates déjà planifiées
+    const existingDates = existingPlanned.map(p => p.date.toISOString().split('T')[0]);
+    const availableSessionDates = sessionDates.filter(d => !existingDates.includes(d));
+
     // Construire le contexte pour l'IA
     const planningContext = {
       runner: {
@@ -187,6 +252,8 @@ exports.generatePlan = async (req, res) => {
         availableDays: user.availableDays,
         preferredTime: user.preferredTime
       },
+      // IMPORTANT: Les dates exactes où créer des séances
+      sessionDates: availableSessionDates,
       history: {
         recentRuns: recentRuns.map(r => ({
           date: r.date,
@@ -199,7 +266,7 @@ exports.generatePlan = async (req, res) => {
         totalRunsLast4Weeks: monthRuns.length
       },
       lastAnalysis: lastAnalyzedRun?.analysis || null,
-      existingPlannedDates: existingPlanned.map(p => p.date.toISOString().split('T')[0]),
+      existingPlannedDates: existingDates,
       weeksToGenerate: weeks,
       today: new Date().toISOString().split('T')[0]
     };
@@ -217,12 +284,37 @@ exports.generatePlan = async (req, res) => {
       return res.status(500).json({ error: 'Erreur lors de la génération du plan' });
     }
 
-    // Créer les séances planifiées
+    // Retourner les séances en preview (sans sauvegarder)
+    res.json({
+      message: 'Plan généré',
+      sessions: response.data.sessions
+    });
+  } catch (error) {
+    console.error('Planning generation error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Helper: Parser une date sans problème de timezone (UTC midi)
+const parseDateUTC = (dateStr) => {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+};
+
+// Confirmer et sauvegarder les séances générées
+exports.confirmPlan = async (req, res) => {
+  try {
+    const { sessions } = req.body;
+
+    if (!sessions || !Array.isArray(sessions) || sessions.length === 0) {
+      return res.status(400).json({ error: 'Aucune séance à sauvegarder' });
+    }
+
     const createdSessions = [];
-    for (const session of response.data.sessions) {
+    for (const session of sessions) {
       const plannedRun = new PlannedRun({
         user: req.user._id,
-        date: new Date(session.date),
+        date: parseDateUTC(session.date),
         sessionType: session.sessionType,
         targetDistance: session.targetDistance,
         targetDuration: session.targetDuration,
@@ -240,11 +332,11 @@ exports.generatePlan = async (req, res) => {
     }
 
     res.status(201).json({
-      message: `${createdSessions.length} séances générées`,
+      message: `${createdSessions.length} séances ajoutées au planning`,
       sessions: createdSessions
     });
   } catch (error) {
-    console.error('Planning generation error:', error.message);
+    console.error('Planning confirm error:', error.message);
     res.status(500).json({ error: error.message });
   }
 };
