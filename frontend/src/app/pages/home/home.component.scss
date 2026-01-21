@@ -1,8 +1,8 @@
 .container {
-  max-width: 800px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
-  padding-top: calc(64px + 2rem);
+  padding-top: calc(120px + 3.5rem);
   font-family: 'Poppins', sans-serif;
   min-height: 100vh;
   background: #f5f7fa;
@@ -25,6 +25,102 @@
   }
 }
 
+// Layout deux colonnes
+.main-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 2rem;
+  align-items: start;
+}
+
+.main-content {
+  min-width: 0;
+}
+
+.sidebar {
+  position: sticky;
+  top: calc(120px + 2rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.sidebar-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(5, 25, 35, 0.06);
+  border: 1px solid #e5e7eb;
+
+  h3 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #051923;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 1rem;
+  }
+}
+
+.actions-card {
+  .sidebar-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}
+
+.result-card {
+  border-left: 4px solid #00a6fb;
+
+  .loading-state {
+    text-align: center;
+    padding: 1rem 0;
+
+    .loading-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid #e5e7eb;
+      border-top-color: #00a6fb;
+      border-radius: 50%;
+      margin: 0 auto 0.75rem;
+      animation: spin 0.8s linear infinite;
+    }
+
+    p {
+      margin: 0;
+      color: #666;
+      font-size: 0.9rem;
+    }
+  }
+
+  .error-state {
+    padding: 0.75rem;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    color: #dc2626;
+    font-size: 0.9rem;
+  }
+
+  .analysis-result {
+    p {
+      color: #333;
+      line-height: 1.7;
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 0.9rem;
+    }
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Formulaire
 .run-form {
   background: #fff;
   border-radius: 16px;
@@ -79,13 +175,7 @@
   margin-top: 1.5rem;
 }
 
-.form-actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-  margin-top: 2rem;
-}
-
+// Boutons
 .btn-primary, .btn-secondary {
   padding: 0.75rem 1.5rem;
   border-radius: 10px;
@@ -93,6 +183,8 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  width: 100%;
+  text-align: center;
 }
 
 .btn-primary {
@@ -123,36 +215,13 @@
   }
 }
 
-.error-box {
-  margin-top: 1.5rem;
-  padding: 1rem;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 10px;
-  color: #dc2626;
-}
-
-.analysis-box {
-  margin-top: 1.5rem;
-  padding: 1.5rem;
-  background: rgba(0, 166, 251, 0.05);
-  border: 1px solid rgba(0, 166, 251, 0.2);
-  border-left: 4px solid #00a6fb;
-  border-radius: 12px;
-
-  h2 {
-    margin: 0 0 1rem 0;
-    color: #051923;
-    font-size: 0.9rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+// Responsive
+@media (max-width: 900px) {
+  .main-layout {
+    grid-template-columns: 1fr;
   }
 
-  p {
-    color: #333;
-    line-height: 1.7;
-    margin: 0;
-    white-space: pre-wrap;
+  .sidebar {
+    position: static;
   }
 }

@@ -108,7 +108,7 @@ export class PlanningComponent implements OnInit {
     // Construire 6 semaines
     const days: CalendarDay[] = [];
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
     for (let i = 0; i < 42; i++) {
       const date = new Date(startDate);
@@ -134,7 +134,7 @@ export class PlanningComponent implements OnInit {
         date,
         dayOfMonth: date.getDate(),
         isCurrentMonth: date.getMonth() === month,
-        isToday: date.getTime() === today.getTime(),
+        isToday: dateStr === todayStr,
         runs: dayRuns,
         plannedRuns: dayPlanned
       });
@@ -399,5 +399,34 @@ export class PlanningComponent implements OnInit {
     if (skipped > 0) indicators.push({ type: 'skipped', count: skipped });
 
     return indicators;
+  }
+
+  getMonthStats(): { planned: number; completed: number; totalKm: number } {
+    const days = this.calendarDays();
+    let planned = 0;
+    let completed = 0;
+    let totalKm = 0;
+
+    // Ne compter que les jours du mois affiché
+    days.filter(day => day.isCurrentMonth).forEach(day => {
+      planned += day.plannedRuns.filter(p => p.status === 'planned').length;
+      // Complétées = séances planifiées complétées + courses analysées
+      completed += day.plannedRuns.filter(p => p.status === 'completed').length + day.runs.length;
+      // Total km des courses analysées
+      day.runs.forEach(run => {
+        if (run.distance) {
+          totalKm += run.distance;
+        }
+      });
+    });
+
+    return { planned, completed, totalKm: Math.round(totalKm * 10) / 10 };
+  }
+
+  goToToday() {
+    const today = new Date();
+    this.currentMonth.set(today.getMonth() + 1);
+    this.currentYear.set(today.getFullYear());
+    this.loadCalendar();
   }
 }

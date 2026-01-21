@@ -2,22 +2,8 @@
 
 <div class="container">
   <div class="page-header">
-    <div class="header-left">
-      <h1>Planning</h1>
-      <p class="subtitle">Planifie tes entraînements avec l'IA</p>
-    </div>
-    <div class="header-actions">
-      <button
-        class="btn-generate"
-        (click)="openGenerateOptions()"
-        [disabled]="isGenerating()">
-        @if (isGenerating()) {
-          Génération...
-        } @else {
-          Générer une semaine
-        }
-      </button>
-    </div>
+    <h1>Planning</h1>
+    <p class="subtitle">Planifie tes entraînements avec l'IA</p>
   </div>
 
   @if (successMessage()) {
@@ -28,72 +14,124 @@
     <div class="error-box">{{ error() }}</div>
   }
 
-  <main>
-    <!-- Navigation du calendrier -->
-    <div class="calendar-nav">
-      <button class="nav-btn" (click)="previousMonth()">←</button>
-      <span class="current-month">{{ getMonthName() }}</span>
-      <button class="nav-btn" (click)="nextMonth()">→</button>
-    </div>
+  <div class="main-layout">
+    <!-- Zone principale : Calendrier -->
+    <div class="main-content">
+      <!-- Navigation du calendrier -->
+      <div class="calendar-nav">
+        <button class="nav-btn" (click)="previousMonth()">←</button>
+        <span class="current-month">{{ getMonthName() }}</span>
+        <button class="nav-btn" (click)="nextMonth()">→</button>
+      </div>
 
-    <!-- Calendrier -->
-    <div class="calendar">
-      <!-- En-têtes des jours -->
-      <div class="calendar-header">
-        @for (day of weekDays; track day) {
-          <div class="calendar-header-cell">{{ day }}</div>
+      <!-- Calendrier -->
+      <div class="calendar">
+        <!-- En-têtes des jours -->
+        <div class="calendar-header">
+          @for (day of weekDays; track day) {
+            <div class="calendar-header-cell">{{ day }}</div>
+          }
+        </div>
+
+        <!-- Grille du calendrier -->
+        @if (isLoading()) {
+          <div class="loading">Chargement...</div>
+        } @else {
+          <div class="calendar-grid">
+            @for (day of calendarDays(); track day.date.getTime()) {
+              <div
+                class="calendar-day"
+                [class.other-month]="!day.isCurrentMonth"
+                [class.today]="day.isToday"
+                [class.has-events]="day.runs.length > 0 || day.plannedRuns.length > 0"
+                (click)="selectDay(day)">
+                <span class="day-number">{{ day.dayOfMonth }}</span>
+
+                @if (day.runs.length > 0 || day.plannedRuns.length > 0) {
+                  <div class="day-indicators">
+                    @for (indicator of getDayIndicators(day); track indicator.type) {
+                      <div class="indicator-badge" [class]="indicator.type">
+                        {{ indicator.count }}
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
         }
       </div>
 
-      <!-- Grille du calendrier -->
-      @if (isLoading()) {
-        <div class="loading">Chargement...</div>
-      } @else {
-        <div class="calendar-grid">
-          @for (day of calendarDays(); track day.date.getTime()) {
-            <div
-              class="calendar-day"
-              [class.other-month]="!day.isCurrentMonth"
-              [class.today]="day.isToday"
-              [class.has-events]="day.runs.length > 0 || day.plannedRuns.length > 0"
-              (click)="selectDay(day)">
-              <span class="day-number">{{ day.dayOfMonth }}</span>
-
-              @if (day.runs.length > 0 || day.plannedRuns.length > 0) {
-                <div class="day-indicators">
-                  @for (indicator of getDayIndicators(day); track indicator.type) {
-                    <div class="indicator-badge" [class]="indicator.type">
-                      {{ indicator.count }}
-                    </div>
-                  }
-                </div>
-              }
-            </div>
-          }
+      <!-- Légende -->
+      <div class="legend">
+        <div class="legend-item">
+          <span class="legend-dot completed"></span>
+          <span>Course effectuée</span>
         </div>
-      }
+        <div class="legend-item">
+          <span class="legend-dot planned"></span>
+          <span>Séance planifiée</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot done"></span>
+          <span>Planifiée (complétée)</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot skipped"></span>
+          <span>Planifiée (passée)</span>
+        </div>
+      </div>
     </div>
 
-    <!-- Légende -->
-    <div class="legend">
-      <div class="legend-item">
-        <span class="legend-dot completed"></span>
-        <span>Course effectuée</span>
+    <!-- Sidebar : Génération IA et actions -->
+    <div class="sidebar">
+      <!-- Carte Génération IA -->
+      <div class="sidebar-card generate-card">
+        <h3>Génération IA</h3>
+        <p class="card-description">Laisse l'IA créer ton programme d'entraînement personnalisé pour la semaine.</p>
+        <button
+          class="btn-generate"
+          (click)="openGenerateOptions()"
+          [disabled]="isGenerating()">
+          @if (isGenerating()) {
+            Génération...
+          } @else {
+            Générer une semaine
+          }
+        </button>
       </div>
-      <div class="legend-item">
-        <span class="legend-dot planned"></span>
-        <span>Séance planifiée</span>
+
+      <!-- Carte Résumé du mois -->
+      <div class="sidebar-card week-summary">
+        <h3>Ce mois</h3>
+        <div class="summary-stats">
+          <div class="stat-item">
+            <span class="stat-value">{{ getMonthStats().planned }}</span>
+            <span class="stat-label">Planifiées</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">{{ getMonthStats().completed }}</span>
+            <span class="stat-label">Complétées</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">{{ getMonthStats().totalKm }}</span>
+            <span class="stat-label">km</span>
+          </div>
+        </div>
       </div>
-      <div class="legend-item">
-        <span class="legend-dot done"></span>
-        <span>Planifiée (complétée)</span>
-      </div>
-      <div class="legend-item">
-        <span class="legend-dot skipped"></span>
-        <span>Planifiée (passée)</span>
+
+      <!-- Carte Actions rapides -->
+      <div class="sidebar-card quick-actions">
+        <h3>Actions rapides</h3>
+        <div class="quick-actions-list">
+          <button class="quick-action-btn" (click)="goToToday()">
+            <span class="action-icon">📅</span>
+            Aujourd'hui
+          </button>
+        </div>
       </div>
     </div>
-  </main>
+  </div>
 </div>
 
 <!-- Modal détail du jour -->
