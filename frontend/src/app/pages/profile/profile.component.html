@@ -1,0 +1,225 @@
+<app-navbar></app-navbar>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Mon Profil</h1>
+    <p class="subtitle">Historique de tes courses</p>
+  </div>
+
+  <main>
+    <!-- Infos utilisateur -->
+    <section class="user-card">
+      <div class="user-avatar">
+        {{ authService.currentUser()?.firstName?.charAt(0) }}{{ authService.currentUser()?.lastName?.charAt(0) }}
+      </div>
+      <div class="user-info">
+        <h2>{{ authService.currentUser()?.firstName }} {{ authService.currentUser()?.lastName }}</h2>
+        <p class="user-email">{{ authService.currentUser()?.email }}</p>
+      </div>
+    </section>
+
+    <!-- Profil coureur -->
+    <section class="runner-profile">
+      <div class="section-header">
+        <h3>Profil coureur</h3>
+        <button class="btn-edit" (click)="toggleEdit()">
+          @if (isEditing()) {
+            Annuler
+          } @else {
+            Modifier
+          }
+        </button>
+      </div>
+
+      @if (saveSuccess()) {
+        <div class="success-box">Profil mis à jour avec succès !</div>
+      }
+
+      @if (saveError()) {
+        <div class="error-box">{{ saveError() }}</div>
+      }
+
+      @if (!isEditing()) {
+        <!-- Mode lecture -->
+        <div class="profile-grid">
+          <div class="profile-item">
+            <span class="profile-label">Niveau</span>
+            <span class="profile-value">{{ getLevelLabel(authService.currentUser()?.runningLevel) }}</span>
+          </div>
+          <div class="profile-item">
+            <span class="profile-label">Objectif</span>
+            <span class="profile-value">{{ getGoalLabel(authService.currentUser()?.goal) }}</span>
+          </div>
+          <div class="profile-item">
+            <span class="profile-label">Fréquence</span>
+            <span class="profile-value">
+              @if (authService.currentUser()?.weeklyFrequency) {
+                {{ authService.currentUser()?.weeklyFrequency }} séances/semaine
+              } @else {
+                Non défini
+              }
+            </span>
+          </div>
+          <div class="profile-item">
+            <span class="profile-label">Détails objectif</span>
+            <span class="profile-value">{{ authService.currentUser()?.goalDetails || 'Non défini' }}</span>
+          </div>
+          <div class="profile-item full-width">
+            <span class="profile-label">Blessures / Points de vigilance</span>
+            <span class="profile-value">{{ authService.currentUser()?.injuries || 'Aucun' }}</span>
+          </div>
+          <div class="profile-item">
+            <span class="profile-label">Jours disponibles</span>
+            <span class="profile-value">{{ getAvailableDaysDisplay() }}</span>
+          </div>
+          <div class="profile-item">
+            <span class="profile-label">Créneau préféré</span>
+            <span class="profile-value">{{ getPreferredTimeLabel(authService.currentUser()?.preferredTime) }}</span>
+          </div>
+        </div>
+      } @else {
+        <!-- Mode édition -->
+        <form class="profile-form" (ngSubmit)="saveProfile()">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="level">Niveau</label>
+              <select id="level" [(ngModel)]="profileForm.runningLevel" name="runningLevel">
+                <option [ngValue]="undefined">-- Sélectionner --</option>
+                @for (level of runningLevels; track level.value) {
+                  <option [value]="level.value">{{ level.label }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="goal">Objectif</label>
+              <select id="goal" [(ngModel)]="profileForm.goal" name="goal">
+                <option [ngValue]="undefined">-- Sélectionner --</option>
+                @for (goal of goals; track goal.value) {
+                  <option [value]="goal.value">{{ goal.label }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="frequency">Fréquence (séances/semaine)</label>
+              <input type="number" id="frequency" [(ngModel)]="profileForm.weeklyFrequency" name="weeklyFrequency" min="1" max="14" placeholder="3">
+            </div>
+
+            <div class="form-group">
+              <label for="goalDetails">Détails objectif</label>
+              <input type="text" id="goalDetails" [(ngModel)]="profileForm.goalDetails" name="goalDetails" placeholder="Ex: Marathon de Paris en avril">
+            </div>
+
+            <div class="form-group full-width">
+              <label for="injuries">Blessures / Points de vigilance</label>
+              <textarea id="injuries" [(ngModel)]="profileForm.injuries" name="injuries" rows="2" placeholder="Ex: Tendinite au genou droit, éviter les descentes"></textarea>
+            </div>
+
+            <div class="form-group full-width">
+              <label>Jours disponibles pour courir</label>
+              <div class="days-selector">
+                @for (day of allDays; track day.value) {
+                  <button
+                    type="button"
+                    class="day-btn"
+                    [class.selected]="isDaySelected(day.value)"
+                    (click)="toggleDay(day.value)">
+                    {{ day.label }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="preferredTime">Créneau préféré</label>
+              <select id="preferredTime" [(ngModel)]="profileForm.preferredTime" name="preferredTime">
+                <option [ngValue]="undefined">-- Sélectionner --</option>
+                @for (time of preferredTimes; track time.value) {
+                  <option [value]="time.value">{{ time.label }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-secondary" (click)="toggleEdit()">Annuler</button>
+            <button type="submit" class="btn-primary" [disabled]="isSaving()">
+              @if (isSaving()) {
+                Enregistrement...
+              } @else {
+                Enregistrer
+              }
+            </button>
+          </div>
+        </form>
+      }
+    </section>
+
+    <!-- Statistiques globales -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-value">{{ getTotalRuns() }}</span>
+        <span class="stat-label">Courses</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">{{ getTotalDistance() | number:'1.1-1' }} km</span>
+        <span class="stat-label">Distance totale</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">{{ formatDuration(getTotalDuration()) }}</span>
+        <span class="stat-label">Temps total</span>
+      </div>
+    </section>
+
+    <!-- Historique des runs -->
+    <section class="runs-section">
+      <h3>Historique des courses</h3>
+
+      @if (isLoading()) {
+        <div class="loading">Chargement...</div>
+      }
+
+      @if (error()) {
+        <div class="error-box">{{ error() }}</div>
+      }
+
+      @if (!isLoading() && runs().length === 0) {
+        <div class="empty-state">
+          <p>Aucune course enregistrée pour le moment.</p>
+          <a routerLink="/" class="btn-primary">Enregistrer ma première course</a>
+        </div>
+      }
+
+      @if (!isLoading() && runs().length > 0) {
+        <div class="runs-list">
+          @for (run of runs(); track run._id) {
+            <div class="run-card">
+              <div class="run-header">
+                <span class="run-date">{{ formatDate(run.date) }}</span>
+                @if (run.sessionType) {
+                  <span class="run-type">{{ run.sessionType }}</span>
+                }
+              </div>
+              <div class="run-summary">
+                {{ getRunSummary(run) }}
+                @if (run.feeling) {
+                  <span class="run-feeling">{{ getFeelingEmoji(run.feeling) }} {{ run.feeling }}/10</span>
+                }
+              </div>
+              @if (run.notes) {
+                <p class="run-notes">{{ run.notes }}</p>
+              }
+              @if (run.analysis) {
+                <div class="run-analysis">
+                  <span class="analysis-label">Analyse IA :</span>
+                  <p>{{ run.analysis }}</p>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </section>
+  </main>
+</div>

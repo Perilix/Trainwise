@@ -4,8 +4,30 @@
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #051923;
+  font-family: 'Poppins', sans-serif;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(0, 166, 251, 0.15) 0%, transparent 70%);
+    top: -200px;
+    right: -200px;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(5, 130, 202, 0.1) 0%, transparent 70%);
+    bottom: -100px;
+    left: -100px;
+  }
 }
 
 .auth-card {
@@ -13,8 +35,10 @@
   border-radius: 16px;
   padding: 2.5rem;
   width: 100%;
-  max-width: 420px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  max-width: 460px;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
+  position: relative;
+  z-index: 1;
 }
 
 header {
@@ -23,14 +47,15 @@ header {
 
   h1 {
     font-size: 2rem;
-    color: #1a1a2e;
+    color: #051923;
     margin: 0;
+    font-weight: 700;
   }
 
   .subtitle {
     color: #666;
     margin-top: 0.5rem;
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
 }
 
@@ -45,60 +70,65 @@ header {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.3rem;
 
     .step-number {
-      width: 32px;
-      height: 32px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       background: #e5e7eb;
       color: #9ca3af;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 600;
-      font-size: 0.875rem;
+      font-weight: 700;
+      font-size: 0.9rem;
       transition: all 0.3s;
     }
 
     .step-label {
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       color: #9ca3af;
       transition: color 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 500;
     }
 
     &.active {
       .step-number {
-        background: #4f46e5;
+        background: #00a6fb;
         color: #fff;
       }
 
       .step-label {
-        color: #4f46e5;
+        color: #00a6fb;
+        font-weight: 600;
       }
     }
 
     &.completed {
       .step-number {
-        background: #10b981;
+        background: #006494;
         color: #fff;
       }
 
       .step-label {
-        color: #10b981;
+        color: #006494;
       }
     }
   }
 
   .step-line {
-    width: 40px;
-    height: 2px;
+    width: 50px;
+    height: 3px;
     background: #e5e7eb;
     margin-bottom: 1.25rem;
     transition: background 0.3s;
+    border-radius: 2px;
 
     &.active {
-      background: #10b981;
+      background: #00a6fb;
     }
   }
 }
@@ -114,28 +144,29 @@ header {
   flex-direction: column;
 
   label {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #333;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #051923;
     margin-bottom: 0.5rem;
 
     .optional {
       color: #9ca3af;
       font-weight: 400;
+      font-size: 0.8rem;
     }
   }
 
   input {
-    padding: 0.875rem;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+    padding: 0.875rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
     font-size: 1rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: all 0.2s;
 
     &:focus {
       outline: none;
-      border-color: #4f46e5;
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+      border-color: #00a6fb;
+      box-shadow: 0 0 0 3px rgba(0, 166, 251, 0.15);
     }
 
     &::placeholder {
@@ -148,7 +179,7 @@ header {
   padding: 0.875rem;
   background: #fef2f2;
   border: 1px solid #fecaca;
-  border-radius: 8px;
+  border-radius: 10px;
   color: #dc2626;
   font-size: 0.9rem;
 }
@@ -161,20 +192,22 @@ header {
 .btn-primary, .btn-secondary {
   flex: 1;
   padding: 0.875rem;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .btn-primary {
-  background: #4f46e5;
+  background: #00a6fb;
   color: #fff;
   border: none;
 
   &:hover:not(:disabled) {
-    background: #4338ca;
+    background: #0582ca;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 166, 251, 0.3);
   }
 
   &:disabled {
@@ -185,11 +218,12 @@ header {
 
 .btn-secondary {
   background: #fff;
-  color: #666;
-  border: 1px solid #ddd;
+  color: #051923;
+  border: 2px solid #e5e7eb;
 
   &:hover {
-    background: #f5f5f5;
+    border-color: #00a6fb;
+    color: #00a6fb;
   }
 }
 
@@ -199,11 +233,12 @@ header {
   color: #666;
 
   a {
-    color: #4f46e5;
+    color: #0582ca;
     text-decoration: none;
-    font-weight: 500;
+    font-weight: 600;
 
     &:hover {
+      color: #00a6fb;
       text-decoration: underline;
     }
   }

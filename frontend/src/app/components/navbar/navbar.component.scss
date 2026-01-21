@@ -1,0 +1,244 @@
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 120px;
+  background: #051923;
+  border-bottom: 1px solid #003554;
+  z-index: 1000;
+  font-family: 'Poppins', sans-serif;
+}
+
+.navbar-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 2rem;
+}
+
+// Logo
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.9;
+  }
+
+  .logo-icon {
+    width: 48px;
+    height: 48px;
+    background: #00a6fb;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .logo-text {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: -0.5px;
+  }
+}
+
+// Spacer
+.navbar-spacer {
+  flex: 1;
+}
+
+// Right section
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+// Navigation links
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+
+  .nav-link {
+    padding: 0.6rem 1.25rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 500;
+    border-radius: 10px;
+    transition: all 0.2s;
+
+    &:hover {
+      color: #00a6fb;
+    }
+
+    &.active {
+      color: #fff;
+      background: #003554;
+    }
+  }
+}
+
+// User menu
+.navbar-user {
+  position: relative;
+
+  .user-avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: #00a6fb;
+    border: none;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 0 3px rgba(0, 166, 251, 0.3);
+    }
+  }
+
+  .user-dropdown {
+    position: absolute;
+    top: calc(100% + 12px);
+    right: 0;
+    width: 220px;
+    background: #051923;
+    border: 1px solid #003554;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(5, 25, 35, 0.8);
+    overflow: hidden;
+    animation: dropdownFade 0.15s ease;
+
+    .dropdown-header {
+      padding: 1rem;
+      border-bottom: 1px solid #003554;
+
+      .dropdown-name {
+        display: block;
+        color: #fff;
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 0.2rem;
+      }
+
+      .dropdown-email {
+        display: block;
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 0.75rem;
+      }
+    }
+
+    .dropdown-item {
+      display: block;
+      width: 100%;
+      padding: 0.7rem 1rem;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.85rem;
+      text-decoration: none;
+      text-align: left;
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s;
+
+      &:hover {
+        background: #003554;
+        color: #00a6fb;
+      }
+
+      &.dropdown-logout {
+        color: #ff6b6b;
+        border-top: 1px solid #003554;
+
+        &:hover {
+          background: rgba(255, 107, 107, 0.1);
+        }
+      }
+    }
+  }
+}
+
+.navbar-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+}
+
+@keyframes dropdownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .navbar {
+    height: 90px;
+  }
+
+  .navbar-container {
+    padding: 0 1rem;
+  }
+
+  .navbar-logo {
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      font-size: 1.25rem;
+      border-radius: 10px;
+    }
+
+    .logo-text {
+      font-size: 1.2rem;
+    }
+  }
+
+  .navbar-right {
+    gap: 0.75rem;
+  }
+
+  .navbar-links .nav-link {
+    padding: 0.5rem 0.9rem;
+    font-size: 0.85rem;
+  }
+
+  .navbar-user .user-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 500px) {
+  .logo-text {
+    display: none;
+  }
+
+  .navbar-links .nav-link {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.8rem;
+  }
+}

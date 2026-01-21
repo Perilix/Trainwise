@@ -4,8 +4,30 @@
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #051923;
+  font-family: 'Poppins', sans-serif;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(0, 166, 251, 0.15) 0%, transparent 70%);
+    top: -200px;
+    right: -200px;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(5, 130, 202, 0.1) 0%, transparent 70%);
+    bottom: -100px;
+    left: -100px;
+  }
 }
 
 .auth-card {
@@ -14,7 +36,9 @@
   padding: 2.5rem;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
+  position: relative;
+  z-index: 1;
 }
 
 header {
@@ -23,14 +47,15 @@ header {
 
   h1 {
     font-size: 2rem;
-    color: #1a1a2e;
+    color: #051923;
     margin: 0;
+    font-weight: 700;
   }
 
   .subtitle {
     color: #666;
     margin-top: 0.5rem;
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
 }
 
@@ -45,23 +70,23 @@ header {
   flex-direction: column;
 
   label {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #333;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #051923;
     margin-bottom: 0.5rem;
   }
 
   input {
-    padding: 0.875rem;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+    padding: 0.875rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
     font-size: 1rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: all 0.2s;
 
     &:focus {
       outline: none;
-      border-color: #4f46e5;
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+      border-color: #00a6fb;
+      box-shadow: 0 0 0 3px rgba(0, 166, 251, 0.15);
     }
 
     &::placeholder {
@@ -74,25 +99,27 @@ header {
   padding: 0.875rem;
   background: #fef2f2;
   border: 1px solid #fecaca;
-  border-radius: 8px;
+  border-radius: 10px;
   color: #dc2626;
   font-size: 0.9rem;
 }
 
 .btn-primary {
-  padding: 0.875rem;
-  border-radius: 8px;
+  padding: 1rem;
+  border-radius: 10px;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  background: #4f46e5;
+  background: #00a6fb;
   color: #fff;
   border: none;
   margin-top: 0.5rem;
 
   &:hover:not(:disabled) {
-    background: #4338ca;
+    background: #0582ca;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 166, 251, 0.3);
   }
 
   &:disabled {
@@ -107,11 +134,12 @@ header {
   color: #666;
 
   a {
-    color: #4f46e5;
+    color: #0582ca;
     text-decoration: none;
-    font-weight: 500;
+    font-weight: 600;
 
     &:hover {
+      color: #00a6fb;
       text-decoration: underline;
     }
   }

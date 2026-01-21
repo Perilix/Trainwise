@@ -35,6 +35,42 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'admin'],
     default: 'user'
   },
+  // Profil coureur
+  runningLevel: {
+    type: String,
+    enum: ['debutant', 'intermediaire', 'confirme', 'expert'],
+    default: null
+  },
+  goal: {
+    type: String,
+    enum: ['remise_en_forme', '5km', '10km', 'semi_marathon', 'marathon', 'trail', 'ultra', 'autre'],
+    default: null
+  },
+  goalDetails: {
+    type: String,
+    trim: true
+  },
+  weeklyFrequency: {
+    type: Number,
+    min: 1,
+    max: 14,
+    default: null
+  },
+  injuries: {
+    type: String,
+    trim: true
+  },
+  // Disponibilités d'entraînement
+  availableDays: {
+    type: [String],
+    enum: ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'],
+    default: []
+  },
+  preferredTime: {
+    type: String,
+    enum: ['matin', 'midi', 'soir', 'flexible'],
+    default: 'flexible'
+  },
   createdAt: {
     type: Date,
     default: Date.now
