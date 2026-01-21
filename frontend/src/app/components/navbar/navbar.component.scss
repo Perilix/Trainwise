@@ -6,7 +6,7 @@
   height: 120px;
   background: #051923;
   border-bottom: 1px solid #003554;
-  z-index: 1000;
+  z-index: 9999;
   font-family: 'Poppins', sans-serif;
 }
 
@@ -179,7 +179,7 @@
 .navbar-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 999;
+  z-index: 9998;
 }
 
 @keyframes dropdownFade {
