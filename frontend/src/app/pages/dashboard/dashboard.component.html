@@ -1,0 +1,216 @@
+<app-navbar></app-navbar>
+
+<div class="container">
+  <!-- Header avec salutation et streak -->
+  <header class="dashboard-header">
+    <div class="greeting">
+      <h1>{{ getGreeting() }}, {{ authService.currentUser()?.firstName }} !</h1>
+      <p class="subtitle">{{ getMotivationalMessage() }}</p>
+    </div>
+    <div class="streak-badge" [class.active]="streak() > 0">
+      <span class="streak-icon">🔥</span>
+      <div class="streak-info">
+        <span class="streak-value">{{ streak() }}</span>
+        <span class="streak-label">jours</span>
+      </div>
+    </div>
+  </header>
+
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>Chargement...</p>
+    </div>
+  } @else {
+    <div class="dashboard-grid">
+      <!-- Colonne principale -->
+      <div class="main-column">
+        <!-- Prochaine séance - Focus principal -->
+        <section class="next-session-card">
+          @if (upcomingSession()) {
+            <div class="session-header">
+              <span class="session-badge">Prochaine séance</span>
+              <span class="session-date">{{ formatDate(upcomingSession()!.date) }}</span>
+            </div>
+            <div class="session-content">
+              <h2 class="session-type">{{ getSessionTypeLabel(upcomingSession()!.sessionType) }}</h2>
+              <div class="session-targets">
+                @if (upcomingSession()!.targetDistance) {
+                  <div class="target-item">
+                    <span class="target-value">{{ upcomingSession()!.targetDistance }}</span>
+                    <span class="target-unit">km</span>
+                  </div>
+                }
+                @if (upcomingSession()!.targetDuration) {
+                  <div class="target-item">
+                    <span class="target-value">{{ upcomingSession()!.targetDuration }}</span>
+                    <span class="target-unit">min</span>
+                  </div>
+                }
+                @if (upcomingSession()!.targetPace) {
+                  <div class="target-item">
+                    <span class="target-value">{{ upcomingSession()!.targetPace }}</span>
+                    <span class="target-unit">/km</span>
+                  </div>
+                }
+              </div>
+              @if (upcomingSession()!.description) {
+                <p class="session-description">{{ upcomingSession()!.description }}</p>
+              }
+              @if (upcomingSession()!.mainWorkout) {
+                <div class="session-workout">
+                  <span class="workout-label">Séance</span>
+                  <p>{{ upcomingSession()!.mainWorkout }}</p>
+                </div>
+              }
+            </div>
+            <a routerLink="/planning" class="session-cta">
+              Voir le planning complet
+              <span class="cta-arrow">→</span>
+            </a>
+          } @else {
+            <div class="no-session">
+              <span class="no-session-icon">📅</span>
+              <h3>Aucune séance planifiée</h3>
+              <p>Génère ton programme d'entraînement personnalisé avec l'IA.</p>
+              <a routerLink="/planning" class="btn-plan">Planifier mes séances</a>
+            </div>
+          }
+        </section>
+
+        <!-- Timeline de la semaine -->
+        <section class="week-timeline">
+          <div class="section-header">
+            <h3>Cette semaine</h3>
+            <a routerLink="/planning" class="see-all">Voir tout →</a>
+          </div>
+          <div class="timeline-days">
+            @for (day of weekDays(); track day.date.getTime()) {
+              <div
+                class="timeline-day"
+                [class.today]="day.isToday"
+                [class.past]="day.isPast && !day.isToday"
+                [class]="getDayStatus(day)">
+                <span class="day-name">{{ day.dayName }}</span>
+                <span class="day-number">{{ day.dayNumber }}</span>
+                <div class="day-indicator">
+                  @if (getDayStatus(day) === 'completed') {
+                    <span class="indicator-dot completed"></span>
+                  } @else if (getDayStatus(day) === 'planned') {
+                    <span class="indicator-dot planned"></span>
+                  } @else if (getDayStatus(day) === 'done') {
+                    <span class="indicator-dot done"></span>
+                  } @else if (getDayStatus(day) === 'skipped') {
+                    <span class="indicator-dot skipped"></span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+          <div class="timeline-legend">
+            <span class="legend-item"><span class="dot completed"></span> Effectuée</span>
+            <span class="legend-item"><span class="dot planned"></span> Planifiée</span>
+          </div>
+        </section>
+
+        <!-- Feed des dernières courses -->
+        <section class="recent-runs">
+          <div class="section-header">
+            <h3>Dernières courses</h3>
+            <a routerLink="/profile" class="see-all">Tout voir →</a>
+          </div>
+
+          @if (recentRuns().length === 0) {
+            <div class="empty-runs">
+              <p>Aucune course enregistrée.</p>
+              <a routerLink="/analyse" class="btn-secondary">Enregistrer une course</a>
+            </div>
+          } @else {
+            <div class="runs-feed">
+              @for (run of recentRuns(); track run._id) {
+                <div class="run-card" (click)="openRunDetail(run)">
+                  <div class="run-date">{{ formatRunDate(run.date) }}</div>
+                  <div class="run-content">
+                    <div class="run-title-row">
+                      <span class="run-title">{{ getRunTitle(run.notes) }}</span>
+                      @if (run.stravaActivityId) {
+                        <span class="strava-badge">Strava</span>
+                      }
+                    </div>
+                    <div class="run-stats">
+                      @if (run.distance) {
+                        <span class="run-stat">{{ run.distance }} km</span>
+                      }
+                      @if (run.duration) {
+                        <span class="run-stat">{{ formatDuration(run.duration) }}</span>
+                      }
+                      @if (run.averagePace) {
+                        <span class="run-stat">{{ run.averagePace }}/km</span>
+                      }
+                    </div>
+                  </div>
+                  <span class="run-arrow">→</span>
+                </div>
+              }
+            </div>
+          }
+        </section>
+      </div>
+
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <!-- Stats de la semaine -->
+        <div class="stats-card">
+          <h3>Cette semaine</h3>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <span class="stat-value">{{ weekStats().runs }}</span>
+              <span class="stat-label">courses</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value">{{ weekStats().distance }}</span>
+              <span class="stat-label">km</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value">{{ formatDuration(weekStats().duration) }}</span>
+              <span class="stat-label">temps</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tips / Conseils -->
+        <div class="tips-card">
+          <h3>Conseils</h3>
+          @for (tip of getTips(); track tip.title) {
+            <div class="tip-item">
+              <span class="tip-icon">{{ tip.icon }}</span>
+              <div class="tip-content">
+                <span class="tip-title">{{ tip.title }}</span>
+                <p class="tip-text">{{ tip.text }}</p>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Quick actions -->
+        <div class="actions-card">
+          <h3>Actions rapides</h3>
+          <div class="quick-actions">
+            <a routerLink="/analyse" class="action-btn primary">
+              <span class="action-icon">📝</span>
+              Nouvelle analyse
+            </a>
+            <a routerLink="/planning" class="action-btn">
+              <span class="action-icon">📅</span>
+              Planning
+            </a>
+            <a routerLink="/profile" class="action-btn">
+              <span class="action-icon">👤</span>
+              Mon profil
+            </a>
+          </div>
+        </div>
+      </aside>
+    </div>
+  }
+</div>
