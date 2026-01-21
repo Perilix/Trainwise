@@ -1,9 +1,10 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { RunService, Run } from '../../services/run.service';
 import { AuthService, UpdateProfileData } from '../../services/auth.service';
+import { StravaService, StravaStatus } from '../../services/strava.service';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 
 @Component({
@@ -23,6 +24,12 @@ export class ProfileComponent implements OnInit {
   isSaving = signal(false);
   saveError = signal<string | null>(null);
   saveSuccess = signal(false);
+
+  // Strava
+  stravaStatus = signal<StravaStatus | null>(null);
+  stravaLoading = signal(false);
+  stravaSyncing = signal(false);
+  stravaMessage = signal<string | null>(null);
 
   profileForm: UpdateProfileData = {
     runningLevel: undefined,
@@ -71,12 +78,120 @@ export class ProfileComponent implements OnInit {
 
   constructor(
     private runService: RunService,
-    public authService: AuthService
+    public authService: AuthService,
+    private stravaService: StravaService,
+    private route: ActivatedRoute,
+    private router: Router
   ) {}
+
+  openRunDetail(run: Run) {
+    if (run._id) {
+      this.router.navigate(['/run', run._id]);
+    }
+  }
 
   ngOnInit() {
     this.loadRuns();
     this.initProfileForm();
+    this.loadStravaStatus();
+    this.handleStravaCallback();
+  }
+
+  handleStravaCallback() {
+    this.route.queryParams.subscribe(params => {
+      if (params['strava'] === 'success') {
+        this.stravaMessage.set('Compte Strava connecté avec succès !');
+        this.loadStravaStatus();
+        setTimeout(() => this.stravaMessage.set(null), 5000);
+      } else if (params['strava'] === 'error') {
+        this.stravaMessage.set('Erreur de connexion Strava: ' + (params['message'] || 'Erreur inconnue'));
+        setTimeout(() => this.stravaMessage.set(null), 5000);
+      }
+    });
+  }
+
+  loadStravaStatus() {
+    this.stravaLoading.set(true);
+    this.stravaService.getStatus().subscribe({
+      next: (status) => {
+        this.stravaStatus.set(status);
+        this.stravaLoading.set(false);
+      },
+      error: () => {
+        this.stravaLoading.set(false);
+      }
+    });
+  }
+
+  connectStrava() {
+    this.stravaLoading.set(true);
+    this.stravaService.getAuthUrl().subscribe({
+      next: (response) => {
+        window.location.href = response.authUrl;
+      },
+      error: () => {
+        this.stravaLoading.set(false);
+        this.stravaMessage.set('Erreur lors de la connexion à Strava');
+      }
+    });
+  }
+
+  syncStrava() {
+    this.stravaSyncing.set(true);
+    this.stravaMessage.set(null);
+    this.stravaService.syncActivities().subscribe({
+      next: (result) => {
+        this.stravaSyncing.set(false);
+        this.stravaMessage.set(result.message);
+        if (result.imported.length > 0) {
+          this.loadRuns();
+        }
+        setTimeout(() => this.stravaMessage.set(null), 5000);
+      },
+      error: (err) => {
+        this.stravaSyncing.set(false);
+        this.stravaMessage.set('Erreur lors de la synchronisation');
+        console.error(err);
+      }
+    });
+  }
+
+  resyncStrava() {
+    this.stravaSyncing.set(true);
+    this.stravaMessage.set(null);
+    this.stravaService.resyncActivities().subscribe({
+      next: (result) => {
+        this.stravaSyncing.set(false);
+        this.stravaMessage.set(result.message);
+        if (result.updated > 0) {
+          this.loadRuns();
+        }
+        setTimeout(() => this.stravaMessage.set(null), 5000);
+      },
+      error: (err) => {
+        this.stravaSyncing.set(false);
+        this.stravaMessage.set('Erreur lors de la resynchronisation');
+        console.error(err);
+      }
+    });
+  }
+
+  disconnectStrava() {
+    if (!confirm('Déconnecter votre compte Strava ?')) return;
+
+    this.stravaLoading.set(true);
+    this.stravaService.disconnect().subscribe({
+      next: () => {
+        this.stravaStatus.set({ connected: false, athleteId: null, connectedAt: null });
+        this.stravaLoading.set(false);
+        this.stravaMessage.set('Compte Strava déconnecté');
+        setTimeout(() => this.stravaMessage.set(null), 3000);
+      },
+      error: () => {
+        this.stravaLoading.set(false);
+        this.stravaMessage.set('Erreur lors de la déconnexion');
+      }
+    });
   }
 
   initProfileForm() {

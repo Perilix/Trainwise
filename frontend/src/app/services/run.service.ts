@@ -17,6 +17,10 @@ export interface Run {
   notes?: string;
   analysis?: string;
   analyzedAt?: Date;
+  stravaActivityId?: number;
+  polyline?: string;
+  startLatLng?: number[];
+  endLatLng?: number[];
 }
 
 @Injectable({
@@ -41,5 +45,9 @@ export class RunService {
 
   deleteRun(id: string): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}`);
+  }
+
+  analyzeRun(id: string): Observable<Run> {
+    return this.http.post<Run>(`${this.apiUrl}/${id}/analyze`, {});
   }
 }

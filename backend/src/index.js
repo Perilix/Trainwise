@@ -6,6 +6,7 @@ require('dotenv').config();
 const runRoutes = require('./routes/run.routes');
 const authRoutes = require('./routes/auth.routes');
 const planningRoutes = require('./routes/planning.routes');
+const stravaRoutes = require('./routes/strava.routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,6 +19,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/runs', runRoutes);
 app.use('/api/planning', planningRoutes);
+app.use('/api/strava', stravaRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

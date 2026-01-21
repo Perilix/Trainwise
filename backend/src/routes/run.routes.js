@@ -15,6 +15,9 @@ router.get('/', runController.getAllRuns);
 // GET /api/runs/:id - Récupérer une course par ID
 router.get('/:id', runController.getRunById);
 
+// POST /api/runs/:id/analyze - Analyser une course avec l'IA
+router.post('/:id/analyze', runController.analyzeRun);
+
 // PATCH /api/runs/:id/analysis - Mettre à jour l'analyse (callback n8n)
 router.patch('/:id/analysis', runController.updateAnalysis);
 

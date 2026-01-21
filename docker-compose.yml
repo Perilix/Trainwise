@@ -43,6 +43,10 @@ services:
       - N8N_PLANNING_WEBHOOK_URL=${N8N_PLANNING_WEBHOOK_URL:-}
       - JWT_SECRET=${JWT_SECRET:-runiq-jwt-secret-change-in-production}
       - JWT_EXPIRE=${JWT_EXPIRE:-7d}
+      - STRAVA_CLIENT_ID=${STRAVA_CLIENT_ID}
+      - STRAVA_CLIENT_SECRET=${STRAVA_CLIENT_SECRET}
+      - BACKEND_URL=${BACKEND_URL:-http://localhost:3000}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:4200}
     depends_on:
       - mongodb
     networks:

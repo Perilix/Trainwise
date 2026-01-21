@@ -205,11 +205,23 @@
         <div class="section">
           <h3>Courses effectuées</h3>
           @for (run of selectedDay()!.runs; track run._id) {
-            <div class="event-card completed">
-              <button class="delete-btn" (click)="deleteRun(run)" title="Supprimer">×</button>
+            <div class="event-card completed clickable" (click)="openRunDetail(run)">
+              <button class="delete-btn" (click)="deleteRun(run); $event.stopPropagation()" title="Supprimer">×</button>
+              @if (run.stravaActivityId) {
+                <span class="strava-badge">Strava</span>
+              }
               <div class="event-header">
                 <span class="event-type">{{ run.sessionType || 'Course' }}</span>
+                <span class="view-detail">Voir &rarr;</span>
               </div>
+              @if (run.notes) {
+                <div class="run-notes">
+                  <span class="run-title">{{ getRunTitle(run.notes) }}</span>
+                  @if (getRunDescription(run.notes)) {
+                    <p class="run-description">{{ getRunDescription(run.notes) }}</p>
+                  }
+                </div>
+              }
               <div class="event-stats">
                 @if (run.distance) {
                   <span>{{ run.distance }} km</span>

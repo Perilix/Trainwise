@@ -37,7 +37,27 @@ const runSchema = new mongoose.Schema({
 
   // Analyse GPT
   analysis: { type: String },
-  analyzedAt: { type: Date }
+  analyzedAt: { type: Date },
+
+  // Strava
+  stravaActivityId: {
+    type: Number,
+    default: null,
+    sparse: true,
+    index: true
+  },
+  polyline: {
+    type: String,
+    default: null
+  },
+  startLatLng: {
+    type: [Number],
+    default: null
+  },
+  endLatLng: {
+    type: [Number],
+    default: null
+  }
 }, {
   timestamps: true
 });

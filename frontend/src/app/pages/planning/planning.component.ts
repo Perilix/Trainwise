@@ -1,7 +1,7 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { PlanningService, PlannedRun, CalendarData, SessionType } from '../../services/planning.service';
 import { RunService, Run } from '../../services/run.service';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
@@ -68,8 +68,15 @@ export class PlanningComponent implements OnInit {
 
   constructor(
     private planningService: PlanningService,
-    private runService: RunService
+    private runService: RunService,
+    private router: Router
   ) {}
+
+  openRunDetail(run: Run) {
+    if (run._id) {
+      this.router.navigate(['/run', run._id]);
+    }
+  }
 
   ngOnInit() {
     this.loadCalendar();
@@ -428,5 +435,18 @@ export class PlanningComponent implements OnInit {
     this.currentMonth.set(today.getMonth() + 1);
     this.currentYear.set(today.getFullYear());
     this.loadCalendar();
+  }
+
+  getRunTitle(notes: string): string {
+    if (!notes) return '';
+    const lines = notes.split('\n');
+    return lines[0] || '';
+  }
+
+  getRunDescription(notes: string): string {
+    if (!notes) return '';
+    const lines = notes.split('\n');
+    // Skip title and empty line, return the rest
+    return lines.slice(2).join('\n').trim();
   }
 }
