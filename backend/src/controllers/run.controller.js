@@ -191,6 +191,105 @@ exports.getRunById = async (req, res) => {
   }
 };
 
+// Analyser une course existante avec l'IA
+exports.analyzeRun = async (req, res) => {
+  try {
+    const run = await Run.findOne({ _id: req.params.id, user: req.user._id });
+    if (!run) {
+      return res.status(404).json({ error: 'Course non trouvée' });
+    }
+
+    if (!process.env.N8N_WEBHOOK_URL) {
+      return res.status(400).json({ error: 'Webhook IA non configuré' });
+    }
+
+    // Récupérer les données utilisateur complètes
+    const user = await User.findById(req.user._id);
+
+    // Récupérer les 5 dernières courses (excluant celle-ci)
+    const recentRuns = await Run.find({
+      user: req.user._id,
+      _id: { $ne: run._id }
+    })
+      .sort({ date: -1 })
+      .limit(5);
+
+    // Trouver la dernière analyse
+    const lastAnalyzedRun = await Run.findOne({
+      user: req.user._id,
+      analysis: { $exists: true, $ne: null },
+      _id: { $ne: run._id }
+    }).sort({ analyzedAt: -1 });
+
+    // Calculer les stats sur les 2 dernières semaines
+    const twoWeeksAgo = new Date();
+    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+
+    const twoWeeksRuns = await Run.find({
+      user: req.user._id,
+      date: { $gte: twoWeeksAgo },
+      _id: { $ne: run._id }
+    }).sort({ date: -1 });
+
+    const stats = calculateStats(twoWeeksRuns);
+
+    // Construire le contexte enrichi
+    const enrichedContext = {
+      runId: run._id,
+      currentRun: {
+        date: run.date,
+        distance: run.distance,
+        duration: run.duration,
+        averagePace: run.averagePace,
+        averageHeartRate: run.averageHeartRate,
+        maxHeartRate: run.maxHeartRate,
+        averageCadence: run.averageCadence,
+        elevationGain: run.elevationGain,
+        sessionType: run.sessionType,
+        feeling: run.feeling,
+        notes: run.notes
+      },
+      runner: {
+        name: `${user.firstName} ${user.lastName}`,
+        email: user.email,
+        level: user.runningLevel,
+        goal: user.goal,
+        goalDetails: user.goalDetails,
+        weeklyFrequency: user.weeklyFrequency,
+        injuries: user.injuries
+      },
+      recentRuns: formatRunsForContext(recentRuns),
+      lastAnalysis: lastAnalyzedRun ? {
+        date: lastAnalyzedRun.date,
+        analysis: lastAnalyzedRun.analysis,
+        runSummary: {
+          distance: lastAnalyzedRun.distance,
+          duration: lastAnalyzedRun.duration,
+          sessionType: lastAnalyzedRun.sessionType
+        }
+      } : null,
+      twoWeeksStats: stats,
+      context: {
+        dayOfWeek: new Date(run.date).toLocaleDateString('fr-FR', { weekday: 'long' }),
+        isWeekend: [0, 6].includes(new Date(run.date).getDay())
+      }
+    };
+
+    const response = await axios.post(process.env.N8N_WEBHOOK_URL, enrichedContext);
+
+    if (response.data && response.data.analysis) {
+      run.analysis = response.data.analysis;
+      run.analyzedAt = new Date();
+      await run.save();
+    }
+
+    res.json(run);
+  } catch (error) {
+    console.error('Analyze run error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Mettre à jour l'analyse (appelé par n8n en callback)
 exports.updateAnalysis = async (req, res) => {
   try {

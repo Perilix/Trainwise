@@ -1,0 +1,331 @@
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+  padding-top: calc(120px + 2rem);
+  font-family: 'Poppins', sans-serif;
+  min-height: 100vh;
+  background: #f5f7fa;
+}
+
+.loading-state,
+.error-state {
+  text-align: center;
+  padding: 4rem 2rem;
+
+  p {
+    color: #666;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+}
+
+.btn-back {
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: #00a6fb;
+  color: #fff;
+  border: none;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #0582ca;
+  }
+}
+
+// Page Header
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  .btn-back-arrow {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: none;
+    background: #fff;
+    color: #051923;
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(5, 25, 35, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 0.25rem;
+
+    &:hover {
+      background: #00a6fb;
+      color: #fff;
+    }
+  }
+
+  .header-content {
+    flex: 1;
+
+    h1 {
+      font-size: 1.5rem;
+      color: #051923;
+      margin: 0 0 0.25rem;
+      font-weight: 700;
+    }
+
+    .run-date {
+      color: #666;
+      margin: 0;
+      font-size: 0.9rem;
+      text-transform: capitalize;
+    }
+  }
+
+  .strava-badge {
+    padding: 0.35rem 0.75rem;
+    background: #FC4C02;
+    color: #fff;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+  }
+}
+
+// Map Section
+.map-section {
+  margin-bottom: 1.5rem;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(5, 25, 35, 0.1);
+
+  .map-container {
+    width: 100%;
+    height: 300px;
+    background: #e5e7eb;
+  }
+}
+
+// Custom map markers
+:global {
+  .marker-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+
+    &.start {
+      background: #10b981;
+    }
+
+    &.end {
+      background: #ef4444;
+    }
+  }
+}
+
+// Stats Section
+.stats-section {
+  margin-bottom: 1.5rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.stat-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.25rem;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(5, 25, 35, 0.06);
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(5, 25, 35, 0.1);
+  }
+
+  .stat-value {
+    display: block;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #051923;
+
+    &.type {
+      font-size: 1rem;
+      text-transform: capitalize;
+    }
+  }
+
+  .stat-unit {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #0582ca;
+    margin-left: 2px;
+  }
+
+  .stat-label {
+    display: block;
+    color: #666;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.25rem;
+  }
+}
+
+// Description Section
+.description-section {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(5, 25, 35, 0.06);
+  border: 1px solid #e5e7eb;
+  margin-bottom: 1.5rem;
+
+  h2 {
+    margin: 0 0 1rem;
+    font-size: 1rem;
+    color: #051923;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .description-text {
+    margin: 0;
+    color: #444;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+}
+
+// Analysis Section
+.analysis-section {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(5, 25, 35, 0.06);
+  border: 1px solid #e5e7eb;
+
+  .analysis-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+
+    h2 {
+      margin: 0;
+      font-size: 1rem;
+      color: #051923;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  }
+
+  .btn-analyze {
+    padding: 0.6rem 1.25rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: linear-gradient(135deg, #00a6fb 0%, #0582ca 100%);
+    color: #fff;
+    border: none;
+
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 166, 251, 0.3);
+    }
+
+    &:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+  }
+
+  .success-message {
+    padding: 0.75rem 1rem;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    border-radius: 10px;
+    color: #065f46;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+  }
+
+  .analysis-content {
+    padding: 1rem;
+    background: linear-gradient(135deg, rgba(0, 166, 251, 0.05) 0%, #f8f9fa 100%);
+    border-radius: 12px;
+    border-left: 4px solid #00a6fb;
+
+    p {
+      margin: 0;
+      color: #333;
+      font-size: 0.95rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+    }
+
+    .analysis-date {
+      display: block;
+      margin-top: 1rem;
+      font-size: 0.8rem;
+      color: #888;
+    }
+  }
+
+  .no-analysis {
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+
+    p {
+      margin: 0 0 0.5rem;
+    }
+
+    .hint {
+      font-size: 0.85rem;
+      color: #888;
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 600px) {
+  .container {
+    padding: 1rem;
+    padding-top: calc(120px + 1rem);
+  }
+
+  .page-header {
+    flex-wrap: wrap;
+
+    h1 {
+      font-size: 1.25rem;
+    }
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .map-section .map-container {
+    height: 250px;
+  }
+}

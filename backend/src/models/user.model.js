@@ -71,6 +71,29 @@ const userSchema = new mongoose.Schema({
     enum: ['matin', 'midi', 'soir', 'flexible'],
     default: 'flexible'
   },
+  // Intégration Strava
+  strava: {
+    athleteId: {
+      type: Number,
+      default: null
+    },
+    accessToken: {
+      type: String,
+      select: false
+    },
+    refreshToken: {
+      type: String,
+      select: false
+    },
+    expiresAt: {
+      type: Number,
+      default: null
+    },
+    connectedAt: {
+      type: Date,
+      default: null
+    }
+  },
   createdAt: {
     type: Date,
     default: Date.now

@@ -1,0 +1,149 @@
+<app-navbar></app-navbar>
+
+<div class="container">
+  @if (isLoading()) {
+    <div class="loading-state">
+      <p>Chargement...</p>
+    </div>
+  }
+
+  @if (error()) {
+    <div class="error-state">
+      <p>{{ error() }}</p>
+      <button class="btn-back" (click)="goBack()">Retour</button>
+    </div>
+  }
+
+  @if (!isLoading() && run()) {
+    <div class="page-header">
+      <button class="btn-back-arrow" (click)="goBack()">
+        <span>&larr;</span>
+      </button>
+      <div class="header-content">
+        <h1>{{ getRunTitle() }}</h1>
+        <p class="run-date">{{ formatDate(run()!.date) }} à {{ formatTime(run()!.date) }}</p>
+      </div>
+      @if (run()?.stravaActivityId) {
+        <span class="strava-badge">Strava</span>
+      }
+    </div>
+
+    <!-- Map -->
+    @if (run()?.polyline) {
+      <section class="map-section">
+        <div id="map" class="map-container"></div>
+      </section>
+    }
+
+    <!-- Stats Grid -->
+    <section class="stats-section">
+      <div class="stats-grid">
+        @if (run()?.distance) {
+          <div class="stat-card">
+            <span class="stat-value">{{ run()!.distance }}</span>
+            <span class="stat-unit">km</span>
+            <span class="stat-label">Distance</span>
+          </div>
+        }
+        @if (run()?.duration) {
+          <div class="stat-card">
+            <span class="stat-value">{{ formatDuration(run()!.duration!) }}</span>
+            <span class="stat-label">Durée</span>
+          </div>
+        }
+        @if (run()?.averagePace) {
+          <div class="stat-card">
+            <span class="stat-value">{{ run()!.averagePace }}</span>
+            <span class="stat-unit">/km</span>
+            <span class="stat-label">Allure</span>
+          </div>
+        }
+        @if (run()?.elevationGain) {
+          <div class="stat-card">
+            <span class="stat-value">{{ run()!.elevationGain }}</span>
+            <span class="stat-unit">m</span>
+            <span class="stat-label">Dénivelé</span>
+          </div>
+        }
+        @if (run()?.averageHeartRate) {
+          <div class="stat-card">
+            <span class="stat-value">{{ run()!.averageHeartRate }}</span>
+            <span class="stat-unit">bpm</span>
+            <span class="stat-label">FC moyenne</span>
+          </div>
+        }
+        @if (run()?.maxHeartRate) {
+          <div class="stat-card">
+            <span class="stat-value">{{ run()!.maxHeartRate }}</span>
+            <span class="stat-unit">bpm</span>
+            <span class="stat-label">FC max</span>
+          </div>
+        }
+        @if (run()?.averageCadence) {
+          <div class="stat-card">
+            <span class="stat-value">{{ run()!.averageCadence }}</span>
+            <span class="stat-unit">ppm</span>
+            <span class="stat-label">Cadence</span>
+          </div>
+        }
+        @if (run()?.feeling) {
+          <div class="stat-card">
+            <span class="stat-value">{{ run()!.feeling }}/10</span>
+            <span class="stat-label">Ressenti</span>
+          </div>
+        }
+        @if (run()?.sessionType) {
+          <div class="stat-card">
+            <span class="stat-value type">{{ run()!.sessionType }}</span>
+            <span class="stat-label">Type</span>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- Description -->
+    @if (getRunDescription()) {
+      <section class="description-section">
+        <h2>Notes</h2>
+        <p class="description-text">{{ getRunDescription() }}</p>
+      </section>
+    }
+
+    <!-- AI Analysis -->
+    <section class="analysis-section">
+      <div class="analysis-header">
+        <h2>Analyse IA</h2>
+        @if (!run()?.analysis) {
+          <button
+            class="btn-analyze"
+            (click)="analyzeRun()"
+            [disabled]="isAnalyzing()">
+            @if (isAnalyzing()) {
+              Analyse en cours...
+            } @else {
+              Analyser avec l'IA
+            }
+          </button>
+        }
+      </div>
+
+      @if (analyzeSuccess()) {
+        <div class="success-message">Analyse terminée !</div>
+      }
+
+      @if (run()?.analysis) {
+        <div class="analysis-content">
+          <p>{{ run()!.analysis }}</p>
+          <span class="analysis-date">
+            Analysé le {{ run()!.analyzedAt | date:'dd/MM/yyyy à HH:mm' }}
+          </span>
+        </div>
+      } @else if (!isAnalyzing()) {
+        <div class="no-analysis">
+          <p>Cette course n'a pas encore été analysée.</p>
+          <p class="hint">Clique sur "Analyser avec l'IA" pour obtenir des conseils personnalisés.</p>
+        </div>
+      }
+    </section>
+  }
+</div>

@@ -357,10 +357,33 @@
   box-shadow: 0 4px 20px rgba(5, 25, 35, 0.06);
   border: 1px solid #e5e7eb;
   transition: all 0.2s;
+  position: relative;
 
   &:hover {
     border-color: #00a6fb;
     box-shadow: 0 8px 30px rgba(5, 25, 35, 0.1);
+  }
+
+  &.clickable {
+    cursor: pointer;
+
+    &:hover {
+      transform: translateY(-2px);
+
+      .view-detail {
+        opacity: 1;
+      }
+    }
+  }
+
+  .view-detail {
+    display: block;
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    color: #00a6fb;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.2s;
   }
 
   .run-header {
@@ -373,6 +396,23 @@
       font-weight: 700;
       color: #051923;
       font-size: 0.95rem;
+    }
+
+    .run-badges {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .strava-badge {
+      background: #FC4C02;
+      color: #fff;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
     }
 
     .run-type {
@@ -422,20 +462,24 @@
 
     .analysis-label {
       font-weight: 700;
-      color: #051923;
-      font-size: 0.75rem;
+      color: #0582ca;
+      font-size: 0.7rem;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       display: block;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.35rem;
     }
 
-    p {
+    .analysis-preview {
       margin: 0;
-      color: #444;
-      font-size: 0.9rem;
-      line-height: 1.6;
-      white-space: pre-wrap;
+      color: #555;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   }
 }
@@ -457,5 +501,160 @@
     background: #0582ca;
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0, 166, 251, 0.3);
+  }
+}
+
+// Strava section
+.strava-section {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(5, 25, 35, 0.06);
+  border: 1px solid #e5e7eb;
+  margin-bottom: 1.5rem;
+
+  .section-header {
+    margin-bottom: 1rem;
+
+    h3 {
+      margin: 0;
+      font-size: 1rem;
+      color: #051923;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+  }
+
+  .strava-icon {
+    vertical-align: middle;
+  }
+
+  .strava-message {
+    padding: 0.75rem 1rem;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    color: #dc2626;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+
+    &.success {
+      background: #ecfdf5;
+      border-color: #a7f3d0;
+      color: #065f46;
+    }
+  }
+
+  .strava-loading {
+    text-align: center;
+    padding: 1rem;
+    color: #666;
+  }
+
+  .strava-connected {
+    .strava-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      color: #666;
+
+      .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #10b981;
+
+        &.connected {
+          background: #10b981;
+        }
+      }
+    }
+
+    .strava-actions {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+  }
+
+  .strava-disconnected {
+    text-align: center;
+    padding: 1rem 0;
+
+    p {
+      color: #666;
+      margin: 0 0 1rem;
+      font-size: 0.9rem;
+    }
+  }
+
+  .btn-strava-connect {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #FC4C02;
+    color: #fff;
+    border: none;
+
+    &:hover {
+      background: #e04502;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(252, 76, 2, 0.3);
+    }
+  }
+
+  .btn-strava-sync,
+  .btn-strava-resync {
+    padding: 0.6rem 1.25rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #FC4C02;
+    color: #fff;
+    border: none;
+
+    &:hover:not(:disabled) {
+      background: #e04502;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  .btn-strava-resync {
+    background: #e65c00;
+  }
+
+  .btn-strava-disconnect {
+    padding: 0.6rem 1.25rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+    color: #666;
+    border: 2px solid #e5e7eb;
+
+    &:hover {
+      border-color: #dc2626;
+      color: #dc2626;
+    }
   }
 }

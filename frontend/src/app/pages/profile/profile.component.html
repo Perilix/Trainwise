@@ -156,6 +156,60 @@
       }
     </section>
 
+    <!-- Intégration Strava -->
+    <section class="strava-section">
+      <div class="section-header">
+        <h3>
+          <svg class="strava-icon" viewBox="0 0 24 24" width="24" height="24">
+            <path fill="#FC4C02" d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+          </svg>
+          Strava
+        </h3>
+      </div>
+
+      @if (stravaMessage()) {
+        <div class="strava-message" [class.success]="stravaMessage()?.includes('succès') || stravaMessage()?.includes('importée')">
+          {{ stravaMessage() }}
+        </div>
+      }
+
+      @if (stravaLoading()) {
+        <div class="strava-loading">Chargement...</div>
+      } @else if (stravaStatus()?.connected) {
+        <div class="strava-connected">
+          <div class="strava-status">
+            <span class="status-dot connected"></span>
+            <span>Connecté depuis le {{ stravaStatus()?.connectedAt | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <div class="strava-actions">
+            <button class="btn-strava-sync" (click)="syncStrava()" [disabled]="stravaSyncing()">
+              @if (stravaSyncing()) {
+                Synchronisation...
+              } @else {
+                Importer mes courses
+              }
+            </button>
+            <button class="btn-strava-resync" (click)="resyncStrava()" [disabled]="stravaSyncing()">
+              Mettre à jour
+            </button>
+            <button class="btn-strava-disconnect" (click)="disconnectStrava()">
+              Déconnecter
+            </button>
+          </div>
+        </div>
+      } @else {
+        <div class="strava-disconnected">
+          <p>Connecte ton compte Strava pour importer automatiquement tes courses.</p>
+          <button class="btn-strava-connect" (click)="connectStrava()">
+            <svg class="strava-icon-small" viewBox="0 0 24 24" width="18" height="18">
+              <path fill="white" d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+            </svg>
+            Connecter Strava
+          </button>
+        </div>
+      }
+    </section>
+
     <!-- Statistiques globales -->
     <section class="stats-grid">
       <div class="stat-card">
@@ -194,12 +248,17 @@
       @if (!isLoading() && runs().length > 0) {
         <div class="runs-list">
           @for (run of runs(); track run._id) {
-            <div class="run-card">
+            <div class="run-card clickable" (click)="openRunDetail(run)">
               <div class="run-header">
                 <span class="run-date">{{ formatDate(run.date) }}</span>
-                @if (run.sessionType) {
-                  <span class="run-type">{{ run.sessionType }}</span>
-                }
+                <div class="run-badges">
+                  @if (run.stravaActivityId) {
+                    <span class="strava-badge">Strava</span>
+                  }
+                  @if (run.sessionType) {
+                    <span class="run-type">{{ run.sessionType }}</span>
+                  }
+                </div>
               </div>
               <div class="run-summary">
                 {{ getRunSummary(run) }}
@@ -212,10 +271,11 @@
               }
               @if (run.analysis) {
                 <div class="run-analysis">
-                  <span class="analysis-label">Analyse IA :</span>
-                  <p>{{ run.analysis }}</p>
+                  <span class="analysis-label">Analyse IA</span>
+                  <p class="analysis-preview">{{ run.analysis }}</p>
                 </div>
               }
+              <span class="view-detail">{{ run.analysis ? 'Voir plus' : 'Voir les détails' }} &rarr;</span>
             </div>
           }
         </div>
