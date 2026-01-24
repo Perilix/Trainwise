@@ -1,0 +1,104 @@
+<app-navbar></app-navbar>
+
+<div class="container">
+  <header class="chat-header">
+    <div class="header-content">
+      <h1>Messages</h1>
+      <button class="new-chat-btn" (click)="toggleNewConversation()">
+        @if (showNewConversation()) {
+          <span class="icon">x</span>
+        } @else {
+          <span class="icon">+</span>
+        }
+      </button>
+    </div>
+  </header>
+
+  <!-- New conversation search -->
+  @if (showNewConversation()) {
+    <div class="new-conversation-panel">
+      <div class="search-box">
+        <span class="search-icon">@</span>
+        <input
+          type="text"
+          placeholder="Rechercher un utilisateur..."
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+          autofocus
+        />
+      </div>
+
+      @if (isSearching()) {
+        <div class="search-loading">
+          <div class="loading-spinner small"></div>
+          <span>Recherche...</span>
+        </div>
+      } @else if (searchResults().length > 0) {
+        <div class="search-results">
+          @for (user of searchResults(); track user._id) {
+            <div class="user-result" (click)="startConversation(user)">
+              <div class="avatar" [class.online]="user.isOnline">
+                {{ getInitials(user.firstName + ' ' + user.lastName) }}
+              </div>
+              <div class="user-info">
+                <span class="user-name">{{ user.firstName }} {{ user.lastName }}</span>
+                <span class="user-email">{{ user.email }}</span>
+              </div>
+              @if (user.isOnline) {
+                <span class="online-badge">En ligne</span>
+              }
+            </div>
+          }
+        </div>
+      } @else if (searchQuery().length >= 2) {
+        <div class="no-results">
+          <p>Aucun utilisateur trouve</p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Conversations list -->
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>Chargement des conversations...</p>
+    </div>
+  } @else {
+    <div class="conversations-list">
+      @if (chatService.sortedConversations().length === 0) {
+        <div class="empty-state">
+          <span class="empty-icon">@</span>
+          <h3>Aucune conversation</h3>
+          <p>Commencez a discuter avec un autre utilisateur</p>
+          <button class="start-btn" (click)="toggleNewConversation()">
+            Nouvelle conversation
+          </button>
+        </div>
+      } @else {
+        @for (conversation of chatService.sortedConversations(); track conversation._id) {
+          <div
+            class="conversation-item"
+            [class.unread]="conversation.unreadCount > 0"
+            (click)="openConversation(conversation)">
+            <div class="avatar" [class.online]="isOnline(conversation)">
+              {{ getInitials(getConversationName(conversation)) }}
+            </div>
+            <div class="conversation-content">
+              <div class="conversation-header">
+                <span class="conversation-name">{{ getConversationName(conversation) }}</span>
+                <span class="conversation-time">{{ formatTime(conversation.lastMessage.sentAt) }}</span>
+              </div>
+              <div class="conversation-preview">
+                <span class="message-preview">{{ getLastMessagePreview(conversation) }}</span>
+                @if (conversation.unreadCount > 0) {
+                  <span class="unread-badge">{{ conversation.unreadCount }}</span>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  }
+</div>

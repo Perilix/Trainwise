@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { RunService, Run } from '../../services/run.service';
 import { PlanningService, PlannedRun } from '../../services/planning.service';
 import { AuthService } from '../../services/auth.service';
+import { ChatService, Conversation } from '../../services/chat.service';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 
 interface WeekDay {
@@ -28,6 +29,7 @@ export class DashboardComponent implements OnInit {
   recentRuns = signal<Run[]>([]);
   weekDays = signal<WeekDay[]>([]);
   upcomingSession = signal<PlannedRun | null>(null);
+  recentConversations = signal<Conversation[]>([]);
 
   // Loading states
   isLoading = signal(true);
@@ -40,11 +42,13 @@ export class DashboardComponent implements OnInit {
     private runService: RunService,
     private planningService: PlanningService,
     public authService: AuthService,
+    public chatService: ChatService,
     private router: Router
   ) {}
 
   ngOnInit() {
     this.loadDashboardData();
+    this.loadRecentConversations();
   }
 
   loadDashboardData() {
@@ -336,5 +340,100 @@ export class DashboardComponent implements OnInit {
     }
 
     return tips.slice(0, 2);
+  }
+
+  // Messages methods
+  loadRecentConversations() {
+    this.chatService.getConversations().subscribe({
+      next: (conversations) => {
+        this.recentConversations.set(conversations.slice(0, 3));
+      },
+      error: (err) => {
+        console.error('Error loading conversations:', err);
+      }
+    });
+  }
+
+  getConversationName(conversation: Conversation): string {
+    if (conversation.otherParticipant) {
+      return `${conversation.otherParticipant.firstName} ${conversation.otherParticipant.lastName}`;
+    }
+    const currentUser = this.authService.getUser();
+    const other = conversation.participants.find(p => p._id !== currentUser?.id);
+    return other ? `${other.firstName} ${other.lastName}` : 'Conversation';
+  }
+
+  getConversationInitials(conversation: Conversation): string {
+    const name = this.getConversationName(conversation);
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+  }
+
+  getLastMessagePreview(conversation: Conversation): string {
+    if (!conversation.lastMessage?.content) {
+      return 'Nouvelle conversation';
+    }
+
+    const currentUser = this.authService.getUser();
+    const isOwnMessage = conversation.lastMessage.sender?._id === currentUser?.id ||
+                         (conversation.lastMessage.sender as any) === currentUser?.id;
+
+    let content = conversation.lastMessage.content;
+    if (conversation.lastMessage.type === 'image') {
+      content = 'Photo';
+    } else if (conversation.lastMessage.type === 'document') {
+      content = 'Document';
+    }
+
+    const prefix = isOwnMessage ? 'Vous : ' : '';
+    const maxLength = isOwnMessage ? 25 : 30;
+
+    if (content.length > maxLength) {
+      content = content.substring(0, maxLength) + '...';
+    }
+
+    return prefix + content;
+  }
+
+  formatMessageTime(date: Date | string | null): string {
+    if (!date) return '';
+
+    const d = new Date(date);
+    const now = new Date();
+    const diff = now.getTime() - d.getTime();
+
+    // Less than 24 hours
+    if (diff < 24 * 60 * 60 * 1000) {
+      return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Less than 7 days
+    if (diff < 7 * 24 * 60 * 60 * 1000) {
+      return d.toLocaleDateString('fr-FR', { weekday: 'short' });
+    }
+
+    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  }
+
+  isMessageRead(conversation: Conversation): boolean {
+    const currentUser = this.authService.getUser();
+    // If last message is from current user, check if other participant read it
+    // For simplicity, we consider it read if unreadCount is 0
+    const isOwnMessage = conversation.lastMessage?.sender?._id === currentUser?.id ||
+                         (conversation.lastMessage?.sender as any) === currentUser?.id;
+    return isOwnMessage && conversation.unreadCount === 0;
+  }
+
+  isOwnLastMessage(conversation: Conversation): boolean {
+    const currentUser = this.authService.getUser();
+    return conversation.lastMessage?.sender?._id === currentUser?.id ||
+           (conversation.lastMessage?.sender as any) === currentUser?.id;
+  }
+
+  openConversation(conversation: Conversation) {
+    this.router.navigate(['/chat', conversation._id]);
+  }
+
+  isUserOnline(conversation: Conversation): boolean {
+    return conversation.otherParticipant?.isOnline || false;
   }
 }

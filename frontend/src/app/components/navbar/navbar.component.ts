@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { ChatService } from '../../services/chat.service';
 
 @Component({
   selector: 'app-navbar',
@@ -10,10 +11,20 @@ import { AuthService } from '../../services/auth.service';
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.scss'
 })
-export class NavbarComponent {
+export class NavbarComponent implements OnInit {
   isMenuOpen = false;
 
-  constructor(public authService: AuthService) {}
+  constructor(
+    public authService: AuthService,
+    public chatService: ChatService
+  ) {}
+
+  ngOnInit() {
+    // Load unread count on init
+    if (this.authService.isAuthenticated()) {
+      this.chatService.getUnreadCount().subscribe();
+    }
+  }
 
   getUserInitial(): string {
     const user = this.authService.currentUser();
@@ -29,6 +40,7 @@ export class NavbarComponent {
   }
 
   logout() {
+    this.chatService.disconnect();
     this.authService.logout();
   }
 }
