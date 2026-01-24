@@ -41,7 +41,7 @@
     width: 70px;
     height: 70px;
     border-radius: 50%;
-    background: #00a6fb;
+    background: linear-gradient(135deg, #00a6fb 0%, #0582ca 100%);
     color: #fff;
     display: flex;
     align-items: center;
@@ -49,9 +49,20 @@
     font-size: 1.5rem;
     font-weight: 700;
     text-transform: uppercase;
+    overflow: hidden;
+    flex-shrink: 0;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
   }
 
   .user-info {
+    flex: 1;
+
     h2 {
       margin: 0;
       font-size: 1.25rem;
@@ -63,6 +74,23 @@
       margin: 0.25rem 0 0;
       color: #666;
       font-size: 0.9rem;
+    }
+  }
+
+  .btn-settings {
+    padding: 0.5rem 1rem;
+    background: transparent;
+    color: #00a6fb;
+    border: 2px solid #00a6fb;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+
+    &:hover {
+      background: #00a6fb;
+      color: #fff;
     }
   }
 }

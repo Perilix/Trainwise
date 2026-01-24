@@ -10,8 +10,8 @@ exports.getConversations = async (req, res) => {
     const conversations = await Conversation.find({
       participants: req.user._id
     })
-      .populate('participants', 'firstName lastName email')
-      .populate('lastMessage.sender', 'firstName lastName')
+      .populate('participants', 'firstName lastName email profilePicture')
+      .populate('lastMessage.sender', 'firstName lastName profilePicture')
       .sort({ 'lastMessage.sentAt': -1, updatedAt: -1 });
 
     // Add online status and format response
@@ -100,7 +100,7 @@ exports.getMessages = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const messages = await Message.find({ conversation: conversationId })
-      .populate('sender', 'firstName lastName email')
+      .populate('sender', 'firstName lastName email profilePicture')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
@@ -176,7 +176,7 @@ exports.searchUsers = async (req, res) => {
         { email: { $regex: q, $options: 'i' } }
       ]
     })
-      .select('firstName lastName email')
+      .select('firstName lastName email profilePicture')
       .limit(10);
 
     // Add online status

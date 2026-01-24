@@ -111,12 +111,21 @@
 .navbar-user {
   position: relative;
 
+    .avatar-img {
+      width: 90px;
+      height: 90px;
+      object-fit: cover;
+      display: block;
+      cursor: pointer;
+    }
+
   .user-avatar {
     width: 65px;
     height: 65px;
     border-radius: 50%;
     background: #00a6fb;
     border: none;
+    outline: none;
     color: #fff;
     font-size: 1.5rem;
     font-weight: 600;
@@ -125,10 +134,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
+    padding: 0;
 
     &:hover {
       transform: scale(1.05);
-      box-shadow: 0 0 0 3px rgba(0, 166, 251, 0.3);
+    }
+
+    &:focus {
+      outline: none;
     }
   }
 

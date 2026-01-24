@@ -10,12 +10,17 @@
     <!-- Infos utilisateur -->
     <section class="user-card">
       <div class="user-avatar">
-        {{ authService.currentUser()?.firstName?.charAt(0) }}{{ authService.currentUser()?.lastName?.charAt(0) }}
+        @if (authService.currentUser()?.profilePicture) {
+          <img [src]="authService.currentUser()?.profilePicture" alt="Photo de profil">
+        } @else {
+          {{ authService.currentUser()?.firstName?.charAt(0) }}{{ authService.currentUser()?.lastName?.charAt(0) }}
+        }
       </div>
       <div class="user-info">
         <h2>{{ authService.currentUser()?.firstName }} {{ authService.currentUser()?.lastName }}</h2>
         <p class="user-email">{{ authService.currentUser()?.email }}</p>
       </div>
+      <a routerLink="/settings" class="btn-settings">Paramètres</a>
     </section>
 
     <!-- Profil coureur -->

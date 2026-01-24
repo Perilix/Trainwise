@@ -46,10 +46,9 @@
     flex: 1;
 
     .avatar {
-      width: 40px;
-      height: 40px;
+      width: 50px;
+      height: 50px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #00a6fb 0%, #0582ca 100%);
       color: #fff;
       display: flex;
       align-items: center;
@@ -57,12 +56,20 @@
       font-weight: 600;
       font-size: 0.85rem;
       position: relative;
+      overflow: hidden;
+
+      .avatar-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
 
       &.online::after {
         content: '';
         position: absolute;
-        bottom: 0;
-        right: 0;
+        bottom: 2px;
+        right: 2px;
         width: 10px;
         height: 10px;
         background: #10b981;
@@ -204,10 +211,9 @@
   }
 
   .message-avatar {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #00a6fb 0%, #0582ca 100%);
     color: #fff;
     display: flex;
     align-items: center;
@@ -216,6 +222,13 @@
     font-weight: 600;
     flex-shrink: 0;
     align-self: flex-end;
+    overflow: hidden;
+
+    .avatar-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
   }
 
   .message-content {

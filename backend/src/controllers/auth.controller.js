@@ -187,12 +187,38 @@ exports.uploadAvatar = async (req, res) => {
 
     // Delete old avatar from Cloudinary if exists
     if (user.profilePicture) {
-      const publicId = user.profilePicture.split('/').slice(-2).join('/').split('.')[0];
-      await cloudinary.uploader.destroy(`runiq/avatars/${publicId.split('/').pop()}`);
+      // Extract public_id from URL
+      const urlParts = user.profilePicture.split('/');
+      const publicIdWithExt = urlParts.slice(-2).join('/');
+      const publicId = publicIdWithExt.replace(/\.[^/.]+$/, '');
+      try {
+        await cloudinary.uploader.destroy(publicId);
+      } catch (e) {
+        console.log('Could not delete old avatar:', e.message);
+      }
     }
 
+    // Upload new avatar to Cloudinary
+    const uploadResult = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'runiq/avatars',
+          resource_type: 'image',
+          transformation: [
+            { width: 400, height: 400, crop: 'fill', gravity: 'face' },
+            { quality: 'auto' }
+          ]
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      uploadStream.end(req.file.buffer);
+    });
+
     // Update user with new avatar URL
-    user.profilePicture = req.file.path;
+    user.profilePicture = uploadResult.secure_url;
     await user.save();
 
     res.json({
@@ -223,8 +249,15 @@ exports.deleteAvatar = async (req, res) => {
     const user = await User.findById(req.user.id);
 
     if (user.profilePicture) {
-      const publicId = user.profilePicture.split('/').slice(-2).join('/').split('.')[0];
-      await cloudinary.uploader.destroy(`runiq/avatars/${publicId.split('/').pop()}`);
+      // Extract public_id from URL (format: runiq/avatars/filename)
+      const urlParts = user.profilePicture.split('/');
+      const publicIdWithExt = urlParts.slice(-2).join('/');
+      const publicId = publicIdWithExt.replace(/\.[^/.]+$/, '');
+      try {
+        await cloudinary.uploader.destroy(publicId);
+      } catch (e) {
+        console.log('Could not delete avatar:', e.message);
+      }
     }
 
     user.profilePicture = null;

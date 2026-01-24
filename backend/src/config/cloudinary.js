@@ -2,14 +2,12 @@ const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
-// Configure Cloudinary (uses CLOUDINARY_URL env var automatically if set)
-if (!process.env.CLOUDINARY_URL) {
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-  });
-}
+// Configure Cloudinary explicitly
+cloudinary.config({
+  cloud_name: 'dncmc7vdo',
+  api_key: '987571536728872',
+  api_secret: 'X8Uol9go881ThMqkp9L4XQwzTPI'
+});
 
 // Configure Multer storage for Cloudinary
 const storage = new CloudinaryStorage({
@@ -66,23 +64,9 @@ const upload = multer({
   }
 });
 
-// Storage for profile pictures
-const avatarStorage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'runiq/avatars',
-    resource_type: 'image',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
-    transformation: [
-      { width: 400, height: 400, crop: 'fill', gravity: 'face' },
-      { quality: 'auto' }
-    ]
-  }
-});
-
-// Avatar upload middleware
-const uploadAvatar = multer({
-  storage: avatarStorage,
+// Avatar upload middleware (memory storage - will upload to Cloudinary in controller)
+const uploadAvatarMemory = multer({
+  storage: multer.memoryStorage(),
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
@@ -95,4 +79,4 @@ const uploadAvatar = multer({
   }
 });
 
-module.exports = { cloudinary, upload, uploadAvatar };
+module.exports = { cloudinary, upload, uploadAvatar: uploadAvatarMemory };

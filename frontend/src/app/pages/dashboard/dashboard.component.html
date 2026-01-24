@@ -144,7 +144,11 @@
               @for (conv of recentConversations(); track conv._id) {
                 <div class="conversation-item" [class.unread]="conv.unreadCount > 0" (click)="openConversation(conv)">
                   <div class="conv-avatar" [class.online]="isUserOnline(conv)">
-                    {{ getConversationInitials(conv) }}
+                    @if (getConversationAvatar(conv)) {
+                      <img [src]="getConversationAvatar(conv)" alt="Avatar" class="avatar-img">
+                    } @else {
+                      {{ getConversationInitials(conv) }}
+                    }
                   </div>
                   <div class="conv-content">
                     <div class="conv-header">

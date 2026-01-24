@@ -1,0 +1,148 @@
+<app-navbar></app-navbar>
+
+<div class="container">
+  <div class="page-header">
+    <button class="btn-back" (click)="goBack()">
+      <span class="icon">←</span>
+    </button>
+    <div class="header-content">
+      <h1>Paramètres</h1>
+      <p class="subtitle">Gérez vos informations personnelles</p>
+    </div>
+  </div>
+
+  @if (saveSuccess()) {
+    <div class="success-box">Modifications enregistrées avec succès !</div>
+  }
+
+  @if (saveError()) {
+    <div class="error-box">{{ saveError() }}</div>
+  }
+
+  <!-- Photo de profil -->
+  <section class="settings-card">
+    <h2>Photo de profil</h2>
+
+    <div class="avatar-section">
+      <div class="avatar-preview" (click)="triggerFileInput()" [class.clickable]="!isUploadingAvatar()">
+        @if (authService.currentUser()?.profilePicture) {
+          <img [src]="authService.currentUser()?.profilePicture" alt="Photo de profil">
+        } @else {
+          <div class="avatar-placeholder">{{ getUserInitials() }}</div>
+        }
+
+        <div class="avatar-overlay">
+          <span class="overlay-icon">📷</span>
+        </div>
+
+        @if (isUploadingAvatar()) {
+          <div class="avatar-loading">
+            <div class="loading-spinner"></div>
+          </div>
+        }
+      </div>
+
+      <input
+        #fileInput
+        type="file"
+        accept="image/*"
+        (change)="onFileSelected($event)"
+        [disabled]="isUploadingAvatar()"
+        hidden
+      >
+
+      <div class="avatar-actions">
+        @if (authService.currentUser()?.profilePicture) {
+          <button
+            class="btn-delete"
+            (click)="deleteAvatar()"
+            [disabled]="isUploadingAvatar()">
+            Supprimer la photo
+          </button>
+        }
+      </div>
+    </div>
+
+    <p class="hint">Cliquez sur la photo pour la modifier. Format : JPG, PNG, GIF. Max : 5 Mo</p>
+  </section>
+
+  <!-- Informations personnelles -->
+  <section class="settings-card">
+    <h2>Informations personnelles</h2>
+
+    <form (ngSubmit)="saveProfile()" class="settings-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="firstName">Prénom</label>
+          <input
+            type="text"
+            id="firstName"
+            [(ngModel)]="formData.firstName"
+            name="firstName"
+            placeholder="Votre prénom"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="lastName">Nom</label>
+          <input
+            type="text"
+            id="lastName"
+            [(ngModel)]="formData.lastName"
+            name="lastName"
+            placeholder="Votre nom"
+            required
+          >
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input
+          type="email"
+          id="email"
+          [value]="authService.currentUser()?.email"
+          disabled
+          class="disabled"
+        >
+        <span class="field-hint">L'email ne peut pas être modifié</span>
+      </div>
+
+      <div class="form-group">
+        <label for="phone">Téléphone <span class="optional">(optionnel)</span></label>
+        <input
+          type="tel"
+          id="phone"
+          [(ngModel)]="formData.phone"
+          name="phone"
+          placeholder="06 12 34 56 78"
+        >
+      </div>
+
+      <div class="form-actions">
+        <button
+          type="submit"
+          class="btn-primary"
+          [disabled]="isSaving()">
+          @if (isSaving()) {
+            Enregistrement...
+          } @else {
+            Enregistrer les modifications
+          }
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Compte -->
+  <section class="settings-card danger-zone">
+    <h2>Zone de danger</h2>
+    <p class="danger-text">Ces actions sont irréversibles. Procédez avec précaution.</p>
+
+    <button class="btn-danger" disabled>
+      Supprimer mon compte
+    </button>
+    <span class="coming-soon">Bientôt disponible</span>
+  </section>
+</div>

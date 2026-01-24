@@ -12,6 +12,7 @@ export interface User {
   firstName: string;
   lastName: string;
   phone?: string;
+  profilePicture?: string;
   role: 'user' | 'admin';
   runningLevel?: 'debutant' | 'intermediaire' | 'confirme' | 'expert';
   goal?: 'remise_en_forme' | '5km' | '10km' | 'semi_marathon' | 'marathon' | 'trail' | 'ultra' | 'autre';
@@ -107,6 +108,24 @@ export class AuthService {
 
   updateProfile(data: UpdateProfileData): Observable<User> {
     return this.http.patch<User>(`${this.API_URL}/profile`, data)
+      .pipe(tap(user => {
+        localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+        this.currentUser.set(user);
+      }));
+  }
+
+  uploadAvatar(file: File): Observable<User> {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    return this.http.post<User>(`${this.API_URL}/avatar`, formData)
+      .pipe(tap(user => {
+        localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+        this.currentUser.set(user);
+      }));
+  }
+
+  deleteAvatar(): Observable<User> {
+    return this.http.delete<User>(`${this.API_URL}/avatar`)
       .pipe(tap(user => {
         localStorage.setItem(this.USER_KEY, JSON.stringify(user));
         this.currentUser.set(user);

@@ -38,7 +38,11 @@
           @for (user of searchResults(); track user._id) {
             <div class="user-result" (click)="startConversation(user)">
               <div class="avatar" [class.online]="user.isOnline">
-                {{ getInitials(user.firstName + ' ' + user.lastName) }}
+                @if (user.profilePicture) {
+                  <img [src]="user.profilePicture" alt="Avatar" class="avatar-img">
+                } @else {
+                  {{ getInitials(user.firstName + ' ' + user.lastName) }}
+                }
               </div>
               <div class="user-info">
                 <span class="user-name">{{ user.firstName }} {{ user.lastName }}</span>
@@ -82,7 +86,11 @@
             [class.unread]="conversation.unreadCount > 0"
             (click)="openConversation(conversation)">
             <div class="avatar" [class.online]="isOnline(conversation)">
-              {{ getInitials(getConversationName(conversation)) }}
+              @if (getConversationAvatar(conversation)) {
+                <img [src]="getConversationAvatar(conversation)" alt="Avatar" class="avatar-img">
+              } @else {
+                {{ getInitials(getConversationName(conversation)) }}
+              }
             </div>
             <div class="conversation-content">
               <div class="conversation-header">

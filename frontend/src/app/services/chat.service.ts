@@ -9,6 +9,7 @@ export interface UserPreview {
   firstName: string;
   lastName: string;
   email: string;
+  profilePicture?: string;
   isOnline?: boolean;
 }
 
