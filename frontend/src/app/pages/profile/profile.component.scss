@@ -5,17 +5,17 @@
   padding-top: calc(120px + 2rem);
   font-family: 'Poppins', sans-serif;
   min-height: 100vh;
-  background: #f5f7fa;
+  background: #F6F4F0;
 }
 
 .page-header {
   margin-bottom: 2rem;
 
   h1 {
+    font-family: 'GulfsDisplay', serif;
     font-size: 1.75rem;
     color: #051923;
     margin: 0 0 0.5rem;
-    font-weight: 700;
   }
 
   .subtitle {
@@ -30,11 +30,11 @@
   display: flex;
   align-items: center;
   gap: 1.5rem;
-  background: #fff;
+  background: #F6F4F0;
   border-radius: 16px;
   padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(5, 25, 35, 0.06);
-  border: 1px solid #e5e7eb;
+  box-shadow: 0 0 10px 4px rgba(0, 53, 84, 0.15);
+  border: 1px solid rgba(0, 53, 84, 0.2);
   margin-bottom: 1.5rem;
 
   .user-avatar {
@@ -69,11 +69,11 @@
 
 // Runner profile section
 .runner-profile {
-  background: #fff;
+  background: #F6F4F0;
   border-radius: 16px;
   padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(5, 25, 35, 0.06);
-  border: 1px solid #e5e7eb;
+  box-shadow: 0 0 10px 4px rgba(0, 53, 84, 0.15);
+  border: 1px solid rgba(0, 53, 84, 0.2);
   margin-bottom: 1.5rem;
 
   .section-header {
@@ -273,23 +273,23 @@
   }
 
   .stat-card {
-    background: #fff;
+    background: #F6F4F0;
     border-radius: 16px;
     padding: 1.5rem;
     text-align: center;
-    box-shadow: 0 4px 20px rgba(5, 25, 35, 0.06);
-    border: 1px solid #e5e7eb;
+    box-shadow: 0 0 10px 4px rgba(0, 53, 84, 0.15);
+    border: 1px solid rgba(0, 53, 84, 0.2);
     transition: all 0.2s;
 
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 30px rgba(5, 25, 35, 0.1);
+      box-shadow: 0 0 15px 6px rgba(0, 53, 84, 0.2);
     }
 
     .stat-value {
       display: block;
+      font-family: 'GulfsDisplay', serif;
       font-size: 2rem;
-      font-weight: 700;
       color: #051923;
       margin-bottom: 0.25rem;
     }
@@ -351,17 +351,17 @@
 }
 
 .run-card {
-  background: #fff;
+  background: #F6F4F0;
   border-radius: 16px;
   padding: 1.25rem;
-  box-shadow: 0 4px 20px rgba(5, 25, 35, 0.06);
-  border: 1px solid #e5e7eb;
+  box-shadow: 0 0 10px 4px rgba(0, 53, 84, 0.15);
+  border: 1px solid rgba(0, 53, 84, 0.2);
   transition: all 0.2s;
   position: relative;
 
   &:hover {
     border-color: #00a6fb;
-    box-shadow: 0 8px 30px rgba(5, 25, 35, 0.1);
+    box-shadow: 0 0 15px 6px rgba(0, 53, 84, 0.2);
   }
 
   &.clickable {
@@ -506,11 +506,11 @@
 
 // Strava section
 .strava-section {
-  background: #fff;
+  background: #F6F4F0;
   border-radius: 16px;
   padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(5, 25, 35, 0.06);
-  border: 1px solid #e5e7eb;
+  box-shadow: 0 0 10px 4px rgba(0, 53, 84, 0.15);
+  border: 1px solid rgba(0, 53, 84, 0.2);
   margin-bottom: 1.5rem;
 
   .section-header {

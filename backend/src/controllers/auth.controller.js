@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
+const { cloudinary } = require('../config/cloudinary');
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -33,6 +34,7 @@ exports.register = async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         phone: user.phone,
+        profilePicture: user.profilePicture,
         role: user.role,
         runningLevel: user.runningLevel,
         goal: user.goal,
@@ -81,6 +83,7 @@ exports.login = async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         phone: user.phone,
+        profilePicture: user.profilePicture,
         role: user.role,
         runningLevel: user.runningLevel,
         goal: user.goal,
@@ -106,6 +109,7 @@ exports.getMe = async (req, res) => {
       firstName: user.firstName,
       lastName: user.lastName,
       phone: user.phone,
+      profilePicture: user.profilePicture,
       role: user.role,
       runningLevel: user.runningLevel,
       goal: user.goal,
@@ -156,6 +160,7 @@ exports.updateProfile = async (req, res) => {
       firstName: user.firstName,
       lastName: user.lastName,
       phone: user.phone,
+      profilePicture: user.profilePicture,
       role: user.role,
       runningLevel: user.runningLevel,
       goal: user.goal,
@@ -168,5 +173,81 @@ exports.updateProfile = async (req, res) => {
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
+  }
+};
+
+// Upload profile picture
+exports.uploadAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Aucune image fournie' });
+    }
+
+    const user = await User.findById(req.user.id);
+
+    // Delete old avatar from Cloudinary if exists
+    if (user.profilePicture) {
+      const publicId = user.profilePicture.split('/').slice(-2).join('/').split('.')[0];
+      await cloudinary.uploader.destroy(`runiq/avatars/${publicId.split('/').pop()}`);
+    }
+
+    // Update user with new avatar URL
+    user.profilePicture = req.file.path;
+    await user.save();
+
+    res.json({
+      id: user._id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phone: user.phone,
+      profilePicture: user.profilePicture,
+      role: user.role,
+      runningLevel: user.runningLevel,
+      goal: user.goal,
+      goalDetails: user.goalDetails,
+      weeklyFrequency: user.weeklyFrequency,
+      injuries: user.injuries,
+      availableDays: user.availableDays,
+      preferredTime: user.preferredTime,
+      createdAt: user.createdAt
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Delete profile picture
+exports.deleteAvatar = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (user.profilePicture) {
+      const publicId = user.profilePicture.split('/').slice(-2).join('/').split('.')[0];
+      await cloudinary.uploader.destroy(`runiq/avatars/${publicId.split('/').pop()}`);
+    }
+
+    user.profilePicture = null;
+    await user.save();
+
+    res.json({
+      id: user._id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phone: user.phone,
+      profilePicture: user.profilePicture,
+      role: user.role,
+      runningLevel: user.runningLevel,
+      goal: user.goal,
+      goalDetails: user.goalDetails,
+      weeklyFrequency: user.weeklyFrequency,
+      injuries: user.injuries,
+      availableDays: user.availableDays,
+      preferredTime: user.preferredTime,
+      createdAt: user.createdAt
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 };

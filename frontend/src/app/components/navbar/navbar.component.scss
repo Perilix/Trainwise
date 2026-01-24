@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   height: 120px;
-  background: #051923;
+  background: #003554;
   border-bottom: 1px solid #003554;
   z-index: 9999;
   font-family: 'Poppins', sans-serif;
@@ -23,7 +23,6 @@
 .navbar-logo {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
   text-decoration: none;
   transition: opacity 0.2s;
 
@@ -31,24 +30,21 @@
     opacity: 0.9;
   }
 
-  .logo-icon {
-    width: 48px;
-    height: 48px;
-    background: #00a6fb;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #fff;
-  }
-
   .logo-text {
-    font-size: 1.4rem;
-    font-weight: 600;
-    color: #fff;
-    letter-spacing: -0.5px;
+    display: flex;
+    flex-direction: column;
+    font-family: 'GulfsDisplayExpanded', serif;
+    font-style: italic;
+    line-height: 0.85;
+    font-size: 2rem;
+
+    .logo-train {
+      color: #F6F4F0;
+    }
+
+    .logo-wise {
+      color: #00A6FB;
+    }
   }
 }
 
@@ -71,12 +67,12 @@
   gap: 0.35rem;
 
   .nav-link {
+    font-family: 'GulfsDisplay', serif;
     padding: 0.6rem 1.25rem;
-    color: rgba(255, 255, 255, 0.6);
+    color: white;
     text-decoration: none;
-    font-size: 0.95rem;
-    font-weight: 500;
-    border-radius: 10px;
+    font-size: 1.4rem;
+    border-radius: 8px;
     transition: all 0.2s;
 
     &:hover {
@@ -84,8 +80,8 @@
     }
 
     &.active {
-      color: #fff;
-      background: #003554;
+      color: #00a6fb;
+      background: rgba(0, 166, 251, 0.24);
     }
 
     &.nav-link-chat {
@@ -116,13 +112,13 @@
   position: relative;
 
   .user-avatar {
-    width: 46px;
-    height: 46px;
+    width: 65px;
+    height: 65px;
     border-radius: 50%;
     background: #00a6fb;
     border: none;
     color: #fff;
-    font-size: 1.05rem;
+    font-size: 1.5rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
@@ -225,15 +221,8 @@
   }
 
   .navbar-logo {
-    .logo-icon {
-      width: 40px;
-      height: 40px;
-      font-size: 1.25rem;
-      border-radius: 10px;
-    }
-
     .logo-text {
-      font-size: 1.2rem;
+      font-size: 1.6rem;
     }
   }
 
@@ -254,8 +243,8 @@
 }
 
 @media (max-width: 500px) {
-  .logo-text {
-    display: none;
+  .navbar-logo .logo-text {
+    font-size: 1.3rem;
   }
 
   .navbar-links .nav-link {

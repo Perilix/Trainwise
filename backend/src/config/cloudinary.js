@@ -66,4 +66,33 @@ const upload = multer({
   }
 });
 
-module.exports = { cloudinary, upload };
+// Storage for profile pictures
+const avatarStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'runiq/avatars',
+    resource_type: 'image',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+    transformation: [
+      { width: 400, height: 400, crop: 'fill', gravity: 'face' },
+      { quality: 'auto' }
+    ]
+  }
+});
+
+// Avatar upload middleware
+const uploadAvatar = multer({
+  storage: avatarStorage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Seules les images sont autorisées'), false);
+    }
+  },
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB max
+  }
+});
+
+module.exports = { cloudinary, upload, uploadAvatar };

@@ -5,17 +5,17 @@
   padding-top: calc(120px + 2rem);
   font-family: 'Poppins', sans-serif;
   min-height: 100vh;
-  background: #f5f7fa;
+  background: #F6F4F0;
 }
 
 .page-header {
   margin-bottom: 1.5rem;
 
   h1 {
+    font-family: 'GulfsDisplay', serif;
     font-size: 1.75rem;
     color: #051923;
     margin: 0 0 0.5rem;
-    font-weight: 700;
   }
 
   .subtitle {
@@ -64,16 +64,16 @@
 }
 
 .sidebar-card {
-  background: #fff;
+  background: #F6F4F0;
   border-radius: 16px;
   padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(5, 25, 35, 0.06);
-  border: 1px solid #e5e7eb;
+  box-shadow: 0 0 10px 4px rgba(0, 53, 84, 0.15);
+  border: 1px solid rgba(0, 53, 84, 0.2);
 
   h3 {
     font-size: 0.85rem;
-    font-weight: 700;
-    color: #051923;
+    font-weight: 800;
+    color: #003554;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin: 0 0 1rem;
@@ -81,8 +81,6 @@
 }
 
 .generate-card {
-  border-top: 4px solid #00a6fb;
-
   .card-description {
     font-size: 0.875rem;
     color: #666;
@@ -141,8 +139,8 @@
 
     .stat-value {
       display: block;
+      font-family: 'GulfsDisplay', serif;
       font-size: 1.5rem;
-      font-weight: 700;
       color: #00a6fb;
     }
 
@@ -222,8 +220,8 @@
   }
 
   .current-month {
+    font-family: 'GulfsDisplay', serif;
     font-size: 1.35rem;
-    font-weight: 700;
     color: #051923;
     text-transform: capitalize;
     min-width: 200px;
@@ -236,11 +234,11 @@
 
 // Calendar
 .calendar {
-  background: #fff;
+  background: #F6F4F0;
   border-radius: 20px;
-  border: none;
   overflow: hidden;
-  box-shadow: 0 10px 40px rgba(5, 25, 35, 0.1);
+  box-shadow: 0 0 10px 4px rgba(0, 53, 84, 0.15);
+  border: 1px solid rgba(0, 53, 84, 0.2);
 }
 
 .calendar-header {
@@ -319,8 +317,9 @@
   }
 
   .day-number {
+    font-family: 'Poppins', serif;
+    font-weight: 700;
     font-size: 0.9rem;
-    font-weight: 600;
     color: #051923;
   }
 
@@ -1105,7 +1104,7 @@
     &:hover {
       border-color: #051923;
       color: #051923;
-      background: #f5f7fa;
+      background: #F6F4F0;
     }
   }
 
