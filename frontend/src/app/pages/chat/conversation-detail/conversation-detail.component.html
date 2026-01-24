@@ -1,0 +1,150 @@
+<app-navbar></app-navbar>
+
+<div class="chat-container">
+  <!-- Header -->
+  <header class="chat-header">
+    <button class="back-btn" (click)="goBack()">
+      <span class="arrow">&larr;</span>
+    </button>
+    <div class="user-info">
+      <div class="avatar" [class.online]="isOnline()">
+        {{ getInitials(getConversationName()) }}
+      </div>
+      <div class="user-details">
+        <span class="user-name">{{ getConversationName() }}</span>
+        @if (isOnline()) {
+          <span class="status online">En ligne</span>
+        } @else {
+          <span class="status">Hors ligne</span>
+        }
+      </div>
+    </div>
+  </header>
+
+  <!-- Messages -->
+  <div class="messages-container" #messagesContainer>
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Chargement des messages...</p>
+      </div>
+    } @else {
+      <div class="messages-list">
+        @for (message of chatService.messages(); track message._id; let i = $index) {
+          @if (shouldShowDate(i)) {
+            <div class="date-separator">
+              <span>{{ formatMessageDate(message.createdAt) }}</span>
+            </div>
+          }
+
+          <div
+            class="message"
+            [class.own]="isOwnMessage(message)"
+            [class.other]="!isOwnMessage(message)">
+
+            @if (!isOwnMessage(message)) {
+              <div class="message-avatar">
+                {{ getInitials(message.sender.firstName + ' ' + message.sender.lastName) }}
+              </div>
+            }
+
+            <div class="message-content">
+              @if (isImage(message) && message.attachment) {
+                <div class="message-image">
+                  <img [src]="message.attachment.url" [alt]="message.attachment.filename" />
+                </div>
+              } @else if (isDocument(message) && message.attachment) {
+                <a class="message-document" [href]="message.attachment.url" target="_blank">
+                  <div class="doc-icon">{{ getFileIcon(message.attachment.mimeType) }}</div>
+                  <div class="doc-info">
+                    <span class="doc-name">{{ message.attachment.filename }}</span>
+                    <span class="doc-size">{{ formatFileSize(message.attachment.size) }}</span>
+                  </div>
+                </a>
+              }
+
+              @if (message.content && !(isImage(message) && !message.content)) {
+                <div class="message-text">{{ message.content }}</div>
+              }
+
+              <div class="message-time">
+                {{ formatMessageTime(message.createdAt) }}
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Typing indicator -->
+        @if (typingUsers().length > 0) {
+          <div class="typing-indicator">
+            <div class="typing-dots">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <span class="typing-text">
+              {{ typingUsers()[0].userName }} ecrit...
+            </span>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Input area -->
+  <div class="input-area">
+    <!-- Pending attachment preview -->
+    @if (pendingAttachment()) {
+      <div class="attachment-preview">
+        @if (pendingAttachment()!.type === 'image') {
+          <img [src]="pendingAttachment()!.url" alt="Preview" />
+        } @else {
+          <div class="doc-preview">
+            <span class="doc-icon">{{ getFileIcon(pendingAttachment()!.mimeType) }}</span>
+            <span class="doc-name">{{ pendingAttachment()!.filename }}</span>
+          </div>
+        }
+        <button class="remove-attachment" (click)="removePendingAttachment()">x</button>
+      </div>
+    }
+
+    <div class="input-row">
+      <button
+        class="attach-btn"
+        (click)="triggerFileUpload()"
+        [disabled]="isUploading()">
+        @if (isUploading()) {
+          <div class="loading-spinner small"></div>
+        } @else {
+          <span class="icon">+</span>
+        }
+      </button>
+
+      <input
+        type="file"
+        #fileInput
+        (change)="onFileSelected($event)"
+        accept="image/*,.pdf,.doc,.docx,.txt"
+        hidden
+      />
+
+      <div class="text-input-wrapper">
+        <textarea
+          class="text-input"
+          placeholder="Ecrire un message..."
+          [value]="messageText()"
+          (input)="messageText.set($any($event.target).value); onInput()"
+          (keydown)="onKeyDown($event)"
+          rows="1"
+        ></textarea>
+      </div>
+
+      <button
+        class="send-btn"
+        (click)="sendMessage()"
+        [disabled]="(!messageText().trim() && !pendingAttachment()) || isSending()">
+        <span class="icon">&rarr;</span>
+      </button>
+    </div>
+  </div>
+</div>

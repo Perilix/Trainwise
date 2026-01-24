@@ -178,6 +178,56 @@
           </div>
         </div>
 
+        <!-- Messages non lus -->
+        <div class="messages-card">
+          <div class="messages-header">
+            <h3>Messages</h3>
+            @if (chatService.totalUnread() > 0) {
+              <span class="total-unread">{{ chatService.totalUnread() }}</span>
+            }
+            <a routerLink="/chat" class="see-all-link">Voir tout</a>
+          </div>
+
+          @if (recentConversations().length === 0) {
+            <div class="no-messages">
+              <p>Aucune conversation</p>
+              <a routerLink="/chat" class="start-chat-btn">Demarrer un chat</a>
+            </div>
+          } @else {
+            <div class="conversations-list">
+              @for (conv of recentConversations(); track conv._id) {
+                <div class="conversation-item" [class.unread]="conv.unreadCount > 0" (click)="openConversation(conv)">
+                  <div class="conv-avatar" [class.online]="isUserOnline(conv)">
+                    {{ getConversationInitials(conv) }}
+                  </div>
+                  <div class="conv-content">
+                    <div class="conv-header">
+                      <span class="conv-name">{{ getConversationName(conv) }}</span>
+                      <span class="conv-time">{{ formatMessageTime(conv.lastMessage.sentAt) }}</span>
+                    </div>
+                    <div class="conv-message">
+                      <span class="message-text">{{ getLastMessagePreview(conv) }}</span>
+                      <div class="message-status">
+                        @if (conv.unreadCount > 0) {
+                          <span class="unread-badge">{{ conv.unreadCount }}</span>
+                        } @else if (isOwnLastMessage(conv)) {
+                          <span class="read-status" [class.read]="isMessageRead(conv)">
+                            @if (isMessageRead(conv)) {
+                              ✓✓
+                            } @else {
+                              ✓
+                            }
+                          </span>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
         <!-- Tips / Conseils -->
         <div class="tips-card">
           <h3>Conseils</h3>

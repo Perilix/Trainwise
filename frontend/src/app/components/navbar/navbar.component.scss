@@ -87,6 +87,27 @@
       color: #fff;
       background: #003554;
     }
+
+    &.nav-link-chat {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      .unread-badge {
+        background: #ff4757;
+        color: #fff;
+        font-size: 0.65rem;
+        font-weight: 700;
+        min-width: 18px;
+        height: 18px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 5px;
+      }
+    }
   }
 }
 

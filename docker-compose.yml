@@ -47,6 +47,9 @@ services:
       - STRAVA_CLIENT_SECRET=${STRAVA_CLIENT_SECRET}
       - BACKEND_URL=${BACKEND_URL:-http://localhost:3000}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:4200}
+      - CLOUDINARY_URL=${CLOUDINARY_URL:-}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@runiq.fr}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
     depends_on:
       - mongodb
     networks:

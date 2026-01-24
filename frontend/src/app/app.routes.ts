@@ -28,6 +28,16 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'chat',
+    loadComponent: () => import('./pages/chat/conversations-list/conversations-list.component').then(m => m.ConversationsListComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'chat/:id',
+    loadComponent: () => import('./pages/chat/conversation-detail/conversation-detail.component').then(m => m.ConversationDetailComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'login',
     loadComponent: () => import('./pages/login/login.component').then(m => m.LoginComponent),
     canActivate: [guestGuard]

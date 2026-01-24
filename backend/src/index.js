@@ -1,18 +1,25 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const http = require('http');
 require('dotenv').config();
 
 const runRoutes = require('./routes/run.routes');
 const authRoutes = require('./routes/auth.routes');
 const planningRoutes = require('./routes/planning.routes');
 const stravaRoutes = require('./routes/strava.routes');
+const chatRoutes = require('./routes/chat.routes');
+const { initializeSocket } = require('./socket/index');
 
 const app = express();
+const httpServer = http.createServer(app);
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:4200',
+  credentials: true
+}));
 app.use(express.json());
 
 // Routes
@@ -20,6 +27,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/runs', runRoutes);
 app.use('/api/planning', planningRoutes);
 app.use('/api/strava', stravaRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -30,7 +38,11 @@ app.get('/api/health', (req, res) => {
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/runiq')
   .then(() => {
     console.log('Connected to MongoDB');
-    app.listen(PORT, () => {
+
+    // Initialize Socket.io
+    initializeSocket(httpServer);
+
+    httpServer.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
   })

@@ -21,6 +21,12 @@
         <a routerLink="/planning" routerLinkActive="active" class="nav-link">
           Planning
         </a>
+        <a routerLink="/chat" routerLinkActive="active" class="nav-link nav-link-chat">
+          Messages
+          @if (chatService.totalUnread() > 0) {
+            <span class="unread-badge">{{ chatService.totalUnread() > 99 ? '99+' : chatService.totalUnread() }}</span>
+          }
+        </a>
       </div>
 
       <!-- User menu -->
