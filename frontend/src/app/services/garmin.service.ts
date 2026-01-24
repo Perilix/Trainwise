@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface GarminStatus {
   connected: boolean;
@@ -29,7 +30,7 @@ export interface GarminSyncResult {
   providedIn: 'root'
 })
 export class GarminService {
-  private apiUrl = 'http://localhost:3000/api/garmin';
+  private apiUrl = `${environment.apiUrl}/garmin`;
 
   constructor(private http: HttpClient) {}
 
