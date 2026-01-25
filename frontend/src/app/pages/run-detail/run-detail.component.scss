@@ -6,6 +6,15 @@
   font-family: 'Poppins', sans-serif;
   min-height: 100vh;
   background: #F6F4F0;
+
+  @media (max-width: 768px) {
+    padding-top: calc(70px + 1.5rem);
+  }
+
+  @media (max-width: 500px) {
+    padding: 1rem;
+    padding-top: calc(60px + 1rem);
+  }
 }
 
 .loading-state,
@@ -310,7 +319,6 @@
 @media (max-width: 600px) {
   .container {
     padding: 1rem;
-    padding-top: calc(120px + 1rem);
   }
 
   .page-header {

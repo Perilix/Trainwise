@@ -111,23 +111,29 @@
 .navbar-user {
   position: relative;
 
-    .avatar-img {
-      width: 90px;
-      height: 90px;
-      object-fit: cover;
-      display: block;
-      cursor: pointer;
+  .avatar-img {
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    cursor: pointer;
+    transition: transform 0.2s;
+
+    &:hover {
+      transform: scale(1.05);
     }
+  }
 
   .user-avatar {
-    width: 65px;
-    height: 65px;
+    width: 55px;
+    height: 55px;
     border-radius: 50%;
-    background: #00a6fb;
+    background: linear-gradient(135deg, #00a6fb 0%, #0582ca 100%);
     border: none;
     outline: none;
     color: #fff;
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;

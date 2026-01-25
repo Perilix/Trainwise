@@ -6,6 +6,14 @@
   font-family: 'Poppins', sans-serif;
   min-height: 100vh;
   background: #F6F4F0;
+
+  @media (max-width: 768px) {
+    padding-top: calc(70px + 1.5rem);
+  }
+
+  @media (max-width: 500px) {
+    padding-top: calc(60px + 1rem);
+  }
 }
 
 // Header
@@ -553,6 +561,10 @@
   gap: 1.5rem;
   position: sticky;
   top: calc(120px + 2rem);
+
+  @media (max-width: 768px) {
+    top: calc(70px + 1.5rem);
+  }
 }
 
 .stats-card, .tips-card, .actions-card, .messages-card {
@@ -706,15 +718,16 @@
     }
 
     .conv-avatar {
-      width: 50px;
-      height: 50px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
+      background: linear-gradient(135deg, #00a6fb 0%, #0582ca 100%);
       color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 600;
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       flex-shrink: 0;
       position: relative;
       overflow: hidden;
@@ -735,7 +748,7 @@
         height: 10px;
         background: #10b981;
         border-radius: 50%;
-        border: 2px solid #fff;
+        border: 2px solid #F6F4F0;
       }
     }
 
@@ -942,7 +955,6 @@
 @media (max-width: 480px) {
   .container {
     padding: 1rem;
-    padding-top: calc(120px + 1rem);
   }
 
   .stats-card .stats-grid {

@@ -6,6 +6,14 @@
   font-family: 'Poppins', sans-serif;
   min-height: 100vh;
   background: #F6F4F0;
+
+  @media (max-width: 768px) {
+    padding-top: calc(70px + 1.5rem);
+  }
+
+  @media (max-width: 500px) {
+    padding-top: calc(60px + 1rem);
+  }
 }
 
 .page-header {
@@ -347,11 +355,6 @@
 
 // Responsive
 @media (max-width: 480px) {
-  .container {
-    padding: 1rem;
-    padding-top: calc(120px + 1rem);
-  }
-
   .avatar-section {
     flex-direction: column;
     align-items: center;
