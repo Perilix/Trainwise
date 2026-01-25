@@ -13,6 +13,7 @@ import { ChatService } from '../../services/chat.service';
 })
 export class NavbarComponent implements OnInit {
   isMenuOpen = false;
+  isMobileMenuOpen = false;
 
   constructor(
     public authService: AuthService,
@@ -37,6 +38,14 @@ export class NavbarComponent implements OnInit {
 
   closeMenu() {
     this.isMenuOpen = false;
+  }
+
+  toggleMobileMenu() {
+    this.isMobileMenuOpen = !this.isMobileMenuOpen;
+  }
+
+  closeMobileMenu() {
+    this.isMobileMenuOpen = false;
   }
 
   logout() {
