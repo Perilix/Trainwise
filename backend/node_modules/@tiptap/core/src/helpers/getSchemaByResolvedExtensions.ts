@@ -1,19 +1,22 @@
-import { MarkSpec, NodeSpec, Schema } from '@tiptap/pm/model'
+import {
+  MarkSpec, NodeSpec, Schema, TagParseRule,
+} from '@tiptap/pm/model'
 
-import { MarkConfig, NodeConfig } from '..'
-import { AnyConfig, Extensions } from '../types'
-import { callOrReturn } from '../utilities/callOrReturn'
-import { isEmptyObject } from '../utilities/isEmptyObject'
-import { getAttributesFromExtensions } from './getAttributesFromExtensions'
-import { getExtensionField } from './getExtensionField'
-import { getRenderedAttributes } from './getRenderedAttributes'
-import { injectExtensionAttributesToParseRule } from './injectExtensionAttributesToParseRule'
-import { splitExtensions } from './splitExtensions'
+import { Editor, MarkConfig, NodeConfig } from '../index.js'
+import { AnyConfig, Extensions } from '../types.js'
+import { callOrReturn } from '../utilities/callOrReturn.js'
+import { isEmptyObject } from '../utilities/isEmptyObject.js'
+import { getAttributesFromExtensions } from './getAttributesFromExtensions.js'
+import { getExtensionField } from './getExtensionField.js'
+import { getRenderedAttributes } from './getRenderedAttributes.js'
+import { injectExtensionAttributesToParseRule } from './injectExtensionAttributesToParseRule.js'
+import { splitExtensions } from './splitExtensions.js'
 
 function cleanUpSchemaItem<T>(data: T) {
   return Object.fromEntries(
+    // @ts-ignore
     Object.entries(data).filter(([key, value]) => {
-      if (key === 'attrs' && isEmptyObject(value)) {
+      if (key === 'attrs' && isEmptyObject(value as object | undefined)) {
         return false
       }
 
@@ -22,7 +25,13 @@ function cleanUpSchemaItem<T>(data: T) {
   ) as T
 }
 
-export function getSchemaByResolvedExtensions(extensions: Extensions): Schema {
+/**
+ * Creates a new Prosemirror schema based on the given extensions.
+ * @param extensions An array of Tiptap extensions
+ * @param editor The editor instance
+ * @returns A Prosemirror schema
+ */
+export function getSchemaByResolvedExtensions(extensions: Extensions, editor?: Editor): Schema {
   const allAttributes = getAttributesFromExtensions(extensions)
   const { nodeExtensions, markExtensions } = splitExtensions(extensions)
   const topNode = nodeExtensions.find(extension => getExtensionField(extension, 'topNode'))?.name
@@ -36,6 +45,7 @@ export function getSchemaByResolvedExtensions(extensions: Extensions): Schema {
         name: extension.name,
         options: extension.options,
         storage: extension.storage,
+        editor,
       }
 
       const extraNodeFields = extensions.reduce((fields, e) => {
@@ -67,6 +77,8 @@ export function getSchemaByResolvedExtensions(extensions: Extensions): Schema {
           getExtensionField<NodeConfig['draggable']>(extension, 'draggable', context),
         ),
         code: callOrReturn(getExtensionField<NodeConfig['code']>(extension, 'code', context)),
+        whitespace: callOrReturn(getExtensionField<NodeConfig['whitespace']>(extension, 'whitespace', context)),
+        linebreakReplacement: callOrReturn(getExtensionField<NodeConfig['linebreakReplacement']>(extension, 'linebreakReplacement', context)),
         defining: callOrReturn(
           getExtensionField<NodeConfig['defining']>(extension, 'defining', context),
         ),
@@ -85,7 +97,7 @@ export function getSchemaByResolvedExtensions(extensions: Extensions): Schema {
       )
 
       if (parseHTML) {
-        schema.parseDOM = parseHTML.map(parseRule => injectExtensionAttributesToParseRule(parseRule, extensionAttributes))
+        schema.parseDOM = parseHTML.map(parseRule => injectExtensionAttributesToParseRule(parseRule, extensionAttributes)) as TagParseRule[]
       }
 
       const renderHTML = getExtensionField<NodeConfig['renderHTML']>(
@@ -124,6 +136,7 @@ export function getSchemaByResolvedExtensions(extensions: Extensions): Schema {
         name: extension.name,
         options: extension.options,
         storage: extension.storage,
+        editor,
       }
 
       const extraMarkFields = extensions.reduce((fields, e) => {
@@ -135,7 +148,7 @@ export function getSchemaByResolvedExtensions(extensions: Extensions): Schema {
 
         return {
           ...fields,
-          ...(extendMarkSchema ? extendMarkSchema(extension) : {}),
+          ...(extendMarkSchema ? extendMarkSchema(extension as any) : {}),
         }
       }, {})
 
