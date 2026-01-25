@@ -2,6 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
+import { environment } from '../../environments/environment';
 
 export type DayOfWeek = 'lundi' | 'mardi' | 'mercredi' | 'jeudi' | 'vendredi' | 'samedi' | 'dimanche';
 export type PreferredTime = 'matin' | 'midi' | 'soir' | 'flexible';
@@ -12,6 +13,7 @@ export interface User {
   firstName: string;
   lastName: string;
   phone?: string;
+  profilePicture?: string;
   role: 'user' | 'admin';
   runningLevel?: 'debutant' | 'intermediaire' | 'confirme' | 'expert';
   goal?: 'remise_en_forme' | '5km' | '10km' | 'semi_marathon' | 'marathon' | 'trail' | 'ultra' | 'autre';
@@ -52,7 +54,7 @@ export interface AuthResponse {
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly API_URL = 'http://localhost:3000/api/auth';
+  private readonly API_URL = `${environment.apiUrl}/auth`;
   private readonly TOKEN_KEY = 'runiq_token';
   private readonly USER_KEY = 'runiq_user';
 
@@ -107,6 +109,24 @@ export class AuthService {
 
   updateProfile(data: UpdateProfileData): Observable<User> {
     return this.http.patch<User>(`${this.API_URL}/profile`, data)
+      .pipe(tap(user => {
+        localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+        this.currentUser.set(user);
+      }));
+  }
+
+  uploadAvatar(file: File): Observable<User> {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    return this.http.post<User>(`${this.API_URL}/avatar`, formData)
+      .pipe(tap(user => {
+        localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+        this.currentUser.set(user);
+      }));
+  }
+
+  deleteAvatar(): Observable<User> {
+    return this.http.delete<User>(`${this.API_URL}/avatar`)
       .pipe(tap(user => {
         localStorage.setItem(this.USER_KEY, JSON.stringify(user));
         this.currentUser.set(user);

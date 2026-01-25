@@ -25,59 +25,6 @@
     <div class="dashboard-grid">
       <!-- Colonne principale -->
       <div class="main-column">
-        <!-- Prochaine séance - Focus principal -->
-        <section class="next-session-card">
-          @if (upcomingSession()) {
-            <div class="session-header">
-              <span class="session-badge">Prochaine séance</span>
-              <span class="session-date">{{ formatDate(upcomingSession()!.date) }}</span>
-            </div>
-            <div class="session-content">
-              <h2 class="session-type">{{ getSessionTypeLabel(upcomingSession()!.sessionType) }}</h2>
-              <div class="session-targets">
-                @if (upcomingSession()!.targetDistance) {
-                  <div class="target-item">
-                    <span class="target-value">{{ upcomingSession()!.targetDistance }}</span>
-                    <span class="target-unit">km</span>
-                  </div>
-                }
-                @if (upcomingSession()!.targetDuration) {
-                  <div class="target-item">
-                    <span class="target-value">{{ upcomingSession()!.targetDuration }}</span>
-                    <span class="target-unit">min</span>
-                  </div>
-                }
-                @if (upcomingSession()!.targetPace) {
-                  <div class="target-item">
-                    <span class="target-value">{{ upcomingSession()!.targetPace }}</span>
-                    <span class="target-unit">/km</span>
-                  </div>
-                }
-              </div>
-              @if (upcomingSession()!.description) {
-                <p class="session-description">{{ upcomingSession()!.description }}</p>
-              }
-              @if (upcomingSession()!.mainWorkout) {
-                <div class="session-workout">
-                  <span class="workout-label">Séance</span>
-                  <p>{{ upcomingSession()!.mainWorkout }}</p>
-                </div>
-              }
-            </div>
-            <a routerLink="/planning" class="session-cta">
-              Voir le planning complet
-              <span class="cta-arrow">→</span>
-            </a>
-          } @else {
-            <div class="no-session">
-              <span class="no-session-icon">📅</span>
-              <h3>Aucune séance planifiée</h3>
-              <p>Génère ton programme d'entraînement personnalisé avec l'IA.</p>
-              <a routerLink="/planning" class="btn-plan">Planifier mes séances</a>
-            </div>
-          }
-        </section>
-
         <!-- Timeline de la semaine -->
         <section class="week-timeline">
           <div class="section-header">
@@ -159,7 +106,6 @@
 
       <!-- Sidebar -->
       <aside class="sidebar">
-        <!-- Stats de la semaine -->
         <div class="stats-card">
           <h3>Cette semaine</h3>
           <div class="stats-grid">
@@ -181,7 +127,7 @@
         <!-- Messages non lus -->
         <div class="messages-card">
           <div class="messages-header">
-            <h3>Messages</h3>
+            <h3>Messages non lus</h3>
             @if (chatService.totalUnread() > 0) {
               <span class="total-unread">{{ chatService.totalUnread() }}</span>
             }
@@ -198,7 +144,11 @@
               @for (conv of recentConversations(); track conv._id) {
                 <div class="conversation-item" [class.unread]="conv.unreadCount > 0" (click)="openConversation(conv)">
                   <div class="conv-avatar" [class.online]="isUserOnline(conv)">
-                    {{ getConversationInitials(conv) }}
+                    @if (getConversationAvatar(conv)) {
+                      <img [src]="getConversationAvatar(conv)" alt="Avatar" class="avatar-img">
+                    } @else {
+                      {{ getConversationInitials(conv) }}
+                    }
                   </div>
                   <div class="conv-content">
                     <div class="conv-header">
@@ -242,24 +192,6 @@
           }
         </div>
 
-        <!-- Quick actions -->
-        <div class="actions-card">
-          <h3>Actions rapides</h3>
-          <div class="quick-actions">
-            <a routerLink="/analyse" class="action-btn primary">
-              <span class="action-icon">📝</span>
-              Nouvelle analyse
-            </a>
-            <a routerLink="/planning" class="action-btn">
-              <span class="action-icon">📅</span>
-              Planning
-            </a>
-            <a routerLink="/profile" class="action-btn">
-              <span class="action-icon">👤</span>
-              Mon profil
-            </a>
-          </div>
-        </div>
       </aside>
     </div>
   }

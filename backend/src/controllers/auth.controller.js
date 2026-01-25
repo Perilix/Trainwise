@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
+const { cloudinary } = require('../config/cloudinary');
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -33,6 +34,7 @@ exports.register = async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         phone: user.phone,
+        profilePicture: user.profilePicture,
         role: user.role,
         runningLevel: user.runningLevel,
         goal: user.goal,
@@ -81,6 +83,7 @@ exports.login = async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         phone: user.phone,
+        profilePicture: user.profilePicture,
         role: user.role,
         runningLevel: user.runningLevel,
         goal: user.goal,
@@ -106,6 +109,7 @@ exports.getMe = async (req, res) => {
       firstName: user.firstName,
       lastName: user.lastName,
       phone: user.phone,
+      profilePicture: user.profilePicture,
       role: user.role,
       runningLevel: user.runningLevel,
       goal: user.goal,
@@ -156,6 +160,7 @@ exports.updateProfile = async (req, res) => {
       firstName: user.firstName,
       lastName: user.lastName,
       phone: user.phone,
+      profilePicture: user.profilePicture,
       role: user.role,
       runningLevel: user.runningLevel,
       goal: user.goal,
@@ -168,5 +173,114 @@ exports.updateProfile = async (req, res) => {
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
+  }
+};
+
+// Upload profile picture
+exports.uploadAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Aucune image fournie' });
+    }
+
+    const user = await User.findById(req.user.id);
+
+    // Delete old avatar from Cloudinary if exists
+    if (user.profilePicture) {
+      // Extract public_id from URL
+      const urlParts = user.profilePicture.split('/');
+      const publicIdWithExt = urlParts.slice(-2).join('/');
+      const publicId = publicIdWithExt.replace(/\.[^/.]+$/, '');
+      try {
+        await cloudinary.uploader.destroy(publicId);
+      } catch (e) {
+        console.log('Could not delete old avatar:', e.message);
+      }
+    }
+
+    // Upload new avatar to Cloudinary
+    const uploadResult = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'runiq/avatars',
+          resource_type: 'image',
+          transformation: [
+            { width: 400, height: 400, crop: 'fill', gravity: 'face' },
+            { quality: 'auto' }
+          ]
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      uploadStream.end(req.file.buffer);
+    });
+
+    // Update user with new avatar URL
+    user.profilePicture = uploadResult.secure_url;
+    await user.save();
+
+    res.json({
+      id: user._id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phone: user.phone,
+      profilePicture: user.profilePicture,
+      role: user.role,
+      runningLevel: user.runningLevel,
+      goal: user.goal,
+      goalDetails: user.goalDetails,
+      weeklyFrequency: user.weeklyFrequency,
+      injuries: user.injuries,
+      availableDays: user.availableDays,
+      preferredTime: user.preferredTime,
+      createdAt: user.createdAt
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Delete profile picture
+exports.deleteAvatar = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (user.profilePicture) {
+      // Extract public_id from URL (format: runiq/avatars/filename)
+      const urlParts = user.profilePicture.split('/');
+      const publicIdWithExt = urlParts.slice(-2).join('/');
+      const publicId = publicIdWithExt.replace(/\.[^/.]+$/, '');
+      try {
+        await cloudinary.uploader.destroy(publicId);
+      } catch (e) {
+        console.log('Could not delete avatar:', e.message);
+      }
+    }
+
+    user.profilePicture = null;
+    await user.save();
+
+    res.json({
+      id: user._id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phone: user.phone,
+      profilePicture: user.profilePicture,
+      role: user.role,
+      runningLevel: user.runningLevel,
+      goal: user.goal,
+      goalDetails: user.goalDetails,
+      weeklyFrequency: user.weeklyFrequency,
+      injuries: user.injuries,
+      availableDays: user.availableDays,
+      preferredTime: user.preferredTime,
+      createdAt: user.createdAt
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 };

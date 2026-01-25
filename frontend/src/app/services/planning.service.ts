@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Run } from './run.service';
+import { environment } from '../../environments/environment';
 
 export type SessionType = 'endurance' | 'fractionne' | 'tempo' | 'recuperation' | 'sortie_longue' | 'cotes' | 'fartlek';
 export type PlannedRunStatus = 'planned' | 'completed' | 'skipped';
@@ -42,7 +43,7 @@ export interface GeneratePlanResponse {
   providedIn: 'root'
 })
 export class PlanningService {
-  private apiUrl = 'http://localhost:3000/api/planning';
+  private apiUrl = `${environment.apiUrl}/planning`;
 
   constructor(private http: HttpClient) {}
 

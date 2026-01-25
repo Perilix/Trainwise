@@ -5,17 +5,17 @@
   padding-top: calc(120px + 3.5rem);
   font-family: 'Poppins', sans-serif;
   min-height: 100vh;
-  background: #f5f7fa;
+  background: #F6F4F0;
 }
 
 .page-header {
   margin-bottom: 2rem;
 
   h1 {
+    font-family: 'GulfsDisplay', serif;
     font-size: 1.75rem;
     color: #051923;
     margin: 0 0 0.5rem;
-    font-weight: 700;
   }
 
   .subtitle {
@@ -46,16 +46,16 @@
 }
 
 .sidebar-card {
-  background: #fff;
+  background: #F6F4F0;
   border-radius: 16px;
   padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(5, 25, 35, 0.06);
-  border: 1px solid #e5e7eb;
+  box-shadow: 0 0 10px 4px rgba(0, 53, 84, 0.15);
+  border: 1px solid rgba(0, 53, 84, 0.2);
 
   h3 {
     font-size: 0.85rem;
-    font-weight: 700;
-    color: #051923;
+    font-weight: 800;
+    color: #003554;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin: 0 0 1rem;
@@ -122,11 +122,11 @@
 
 // Formulaire
 .run-form {
-  background: #fff;
+  background: #F6F4F0;
   border-radius: 16px;
   padding: 2rem;
-  box-shadow: 0 4px 20px rgba(5, 25, 35, 0.06);
-  border: 1px solid #e5e7eb;
+  box-shadow: 0 0 10px 4px rgba(0, 53, 84, 0.15);
+  border: 1px solid rgba(0, 53, 84, 0.2);
 }
 
 .form-grid {

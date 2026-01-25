@@ -322,4 +322,16 @@ export class ConversationDetailComponent implements OnInit, OnDestroy, AfterView
     if (bytes < 1024 * 1024) return Math.round(bytes / 1024) + ' Ko';
     return (bytes / (1024 * 1024)).toFixed(1) + ' Mo';
   }
+
+  getConversationAvatar(): string | undefined {
+    const conversation = this.chatService.currentConversation();
+    if (!conversation) return undefined;
+
+    if (conversation.otherParticipant?.profilePicture) {
+      return conversation.otherParticipant.profilePicture;
+    }
+    const currentUser = this.authService.getUser();
+    const other = conversation.participants.find(p => p._id !== currentUser?.id);
+    return other?.profilePicture;
+  }
 }
