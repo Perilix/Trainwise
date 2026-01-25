@@ -5,17 +5,17 @@
   padding-top: calc(120px + 2rem);
   font-family: 'Poppins', sans-serif;
   min-height: 100vh;
-  background: #f5f7fa;
+  background: #F6F4F0;
 }
 
 .page-header {
   margin-bottom: 2rem;
 
   h1 {
+    font-family: 'GulfsDisplay', serif;
     font-size: 1.75rem;
     color: #051923;
     margin: 0 0 0.5rem;
-    font-weight: 700;
   }
 
   .subtitle {
@@ -30,18 +30,18 @@
   display: flex;
   align-items: center;
   gap: 1.5rem;
-  background: #fff;
+  background: #F6F4F0;
   border-radius: 16px;
   padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(5, 25, 35, 0.06);
-  border: 1px solid #e5e7eb;
+  box-shadow: 0 0 10px 4px rgba(0, 53, 84, 0.15);
+  border: 1px solid rgba(0, 53, 84, 0.2);
   margin-bottom: 1.5rem;
 
   .user-avatar {
     width: 70px;
     height: 70px;
     border-radius: 50%;
-    background: #00a6fb;
+    background: linear-gradient(135deg, #00a6fb 0%, #0582ca 100%);
     color: #fff;
     display: flex;
     align-items: center;
@@ -49,9 +49,20 @@
     font-size: 1.5rem;
     font-weight: 700;
     text-transform: uppercase;
+    overflow: hidden;
+    flex-shrink: 0;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
   }
 
   .user-info {
+    flex: 1;
+
     h2 {
       margin: 0;
       font-size: 1.25rem;
@@ -65,15 +76,32 @@
       font-size: 0.9rem;
     }
   }
+
+  .btn-settings {
+    padding: 0.5rem 1rem;
+    background: transparent;
+    color: #00a6fb;
+    border: 2px solid #00a6fb;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+
+    &:hover {
+      background: #00a6fb;
+      color: #fff;
+    }
+  }
 }
 
 // Runner profile section
 .runner-profile {
-  background: #fff;
+  background: #F6F4F0;
   border-radius: 16px;
   padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(5, 25, 35, 0.06);
-  border: 1px solid #e5e7eb;
+  box-shadow: 0 0 10px 4px rgba(0, 53, 84, 0.15);
+  border: 1px solid rgba(0, 53, 84, 0.2);
   margin-bottom: 1.5rem;
 
   .section-header {
@@ -273,23 +301,23 @@
   }
 
   .stat-card {
-    background: #fff;
+    background: #F6F4F0;
     border-radius: 16px;
     padding: 1.5rem;
     text-align: center;
-    box-shadow: 0 4px 20px rgba(5, 25, 35, 0.06);
-    border: 1px solid #e5e7eb;
+    box-shadow: 0 0 10px 4px rgba(0, 53, 84, 0.15);
+    border: 1px solid rgba(0, 53, 84, 0.2);
     transition: all 0.2s;
 
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 30px rgba(5, 25, 35, 0.1);
+      box-shadow: 0 0 15px 6px rgba(0, 53, 84, 0.2);
     }
 
     .stat-value {
       display: block;
+      font-family: 'GulfsDisplay', serif;
       font-size: 2rem;
-      font-weight: 700;
       color: #051923;
       margin-bottom: 0.25rem;
     }
@@ -351,17 +379,17 @@
 }
 
 .run-card {
-  background: #fff;
+  background: #F6F4F0;
   border-radius: 16px;
   padding: 1.25rem;
-  box-shadow: 0 4px 20px rgba(5, 25, 35, 0.06);
-  border: 1px solid #e5e7eb;
+  box-shadow: 0 0 10px 4px rgba(0, 53, 84, 0.15);
+  border: 1px solid rgba(0, 53, 84, 0.2);
   transition: all 0.2s;
   position: relative;
 
   &:hover {
     border-color: #00a6fb;
-    box-shadow: 0 8px 30px rgba(5, 25, 35, 0.1);
+    box-shadow: 0 0 15px 6px rgba(0, 53, 84, 0.2);
   }
 
   &.clickable {
@@ -506,11 +534,11 @@
 
 // Strava section
 .strava-section {
-  background: #fff;
+  background: #F6F4F0;
   border-radius: 16px;
   padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(5, 25, 35, 0.06);
-  border: 1px solid #e5e7eb;
+  box-shadow: 0 0 10px 4px rgba(0, 53, 84, 0.15);
+  border: 1px solid rgba(0, 53, 84, 0.2);
   margin-bottom: 1.5rem;
 
   .section-header {

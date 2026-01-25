@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../environments/environment';
+import { environment } from '../../environments/environment';
 
 export interface Run {
   _id?: string;
@@ -28,7 +28,7 @@ export interface Run {
   providedIn: 'root'
 })
 export class RunService {
-  private apiUrl = `${environment.apiUrl}/api/runs`;
+  private apiUrl = `${environment.apiUrl}/runs`;
 
   constructor(private http: HttpClient) {}
 

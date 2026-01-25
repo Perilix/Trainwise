@@ -168,4 +168,13 @@ export class ConversationsListComponent implements OnInit {
   getInitials(name: string): string {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   }
+
+  getConversationAvatar(conversation: Conversation): string | undefined {
+    if (conversation.otherParticipant?.profilePicture) {
+      return conversation.otherParticipant.profilePicture;
+    }
+    const currentUser = this.authService.getUser();
+    const other = conversation.participants.find(p => p._id !== currentUser?.id);
+    return other?.profilePicture;
+  }
 }

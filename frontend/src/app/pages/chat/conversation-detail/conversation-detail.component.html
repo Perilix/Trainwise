@@ -8,7 +8,11 @@
     </button>
     <div class="user-info">
       <div class="avatar" [class.online]="isOnline()">
-        {{ getInitials(getConversationName()) }}
+        @if (getConversationAvatar()) {
+          <img [src]="getConversationAvatar()" alt="Avatar" class="avatar-img">
+        } @else {
+          {{ getInitials(getConversationName()) }}
+        }
       </div>
       <div class="user-details">
         <span class="user-name">{{ getConversationName() }}</span>
@@ -44,7 +48,11 @@
 
             @if (!isOwnMessage(message)) {
               <div class="message-avatar">
-                {{ getInitials(message.sender.firstName + ' ' + message.sender.lastName) }}
+                @if (message.sender.profilePicture) {
+                  <img [src]="message.sender.profilePicture" alt="Avatar" class="avatar-img">
+                } @else {
+                  {{ getInitials(message.sender.firstName + ' ' + message.sender.lastName) }}
+                }
               </div>
             }
 

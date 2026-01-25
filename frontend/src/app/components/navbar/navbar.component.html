@@ -2,8 +2,10 @@
   <div class="navbar-container">
     <!-- Logo à gauche -->
     <a routerLink="/" class="navbar-logo">
-      <span class="logo-icon">R</span>
-      <span class="logo-text">RunIQ</span>
+      <span class="logo-text">
+        <span class="logo-train">Train</span>
+        <span class="logo-wise">wise</span>
+      </span>
     </a>
 
     <!-- Spacer -->
@@ -13,13 +15,13 @@
     <div class="navbar-right">
       <div class="navbar-links">
         <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link">
-          Dashboard
-        </a>
-        <a routerLink="/analyse" routerLinkActive="active" class="nav-link">
-          Analyse
+          Accueil
         </a>
         <a routerLink="/planning" routerLinkActive="active" class="nav-link">
           Planning
+        </a>
+        <a routerLink="/analyse" routerLinkActive="active" class="nav-link">
+          Analyse
         </a>
         <a routerLink="/chat" routerLinkActive="active" class="nav-link nav-link-chat">
           Messages
@@ -31,9 +33,14 @@
 
       <!-- User menu -->
       <div class="navbar-user">
-        <button class="user-avatar" (click)="toggleMenu()">
-          {{ getUserInitial() }}
-        </button>
+        @if (authService.currentUser()?.profilePicture) {
+              <img [src]="authService.currentUser()?.profilePicture" alt="Avatar" class="avatar-img" (click)="toggleMenu()">
+        } @else {
+          <button class="user-avatar" (click)="toggleMenu()">
+              {{ getUserInitial() }}
+          </button>
+        }
+
 
         @if (isMenuOpen) {
           <div class="user-dropdown">
@@ -42,6 +49,7 @@
               <span class="dropdown-email">{{ authService.currentUser()?.email }}</span>
             </div>
             <a routerLink="/profile" class="dropdown-item" (click)="closeMenu()">Mon profil</a>
+            <a routerLink="/settings" class="dropdown-item" (click)="closeMenu()">Paramètres</a>
             <button class="dropdown-item dropdown-logout" (click)="logout()">Déconnexion</button>
           </div>
         }

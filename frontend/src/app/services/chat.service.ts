@@ -3,13 +3,14 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 import { AuthService } from './auth.service';
-import { environment } from '../environments/environment';
+import { environment } from '../../environments/environment';
 
 export interface UserPreview {
   _id: string;
   firstName: string;
   lastName: string;
   email: string;
+  profilePicture?: string;
   isOnline?: boolean;
 }
 
@@ -72,8 +73,8 @@ export interface TypingEvent {
   providedIn: 'root'
 })
 export class ChatService implements OnDestroy {
-  private readonly API_URL = `${environment.apiUrl}/api/chat`;
-  private readonly SOCKET_URL = environment.apiUrl;
+  private readonly API_URL = `${environment.apiUrl}/chat`;
+  private readonly SOCKET_URL = environment.socketUrl;
 
   private socket: Socket | null = null;
 

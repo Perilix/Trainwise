@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../environments/environment';
+import { environment } from '../../environments/environment';
 
 export interface StravaStatus {
   connected: boolean;
@@ -29,7 +29,7 @@ export interface StravaSyncResult {
   providedIn: 'root'
 })
 export class StravaService {
-  private apiUrl = `${environment.apiUrl}/api/strava`;
+  private apiUrl = `${environment.apiUrl}/strava`;
 
   constructor(private http: HttpClient) {}
 
