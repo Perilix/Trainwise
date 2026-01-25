@@ -73,7 +73,7 @@ export interface TypingEvent {
   providedIn: 'root'
 })
 export class ChatService implements OnDestroy {
-  private readonly API_URL = `${environment.apiUrl}/chat`;
+  private readonly API_URL = `${environment.apiUrl}/api/chat`;
   private readonly SOCKET_URL = environment.socketUrl;
 
   private socket: Socket | null = null;

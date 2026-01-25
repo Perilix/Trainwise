@@ -28,7 +28,7 @@ export interface Run {
   providedIn: 'root'
 })
 export class RunService {
-  private apiUrl = `${environment.apiUrl}/runs`;
+  private apiUrl = `${environment.apiUrl}/api/runs`;
 
   constructor(private http: HttpClient) {}
 

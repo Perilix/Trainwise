@@ -43,7 +43,7 @@ export interface GeneratePlanResponse {
   providedIn: 'root'
 })
 export class PlanningService {
-  private apiUrl = `${environment.apiUrl}/planning`;
+  private apiUrl = `${environment.apiUrl}/api/planning`;
 
   constructor(private http: HttpClient) {}
 
