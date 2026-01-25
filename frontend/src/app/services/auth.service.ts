@@ -2,6 +2,8 @@ import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
+import { environment } from '../environments/environment';
+
 
 export type DayOfWeek = 'lundi' | 'mardi' | 'mercredi' | 'jeudi' | 'vendredi' | 'samedi' | 'dimanche';
 export type PreferredTime = 'matin' | 'midi' | 'soir' | 'flexible';
@@ -52,7 +54,7 @@ export interface AuthResponse {
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly API_URL = 'http://localhost:3000/api/auth';
+  private readonly API_URL = `${environment.apiUrl}/api/auth`;
   private readonly TOKEN_KEY = 'runiq_token';
   private readonly USER_KEY = 'runiq_user';
 

@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 import { AuthService } from './auth.service';
+import { environment } from '../environments/environment';
 
 export interface UserPreview {
   _id: string;
@@ -71,8 +72,8 @@ export interface TypingEvent {
   providedIn: 'root'
 })
 export class ChatService implements OnDestroy {
-  private readonly API_URL = 'http://localhost:3000/api/chat';
-  private readonly SOCKET_URL = 'http://localhost:3000';
+  private readonly API_URL = `${environment.apiUrl}/api/chat`;
+  private readonly SOCKET_URL = environment.apiUrl;
 
   private socket: Socket | null = null;
 
