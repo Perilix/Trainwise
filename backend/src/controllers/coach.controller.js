@@ -3,6 +3,7 @@ const CoachAthlete = require('../models/coachAthlete.model');
 const PlannedRun = require('../models/plannedRun.model');
 const Run = require('../models/run.model');
 const crypto = require('crypto');
+const { createNotification } = require('./notification.controller');
 
 // Générer un code d'invitation unique
 const generateUniqueCode = () => {
@@ -209,6 +210,22 @@ exports.createAthleteSession = async (req, res) => {
       createdBy: req.user._id
     });
 
+    // Créer notification pour l'athlète
+    const sessionDate = new Date(req.body.date).toLocaleDateString('fr-FR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long'
+    });
+    await createNotification({
+      recipient: athleteId,
+      sender: req.user._id,
+      type: 'session',
+      action: 'session_created',
+      title: 'Nouvelle séance planifiée',
+      message: `${req.user.firstName} ${req.user.lastName} a planifié une séance pour le ${sessionDate}`,
+      actionUrl: '/planning'
+    });
+
     res.status(201).json(plannedRun);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -357,6 +374,17 @@ exports.sendDirectInvite = async (req, res) => {
 
     const populatedInvitation = await CoachAthlete.findById(invitation._id)
       .populate('athlete', 'firstName lastName email profilePicture');
+
+    // Créer notification pour l'athlète
+    await createNotification({
+      recipient: athleteId,
+      sender: req.user._id,
+      type: 'invitation',
+      action: 'coach_invited',
+      title: 'Nouvelle invitation coach',
+      message: `${req.user.firstName} ${req.user.lastName} vous invite à rejoindre son équipe`,
+      actionUrl: '/profile'
+    });
 
     res.status(201).json(populatedInvitation);
   } catch (error) {

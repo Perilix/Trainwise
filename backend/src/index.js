@@ -11,6 +11,7 @@ const stravaRoutes = require('./routes/strava.routes');
 const chatRoutes = require('./routes/chat.routes');
 const coachRoutes = require('./routes/coach.routes');
 const athleteRoutes = require('./routes/athlete.routes');
+const notificationRoutes = require('./routes/notification.routes');
 const { initializeSocket } = require('./socket/index');
 
 const app = express();
@@ -32,6 +33,7 @@ app.use('/api/strava', stravaRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/coach', coachRoutes);
 app.use('/api/athlete', athleteRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

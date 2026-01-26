@@ -441,6 +441,15 @@
       }
     }
   }
+
+  .mobile-notifications-btn {
+    width: 100%;
+    background: none;
+    border: none;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
 }
 
 // Mobile menu actions
@@ -509,6 +518,19 @@
   display: none;
 }
 
+// Notification dropdown instances
+.desktop-notification {
+  display: block;
+}
+
+.mobile-notification {
+  display: none;
+
+  ::ng-deep .notification-btn {
+    display: none !important;
+  }
+}
+
 // Responsive
 @media (max-width: 768px) {
   .navbar {
@@ -531,6 +553,14 @@
 
   .mobile-only {
     display: flex;
+  }
+
+  .desktop-notification {
+    display: none;
+  }
+
+  .mobile-notification {
+    display: block;
   }
 }
 

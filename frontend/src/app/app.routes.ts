@@ -1,22 +1,24 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard } from './guards/auth.guard';
 import { coachGuard } from './guards/coach.guard';
+import { athleteGuard } from './guards/athlete.guard';
 
 export const routes: Routes = [
+  // Routes Athlète (bloquées pour les coachs)
   {
     path: '',
     loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent),
-    canActivate: [authGuard]
+    canActivate: [authGuard, athleteGuard]
   },
   {
     path: 'analyse',
     loadComponent: () => import('./pages/home/home.component').then(m => m.HomeComponent),
-    canActivate: [authGuard]
+    canActivate: [authGuard, athleteGuard]
   },
   {
     path: 'profile',
     loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent),
-    canActivate: [authGuard]
+    canActivate: [authGuard, athleteGuard]
   },
   {
     path: 'settings',
@@ -26,12 +28,12 @@ export const routes: Routes = [
   {
     path: 'planning',
     loadComponent: () => import('./pages/planning/planning.component').then(m => m.PlanningComponent),
-    canActivate: [authGuard]
+    canActivate: [authGuard, athleteGuard]
   },
   {
     path: 'run/:id',
     loadComponent: () => import('./pages/run-detail/run-detail.component').then(m => m.RunDetailComponent),
-    canActivate: [authGuard]
+    canActivate: [authGuard, athleteGuard]
   },
   {
     path: 'chat',

@@ -1,5 +1,6 @@
 const User = require('../models/user.model');
 const CoachAthlete = require('../models/coachAthlete.model');
+const { createNotification } = require('./notification.controller');
 
 // Obtenir les invitations en attente pour l'athlète
 exports.getPendingInvitations = async (req, res) => {
@@ -60,6 +61,17 @@ exports.acceptInvitation = async (req, res) => {
       }
     );
 
+    // Notifier le coach
+    await createNotification({
+      recipient: invitation.coach._id,
+      sender: req.user._id,
+      type: 'invitation_response',
+      action: 'invitation_accepted',
+      title: 'Invitation acceptée',
+      message: `${req.user.firstName} ${req.user.lastName} a accepté votre invitation`,
+      actionUrl: '/coach'
+    });
+
     res.json(invitation);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -82,11 +94,22 @@ exports.rejectInvitation = async (req, res) => {
         respondedAt: new Date()
       },
       { new: true }
-    );
+    ).populate('coach', '_id');
 
     if (!invitation) {
       return res.status(404).json({ error: 'Invitation non trouvée ou déjà traitée' });
     }
+
+    // Notifier le coach
+    await createNotification({
+      recipient: invitation.coach._id,
+      sender: req.user._id,
+      type: 'invitation_response',
+      action: 'invitation_rejected',
+      title: 'Invitation refusée',
+      message: `${req.user.firstName} ${req.user.lastName} a refusé votre invitation`,
+      actionUrl: '/coach'
+    });
 
     res.json({ message: 'Invitation refusée' });
   } catch (error) {
