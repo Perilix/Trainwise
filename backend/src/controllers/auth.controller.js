@@ -42,7 +42,9 @@ exports.register = async (req, res) => {
         weeklyFrequency: user.weeklyFrequency,
         injuries: user.injuries,
         availableDays: user.availableDays,
-        preferredTime: user.preferredTime
+        preferredTime: user.preferredTime,
+        age: user.age,
+        gender: user.gender
       }
     });
   } catch (error) {
@@ -91,7 +93,9 @@ exports.login = async (req, res) => {
         weeklyFrequency: user.weeklyFrequency,
         injuries: user.injuries,
         availableDays: user.availableDays,
-        preferredTime: user.preferredTime
+        preferredTime: user.preferredTime,
+        age: user.age,
+        gender: user.gender
       }
     });
   } catch (error) {
@@ -118,6 +122,8 @@ exports.getMe = async (req, res) => {
       injuries: user.injuries,
       availableDays: user.availableDays,
       preferredTime: user.preferredTime,
+      age: user.age,
+      gender: user.gender,
       createdAt: user.createdAt
     });
   } catch (error) {
@@ -138,7 +144,9 @@ exports.updateProfile = async (req, res) => {
       'weeklyFrequency',
       'injuries',
       'availableDays',
-      'preferredTime'
+      'preferredTime',
+      'age',
+      'gender'
     ];
 
     const updates = {};
@@ -169,6 +177,8 @@ exports.updateProfile = async (req, res) => {
       injuries: user.injuries,
       availableDays: user.availableDays,
       preferredTime: user.preferredTime,
+      age: user.age,
+      gender: user.gender,
       createdAt: user.createdAt
     });
   } catch (error) {
@@ -236,6 +246,8 @@ exports.uploadAvatar = async (req, res) => {
       injuries: user.injuries,
       availableDays: user.availableDays,
       preferredTime: user.preferredTime,
+      age: user.age,
+      gender: user.gender,
       createdAt: user.createdAt
     });
   } catch (error) {
@@ -278,6 +290,8 @@ exports.deleteAvatar = async (req, res) => {
       injuries: user.injuries,
       availableDays: user.availableDays,
       preferredTime: user.preferredTime,
+      age: user.age,
+      gender: user.gender,
       createdAt: user.createdAt
     });
   } catch (error) {

@@ -47,6 +47,14 @@
       @if (!isEditing()) {
         <!-- Mode lecture -->
         <div class="profile-grid">
+        <div class="profile-item">
+          <span class="profile-label">Age</span>
+          <span class="profile-value">{{ authService.currentUser()?.age || 'Non défini' }}</span>
+        </div>
+        <div class="profile-item">
+          <span class="profile-label">Genre</span>
+          <span class="profile-value">{{ authService.currentUser()?.gender || 'Non défini'}}</span>
+        </div>
           <div class="profile-item">
             <span class="profile-label">Niveau</span>
             <span class="profile-value">{{ getLevelLabel(authService.currentUser()?.runningLevel) }}</span>
@@ -86,6 +94,21 @@
         <!-- Mode édition -->
         <form class="profile-form" (ngSubmit)="saveProfile()">
           <div class="form-grid">
+            <div class="form-group">
+              <label for="goalDetails">Age</label>
+              <input type="text" id="age" [(ngModel)]="profileForm.age" name="age" placeholder="Votre âge">
+            </div>
+
+            <div class="form-group">
+              <label for="level">Genre</label>
+              <select id="gender" [(ngModel)]="profileForm.gender" name="gender">
+                <option [ngValue]="undefined">-- Sélectionner --</option>
+                @for (gender of genders; track gender.value) {
+                  <option [value]="gender.value">{{ gender.label }}</option>
+                }
+              </select>
+            </div>
+
             <div class="form-group">
               <label for="level">Niveau</label>
               <select id="level" [(ngModel)]="profileForm.runningLevel" name="runningLevel">

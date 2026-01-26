@@ -439,6 +439,121 @@
   }
 }
 
+// Upcoming runs
+.upcoming-runs {
+  background: #F6F4F0;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 0 10px 4px rgba(0, 53, 84, 0.15);
+  border: 1px solid rgba(0, 53, 84, 0.2);
+
+  .runs-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .run-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 12px;
+    background: rgba(0, 166, 251, 0.05);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    border: 1px solid rgba(0, 166, 251, 0.15);
+
+    &:hover {
+      background: rgba(0, 166, 251, 0.1);
+      transform: translateX(4px);
+
+      .run-arrow {
+        opacity: 1;
+        color: #00a6fb;
+      }
+    }
+
+    .run-date {
+      min-width: 70px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #00a6fb;
+      text-align: center;
+    }
+
+    .run-content.planned-run {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .run-details {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .run-description {
+      font-size: 12px;
+      background: white;
+      opacity: 0.6;
+      padding: 0.5rem  1rem;
+      border-radius: 5px;
+      border: 0.5px solid #00a6fb;
+      line-height: 1.2;
+
+      @media (max-width: 768px) {
+        display: none;
+      }
+    }
+
+    .run-content {
+      flex: 1;
+
+      .run-title-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.25rem;
+
+        .run-title {
+          font-weight: 600;
+          color: #051923;
+          font-size: 0.95rem;
+        }
+
+        .planned-badge {
+          background: #00a6fb;
+          color: #fff;
+          padding: 0.15rem 0.4rem;
+          border-radius: 4px;
+          font-size: 0.6rem;
+          font-weight: 700;
+          text-transform: uppercase;
+        }
+      }
+
+      .run-stats {
+        display: flex;
+        gap: 0.75rem;
+
+        .run-stat {
+          font-size: 0.85rem;
+          color: #666;
+        }
+      }
+    }
+
+    .run-arrow {
+      color: #aaa;
+      font-size: 1.1rem;
+      opacity: 0;
+      transition: all 0.2s;
+    }
+  }
+}
+
 // Recent runs
 .recent-runs {
   background: #F6F4F0;

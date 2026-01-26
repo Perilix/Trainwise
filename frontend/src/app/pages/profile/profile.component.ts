@@ -38,7 +38,9 @@ export class ProfileComponent implements OnInit {
     weeklyFrequency: undefined,
     injuries: '',
     availableDays: [],
-    preferredTime: undefined
+    preferredTime: undefined,
+    age: 0,
+    gender: ''
   };
 
   allDays = [
@@ -63,6 +65,12 @@ export class ProfileComponent implements OnInit {
     { value: 'intermediaire', label: 'Intermédiaire' },
     { value: 'confirme', label: 'Confirmé' },
     { value: 'expert', label: 'Expert' }
+  ];
+
+  genders = [
+    { value: 'homme', label: 'Homme' },
+    { value: 'femme', label: 'Femme' },
+    { value: 'autre', label: 'Autre' }
   ];
 
   goals = [
@@ -204,7 +212,9 @@ export class ProfileComponent implements OnInit {
         weeklyFrequency: user.weeklyFrequency || undefined,
         injuries: user.injuries || '',
         availableDays: user.availableDays || [],
-        preferredTime: user.preferredTime || undefined
+        preferredTime: user.preferredTime || undefined,
+        age: user.age || 0,
+        gender: user.gender || ''
       };
     }
   }

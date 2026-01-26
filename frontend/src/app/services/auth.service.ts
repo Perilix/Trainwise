@@ -23,6 +23,8 @@ export interface User {
   injuries?: string;
   availableDays?: DayOfWeek[];
   preferredTime?: PreferredTime;
+  age?: number;
+  gender?: 'homme' | 'femme' | 'autre';
 }
 
 export interface UpdateProfileData {
@@ -36,6 +38,8 @@ export interface UpdateProfileData {
   injuries?: string;
   availableDays?: string[];
   preferredTime?: string;
+  age?: number;
+  gender?: string;
 }
 
 export interface RegisterData {

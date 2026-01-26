@@ -75,6 +75,17 @@ const userSchema = new mongoose.Schema({
     enum: ['matin', 'midi', 'soir', 'flexible'],
     default: 'flexible'
   },
+  age: {
+    type: Number,
+    min: 1,
+    max: 120,
+    default: null
+  },
+  gender: {
+    type: String,
+    enum: ['homme', 'femme', 'autre'],
+    default: null
+  },
   // Intégration Strava
   strava: {
     athleteId: {

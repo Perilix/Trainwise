@@ -27,6 +27,7 @@ interface WeekDay {
 export class DashboardComponent implements OnInit {
   // Data
   recentRuns = signal<Run[]>([]);
+  upcomingRuns = signal<PlannedRun[]>([]);
   weekDays = signal<WeekDay[]>([]);
   upcomingSession = signal<PlannedRun | null>(null);
   recentConversations = signal<Conversation[]>([]);
@@ -65,7 +66,11 @@ export class DashboardComponent implements OnInit {
         this.calculateStreak(data.runs);
         this.calculateWeekStats(data.runs);
         this.findUpcomingSession(data.plannedRuns);
-        this.recentRuns.set(data.runs.slice(0, 4));
+        // Trier par date décroissante et prendre les 3 dernières courses
+        const sortedRuns = [...data.runs].sort((a, b) =>
+          new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+        this.recentRuns.set(sortedRuns.slice(0, 3));
         this.isLoading.set(false);
       },
       error: (err) => {
@@ -220,6 +225,7 @@ export class DashboardComponent implements OnInit {
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     this.upcomingSession.set(upcoming[0] || null);
+    this.upcomingRuns.set(upcoming.slice(0, 3));
   }
 
   getGreeting(): string {
@@ -251,26 +257,6 @@ export class DashboardComponent implements OnInit {
       return `${hours}h${mins > 0 ? mins : ''}`;
     }
     return `${mins}min`;
-  }
-
-  formatDate(date: Date): string {
-    const d = new Date(date);
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-
-    if (this.formatDateStr(d) === this.formatDateStr(today)) {
-      return "Aujourd'hui";
-    }
-    if (this.formatDateStr(d) === this.formatDateStr(tomorrow)) {
-      return "Demain";
-    }
-
-    return d.toLocaleDateString('fr-FR', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'short'
-    });
   }
 
   formatRunDate(date: Date): string {
