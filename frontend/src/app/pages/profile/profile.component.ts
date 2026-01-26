@@ -5,6 +5,8 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { RunService, Run } from '../../services/run.service';
 import { AuthService, UpdateProfileData } from '../../services/auth.service';
 import { StravaService, StravaStatus } from '../../services/strava.service';
+import { AthleteService } from '../../services/athlete.service';
+import { CoachInvitation, Coach } from '../../interfaces/coach.interfaces';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 
 @Component({
@@ -31,6 +33,15 @@ export class ProfileComponent implements OnInit {
   stravaSyncing = signal(false);
   stravaMessage = signal<string | null>(null);
 
+  // Coach
+  currentCoach = signal<Coach | null>(null);
+  pendingInvitations = signal<CoachInvitation[]>([]);
+  coachLoading = signal(false);
+  coachMessage = signal<string | null>(null);
+  coachMessageType = signal<'success' | 'error'>('success');
+  inviteCode = '';
+  joiningByCode = signal(false);
+
   profileForm: UpdateProfileData = {
     runningLevel: undefined,
     goal: undefined,
@@ -38,7 +49,9 @@ export class ProfileComponent implements OnInit {
     weeklyFrequency: undefined,
     injuries: '',
     availableDays: [],
-    preferredTime: undefined
+    preferredTime: undefined,
+    age: 0,
+    gender: ''
   };
 
   allDays = [
@@ -65,6 +78,12 @@ export class ProfileComponent implements OnInit {
     { value: 'expert', label: 'Expert' }
   ];
 
+  genders = [
+    { value: 'homme', label: 'Homme' },
+    { value: 'femme', label: 'Femme' },
+    { value: 'autre', label: 'Autre' }
+  ];
+
   goals = [
     { value: 'remise_en_forme', label: 'Remise en forme' },
     { value: '5km', label: '5 km' },
@@ -80,6 +99,7 @@ export class ProfileComponent implements OnInit {
     private runService: RunService,
     public authService: AuthService,
     private stravaService: StravaService,
+    private athleteService: AthleteService,
     private route: ActivatedRoute,
     private router: Router
   ) {}
@@ -95,6 +115,7 @@ export class ProfileComponent implements OnInit {
     this.initProfileForm();
     this.loadStravaStatus();
     this.handleStravaCallback();
+    this.loadCoachData();
   }
 
   handleStravaCallback() {
@@ -204,7 +225,9 @@ export class ProfileComponent implements OnInit {
         weeklyFrequency: user.weeklyFrequency || undefined,
         injuries: user.injuries || '',
         availableDays: user.availableDays || [],
-        preferredTime: user.preferredTime || undefined
+        preferredTime: user.preferredTime || undefined,
+        age: user.age || 0,
+        gender: user.gender || ''
       };
     }
   }
@@ -345,5 +368,100 @@ export class ProfileComponent implements OnInit {
     if (!goal) return 'Non défini';
     const found = this.goals.find(g => g.value === goal);
     return found ? found.label : goal;
+  }
+
+  // Coach methods
+  loadCoachData() {
+    this.coachLoading.set(true);
+
+    // Load current coach
+    this.athleteService.getCurrentCoach().subscribe({
+      next: (coach) => {
+        this.currentCoach.set(coach);
+      },
+      error: () => {
+        // No coach - that's fine
+      }
+    });
+
+    // Load pending invitations
+    this.athleteService.getPendingInvitations().subscribe({
+      next: (invitations) => {
+        this.pendingInvitations.set(invitations);
+        this.coachLoading.set(false);
+      },
+      error: () => {
+        this.coachLoading.set(false);
+      }
+    });
+  }
+
+  acceptInvitation(invitationId: string) {
+    this.coachLoading.set(true);
+    this.athleteService.acceptInvitation(invitationId).subscribe({
+      next: () => {
+        this.showCoachMessage('Invitation acceptée !', 'success');
+        this.loadCoachData();
+      },
+      error: (err) => {
+        this.coachLoading.set(false);
+        this.showCoachMessage(err.error?.error || 'Erreur lors de l\'acceptation', 'error');
+      }
+    });
+  }
+
+  rejectInvitation(invitationId: string) {
+    this.coachLoading.set(true);
+    this.athleteService.rejectInvitation(invitationId).subscribe({
+      next: () => {
+        this.showCoachMessage('Invitation refusée', 'success');
+        this.loadCoachData();
+      },
+      error: (err) => {
+        this.coachLoading.set(false);
+        this.showCoachMessage(err.error?.error || 'Erreur lors du refus', 'error');
+      }
+    });
+  }
+
+  joinByCode() {
+    if (!this.inviteCode.trim()) return;
+
+    this.joiningByCode.set(true);
+    this.athleteService.joinViaCode(this.inviteCode.trim()).subscribe({
+      next: () => {
+        this.joiningByCode.set(false);
+        this.inviteCode = '';
+        this.showCoachMessage('Demande envoyée au coach !', 'success');
+        this.loadCoachData();
+      },
+      error: (err) => {
+        this.joiningByCode.set(false);
+        this.showCoachMessage(err.error?.error || 'Code invalide ou erreur', 'error');
+      }
+    });
+  }
+
+  leaveCoach() {
+    if (!confirm('Êtes-vous sûr de vouloir quitter votre coach ?')) return;
+
+    this.coachLoading.set(true);
+    this.athleteService.leaveCoach().subscribe({
+      next: () => {
+        this.currentCoach.set(null);
+        this.coachLoading.set(false);
+        this.showCoachMessage('Vous avez quitté votre coach', 'success');
+      },
+      error: (err) => {
+        this.coachLoading.set(false);
+        this.showCoachMessage(err.error?.error || 'Erreur', 'error');
+      }
+    });
+  }
+
+  showCoachMessage(message: string, type: 'success' | 'error') {
+    this.coachMessage.set(message);
+    this.coachMessageType.set(type);
+    setTimeout(() => this.coachMessage.set(null), 5000);
   }
 }

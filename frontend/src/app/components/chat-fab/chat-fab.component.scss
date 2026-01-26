@@ -1,0 +1,93 @@
+.chat-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00a6fb 0%, #0582ca 100%);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(0, 166, 251, 0.4);
+  transition: all 0.3s ease;
+  z-index: 999;
+
+  svg {
+    color: #fff;
+    transition: transform 0.2s;
+  }
+
+  &:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 25px rgba(0, 166, 251, 0.5);
+
+    svg {
+      transform: scale(1.1);
+    }
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  @media (max-width: 768px) {
+    bottom: 20px;
+    right: 20px;
+    width: 52px;
+    height: 52px;
+
+    svg {
+      width: 22px;
+      height: 22px;
+    }
+  }
+
+  @media (max-width: 500px) {
+    bottom: 16px;
+    right: 16px;
+    width: 48px;
+    height: 48px;
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+}
+
+.fab-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ff4757;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(255, 71, 87, 0.4);
+
+  @media (max-width: 768px) {
+    min-width: 20px;
+    height: 20px;
+    font-size: 0.65rem;
+    top: -2px;
+    right: -2px;
+  }
+
+  @media (max-width: 500px) {
+    min-width: 18px;
+    height: 18px;
+    font-size: 0.6rem;
+    padding: 0 4px;
+  }
+}

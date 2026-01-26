@@ -58,8 +58,14 @@ const plannedRunSchema = new mongoose.Schema({
   },
   generatedBy: {
     type: String,
-    enum: ['ai', 'manual'],
+    enum: ['ai', 'manual', 'coach'],
     default: 'ai'
+  },
+  // Qui a créé cette séance (null = l'athlète lui-même)
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
   }
 }, {
   timestamps: true

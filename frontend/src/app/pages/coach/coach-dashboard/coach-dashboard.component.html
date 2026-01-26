@@ -1,0 +1,210 @@
+<app-navbar></app-navbar>
+
+<div class="container">
+  <header class="page-header">
+    <div class="header-content">
+      <h1>Espace Coach</h1>
+      <p class="subtitle">Gérez vos athlètes et leurs entraînements</p>
+    </div>
+    <button class="btn-primary" (click)="openInviteModal()">
+      + Inviter un athlète
+    </button>
+  </header>
+
+  @if (error()) {
+    <div class="alert error">{{ error() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="alert success">{{ successMessage() }}</div>
+  }
+
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>Chargement...</p>
+    </div>
+  } @else {
+    <!-- Stats cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-value">{{ stats()?.totalAthletes || 0 }}</span>
+        <span class="stat-label">Athlètes</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">{{ stats()?.pendingInvitations || 0 }}</span>
+        <span class="stat-label">Invitations en attente</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">{{ stats()?.sessionsCreatedThisWeek || 0 }}</span>
+        <span class="stat-label">Séances cette semaine</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">{{ stats()?.sessionsCreatedTotal || 0 }}</span>
+        <span class="stat-label">Séances totales</span>
+      </div>
+    </div>
+
+    <!-- Invitations en attente -->
+    @if (pendingInvitations().length > 0) {
+      <section class="section">
+        <h2>Invitations en attente</h2>
+        <div class="invitations-list">
+          @for (inv of pendingInvitations(); track inv._id) {
+            <div class="invitation-card">
+              <div class="user-avatar">
+                @if (inv.athlete.profilePicture) {
+                  <img [src]="inv.athlete.profilePicture" alt="Avatar">
+                } @else {
+                  {{ getInitials(inv.athlete.firstName, inv.athlete.lastName) }}
+                }
+              </div>
+              <div class="invitation-info">
+                <span class="name">{{ inv.athlete.firstName }} {{ inv.athlete.lastName }}</span>
+                <span class="email">{{ inv.athlete.email }}</span>
+                <span class="date">Invité le {{ formatDate(inv.invitedAt) }}</span>
+              </div>
+              <span class="badge pending">En attente</span>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- Liste des athlètes -->
+    <section class="section">
+      <h2>Mes athlètes</h2>
+      @if (athletes().length === 0) {
+        <div class="empty-state">
+          <p>Vous n'avez pas encore d'athlètes.</p>
+          <button class="btn-secondary" (click)="openInviteModal()">Inviter un athlète</button>
+        </div>
+      } @else {
+        <div class="athletes-grid">
+          @for (athlete of athletes(); track athlete._id) {
+            <div class="athlete-card">
+              <div class="athlete-header">
+                <div class="user-avatar large">
+                  @if (athlete.profilePicture) {
+                    <img [src]="athlete.profilePicture" alt="Avatar">
+                  } @else {
+                    {{ getInitials(athlete.firstName, athlete.lastName) }}
+                  }
+                </div>
+                <div class="athlete-info">
+                  <h3>{{ athlete.firstName }} {{ athlete.lastName }}</h3>
+                  <span class="email">{{ athlete.email }}</span>
+                </div>
+              </div>
+              <div class="athlete-details">
+                <div class="detail-row">
+                  <span class="label">Niveau</span>
+                  <span class="value">{{ getLevelLabel(athlete.runningLevel) }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="label">Objectif</span>
+                  <span class="value">{{ getGoalLabel(athlete.goal) }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="label">Depuis</span>
+                  <span class="value">{{ formatDate(athlete.joinedAt) }}</span>
+                </div>
+              </div>
+              <div class="athlete-actions">
+                <button class="btn-outline" (click)="viewAthlete(athlete)">Voir profil</button>
+                <button class="btn-primary" (click)="viewAthletePlanning(athlete)">Planning</button>
+                <button class="btn-danger-text" (click)="removeAthlete(athlete)">Retirer</button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+</div>
+
+<!-- Modal d'invitation -->
+@if (showInviteModal()) {
+  <div class="modal-overlay" (click)="closeInviteModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Inviter un athlète</h2>
+        <button class="close-btn" (click)="closeInviteModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Code d'invitation -->
+        <div class="invite-section">
+          <h3>Code d'invitation</h3>
+          <p class="section-desc">Partagez ce code avec vos athlètes pour qu'ils vous rejoignent.</p>
+          <div class="code-box">
+            @if (inviteCode()) {
+              <span class="code">{{ inviteCode() }}</span>
+              <button class="btn-icon" (click)="copyCode()" title="Copier">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+              </button>
+            } @else {
+              <span class="no-code">Aucun code généré</span>
+            }
+            <button class="btn-secondary" (click)="generateCode()" [disabled]="isGeneratingCode()">
+              {{ inviteCode() ? 'Régénérer' : 'Générer' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Invitation directe -->
+        <div class="invite-section">
+          <h3>Invitation directe</h3>
+          <p class="section-desc">Recherchez un utilisateur pour lui envoyer une invitation.</p>
+          <div class="search-box">
+            <input
+              type="text"
+              placeholder="Rechercher par nom ou email..."
+              [ngModel]="searchQuery()"
+              (ngModelChange)="searchQuery.set($event); searchUsers()"
+            >
+            @if (isSearching()) {
+              <div class="loading-spinner small"></div>
+            }
+          </div>
+
+          @if (searchResults().length > 0) {
+            <div class="search-results">
+              @for (user of searchResults(); track user._id) {
+                <div class="search-result-item">
+                  <div class="user-avatar small">
+                    @if (user.profilePicture) {
+                      <img [src]="user.profilePicture" alt="Avatar">
+                    } @else {
+                      {{ getInitials(user.firstName, user.lastName) }}
+                    }
+                  </div>
+                  <div class="user-info">
+                    <span class="name">{{ user.firstName }} {{ user.lastName }}</span>
+                    <span class="email">{{ user.email }}</span>
+                  </div>
+                  @if (user.hasCoach) {
+                    <span class="badge disabled">A déjà un coach</span>
+                  } @else if (user.relationStatus === 'pending') {
+                    <span class="badge pending">Invitation envoyée</span>
+                  } @else if (user.relationStatus === 'accepted') {
+                    <span class="badge success">Déjà votre athlète</span>
+                  } @else {
+                    <button
+                      class="btn-primary small"
+                      (click)="sendInvite(user)"
+                      [disabled]="isSendingInvite()"
+                    >
+                      Inviter
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+}

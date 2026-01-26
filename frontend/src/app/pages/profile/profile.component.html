@@ -47,6 +47,14 @@
       @if (!isEditing()) {
         <!-- Mode lecture -->
         <div class="profile-grid">
+        <div class="profile-item">
+          <span class="profile-label">Age</span>
+          <span class="profile-value">{{ authService.currentUser()?.age || 'Non défini' }}</span>
+        </div>
+        <div class="profile-item">
+          <span class="profile-label">Genre</span>
+          <span class="profile-value">{{ authService.currentUser()?.gender || 'Non défini'}}</span>
+        </div>
           <div class="profile-item">
             <span class="profile-label">Niveau</span>
             <span class="profile-value">{{ getLevelLabel(authService.currentUser()?.runningLevel) }}</span>
@@ -86,6 +94,21 @@
         <!-- Mode édition -->
         <form class="profile-form" (ngSubmit)="saveProfile()">
           <div class="form-grid">
+            <div class="form-group">
+              <label for="goalDetails">Age</label>
+              <input type="text" id="age" [(ngModel)]="profileForm.age" name="age" placeholder="Votre âge">
+            </div>
+
+            <div class="form-group">
+              <label for="level">Genre</label>
+              <select id="gender" [(ngModel)]="profileForm.gender" name="gender">
+                <option [ngValue]="undefined">-- Sélectionner --</option>
+                @for (gender of genders; track gender.value) {
+                  <option [value]="gender.value">{{ gender.label }}</option>
+                }
+              </select>
+            </div>
+
             <div class="form-group">
               <label for="level">Niveau</label>
               <select id="level" [(ngModel)]="profileForm.runningLevel" name="runningLevel">
@@ -212,6 +235,94 @@
             Connecter Strava
           </button>
         </div>
+      }
+    </section>
+
+    <!-- Section Coach -->
+    <section class="coach-section">
+      <div class="section-header">
+        <h3>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          Mon Coach
+        </h3>
+      </div>
+
+      @if (coachMessage()) {
+        <div class="coach-message" [class.success]="coachMessageType() === 'success'" [class.error]="coachMessageType() === 'error'">
+          {{ coachMessage() }}
+        </div>
+      }
+
+      @if (coachLoading()) {
+        <div class="coach-loading">Chargement...</div>
+      } @else {
+        <!-- Coach actuel -->
+        @if (currentCoach()) {
+          <div class="current-coach">
+            <div class="coach-avatar">
+              @if (currentCoach()!.profilePicture) {
+                <img [src]="currentCoach()!.profilePicture" alt="Coach">
+              } @else {
+                {{ currentCoach()!.firstName?.charAt(0) }}{{ currentCoach()!.lastName?.charAt(0) }}
+              }
+            </div>
+            <div class="coach-info">
+              <span class="coach-name">{{ currentCoach()!.firstName }} {{ currentCoach()!.lastName }}</span>
+              <span class="coach-email">{{ currentCoach()!.email }}</span>
+            </div>
+            <button class="btn-leave-coach" (click)="leaveCoach()">Quitter</button>
+          </div>
+        } @else {
+          <!-- Pas de coach -->
+          <div class="no-coach">
+            <p>Tu n'as pas encore de coach. Rejoins un coach pour bénéficier d'un accompagnement personnalisé !</p>
+
+            <!-- Invitations en attente -->
+            @if (pendingInvitations().length > 0) {
+              <div class="pending-invitations">
+                <h4>Invitations en attente</h4>
+                @for (invitation of pendingInvitations(); track invitation._id) {
+                  <div class="invitation-card">
+                    <div class="invitation-info">
+                      <span class="invitation-coach">{{ invitation.coach.firstName }} {{ invitation.coach.lastName }}</span>
+                      <span class="invitation-date">Reçue le {{ invitation.invitedAt | date:'dd/MM/yyyy' }}</span>
+                    </div>
+                    <div class="invitation-actions">
+                      <button class="btn-accept" (click)="acceptInvitation(invitation._id)">Accepter</button>
+                      <button class="btn-reject" (click)="rejectInvitation(invitation._id)">Refuser</button>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- Rejoindre par code -->
+            <div class="join-by-code">
+              <h4>Rejoindre un coach</h4>
+              <p>Entre le code d'invitation fourni par ton coach :</p>
+              <div class="code-input-group">
+                <input
+                  type="text"
+                  [(ngModel)]="inviteCode"
+                  placeholder="Code d'invitation"
+                  [disabled]="joiningByCode()"
+                >
+                <button class="btn-join" (click)="joinByCode()" [disabled]="joiningByCode() || !inviteCode.trim()">
+                  @if (joiningByCode()) {
+                    Envoi...
+                  } @else {
+                    Rejoindre
+                  }
+                </button>
+              </div>
+            </div>
+          </div>
+        }
       }
     </section>
 

@@ -36,8 +36,15 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'admin'],
+    enum: ['user', 'admin', 'coach'],
     default: 'user'
+  },
+  // Code d'invitation pour les coachs
+  coachInviteCode: {
+    type: String,
+    unique: true,
+    sparse: true,
+    default: null
   },
   // Profil coureur
   runningLevel: {
@@ -74,6 +81,17 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['matin', 'midi', 'soir', 'flexible'],
     default: 'flexible'
+  },
+  age: {
+    type: Number,
+    min: 1,
+    max: 120,
+    default: null
+  },
+  gender: {
+    type: String,
+    enum: ['homme', 'femme', 'autre'],
+    default: null
   },
   // Intégration Strava
   strava: {
