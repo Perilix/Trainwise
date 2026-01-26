@@ -22,7 +22,7 @@ export interface PlannedRun {
   status: PlannedRunStatus;
   linkedRun?: Run;
   weekNumber?: number;
-  generatedBy: 'ai' | 'manual';
+  generatedBy: 'ai' | 'manual' | 'coach';
   createdAt?: Date;
   updatedAt?: Date;
 }

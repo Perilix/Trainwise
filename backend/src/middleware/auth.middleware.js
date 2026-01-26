@@ -39,3 +39,11 @@ exports.adminOnly = (req, res, next) => {
   }
   next();
 };
+
+// Coach only middleware
+exports.coachOnly = (req, res, next) => {
+  if (req.user.role !== 'coach') {
+    return res.status(403).json({ error: 'Accès réservé aux coachs' });
+  }
+  next();
+};

@@ -104,6 +104,21 @@
         padding: 0 5px;
       }
     }
+
+    &.nav-link-coach {
+      background: rgba(139, 92, 246, 0.15);
+      color: #a78bfa;
+
+      &:hover {
+        background: rgba(139, 92, 246, 0.25);
+        color: #c4b5fd;
+      }
+
+      &.active {
+        background: rgba(139, 92, 246, 0.3);
+        color: #c4b5fd;
+      }
+    }
   }
 }
 
@@ -406,6 +421,24 @@
       align-items: center;
       justify-content: center;
       padding: 0 6px;
+    }
+
+    &.mobile-nav-link-coach {
+      background: rgba(139, 92, 246, 0.1);
+      color: #a78bfa;
+
+      svg {
+        opacity: 1;
+      }
+
+      &:hover, &.active {
+        background: rgba(139, 92, 246, 0.2);
+        color: #c4b5fd;
+      }
+
+      &.active {
+        border-left-color: #8b5cf6;
+      }
     }
   }
 }

@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard } from './guards/auth.guard';
+import { coachGuard } from './guards/coach.guard';
 
 export const routes: Routes = [
   {
@@ -41,6 +42,22 @@ export const routes: Routes = [
     path: 'chat/:id',
     loadComponent: () => import('./pages/chat/conversation-detail/conversation-detail.component').then(m => m.ConversationDetailComponent),
     canActivate: [authGuard]
+  },
+  // Routes Coach
+  {
+    path: 'coach',
+    loadComponent: () => import('./pages/coach/coach-dashboard/coach-dashboard.component').then(m => m.CoachDashboardComponent),
+    canActivate: [authGuard, coachGuard]
+  },
+  {
+    path: 'coach/athletes/:id',
+    loadComponent: () => import('./pages/coach/athlete-detail/athlete-detail.component').then(m => m.AthleteDetailComponent),
+    canActivate: [authGuard, coachGuard]
+  },
+  {
+    path: 'coach/athletes/:id/planning',
+    loadComponent: () => import('./pages/coach/athlete-planning/athlete-planning.component').then(m => m.AthletePlanningComponent),
+    canActivate: [authGuard, coachGuard]
   },
   {
     path: 'login',

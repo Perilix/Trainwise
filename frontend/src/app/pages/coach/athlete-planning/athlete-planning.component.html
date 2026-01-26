@@ -1,0 +1,238 @@
+<app-navbar></app-navbar>
+
+<div class="container">
+  <div class="page-header">
+    <button class="back-btn" (click)="goBack()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Retour
+    </button>
+    @if (athlete()) {
+      <div class="athlete-info">
+        <div class="user-avatar">
+          @if (athlete()!.profilePicture) {
+            <img [src]="athlete()!.profilePicture" alt="Avatar">
+          } @else {
+            {{ getInitials(athlete()!.firstName, athlete()!.lastName) }}
+          }
+        </div>
+        <div>
+          <h1>Planning de {{ athlete()!.firstName }} {{ athlete()!.lastName }}</h1>
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (error()) {
+    <div class="alert error">{{ error() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="alert success">{{ successMessage() }}</div>
+  }
+
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>Chargement...</p>
+    </div>
+  } @else {
+    <!-- Stats du mois -->
+    <div class="month-stats">
+      <div class="stat">
+        <span class="value">{{ getMonthStats().planned }}</span>
+        <span class="label">Planifiées</span>
+      </div>
+      <div class="stat">
+        <span class="value">{{ getMonthStats().completed }}</span>
+        <span class="label">Effectuées</span>
+      </div>
+      <div class="stat">
+        <span class="value">{{ getMonthStats().totalKm }}</span>
+        <span class="label">km ce mois</span>
+      </div>
+    </div>
+
+    <!-- Navigation calendrier -->
+    <div class="calendar-nav">
+      <button class="nav-btn" (click)="previousMonth()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M15 18l-6-6 6-6"/>
+        </svg>
+      </button>
+      <h2 class="month-name">{{ getMonthName() }}</h2>
+      <button class="nav-btn" (click)="nextMonth()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 18l6-6-6-6"/>
+        </svg>
+      </button>
+      <button class="today-btn" (click)="goToToday()">Aujourd'hui</button>
+    </div>
+
+    <!-- Calendrier -->
+    <div class="calendar">
+      <div class="calendar-header">
+        @for (day of weekDays; track day) {
+          <div class="header-cell">{{ day }}</div>
+        }
+      </div>
+      <div class="calendar-grid">
+        @for (day of calendarDays(); track day.date.getTime()) {
+          <div
+            class="calendar-day"
+            [class.other-month]="!day.isCurrentMonth"
+            [class.today]="day.isToday"
+            [class.has-content]="day.runs.length > 0 || day.plannedRuns.length > 0"
+            (click)="selectDay(day)"
+          >
+            <span class="day-number">{{ day.dayOfMonth }}</span>
+            <div class="day-indicators">
+              @for (indicator of getDayIndicators(day); track indicator.type) {
+                <span class="indicator" [class]="indicator.type"></span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Légende -->
+    <div class="legend">
+      <span class="legend-item"><span class="dot completed"></span> Effectuée</span>
+      <span class="legend-item"><span class="dot planned"></span> Planifiée</span>
+      <span class="legend-item"><span class="dot done"></span> Plan complété</span>
+      <span class="legend-item"><span class="dot skipped"></span> Sautée</span>
+    </div>
+  }
+</div>
+
+<!-- Modal détail du jour -->
+@if (selectedDay()) {
+  <div class="modal-overlay" (click)="closeDetail()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ formatDate(selectedDay()!.date) }}</h2>
+        <button class="close-btn" (click)="closeDetail()">&times;</button>
+      </div>
+      <div class="modal-body">
+        @if (!isAddingSession()) {
+          <!-- Liste des séances -->
+          @if (selectedDay()!.plannedRuns.length === 0 && selectedDay()!.runs.length === 0) {
+            <p class="empty-day">Aucune séance ce jour</p>
+          }
+
+          <!-- Courses effectuées -->
+          @for (run of selectedDay()!.runs; track run._id) {
+            <div class="session-card completed">
+              <div class="session-header">
+                <span class="session-badge completed">Effectuée</span>
+              </div>
+              <div class="session-stats">
+                @if (run.distance) {
+                  <span>{{ run.distance }} km</span>
+                }
+                @if (run.duration) {
+                  <span>{{ run.duration }} min</span>
+                }
+                @if (run.averagePace) {
+                  <span>{{ run.averagePace }}/km</span>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Séances planifiées -->
+          @for (planned of selectedDay()!.plannedRuns; track planned._id) {
+            <div class="session-card" [class.coach-session]="isCoachSession(planned)">
+              <div class="session-header">
+                <span class="session-type">{{ getSessionTypeLabel(planned.sessionType) }}</span>
+                <span class="session-badge" [class]="planned.status">
+                  {{ planned.status === 'planned' ? 'Planifiée' : planned.status === 'completed' ? 'Complétée' : 'Sautée' }}
+                </span>
+                @if (isCoachSession(planned)) {
+                  <span class="coach-badge">Coach</span>
+                }
+              </div>
+              <div class="session-stats">
+                @if (planned.targetDistance) {
+                  <span>{{ planned.targetDistance }} km</span>
+                }
+                @if (planned.targetDuration) {
+                  <span>{{ planned.targetDuration }} min</span>
+                }
+                @if (planned.targetPace) {
+                  <span>{{ planned.targetPace }}/km</span>
+                }
+              </div>
+              @if (planned.description) {
+                <p class="session-description">{{ planned.description }}</p>
+              }
+              @if (planned.status === 'planned' && isCoachSession(planned)) {
+                <button class="btn-danger-text" (click)="deleteSession(planned)">Supprimer</button>
+              }
+            </div>
+          }
+
+          <button class="btn-primary full-width" (click)="openAddSession()">
+            + Ajouter une séance
+          </button>
+        } @else {
+          <!-- Formulaire d'ajout -->
+          <form (ngSubmit)="saveSession()">
+            <div class="form-group">
+              <label>Type de séance</label>
+              <select [(ngModel)]="newSession.sessionType" name="sessionType" required>
+                @for (type of sessionTypes; track type.value) {
+                  <option [value]="type.value">{{ type.label }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Distance (km)</label>
+                <input type="number" [(ngModel)]="newSession.targetDistance" name="targetDistance" step="0.1" min="0">
+              </div>
+              <div class="form-group">
+                <label>Durée (min)</label>
+                <input type="number" [(ngModel)]="newSession.targetDuration" name="targetDuration" min="0">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Allure cible</label>
+              <input type="text" [(ngModel)]="newSession.targetPace" name="targetPace" placeholder="ex: 5:30">
+            </div>
+
+            <div class="form-group">
+              <label>Description / Consignes</label>
+              <textarea [(ngModel)]="newSession.description" name="description" rows="3" placeholder="Instructions pour l'athlète..."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Échauffement</label>
+              <textarea [(ngModel)]="newSession.warmup" name="warmup" rows="2" placeholder="Ex: 15 min footing progressif"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Corps de séance</label>
+              <textarea [(ngModel)]="newSession.mainWorkout" name="mainWorkout" rows="3" placeholder="Ex: 6 x 1000m avec 2min récup"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Retour au calme</label>
+              <textarea [(ngModel)]="newSession.cooldown" name="cooldown" rows="2" placeholder="Ex: 10 min footing + étirements"></textarea>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn-secondary" (click)="cancelAddSession()">Annuler</button>
+              <button type="submit" class="btn-primary" [disabled]="isSaving()">
+                {{ isSaving() ? 'Enregistrement...' : 'Enregistrer' }}
+              </button>
+            </div>
+          </form>
+        }
+      </div>
+    </div>
+  </div>
+}

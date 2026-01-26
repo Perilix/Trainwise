@@ -36,8 +36,15 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'admin'],
+    enum: ['user', 'admin', 'coach'],
     default: 'user'
+  },
+  // Code d'invitation pour les coachs
+  coachInviteCode: {
+    type: String,
+    unique: true,
+    sparse: true,
+    default: null
   },
   // Profil coureur
   runningLevel: {

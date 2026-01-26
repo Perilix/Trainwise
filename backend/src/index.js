@@ -9,6 +9,8 @@ const authRoutes = require('./routes/auth.routes');
 const planningRoutes = require('./routes/planning.routes');
 const stravaRoutes = require('./routes/strava.routes');
 const chatRoutes = require('./routes/chat.routes');
+const coachRoutes = require('./routes/coach.routes');
+const athleteRoutes = require('./routes/athlete.routes');
 const { initializeSocket } = require('./socket/index');
 
 const app = express();
@@ -28,6 +30,8 @@ app.use('/api/runs', runRoutes);
 app.use('/api/planning', planningRoutes);
 app.use('/api/strava', stravaRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/coach', coachRoutes);
+app.use('/api/athlete', athleteRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -1,0 +1,127 @@
+<app-navbar></app-navbar>
+
+<div class="container">
+  <button class="back-btn" (click)="goBack()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+    Retour
+  </button>
+
+  @if (error()) {
+    <div class="alert error">{{ error() }}</div>
+  }
+
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>Chargement...</p>
+    </div>
+  } @else if (athlete()) {
+    <div class="athlete-profile">
+      <!-- Header -->
+      <div class="profile-header">
+        <div class="avatar-section">
+          <div class="user-avatar large">
+            @if (athlete()!.profilePicture) {
+              <img [src]="athlete()!.profilePicture" alt="Avatar">
+            } @else {
+              {{ getInitials(athlete()!.firstName, athlete()!.lastName) }}
+            }
+          </div>
+          <div class="user-info">
+            <h1>{{ athlete()!.firstName }} {{ athlete()!.lastName }}</h1>
+            <p class="email">{{ athlete()!.email }}</p>
+            <p class="joined">Votre athlète depuis le {{ formatDate(athlete()!.joinedAt) }}</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="btn-outline" (click)="startChat()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            Envoyer un message
+          </button>
+          <button class="btn-primary" (click)="viewPlanning()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            Voir le planning
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats rapides -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-value">{{ athlete()!.recentStats.weeklyRuns }}</span>
+          <span class="stat-label">Courses cette semaine</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value">{{ athlete()!.recentStats.weeklyDistance }} km</span>
+          <span class="stat-label">Distance cette semaine</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value">{{ athlete()!.recentStats.streak }}</span>
+          <span class="stat-label">Jours de streak</span>
+        </div>
+      </div>
+
+      <!-- Profil détaillé -->
+      <div class="profile-sections">
+        <div class="section-card">
+          <h2>Profil coureur</h2>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="label">Niveau</span>
+              <span class="value">{{ getLevelLabel(athlete()!.runningLevel) }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Objectif</span>
+              <span class="value">{{ getGoalLabel(athlete()!.goal) }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Fréquence hebdomadaire</span>
+              <span class="value">{{ athlete()!.weeklyFrequency || 'Non défini' }} séances/semaine</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Blessures / Limitations</span>
+              <span class="value">{{ athlete()!.injuries || 'Aucune' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <h2>Disponibilités</h2>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="label">Jours disponibles</span>
+              <span class="value">{{ getAvailableDaysLabel(athlete()!.availableDays) }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Moment préféré</span>
+              <span class="value">{{ getPreferredTimeLabel(athlete()!.preferredTime) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <h2>Informations personnelles</h2>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="label">Age</span>
+              <span class="value">{{ athlete()!.age ? athlete()!.age + ' ans' : 'Non défini' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Genre</span>
+              <span class="value">{{ getGenderLabel(athlete()!.gender) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

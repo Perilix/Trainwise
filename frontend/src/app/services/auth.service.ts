@@ -15,7 +15,8 @@ export interface User {
   lastName: string;
   phone?: string;
   profilePicture?: string;
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'coach';
+  coachInviteCode?: string;
   runningLevel?: 'debutant' | 'intermediaire' | 'confirme' | 'expert';
   goal?: 'remise_en_forme' | '5km' | '10km' | 'semi_marathon' | 'marathon' | 'trail' | 'ultra' | 'autre';
   goalDetails?: string;
@@ -110,6 +111,14 @@ export class AuthService {
 
   getUser(): User | null {
     return this.currentUser();
+  }
+
+  isCoach(): boolean {
+    return this.currentUser()?.role === 'coach';
+  }
+
+  isAdmin(): boolean {
+    return this.currentUser()?.role === 'admin';
   }
 
   updateProfile(data: UpdateProfileData): Observable<User> {
