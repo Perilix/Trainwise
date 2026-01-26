@@ -918,6 +918,7 @@
 
   .code-input-group {
     display: flex;
+    flex-direction: column;
     gap: 0.75rem;
 
     input {
