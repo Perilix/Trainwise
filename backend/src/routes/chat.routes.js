@@ -23,4 +23,7 @@ router.get('/users/search', chatController.searchUsers);
 // Unread count
 router.get('/unread', chatController.getUnreadCount);
 
+// Coach partenaire
+router.get('/partner-coach', chatController.getPartnerCoach);
+
 module.exports = router;

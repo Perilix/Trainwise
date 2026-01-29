@@ -25,6 +25,111 @@
     <div class="dashboard-grid">
       <!-- Colonne principale -->
       <div class="main-column">
+        <!-- Section Coaching -->
+        @if (currentCoach()) {
+          <!-- Utilisateur avec coach -->
+          <section class="coaching-section has-coach">
+            <div class="coach-header">
+              <div class="coach-profile">
+                <div class="coach-avatar">
+                  @if (currentCoach()!.profilePicture) {
+                    <img [src]="currentCoach()!.profilePicture" alt="Coach">
+                  } @else {
+                    {{ getCoachInitials() }}
+                  }
+                </div>
+                <div class="coach-info">
+                  <span class="coach-label">Votre coach</span>
+                  <span class="coach-name">{{ currentCoach()!.firstName }} {{ currentCoach()!.lastName }}</span>
+                </div>
+              </div>
+              <button class="btn-message" (click)="contactCoach()">
+                Envoyer un message
+              </button>
+            </div>
+
+            @if (coachPlannedSessions().length > 0) {
+              <div class="coach-sessions">
+                <h4>Séances planifiées par votre coach</h4>
+                <div class="sessions-list">
+                  @for (session of coachPlannedSessions(); track session._id) {
+                    <div class="session-item" routerLink="/planning">
+                      <span class="session-date">{{ formatRunDate(session.date) }}</span>
+                      <span class="session-type">{{ getSessionTypeLabel(session.sessionType) }}</span>
+                      @if (session.targetDistance) {
+                        <span class="session-distance">{{ session.targetDistance }} km</span>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            } @else {
+              <div class="no-sessions">
+                <p>Aucune séance planifiée pour le moment. Votre coach préparera bientôt votre programme !</p>
+              </div>
+            }
+          </section>
+        } @else {
+          <!-- Utilisateur sans coach -->
+          <section class="coaching-section no-coach">
+            <!-- Coach partenaire -->
+            @if (partnerCoach()) {
+              <div class="promo-content">
+                <div class="coach-avatar large">
+                  @if (partnerCoach()!.profilePicture) {
+                    <img [src]="partnerCoach()!.profilePicture" [alt]="partnerCoach()!.firstName">
+                  } @else {
+                    {{ partnerCoach()!.firstName[0] }}{{ partnerCoach()!.lastName[0] }}
+                  }
+                </div>
+                <div class="promo-info">
+                  <span class="promo-badge">Coach partenaire</span>
+                  <h3>Envie d'un accompagnement humain ?</h3>
+                  <p>Travaillez avec <strong>{{ partnerCoach()!.firstName }} {{ partnerCoach()!.lastName }}</strong>, coach spécialisé running & trail.</p>
+                </div>
+                <div class="promo-actions">
+                  <button class="btn-contact primary" (click)="contactPartnerCoach()">
+                    Contacter
+                  </button>
+                  <a href="mailto:bastidecoaching@gmail.com" class="btn-contact secondary">
+                    Email
+                  </a>
+                </div>
+              </div>
+              <div class="section-divider"></div>
+            }
+
+            <!-- Rejoindre via code -->
+            <div class="join-code-section">
+              <p class="join-label">Vous avez un code d'invitation ?</p>
+              <div class="join-form">
+                <input
+                  type="text"
+                  [(ngModel)]="inviteCode"
+                  placeholder="Entrez le code"
+                  [disabled]="joiningByCode()"
+                  (keyup.enter)="joinByCode()"
+                >
+                <button
+                  class="btn-join"
+                  (click)="joinByCode()"
+                  [disabled]="joiningByCode() || !inviteCode.trim()">
+                  @if (joiningByCode()) {
+                    ...
+                  } @else {
+                    Rejoindre
+                  }
+                </button>
+              </div>
+              @if (joinMessage()) {
+                <p class="join-message" [class.success]="joinMessage()!.type === 'success'" [class.error]="joinMessage()!.type === 'error'">
+                  {{ joinMessage()!.text }}
+                </p>
+              }
+            </div>
+          </section>
+        }
+
         <!-- Timeline de la semaine -->
         <section class="week-timeline">
           <div class="section-header">

@@ -315,6 +315,10 @@ export class ChatService {
       .pipe(tap(response => this.totalUnread.set(response.unreadCount)));
   }
 
+  getPartnerCoach(): Observable<UserPreview> {
+    return this.http.get<UserPreview>(`${this.API_URL}/partner-coach`);
+  }
+
   private calculateTotalUnread(conversations: Conversation[]): void {
     const total = conversations.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0);
     this.totalUnread.set(total);
