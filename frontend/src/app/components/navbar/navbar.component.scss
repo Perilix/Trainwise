@@ -84,13 +84,15 @@
       background: rgba(0, 166, 251, 0.24);
     }
 
-    &.nav-link-chat {
+    &.nav-link-chat,
+    &.nav-link-with-badge {
       position: relative;
       display: flex;
       align-items: center;
       gap: 0.5rem;
 
-      .unread-badge {
+      .unread-badge,
+      .nav-badge {
         background: #ff4757;
         color: #fff;
         font-size: 0.65rem;

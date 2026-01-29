@@ -36,6 +36,16 @@ export const routes: Routes = [
     canActivate: [authGuard, athleteGuard]
   },
   {
+    path: 'friends',
+    loadComponent: () => import('./pages/friends/friends.component').then(m => m.FriendsComponent),
+    canActivate: [authGuard, athleteGuard]
+  },
+  {
+    path: 'user/:id',
+    loadComponent: () => import('./pages/user-profile/user-profile.component').then(m => m.UserProfileComponent),
+    canActivate: [authGuard, athleteGuard]
+  },
+  {
     path: 'chat',
     loadComponent: () => import('./pages/chat/conversations-list/conversations-list.component').then(m => m.ConversationsListComponent),
     canActivate: [authGuard]
