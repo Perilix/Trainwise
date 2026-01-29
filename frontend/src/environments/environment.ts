@@ -1,5 +1,7 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:3000',
-  socketUrl: 'http://localhost:3000'
+  // Pour test sur iPhone, utilise ton IP locale
+  // Pour browser/simulateur, remets localhost
+  apiUrl: 'http://192.168.1.31:3000',
+  socketUrl: 'http://192.168.1.31:3000'
 };

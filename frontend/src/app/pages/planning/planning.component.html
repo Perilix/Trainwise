@@ -66,19 +66,19 @@
       <div class="legend">
         <div class="legend-item">
           <span class="legend-dot completed"></span>
-          <span>Course effectuée</span>
+          <span>🏃 Course effectuée</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot strength"></span>
+          <span>💪 Muscu effectuée</span>
         </div>
         <div class="legend-item">
           <span class="legend-dot planned"></span>
           <span>Séance planifiée</span>
         </div>
         <div class="legend-item">
-          <span class="legend-dot done"></span>
-          <span>Planifiée (complétée)</span>
-        </div>
-        <div class="legend-item">
-          <span class="legend-dot skipped"></span>
-          <span>Planifiée (passée)</span>
+          <span class="legend-dot strength-planned"></span>
+          <span>Muscu planifiée</span>
         </div>
       </div>
     </div>
@@ -128,6 +128,10 @@
             <span class="action-icon">📅</span>
             Aujourd'hui
           </button>
+          <a routerLink="/strength/log" class="quick-action-btn">
+            <span class="action-icon">💪</span>
+            Logger une muscu
+          </a>
         </div>
       </div>
     </div>
@@ -154,30 +158,61 @@
         <div class="add-session-form">
           <h3>Nouvelle séance</h3>
 
+          <!-- Activity Type Selector -->
+          <div class="activity-type-selector">
+            <button
+              class="activity-btn"
+              [class.active]="newSession.activityType === 'running'"
+              (click)="onActivityTypeChange('running')"
+            >
+              🏃 Course
+            </button>
+            <button
+              class="activity-btn"
+              [class.active]="newSession.activityType === 'strength'"
+              (click)="onActivityTypeChange('strength')"
+            >
+              💪 Musculation
+            </button>
+          </div>
+
           <div class="form-group">
             <label>Type de séance</label>
             <select [(ngModel)]="newSession.sessionType">
-              @for (type of sessionTypes; track type.value) {
-                <option [value]="type.value">{{ type.label }}</option>
+              @if (newSession.activityType === 'running') {
+                @for (type of runningSessionTypes; track type.value) {
+                  <option [value]="type.value">{{ type.label }}</option>
+                }
+              } @else {
+                @for (type of strengthSessionTypes; track type.value) {
+                  <option [value]="type.value">{{ type.label }}</option>
+                }
               }
             </select>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label>Distance (km)</label>
-              <input type="number" [(ngModel)]="newSession.targetDistance" placeholder="Ex: 10">
+          @if (newSession.activityType === 'running') {
+            <div class="form-row">
+              <div class="form-group">
+                <label>Distance (km)</label>
+                <input type="number" [(ngModel)]="newSession.targetDistance" placeholder="Ex: 10">
+              </div>
+              <div class="form-group">
+                <label>Durée (min)</label>
+                <input type="number" [(ngModel)]="newSession.targetDuration" placeholder="Ex: 45">
+              </div>
             </div>
-            <div class="form-group">
-              <label>Durée (min)</label>
-              <input type="number" [(ngModel)]="newSession.targetDuration" placeholder="Ex: 45">
-            </div>
-          </div>
 
-          <div class="form-group">
-            <label>Allure cible</label>
-            <input type="text" [(ngModel)]="newSession.targetPace" placeholder="Ex: 5:30">
-          </div>
+            <div class="form-group">
+              <label>Allure cible</label>
+              <input type="text" [(ngModel)]="newSession.targetPace" placeholder="Ex: 5:30">
+            </div>
+          } @else {
+            <div class="form-group">
+              <label>Durée estimée (min)</label>
+              <input type="number" [(ngModel)]="newSession.targetDuration" placeholder="Ex: 60">
+            </div>
+          }
 
           <div class="form-group">
             <label>Description</label>
@@ -243,7 +278,7 @@
         <div class="section">
           <h3>Séances planifiées</h3>
           @for (planned of selectedDay()!.plannedRuns; track planned._id) {
-            <div class="event-card" [class.done]="planned.status === 'completed'" [class.skipped]="planned.status === 'skipped'" [class.ai-generated]="planned.generatedBy === 'ai'">
+            <div class="event-card" [class.done]="planned.status === 'completed'" [class.skipped]="planned.status === 'skipped'" [class.ai-generated]="planned.generatedBy === 'ai'" [class.strength]="planned.activityType === 'strength'">
               <button class="delete-btn" (click)="deletePlannedRun(planned)" title="Supprimer">×</button>
               <span class="event-status" [class]="planned.status">
                 @if (planned.status === 'planned') { À faire }
@@ -254,6 +289,7 @@
                 <span class="coach-badge">Séance du coach IA</span>
               }
               <div class="event-header">
+                <span class="activity-icon">{{ getActivityIcon(planned.activityType) }}</span>
                 <span class="event-type">{{ getSessionTypeLabel(planned.sessionType) }}</span>
               </div>
 
@@ -281,9 +317,42 @@
 
               @if (planned.status === 'planned') {
                 <div class="event-actions">
-                  <button class="btn-done" (click)="markAsCompleted(planned)">Marquer fait</button>
+                  @if (planned.activityType === 'strength') {
+                    <button class="btn-done" (click)="navigateToStrengthLog()">Détailler la séance</button>
+                  } @else {
+                    <button class="btn-done" (click)="markAsCompleted(planned)">Marquer fait</button>
+                  }
                   <button class="btn-skip" (click)="markAsSkipped(planned)">Passer</button>
                 </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Séances muscu effectuées -->
+      @if (!isAddingSession() && selectedDay()!.strengthSessions && selectedDay()!.strengthSessions.length > 0) {
+        <div class="section">
+          <h3>Séances muscu effectuées</h3>
+          @for (session of selectedDay()!.strengthSessions; track session._id) {
+            <div class="event-card strength completed">
+              <div class="event-header">
+                <span class="activity-icon">💪</span>
+                <span class="event-type">{{ getSessionTypeLabel(session.sessionType) }}</span>
+              </div>
+              <div class="event-stats">
+                @if (session.duration) {
+                  <span>{{ session.duration }} min</span>
+                }
+                @if (session.totalSets) {
+                  <span>{{ session.totalSets }} séries</span>
+                }
+                @if (session.totalVolume) {
+                  <span>{{ session.totalVolume }} kg</span>
+                }
+              </div>
+              @if (session.feeling) {
+                <p class="event-description">Ressenti : {{ session.feeling }}/10</p>
               }
             </div>
           }

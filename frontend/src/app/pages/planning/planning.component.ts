@@ -2,8 +2,9 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { PlanningService, PlannedRun, CalendarData, SessionType } from '../../services/planning.service';
+import { PlanningService, PlannedRun, CalendarData, SessionType, ActivityType, RunningSessionType } from '../../services/planning.service';
 import { RunService, Run } from '../../services/run.service';
+import { StrengthSession, StrengthSessionType, SESSION_TYPE_LABELS as STRENGTH_SESSION_LABELS } from '../../interfaces/strength.interfaces';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 
 interface CalendarDay {
@@ -13,6 +14,7 @@ interface CalendarDay {
   isToday: boolean;
   runs: Run[];
   plannedRuns: PlannedRun[];
+  strengthSessions: StrengthSession[];
 }
 
 @Component({
@@ -47,6 +49,7 @@ export class PlanningComponent implements OnInit {
   generateStartDate = this.getNextMonday();
 
   newSession = {
+    activityType: 'running' as ActivityType,
     sessionType: 'endurance' as SessionType,
     targetDistance: null as number | null,
     targetDuration: null as number | null,
@@ -54,7 +57,7 @@ export class PlanningComponent implements OnInit {
     description: ''
   };
 
-  sessionTypes: { value: SessionType; label: string }[] = [
+  runningSessionTypes: { value: RunningSessionType; label: string }[] = [
     { value: 'endurance', label: 'Endurance' },
     { value: 'fractionne', label: 'Fractionné' },
     { value: 'tempo', label: 'Tempo' },
@@ -63,6 +66,20 @@ export class PlanningComponent implements OnInit {
     { value: 'cotes', label: 'Côtes' },
     { value: 'fartlek', label: 'Fartlek' }
   ];
+
+  strengthSessionTypes: { value: StrengthSessionType; label: string }[] = [
+    { value: 'upper_body', label: 'Haut du corps' },
+    { value: 'lower_body', label: 'Bas du corps' },
+    { value: 'full_body', label: 'Corps complet' },
+    { value: 'push', label: 'Push (Poussée)' },
+    { value: 'pull', label: 'Pull (Tirage)' },
+    { value: 'legs', label: 'Jambes' },
+    { value: 'core', label: 'Abdos / Core' },
+    { value: 'hiit', label: 'HIIT' }
+  ];
+
+  // Keep for backward compatibility
+  sessionTypes = this.runningSessionTypes;
 
   weekDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
@@ -137,13 +154,20 @@ export class PlanningComponent implements OnInit {
         return plannedDateStr === dateStr;
       });
 
+      const dayStrength = (data.strengthSessions || []).filter(s => {
+        const d = new Date(s.date);
+        const strengthDateStr = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+        return strengthDateStr === dateStr;
+      });
+
       days.push({
         date,
         dayOfMonth: date.getDate(),
         isCurrentMonth: date.getMonth() === month,
         isToday: dateStr === todayStr,
         runs: dayRuns,
-        plannedRuns: dayPlanned
+        plannedRuns: dayPlanned,
+        strengthSessions: dayStrength
       });
     }
 
@@ -317,7 +341,19 @@ export class PlanningComponent implements OnInit {
   }
 
   getSessionTypeLabel(type: string): string {
+    // Check if it's a strength session type
+    if (STRENGTH_SESSION_LABELS[type as StrengthSessionType]) {
+      return STRENGTH_SESSION_LABELS[type as StrengthSessionType];
+    }
     return this.planningService.getSessionTypeLabel(type as any);
+  }
+
+  getActivityIcon(activityType?: ActivityType): string {
+    return activityType === 'strength' ? '💪' : '🏃';
+  }
+
+  navigateToStrengthLog() {
+    this.router.navigate(['/strength/log']);
   }
 
   formatDate(date: Date): string {
@@ -340,12 +376,22 @@ export class PlanningComponent implements OnInit {
 
   resetNewSession() {
     this.newSession = {
+      activityType: 'running',
       sessionType: 'endurance',
       targetDistance: null,
       targetDuration: null,
       targetPace: '',
       description: ''
     };
+  }
+
+  onActivityTypeChange(type: ActivityType) {
+    this.newSession.activityType = type;
+    if (type === 'running') {
+      this.newSession.sessionType = 'endurance';
+    } else {
+      this.newSession.sessionType = 'full_body';
+    }
   }
 
   saveSession() {
@@ -356,10 +402,11 @@ export class PlanningComponent implements OnInit {
 
     const plannedRun: Partial<PlannedRun> = {
       date: day.date,
+      activityType: this.newSession.activityType,
       sessionType: this.newSession.sessionType,
-      targetDistance: this.newSession.targetDistance || undefined,
+      targetDistance: this.newSession.activityType === 'running' ? (this.newSession.targetDistance || undefined) : undefined,
       targetDuration: this.newSession.targetDuration || undefined,
-      targetPace: this.newSession.targetPace || undefined,
+      targetPace: this.newSession.activityType === 'running' ? (this.newSession.targetPace || undefined) : undefined,
       description: this.newSession.description || undefined,
       generatedBy: 'manual',
       status: 'planned'
@@ -397,13 +444,28 @@ export class PlanningComponent implements OnInit {
       indicators.push({ type: 'completed', count: day.runs.length });
     }
 
-    const planned = day.plannedRuns.filter(p => p.status === 'planned').length;
-    const done = day.plannedRuns.filter(p => p.status === 'completed').length;
+    // Strength sessions logged
+    if (day.strengthSessions && day.strengthSessions.length > 0) {
+      indicators.push({ type: 'strength', count: day.strengthSessions.length });
+    }
+
+    // Running planned sessions
+    const runningPlanned = day.plannedRuns.filter(p => p.status === 'planned' && (!p.activityType || p.activityType === 'running'));
+    const runningDone = day.plannedRuns.filter(p => p.status === 'completed' && (!p.activityType || p.activityType === 'running'));
+
+    // Strength planned sessions
+    const strengthPlanned = day.plannedRuns.filter(p => p.status === 'planned' && p.activityType === 'strength');
+    const strengthDone = day.plannedRuns.filter(p => p.status === 'completed' && p.activityType === 'strength');
+
+    const planned = runningPlanned.length;
+    const done = runningDone.length;
     const skipped = day.plannedRuns.filter(p => p.status === 'skipped').length;
 
     if (planned > 0) indicators.push({ type: 'planned', count: planned });
     if (done > 0) indicators.push({ type: 'done', count: done });
     if (skipped > 0) indicators.push({ type: 'skipped', count: skipped });
+    if (strengthPlanned.length > 0) indicators.push({ type: 'strength-planned', count: strengthPlanned.length });
+    if (strengthDone.length > 0) indicators.push({ type: 'strength-done', count: strengthDone.length });
 
     return indicators;
   }

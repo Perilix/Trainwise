@@ -6,9 +6,14 @@
       <h1>Espace Coach</h1>
       <p class="subtitle">Gérez vos athlètes et leurs entraînements</p>
     </div>
-    <button class="btn-primary" (click)="openInviteModal()">
-      + Inviter un athlète
-    </button>
+    <div class="header-actions">
+      <a routerLink="/coach/exercises" class="btn-secondary">
+        Exercices
+      </a>
+      <button class="btn-primary" (click)="openInviteModal()">
+        + Inviter un athlète
+      </button>
+    </div>
   </header>
 
   @if (error()) {
