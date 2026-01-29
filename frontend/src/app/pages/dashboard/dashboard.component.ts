@@ -1,10 +1,13 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { RunService, Run } from '../../services/run.service';
 import { PlanningService, PlannedRun } from '../../services/planning.service';
 import { AuthService } from '../../services/auth.service';
 import { ChatService, Conversation } from '../../services/chat.service';
+import { AthleteService } from '../../services/athlete.service';
+import { Coach } from '../../interfaces/coach.interfaces';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 
 interface WeekDay {
@@ -20,7 +23,7 @@ interface WeekDay {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, NavbarComponent],
+  imports: [CommonModule, FormsModule, RouterLink, NavbarComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
@@ -31,6 +34,18 @@ export class DashboardComponent implements OnInit {
   weekDays = signal<WeekDay[]>([]);
   upcomingSession = signal<PlannedRun | null>(null);
   recentConversations = signal<Conversation[]>([]);
+
+  // Coach
+  currentCoach = signal<Coach | null>(null);
+  coachPlannedSessions = signal<PlannedRun[]>([]);
+
+  // Coach partenaire (chargé dynamiquement)
+  partnerCoach = signal<{ _id: string; firstName: string; lastName: string; profilePicture?: string } | null>(null);
+
+  // Rejoindre un coach via code
+  inviteCode = '';
+  joiningByCode = signal(false);
+  joinMessage = signal<{ text: string; type: 'success' | 'error' } | null>(null);
 
   // Loading states
   isLoading = signal(true);
@@ -44,12 +59,15 @@ export class DashboardComponent implements OnInit {
     private planningService: PlanningService,
     public authService: AuthService,
     public chatService: ChatService,
+    private athleteService: AthleteService,
     private router: Router
   ) {}
 
   ngOnInit() {
     this.loadDashboardData();
     this.loadRecentConversations();
+    this.loadCurrentCoach();
+    this.loadPartnerCoach();
   }
 
   loadDashboardData() {
@@ -226,6 +244,11 @@ export class DashboardComponent implements OnInit {
 
     this.upcomingSession.set(upcoming[0] || null);
     this.upcomingRuns.set(upcoming.slice(0, 3));
+
+    // Mettre à jour les séances coach si le coach est déjà chargé
+    if (this.currentCoach()) {
+      this.loadCoachSessions();
+    }
   }
 
   getGreeting(): string {
@@ -430,5 +453,107 @@ export class DashboardComponent implements OnInit {
 
   isUserOnline(conversation: Conversation): boolean {
     return conversation.otherParticipant?.isOnline || false;
+  }
+
+  // Coach methods
+  loadCurrentCoach() {
+    this.athleteService.getCurrentCoach().subscribe({
+      next: (coach) => {
+        this.currentCoach.set(coach);
+        if (coach) {
+          this.loadCoachSessions();
+        }
+      },
+      error: (err) => {
+        console.error('Error loading coach:', err);
+        this.currentCoach.set(null);
+      }
+    });
+  }
+
+  loadCoachSessions() {
+    // Les séances planifiées par le coach sont déjà chargées via getCalendarData
+    // On filtre celles créées par un coach (generatedBy === 'coach')
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const coachSessions = this.upcomingRuns().filter(session => {
+      const sessionDate = new Date(session.date);
+      sessionDate.setHours(0, 0, 0, 0);
+      return sessionDate >= today && session.generatedBy === 'coach';
+    }).slice(0, 3);
+
+    this.coachPlannedSessions.set(coachSessions);
+  }
+
+  getCoachInitials(): string {
+    const coach = this.currentCoach();
+    if (!coach) return '';
+    return `${coach.firstName?.[0] || ''}${coach.lastName?.[0] || ''}`.toUpperCase();
+  }
+
+  contactCoach() {
+    const coach = this.currentCoach();
+    if (!coach) return;
+
+    this.chatService.getOrCreateConversation(coach._id).subscribe({
+      next: (conversation) => {
+        this.router.navigate(['/chat', conversation._id]);
+      },
+      error: (err) => {
+        console.error('Error creating conversation:', err);
+      }
+    });
+  }
+
+  loadPartnerCoach() {
+    this.chatService.getPartnerCoach().subscribe({
+      next: (coach) => {
+        this.partnerCoach.set(coach);
+      },
+      error: (err) => {
+        console.error('Error loading partner coach:', err);
+        this.partnerCoach.set(null);
+      }
+    });
+  }
+
+  contactPartnerCoach() {
+    const coach = this.partnerCoach();
+    if (!coach) return;
+
+    this.chatService.getOrCreateConversation(coach._id).subscribe({
+      next: (conversation) => {
+        this.router.navigate(['/chat', conversation._id]);
+      },
+      error: (err) => {
+        console.error('Error creating conversation with partner coach:', err);
+      }
+    });
+  }
+
+  joinByCode() {
+    if (!this.inviteCode.trim()) return;
+
+    this.joiningByCode.set(true);
+    this.joinMessage.set(null);
+
+    this.athleteService.joinViaCode(this.inviteCode.trim()).subscribe({
+      next: () => {
+        this.joiningByCode.set(false);
+        this.inviteCode = '';
+        this.joinMessage.set({ text: 'Demande envoyée !', type: 'success' });
+        this.loadCurrentCoach();
+        setTimeout(() => this.joinMessage.set(null), 3000);
+      },
+      error: (err) => {
+        this.joiningByCode.set(false);
+        this.joinMessage.set({
+          text: err.error?.error || 'Code invalide',
+          type: 'error'
+        });
+        setTimeout(() => this.joinMessage.set(null), 3000);
+      }
+    });
   }
 }

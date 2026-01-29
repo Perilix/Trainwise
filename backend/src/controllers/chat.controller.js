@@ -21,6 +21,13 @@ async function canChat(userId1, userId2) {
   });
   if (coachRelation) return true;
 
+  // Permettre à tout le monde de contacter un coach (coach partenaire)
+  const targetUser = await User.findById(userId2);
+  if (targetUser && targetUser.role === 'coach') return true;
+
+  const currentUser = await User.findById(userId1);
+  if (currentUser && currentUser.role === 'coach') return true;
+
   return false;
 }
 
@@ -316,6 +323,27 @@ exports.markAsRead = async (req, res) => {
     res.json({ message: 'Conversation marquee comme lue' });
   } catch (error) {
     console.error('Error marking as read:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Get partner coach (Hugo Bastide)
+const PARTNER_COACH_EMAIL = 'bastidecoaching@gmail.com';
+
+exports.getPartnerCoach = async (req, res) => {
+  try {
+    const coach = await User.findOne({
+      email: PARTNER_COACH_EMAIL,
+      role: 'coach'
+    }).select('_id firstName lastName email profilePicture');
+
+    if (!coach) {
+      return res.status(404).json({ error: 'Coach partenaire non trouvé' });
+    }
+
+    res.json(coach);
+  } catch (error) {
+    console.error('Error getting partner coach:', error);
     res.status(500).json({ error: error.message });
   }
 };
