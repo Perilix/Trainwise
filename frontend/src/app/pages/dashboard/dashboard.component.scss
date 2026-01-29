@@ -1101,7 +1101,10 @@
   // État: utilisateur sans coach - Promo (design chill)
   &.no-coach {
     background: #F6F4F0;
-    border: 1px solid rgba(0, 53, 84, 0.1);
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow: 0 0 10px 4px rgba(0, 53, 84, 0.15);
+    border: 1px solid rgba(0, 53, 84, 0.2);
 
     .promo-content {
       display: flex;
@@ -1230,6 +1233,7 @@
 
       .join-form {
         display: flex;
+        flex-direction: column;
         gap: 0.5rem;
 
         input {
