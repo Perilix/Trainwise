@@ -2,6 +2,7 @@ const axios = require('axios');
 const PlannedRun = require('../models/plannedRun.model');
 const Run = require('../models/run.model');
 const User = require('../models/user.model');
+const StrengthSession = require('../models/strengthSession.model');
 
 // Récupérer toutes les séances planifiées de l'utilisateur
 exports.getPlannedRuns = async (req, res) => {
@@ -341,7 +342,7 @@ exports.confirmPlan = async (req, res) => {
   }
 };
 
-// Récupérer les données du calendrier (runs + planned)
+// Récupérer les données du calendrier (runs + planned + strength)
 exports.getCalendarData = async (req, res) => {
   try {
     const { month, year } = req.query;
@@ -355,15 +356,26 @@ exports.getCalendarData = async (req, res) => {
       date: { $gte: startDate, $lte: endDate }
     }).sort({ date: 1 });
 
-    // Récupérer les séances planifiées
+    // Récupérer les séances planifiées (running + strength)
     const plannedRuns = await PlannedRun.find({
       user: req.user._id,
       date: { $gte: startDate, $lte: endDate }
-    }).sort({ date: 1 });
+    })
+      .populate('strengthPlan.exercises.exercise', 'name slug imageUrl')
+      .sort({ date: 1 });
+
+    // Récupérer les séances de muscu effectuées
+    const strengthSessions = await StrengthSession.find({
+      user: req.user._id,
+      date: { $gte: startDate, $lte: endDate }
+    })
+      .populate('exercises.exercise', 'name slug imageUrl primaryMuscle')
+      .sort({ date: 1 });
 
     res.json({
       runs,
       plannedRuns,
+      strengthSessions,
       month: parseInt(month),
       year: parseInt(year)
     });

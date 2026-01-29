@@ -10,9 +10,20 @@ const plannedRunSchema = new mongoose.Schema({
     type: Date,
     required: true
   },
+  // Type d'activité : running (défaut pour backward compat) ou strength
+  activityType: {
+    type: String,
+    enum: ['running', 'strength'],
+    default: 'running'
+  },
   sessionType: {
     type: String,
-    enum: ['endurance', 'fractionne', 'tempo', 'recuperation', 'sortie_longue', 'cotes', 'fartlek'],
+    enum: [
+      // Running types
+      'endurance', 'fractionne', 'tempo', 'recuperation', 'sortie_longue', 'cotes', 'fartlek',
+      // Strength types
+      'upper_body', 'lower_body', 'full_body', 'push', 'pull', 'legs', 'core', 'hiit'
+    ],
     required: true
   },
   targetDistance: {
@@ -43,6 +54,22 @@ const plannedRunSchema = new mongoose.Schema({
     type: String, // description retour au calme
     trim: true
   },
+
+  // Champs spécifiques musculation (pour séances planifiées)
+  strengthPlan: {
+    exercises: [{
+      exercise: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Exercise'
+      },
+      targetSets: Number,
+      targetReps: String, // "8-12" format
+      targetWeight: Number, // kg (optionnel)
+      notes: String
+    }],
+    estimatedDuration: Number // minutes
+  },
+
   status: {
     type: String,
     enum: ['planned', 'completed', 'skipped'],

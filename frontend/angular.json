@@ -63,7 +63,10 @@
             ],
             "styles": [
               "node_modules/leaflet/dist/leaflet.css",
-              "src/styles.scss"
+              "src/styles.scss",
+              {
+                "input": "node_modules/@ionic/angular/css/core.css"
+              }
             ]
           },
           "configurations": {
@@ -130,11 +133,46 @@
               "src/styles.scss"
             ]
           }
+        },
+        "ionic-cordova-serve": {
+          "builder": "@ionic/angular-toolkit:cordova-serve",
+          "options": {
+            "cordovaBuildTarget": "frontend:ionic-cordova-build",
+            "devServerTarget": "frontend:serve"
+          },
+          "configurations": {
+            "production": {
+              "cordovaBuildTarget": "frontend:ionic-cordova-build:production",
+              "devServerTarget": "frontend:serve:production"
+            }
+          }
+        },
+        "ionic-cordova-build": {
+          "builder": "@ionic/angular-toolkit:cordova-build",
+          "options": {
+            "browserTarget": "frontend:build"
+          },
+          "configurations": {
+            "production": {
+              "browserTarget": "frontend:build:production"
+            }
+          }
         }
       }
     }
   },
   "cli": {
-    "analytics": "e3ab9156-cacf-4e2f-b1d1-945805a1b1ee"
+    "analytics": "e3ab9156-cacf-4e2f-b1d1-945805a1b1ee",
+    "schematicCollections": [
+      "@ionic/angular-toolkit"
+    ]
+  },
+  "schematics": {
+    "@ionic/angular-toolkit:component": {
+      "styleext": "scss"
+    },
+    "@ionic/angular-toolkit:page": {
+      "styleext": "scss"
+    }
   }
 }
