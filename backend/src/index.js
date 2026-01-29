@@ -20,8 +20,23 @@ const httpServer = http.createServer(app);
 const PORT = process.env.PORT || 3000;
 
 // Middleware
+const allowedOrigins = [
+  'http://localhost:4200',
+  'http://192.168.1.31:4200',
+  'capacitor://localhost',
+  'ionic://localhost',
+  'http://localhost'
+];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:4200',
+  origin: function(origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin) || process.env.FRONTEND_URL === origin) {
+      return callback(null, true);
+    }
+    return callback(null, true); // En dev, on autorise tout
+  },
   credentials: true
 }));
 app.use(express.json());

@@ -2,17 +2,10 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  padding-top: 120px;
+  padding-top: var(--navbar-height, 120px);
+  padding-bottom: var(--bottom-nav-height, 100px);
   font-family: 'Poppins', sans-serif;
   background: #F6F4F0;
-
-  @media (max-width: 768px) {
-    padding-top: 70px;
-  }
-
-  @media (max-width: 500px) {
-    padding-top: 60px;
-  }
 }
 
 // Header
@@ -24,17 +17,12 @@
   background: #F6F4F0;
   border-bottom: 1px solid rgba(0, 53, 84, 0.1);
   position: fixed;
-  top: 120px;
+  top: var(--navbar-height, 120px);
   left: 0;
   right: 0;
   z-index: 10;
 
-  @media (max-width: 768px) {
-    top: 70px;
-  }
-
   @media (max-width: 500px) {
-    top: 60px;
     padding: 0.75rem;
   }
 

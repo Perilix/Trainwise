@@ -2,17 +2,14 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
-  padding-top: calc(120px + 2rem);
+  padding-top: calc(var(--navbar-height, 120px) + 2rem);
+  padding-bottom: calc(var(--bottom-nav-height, 100px) + 1rem);
   font-family: 'Poppins', sans-serif;
   min-height: 100vh;
   background: #F6F4F0;
 
-  @media (max-width: 768px) {
-    padding-top: calc(70px + 1.5rem);
-  }
-
   @media (max-width: 500px) {
-    padding-top: calc(60px + 1rem);
+    padding-top: calc(var(--navbar-height, 85px) + 1rem);
   }
 }
 
@@ -1395,7 +1392,6 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
-    margin-top: 4rem;
 
     .streak-badge {
       align-self: flex-end;
@@ -1430,7 +1426,8 @@
 
 @media (max-width: 480px) {
   .container {
-    padding: 1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
 
   .stats-card .stats-grid {

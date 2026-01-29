@@ -2,19 +2,17 @@
   max-width: 800px;
   margin: 0 auto;
   padding: 2rem;
-  padding-top: calc(120px + 2rem);
+  padding-top: calc(var(--navbar-height, 120px) + 2rem);
+  padding-bottom: calc(var(--bottom-nav-height, 100px) + 1rem);
   font-family: 'Poppins', sans-serif;
   min-height: 100vh;
   background: #F6F4F0;
 
-  @media (max-width: 768px) {
-    padding-top: calc(70px + 1.5rem);
-  }
-
   @media (max-width: 500px) {
-    padding-top: calc(60px + 1rem);
-    padding: 1rem;
-    padding-top: calc(60px + 1rem);
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: calc(var(--navbar-height, 85px) + 1rem);
+    padding-bottom: calc(var(--bottom-nav-height, 100px) + 1rem);
   }
 }
 
@@ -800,22 +798,24 @@
       color: #666;
     }
   }
+}
 
-  .btn-leave-coach {
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: transparent;
-    color: #dc2626;
-    border: 1px solid #dc2626;
+.btn-leave-coach {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: transparent;
+  color: #dc2626;
+  border: 1px solid #dc2626;
+  margin-top: 1rem;
+  width: 100%;
 
-    &:hover {
-      background: #dc2626;
-      color: #fff;
-    }
+  &:hover {
+    background: #dc2626;
+    color: #fff;
   }
 }
 

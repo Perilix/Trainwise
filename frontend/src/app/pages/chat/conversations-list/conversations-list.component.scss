@@ -2,18 +2,11 @@
   max-width: 600px;
   margin: 0 auto;
   padding: 0;
-  padding-top: 120px;
+  padding-top: var(--navbar-height, 120px);
+  padding-bottom: calc(var(--bottom-nav-height, 100px) + 1rem);
   font-family: 'Poppins', sans-serif;
   min-height: 100vh;
   background: #F6F4F0;
-
-  @media (max-width: 768px) {
-    padding-top: 70px;
-  }
-
-  @media (max-width: 500px) {
-    padding-top: 60px;
-  }
 }
 
 // Header
@@ -22,16 +15,11 @@
   padding: 1.5rem;
   border-bottom: 1px solid rgba(0, 53, 84, 0.1);
   position: sticky;
-  top: 120px;
+  top: var(--navbar-height, 120px);
   z-index: 10;
 
   @media (max-width: 768px) {
-    top: 70px;
     padding: 1rem 1.25rem;
-  }
-
-  @media (max-width: 500px) {
-    top: 60px;
   }
 
   .header-content {

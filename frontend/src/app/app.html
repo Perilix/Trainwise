@@ -1,2 +1,5 @@
 <router-outlet></router-outlet>
-<app-chat-fab></app-chat-fab>
+<!--<app-chat-fab></app-chat-fab>-->
+@if (authService.isAuthenticated() && !authService.isCoach()) {
+  <app-bottom-nav></app-bottom-nav>
+}

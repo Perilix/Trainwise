@@ -1,0 +1,96 @@
+.bottom-nav {
+  position: fixed;
+  bottom: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 40px);
+  max-width: 380px;
+  height: 75px;
+  background: #003554;
+  border-radius: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 12px;
+  box-shadow: 0 10px 40px rgba(0, 53, 84, 0.5);
+  z-index: 9998;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px 20px;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.6);
+  transition: all 0.2s ease;
+  border-radius: 50px;
+
+  i {
+    font-size: 1.4rem;
+    transition: transform 0.2s ease;
+  }
+
+  .icon-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .badge {
+      position: absolute;
+      top: -8px;
+      right: -10px;
+      min-width: 18px;
+      height: 18px;
+      background: #ff4757;
+      color: #fff;
+      font-size: 0.6rem;
+      font-weight: 700;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px;
+    }
+  }
+
+  &:hover {
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  &.active {
+    color: #00a6fb;
+    background: rgba(0, 166, 251, 0.2);
+
+    i {
+      transform: scale(1.15);
+    }
+  }
+}
+
+// Desktop: cacher la bottom nav
+@media (min-width: 769px) {
+  .bottom-nav {
+    display: none;
+  }
+}
+
+// Petits écrans
+@media (max-width: 380px) {
+  .bottom-nav {
+    height: 70px;
+    bottom: 20px;
+    border-radius: 30px;
+  }
+
+  .nav-item {
+    padding: 10px 16px;
+
+    i {
+      font-size: 1.2rem;
+    }
+  }
+}

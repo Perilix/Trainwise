@@ -275,9 +275,10 @@
               <span class="coach-name">{{ currentCoach()!.firstName }} {{ currentCoach()!.lastName }}</span>
               <span class="coach-email">{{ currentCoach()!.email }}</span>
             </div>
-            <button class="btn-leave-coach" (click)="leaveCoach()">Quitter</button>
           </div>
-        } @else {
+        <button class="btn-leave-coach" (click)="leaveCoach()">Quitter</button>
+
+      } @else {
           <!-- Pas de coach -->
           <div class="no-coach">
             <p>Tu n'as pas encore de coach. Rejoins un coach pour bénéficier d'un accompagnement personnalisé !</p>
