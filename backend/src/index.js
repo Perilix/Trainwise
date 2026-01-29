@@ -13,6 +13,8 @@ const coachRoutes = require('./routes/coach.routes');
 const athleteRoutes = require('./routes/athlete.routes');
 const notificationRoutes = require('./routes/notification.routes');
 const friendRoutes = require('./routes/friend.routes');
+const exerciseRoutes = require('./routes/exercise.routes');
+const strengthRoutes = require('./routes/strength.routes');
 const { initializeSocket } = require('./socket/index');
 
 const app = express();
@@ -51,6 +53,8 @@ app.use('/api/coach', coachRoutes);
 app.use('/api/athlete', athleteRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/friends', friendRoutes);
+app.use('/api/exercises', exerciseRoutes);
+app.use('/api/strength', strengthRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

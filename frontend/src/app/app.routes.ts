@@ -31,6 +31,11 @@ export const routes: Routes = [
     canActivate: [authGuard, athleteGuard]
   },
   {
+    path: 'strength/log',
+    loadComponent: () => import('./pages/strength-log/strength-log.component').then(m => m.StrengthLogComponent),
+    canActivate: [authGuard, athleteGuard]
+  },
+  {
     path: 'run/:id',
     loadComponent: () => import('./pages/run-detail/run-detail.component').then(m => m.RunDetailComponent),
     canActivate: [authGuard, athleteGuard]
@@ -69,6 +74,11 @@ export const routes: Routes = [
   {
     path: 'coach/athletes/:id/planning',
     loadComponent: () => import('./pages/coach/athlete-planning/athlete-planning.component').then(m => m.AthletePlanningComponent),
+    canActivate: [authGuard, coachGuard]
+  },
+  {
+    path: 'coach/exercises',
+    loadComponent: () => import('./pages/coach/exercises-management/exercises-management.component').then(m => m.ExercisesManagementComponent),
     canActivate: [authGuard, coachGuard]
   },
   {

@@ -1263,6 +1263,83 @@
   }
 }
 
+// Activity type selector
+.activity-type-selector {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+
+  .activity-btn {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    background: #f8f9fa;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #666;
+
+    &:hover {
+      border-color: #00a6fb;
+      color: #00a6fb;
+    }
+
+    &.active {
+      background: linear-gradient(135deg, rgba(0, 166, 251, 0.1) 0%, rgba(0, 166, 251, 0.05) 100%);
+      border-color: #00a6fb;
+      color: #00a6fb;
+    }
+  }
+}
+
+// Activity icon in event header
+.activity-icon {
+  font-size: 1rem;
+  margin-right: 0.5rem;
+}
+
+// Strength indicators
+.indicator-badge {
+  &.strength {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  }
+
+  &.strength-planned {
+    background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+  }
+
+  &.strength-done {
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  }
+}
+
+// Strength legend
+.legend-dot {
+  &.strength {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  }
+
+  &.strength-planned {
+    background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+  }
+}
+
+// Strength event card
+.event-card.strength {
+  border-left-color: #8b5cf6;
+
+  &.completed {
+    border-left-color: #7c3aed;
+  }
+}
+
+// Quick action link styling
+.quick-action-btn {
+  text-decoration: none;
+}
+
 .modal-footer {
   display: flex;
   justify-content: flex-end;

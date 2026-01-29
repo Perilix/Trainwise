@@ -1,0 +1,262 @@
+<app-navbar></app-navbar>
+
+<div class="container">
+  <header class="page-header">
+    <div class="header-content">
+      <div class="breadcrumb">
+        <a routerLink="/coach">← Espace Coach</a>
+      </div>
+      <h1>Bibliothèque d'exercices</h1>
+      <p class="subtitle">Gérez les exercices disponibles pour vos athlètes</p>
+    </div>
+    <button class="btn-primary" (click)="openCreateModal()">
+      + Ajouter un exercice
+    </button>
+  </header>
+
+  @if (error()) {
+    <div class="alert error">{{ error() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="alert success">{{ successMessage() }}</div>
+  }
+
+  <!-- Filters -->
+  <div class="filters-bar">
+    <div class="search-box">
+      <input
+        type="text"
+        placeholder="Rechercher un exercice..."
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+      >
+    </div>
+    <div class="filter-group">
+      <select [ngModel]="filterMuscle()" (ngModelChange)="filterMuscle.set($event)">
+        <option value="">Muscles</option>
+        @for (muscle of muscleGroups; track muscle) {
+          <option [value]="muscle">{{ getMuscleLabel(muscle) }}</option>
+        }
+      </select>
+      <select [ngModel]="filterEquipment()" (ngModelChange)="filterEquipment.set($event)">
+        <option value="">Equipements</option>
+        @for (equip of equipmentOptions; track equip) {
+          <option [value]="equip">{{ getEquipmentLabel(equip) }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>Chargement...</p>
+    </div>
+  } @else {
+    <div class="exercises-count">
+      {{ filteredExercises().length }} exercice{{ filteredExercises().length > 1 ? 's' : '' }}
+    </div>
+
+    @if (filteredExercises().length === 0) {
+      <div class="empty-state">
+        <p>Aucun exercice trouvé.</p>
+        <button class="btn-secondary" (click)="openCreateModal()">Créer un exercice</button>
+      </div>
+    } @else {
+      <div class="exercises-grid">
+        @for (exercise of filteredExercises(); track exercise._id) {
+          <div class="exercise-card">
+            <div class="exercise-image">
+              @if (exercise.imageUrl) {
+                <img [src]="exercise.imageUrl" [alt]="exercise.name">
+              } @else {
+                <div class="placeholder-image">
+                  <span>💪</span>
+                </div>
+              }
+              <span class="difficulty-badge {{ getDifficultyClass(exercise.difficulty) }}">
+                {{ getDifficultyLabel(exercise.difficulty) }}
+              </span>
+            </div>
+            <div class="exercise-content">
+              <h3>{{ exercise.name }}</h3>
+              <div class="exercise-meta">
+                <span class="meta-item">
+                  <span class="icon">🎯</span>
+                  {{ getMuscleLabel(exercise.primaryMuscle) }}
+                </span>
+                <span class="meta-item">
+                  <span class="icon">🏋️</span>
+                  {{ getEquipmentLabel(exercise.equipment) }}
+                </span>
+              </div>
+              @if (exercise.muscleGroups.length > 1) {
+                <div class="muscle-tags">
+                  @for (muscle of exercise.muscleGroups; track muscle) {
+                    <span class="muscle-tag">{{ getMuscleLabel(muscle) }}</span>
+                  }
+                </div>
+              }
+              @if (exercise.description) {
+                <p class="exercise-description">{{ exercise.description }}</p>
+              }
+            </div>
+            <div class="exercise-actions">
+              <button class="btn-icon" (click)="openEditModal(exercise)" title="Modifier">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+              </button>
+              <button class="btn-icon danger" (click)="deleteExercise(exercise)" title="Supprimer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3,6 5,6 21,6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+</div>
+
+<!-- Modal Créer/Modifier -->
+@if (showModal()) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editingExercise() ? 'Modifier' : 'Nouvel' }} exercice</h2>
+        <button class="close-btn" (click)="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label>Nom de l'exercice *</label>
+            <input
+              type="text"
+              [ngModel]="formData().name"
+              (ngModelChange)="updateFormField('name', $event)"
+              placeholder="Ex: Développé couché"
+            >
+          </div>
+
+          <div class="form-group full-width">
+            <label>Description</label>
+            <textarea
+              [ngModel]="formData().description"
+              (ngModelChange)="updateFormField('description', $event)"
+              placeholder="Brève description de l'exercice"
+              rows="2"
+            ></textarea>
+          </div>
+
+          <div class="form-group full-width">
+            <label>Instructions</label>
+            <textarea
+              [ngModel]="formData().instructions"
+              (ngModelChange)="updateFormField('instructions', $event)"
+              placeholder="Instructions détaillées pour réaliser l'exercice"
+              rows="3"
+            ></textarea>
+          </div>
+
+          <div class="form-group full-width">
+            <label>Groupes musculaires ciblés *</label>
+            <div class="checkbox-grid">
+              @for (muscle of muscleGroups; track muscle) {
+                <label class="checkbox-item" [class.selected]="formData().muscleGroups?.includes(muscle)">
+                  <input
+                    type="checkbox"
+                    [checked]="formData().muscleGroups?.includes(muscle)"
+                    (change)="toggleMuscleGroup(muscle)"
+                  >
+                  {{ getMuscleLabel(muscle) }}
+                </label>
+              }
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Muscle principal *</label>
+            <select
+              [ngModel]="formData().primaryMuscle"
+              (ngModelChange)="updateFormField('primaryMuscle', $event)"
+            >
+              <option value="">Sélectionner</option>
+              @for (muscle of formData().muscleGroups; track muscle) {
+                <option [value]="muscle">{{ getMuscleLabel(muscle) }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Équipement</label>
+            <select
+              [ngModel]="formData().equipment"
+              (ngModelChange)="updateFormField('equipment', $event)"
+            >
+              @for (equip of equipmentOptions; track equip) {
+                <option [value]="equip">{{ getEquipmentLabel(equip) }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Difficulté</label>
+            <select
+              [ngModel]="formData().difficulty"
+              (ngModelChange)="updateFormField('difficulty', $event)"
+            >
+              @for (diff of difficultyOptions; track diff) {
+                <option [value]="diff">{{ getDifficultyLabel(diff) }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <input
+                type="checkbox"
+                [ngModel]="formData().isPublic"
+                (ngModelChange)="updateFormField('isPublic', $event)"
+              >
+              Exercice public (visible par tous)
+            </label>
+          </div>
+
+          <div class="form-group full-width">
+            <label>URL Image</label>
+            <input
+              type="url"
+              [ngModel]="formData().imageUrl"
+              (ngModelChange)="updateFormField('imageUrl', $event)"
+              placeholder="https://..."
+            >
+          </div>
+
+          <div class="form-group full-width">
+            <label>URL Vidéo</label>
+            <input
+              type="url"
+              [ngModel]="formData().videoUrl"
+              (ngModelChange)="updateFormField('videoUrl', $event)"
+              placeholder="https://youtube.com/... ou URL directe"
+            >
+          </div>
+        </div>
+
+        @if (error()) {
+          <div class="alert error">{{ error() }}</div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModal()">Annuler</button>
+        <button class="btn-primary" (click)="saveExercise()" [disabled]="isSaving()">
+          {{ isSaving() ? 'Enregistrement...' : (editingExercise() ? 'Modifier' : 'Créer') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

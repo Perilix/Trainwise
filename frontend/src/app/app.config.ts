@@ -8,6 +8,7 @@ import { SocketService } from './services/socket.service';
 import { NotificationService } from './services/notification.service';
 import { ChatService } from './services/chat.service';
 import { FriendService } from './services/friend.service';
+import { provideIonicAngular } from '@ionic/angular/standalone';
 
 // Initialise les services au démarrage pour que les sockets soient prêts
 function initializeApp() {
@@ -32,6 +33,9 @@ export const appConfig: ApplicationConfig = {
       provide: APP_INITIALIZER,
       useFactory: initializeApp,
       multi: true
-    }
+    }, provideIonicAngular({
+      mode: 'ios',
+      _forceStatusbarPadding: false
+    })
   ]
 };

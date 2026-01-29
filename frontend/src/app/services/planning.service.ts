@@ -3,15 +3,26 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Run } from './run.service';
 import { environment } from '../../environments/environment';
+import { StrengthSession, StrengthPlan, StrengthSessionType } from '../interfaces/strength.interfaces';
 
-export type SessionType = 'endurance' | 'fractionne' | 'tempo' | 'recuperation' | 'sortie_longue' | 'cotes' | 'fartlek';
+// Types d'activité
+export type ActivityType = 'running' | 'strength';
+
+// Types de séance running
+export type RunningSessionType = 'endurance' | 'fractionne' | 'tempo' | 'recuperation' | 'sortie_longue' | 'cotes' | 'fartlek';
+
+// Type de séance (running + strength combinés)
+export type SessionType = RunningSessionType | StrengthSessionType;
+
 export type PlannedRunStatus = 'planned' | 'completed' | 'skipped';
 
 export interface PlannedRun {
   _id?: string;
   user: string;
   date: Date;
+  activityType: ActivityType;
   sessionType: SessionType;
+  // Champs running
   targetDistance?: number;
   targetDuration?: number;
   targetPace?: string;
@@ -19,6 +30,9 @@ export interface PlannedRun {
   warmup?: string;
   mainWorkout?: string;
   cooldown?: string;
+  // Champs strength
+  strengthPlan?: StrengthPlan;
+  // Common
   status: PlannedRunStatus;
   linkedRun?: Run;
   weekNumber?: number;
@@ -30,9 +44,21 @@ export interface PlannedRun {
 export interface CalendarData {
   runs: Run[];
   plannedRuns: PlannedRun[];
+  strengthSessions: StrengthSession[];
   month: number;
   year: number;
 }
+
+// Labels pour l'affichage des types de séance running
+export const RUNNING_SESSION_LABELS: Record<RunningSessionType, string> = {
+  endurance: 'Endurance',
+  fractionne: 'Fractionné',
+  tempo: 'Tempo',
+  recuperation: 'Récupération',
+  sortie_longue: 'Sortie longue',
+  cotes: 'Côtes',
+  fartlek: 'Fartlek'
+};
 
 export interface GeneratePlanResponse {
   message: string;
@@ -90,13 +116,24 @@ export class PlanningService {
 
   getSessionTypeLabel(type: SessionType): string {
     const labels: Record<SessionType, string> = {
+      // Running
       endurance: 'Endurance',
       fractionne: 'Fractionné',
       tempo: 'Tempo',
       recuperation: 'Récupération',
       sortie_longue: 'Sortie longue',
       cotes: 'Côtes',
-      fartlek: 'Fartlek'
+      fartlek: 'Fartlek',
+      // Strength
+      upper_body: 'Haut du corps',
+      lower_body: 'Bas du corps',
+      full_body: 'Corps complet',
+      push: 'Push (Poussée)',
+      pull: 'Pull (Tirage)',
+      legs: 'Jambes',
+      core: 'Abdos / Core',
+      hiit: 'HIIT',
+      other: 'Autre'
     };
     return labels[type] || type;
   }

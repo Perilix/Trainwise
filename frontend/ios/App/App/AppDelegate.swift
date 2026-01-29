@@ -13,6 +13,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         window?.backgroundColor = beigeColor
         window?.rootViewController?.view.backgroundColor = beigeColor
 
+        // Override point for customization after application launch.
         return true
     }
 
