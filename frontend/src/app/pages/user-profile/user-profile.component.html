@@ -1,0 +1,93 @@
+<app-navbar></app-navbar>
+
+<div class="container">
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>Chargement du profil...</p>
+    </div>
+  } @else if (error()) {
+    <div class="error-state">
+      <p>{{ error() }}</p>
+      <button class="btn-primary" (click)="goBack()">Retour</button>
+    </div>
+  } @else if (user()) {
+    <!-- Header avec bouton retour -->
+    <div class="header">
+      <button class="btn-back" (click)="goBack()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m15 18-6-6 6-6"/>
+        </svg>
+        Retour
+      </button>
+    </div>
+
+    <!-- Profil Card -->
+    <div class="profile-card">
+      <div class="profile-header">
+        <div class="avatar">
+          @if (user()!.profilePicture) {
+            <img [src]="user()!.profilePicture" alt="Avatar">
+          } @else {
+            {{ getInitials(user()!.firstName, user()!.lastName) }}
+          }
+        </div>
+        <div class="profile-info">
+          <h1>{{ user()!.firstName }} {{ user()!.lastName }}</h1>
+          @if (user()!.runningLevel) {
+            <span class="level-badge">{{ runningLevels[user()!.runningLevel!] || user()!.runningLevel }}</span>
+          }
+        </div>
+      </div>
+
+      <div class="profile-actions">
+        <button class="btn-message" (click)="openConversation()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          Envoyer un message
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    @if (stats()) {
+      <div class="stats-card">
+        <h2>Statistiques</h2>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-value">{{ stats()!.totalRuns }}</span>
+            <span class="stat-label">Courses</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">{{ stats()!.totalDistance | number:'1.0-0' }}</span>
+            <span class="stat-label">km parcourus</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">{{ formatDuration(stats()!.totalDuration) }}</span>
+            <span class="stat-label">Temps total</span>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Infos -->
+    <div class="info-card">
+      <h2>Informations</h2>
+      <div class="info-grid">
+        @if (user()!.goal) {
+          <div class="info-item">
+            <span class="info-label">Objectif</span>
+            <span class="info-value">{{ goals[user()!.goal!] || user()!.goal }}</span>
+          </div>
+        }
+        @if (user()!.weeklyFrequency) {
+          <div class="info-item">
+            <span class="info-label">Entraînements / semaine</span>
+            <span class="info-value">{{ user()!.weeklyFrequency }}x</span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

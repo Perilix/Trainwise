@@ -4,6 +4,8 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ChatService } from '../../services/chat.service';
 import { NotificationService } from '../../services/notification.service';
+import { FriendService } from '../../services/friend.service';
+import { SocketService } from '../../services/socket.service';
 import { NotificationDropdownComponent } from '../notification-dropdown/notification-dropdown.component';
 
 @Component({
@@ -22,13 +24,19 @@ export class NavbarComponent implements OnInit {
   constructor(
     public authService: AuthService,
     public chatService: ChatService,
-    public notificationService: NotificationService
+    public notificationService: NotificationService,
+    public friendService: FriendService,
+    private socketService: SocketService
   ) {}
 
   ngOnInit() {
-    // Load unread count on init
+    // Load unread counts on init
     if (this.authService.isAuthenticated()) {
       this.chatService.getUnreadCount().subscribe();
+      // Load pending friend requests count for badge
+      if (!this.authService.isCoach()) {
+        this.friendService.getPendingRequests().subscribe();
+      }
     }
   }
 
@@ -68,8 +76,7 @@ export class NavbarComponent implements OnInit {
   }
 
   logout() {
-    this.chatService.disconnect();
-    this.notificationService.disconnect();
+    this.socketService.disconnect();
     this.authService.logout();
   }
 }

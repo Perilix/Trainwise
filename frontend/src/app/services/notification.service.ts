@@ -1,69 +1,42 @@
-import { Injectable, signal, OnDestroy } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
-import { io, Socket } from 'socket.io-client';
 import { AuthService } from './auth.service';
+import { SocketService } from './socket.service';
 import { environment } from '../../environments/environment';
 import { Notification, NotificationsResponse } from '../interfaces/notification.interface';
 
 @Injectable({
   providedIn: 'root'
 })
-export class NotificationService implements OnDestroy {
+export class NotificationService {
   private readonly API_URL = `${environment.apiUrl}/api/notifications`;
-  private readonly SOCKET_URL = environment.socketUrl;
-
-  private socket: Socket | null = null;
 
   // Signals
   notifications = signal<Notification[]>([]);
   unreadCount = signal(0);
-  isConnected = signal(false);
 
   constructor(
     private http: HttpClient,
-    private authService: AuthService
+    private authService: AuthService,
+    private socketService: SocketService
   ) {
     if (this.authService.isAuthenticated()) {
-      this.connect();
+      this.setupSocketListeners();
       this.loadUnreadCount();
     }
   }
 
-  ngOnDestroy(): void {
-    this.disconnect();
-  }
-
-  // Socket.io Connection
-  connect(): void {
-    const token = this.authService.getToken();
-    if (!token || this.socket?.connected) return;
-
-    this.socket = io(this.SOCKET_URL, {
-      auth: { token },
-      transports: ['websocket', 'polling']
-    });
-
-    this.socket.on('connect', () => {
-      this.isConnected.set(true);
-    });
-
-    this.socket.on('disconnect', () => {
-      this.isConnected.set(false);
-    });
-
+  private setupSocketListeners(): void {
     // Écouter les nouvelles notifications
-    this.socket.on('notification:new', (notification: Notification) => {
+    this.socketService.on<Notification>('notification:new').subscribe(notification => {
       this.handleNewNotification(notification);
     });
   }
 
+  // Pour la compatibilité avec la navbar
   disconnect(): void {
-    if (this.socket) {
-      this.socket.disconnect();
-      this.socket = null;
-      this.isConnected.set(false);
-    }
+    // Géré par SocketService maintenant
   }
 
   private handleNewNotification(notification: Notification): void {

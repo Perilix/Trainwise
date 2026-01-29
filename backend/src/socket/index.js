@@ -3,7 +3,6 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
 const Message = require('../models/message.model');
 const Conversation = require('../models/conversation.model');
-const { createNotification } = require('../controllers/notification.controller');
 
 let io;
 
@@ -122,26 +121,6 @@ const initializeSocket = (httpServer) => {
         io.to(`conversation:${conversationId}`).emit('conversation:updated', {
           conversation: updatedConversation
         });
-
-        // Créer des notifications pour les autres participants
-        const messagePreview = type === 'text'
-          ? (content.length > 50 ? content.substring(0, 50) + '...' : content)
-          : `[${type}]`;
-
-        for (const participantId of conversation.participants) {
-          const pId = participantId.toString();
-          if (pId !== userId) {
-            await createNotification({
-              recipient: participantId,
-              sender: socket.user._id,
-              type: 'message',
-              action: 'new_message',
-              title: 'Nouveau message',
-              message: `${socket.user.firstName} ${socket.user.lastName}: ${messagePreview}`,
-              actionUrl: `/chat/${conversationId}`
-            });
-          }
-        }
 
       } catch (error) {
         console.error('Error sending message:', error);

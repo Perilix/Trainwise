@@ -1,8 +1,28 @@
 const Conversation = require('../models/conversation.model');
 const Message = require('../models/message.model');
 const User = require('../models/user.model');
+const Friendship = require('../models/friendship.model');
+const CoachAthlete = require('../models/coachAthlete.model');
 const { cloudinary } = require('../config/cloudinary');
-const { isUserOnline } = require('../socket/index');
+const { isUserOnline, getIO } = require('../socket/index');
+
+// Helper pour vérifier si deux utilisateurs peuvent discuter
+async function canChat(userId1, userId2) {
+  // Vérifier si ce sont des amis
+  const areFriends = await Friendship.areFriends(userId1, userId2);
+  if (areFriends) return true;
+
+  // Vérifier si c'est une relation coach-athlète
+  const coachRelation = await CoachAthlete.findOne({
+    $or: [
+      { coach: userId1, athlete: userId2, status: 'accepted' },
+      { coach: userId2, athlete: userId1, status: 'accepted' }
+    ]
+  });
+  if (coachRelation) return true;
+
+  return false;
+}
 
 // Get all conversations for current user
 exports.getConversations = async (req, res) => {
@@ -59,7 +79,26 @@ exports.getOrCreateConversation = async (req, res) => {
       return res.status(404).json({ error: 'Utilisateur non trouve' });
     }
 
+    // Vérifier si les utilisateurs peuvent discuter (amis ou relation coach-athlète)
+    const allowed = await canChat(req.user._id, userId);
+    if (!allowed) {
+      return res.status(403).json({ error: 'Vous devez être amis pour discuter' });
+    }
+
     const conversation = await Conversation.findOrCreateDirect(req.user._id, userId);
+
+    // Notifier les participants via socket pour qu'ils rejoignent la room
+    try {
+      const io = getIO();
+      if (io) {
+        // Notifier l'autre utilisateur de la nouvelle conversation
+        io.to(`user:${userId}`).emit('conversation:new', {
+          conversationId: conversation._id.toString()
+        });
+      }
+    } catch (e) {
+      // Socket non initialisé, pas grave
+    }
 
     // Add online status
     const convObj = conversation.toObject();
@@ -159,31 +198,63 @@ exports.deleteFile = async (req, res) => {
   }
 };
 
-// Search users to start a conversation
+// Search users to start a conversation (only friends and coach-athletes)
 exports.searchUsers = async (req, res) => {
   try {
     const { q } = req.query;
+    const currentUserId = req.user._id;
 
-    if (!q || q.length < 2) {
+    // Récupérer les IDs des amis
+    const friends = await Friendship.getFriends(currentUserId);
+    const friendIds = friends.map(f => f._id);
+
+    // Récupérer les IDs des relations coach-athlète
+    const coachRelations = await CoachAthlete.find({
+      $or: [
+        { coach: currentUserId, status: 'accepted' },
+        { athlete: currentUserId, status: 'accepted' }
+      ]
+    });
+    const coachAthleteIds = coachRelations.map(r =>
+      r.coach.toString() === currentUserId.toString() ? r.athlete : r.coach
+    );
+
+    // Combiner les IDs autorisés (sans doublons)
+    const allowedIds = [...new Set([...friendIds.map(id => id.toString()), ...coachAthleteIds.map(id => id.toString())])];
+
+    if (allowedIds.length === 0) {
       return res.json([]);
     }
 
-    const users = await User.find({
-      _id: { $ne: req.user._id },
-      $or: [
+    // Construire la requête
+    const query = {
+      _id: { $in: allowedIds }
+    };
+
+    // Ajouter le filtre de recherche si présent
+    if (q && q.length >= 2) {
+      query.$or = [
         { firstName: { $regex: q, $options: 'i' } },
         { lastName: { $regex: q, $options: 'i' } },
         { email: { $regex: q, $options: 'i' } }
-      ]
-    })
-      .select('firstName lastName email profilePicture')
-      .limit(10);
+      ];
+    }
 
-    // Add online status
-    const usersWithStatus = users.map(user => ({
-      ...user.toObject(),
-      isOnline: isUserOnline(user._id)
-    }));
+    const users = await User.find(query)
+      .select('firstName lastName email profilePicture role')
+      .limit(20);
+
+    // Add online status and relation type
+    const usersWithStatus = users.map(user => {
+      const isFriend = friendIds.some(id => id.toString() === user._id.toString());
+      const isCoachRelation = coachAthleteIds.some(id => id.toString() === user._id.toString());
+
+      return {
+        ...user.toObject(),
+        isOnline: isUserOnline(user._id),
+        relationType: isFriend ? 'friend' : (isCoachRelation ? 'coach' : null)
+      };
+    });
 
     res.json(usersWithStatus);
   } catch (error) {
