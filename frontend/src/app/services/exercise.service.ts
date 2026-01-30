@@ -69,4 +69,11 @@ export class ExerciseService {
   getEquipment(): Observable<LabelValue[]> {
     return this.http.get<LabelValue[]>(`${this.API_URL}/equipment`);
   }
+
+  // Upload image d'exercice (coach only)
+  uploadImage(file: File): Observable<{ url: string; publicId: string }> {
+    const formData = new FormData();
+    formData.append('image', file);
+    return this.http.post<{ url: string; publicId: string }>(`${this.API_URL}/upload-image`, formData);
+  }
 }

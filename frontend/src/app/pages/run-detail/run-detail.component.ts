@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, AfterViewInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { RunService, Run } from '../../services/run.service';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
@@ -32,7 +32,8 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private runService: RunService
+    private runService: RunService,
+    private location: Location
   ) {}
 
   ngOnInit() {
@@ -213,6 +214,6 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   goBack() {
-    this.router.navigate(['/profile']);
+    this.location.back();
   }
 }

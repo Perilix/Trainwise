@@ -1,5 +1,5 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CoachService } from '../../../services/coach.service';
 import { ChatService } from '../../../services/chat.service';
@@ -23,7 +23,8 @@ export class AthleteDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private coachService: CoachService,
-    private chatService: ChatService
+    private chatService: ChatService,
+    private location: Location
   ) {}
 
   ngOnInit() {
@@ -49,7 +50,7 @@ export class AthleteDetailComponent implements OnInit {
   }
 
   goBack() {
-    this.router.navigate(['/coach']);
+    this.location.back();
   }
 
   viewPlanning() {

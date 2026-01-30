@@ -1,5 +1,5 @@
 import { Component, signal, ViewChild, ElementRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -28,7 +28,8 @@ export class SettingsComponent {
 
   constructor(
     public authService: AuthService,
-    private router: Router
+    private router: Router,
+    private location: Location
   ) {
     this.initForm();
   }
@@ -127,7 +128,7 @@ export class SettingsComponent {
   }
 
   goBack() {
-    this.router.navigate(['/profile']);
+    this.location.back();
   }
 
   triggerFileInput() {

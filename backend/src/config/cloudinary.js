@@ -79,4 +79,29 @@ const uploadAvatarMemory = multer({
   }
 });
 
-module.exports = { cloudinary, upload, uploadAvatar: uploadAvatarMemory };
+// Exercise image storage
+const exerciseStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'runiq/exercises',
+    resource_type: 'image',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+    transformation: [{ width: 800, height: 800, crop: 'limit', quality: 'auto' }]
+  }
+});
+
+const uploadExerciseImage = multer({
+  storage: exerciseStorage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Seules les images sont autorisées'), false);
+    }
+  },
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB max
+  }
+});
+
+module.exports = { cloudinary, upload, uploadAvatar: uploadAvatarMemory, uploadExerciseImage };

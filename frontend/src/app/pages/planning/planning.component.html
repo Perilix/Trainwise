@@ -281,8 +281,8 @@
             <div class="event-card" [class.done]="planned.status === 'completed'" [class.skipped]="planned.status === 'skipped'" [class.ai-generated]="planned.generatedBy === 'ai'" [class.strength]="planned.activityType === 'strength'">
               <button class="delete-btn" (click)="deletePlannedRun(planned)" title="Supprimer">×</button>
               <span class="event-status" [class]="planned.status">
-                @if (planned.status === 'planned') { À faire }
-                @if (planned.status === 'completed') { Fait }
+                @if (planned.status === 'planned') {<i class="fa-solid fa-house"></i>}
+                @if (planned.status === 'completed') { <i class="fa-solid fa-house"></i>}
                 @if (planned.status === 'skipped') { Passé }
               </span>
               @if (planned.generatedBy === 'ai') {

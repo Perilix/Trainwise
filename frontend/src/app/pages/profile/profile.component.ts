@@ -464,4 +464,10 @@ export class ProfileComponent implements OnInit {
     this.coachMessageType.set(type);
     setTimeout(() => this.coachMessage.set(null), 5000);
   }
+
+  logout() {
+    if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
+      this.authService.logout();
+    }
+  }
 }

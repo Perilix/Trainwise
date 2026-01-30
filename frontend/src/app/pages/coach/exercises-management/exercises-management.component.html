@@ -227,13 +227,30 @@
           </div>
 
           <div class="form-group full-width">
-            <label>URL Image</label>
+            <label>Image de l'exercice</label>
             <input
-              type="url"
-              [ngModel]="formData().imageUrl"
-              (ngModelChange)="updateFormField('imageUrl', $event)"
-              placeholder="https://..."
+              type="file"
+              #fileInput
+              accept="image/*"
+              (change)="onFileSelected($event)"
+              hidden
             >
+            <div class="image-upload-zone">
+              @if (imagePreview() || formData().imageUrl) {
+                <div class="image-preview">
+                  <img [src]="imagePreview() || formData().imageUrl" alt="Preview">
+                  <button type="button" class="remove-image-btn" (click)="removeSelectedImage()" title="Supprimer l'image">
+                    &times;
+                  </button>
+                </div>
+              } @else {
+                <div class="upload-placeholder" (click)="triggerFileInput()">
+                  <span class="upload-icon">📷</span>
+                  <span class="upload-text">Cliquez pour ajouter une image</span>
+                  <span class="upload-hint">JPG, PNG, GIF, WebP (max 5 Mo)</span>
+                </div>
+              }
+            </div>
           </div>
 
           <div class="form-group full-width">
@@ -253,8 +270,14 @@
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" (click)="closeModal()">Annuler</button>
-        <button class="btn-primary" (click)="saveExercise()" [disabled]="isSaving()">
-          {{ isSaving() ? 'Enregistrement...' : (editingExercise() ? 'Modifier' : 'Créer') }}
+        <button class="btn-primary" (click)="saveExercise()" [disabled]="isSaving() || isUploadingImage()">
+          @if (isUploadingImage()) {
+            Upload de l'image...
+          } @else if (isSaving()) {
+            Enregistrement...
+          } @else {
+            {{ editingExercise() ? 'Modifier' : 'Créer' }}
+          }
         </button>
       </div>
     </div>

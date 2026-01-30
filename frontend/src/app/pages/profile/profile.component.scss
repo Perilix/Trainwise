@@ -37,7 +37,7 @@
 .user-card {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 0.75rem;
   background: #F6F4F0;
   border-radius: 16px;
   padding: 1.5rem;
@@ -46,8 +46,8 @@
   margin-bottom: 1.5rem;
 
   .user-avatar {
-    width: 70px;
-    height: 70px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
     background: linear-gradient(135deg, #00a6fb 0%, #0582ca 100%);
     color: #fff;
@@ -85,24 +85,28 @@
     }
   }
 
-  .btn-settings {
-    padding: 0.5rem 1rem;
-    background: transparent;
-    color: #00a6fb;
-    border: 2px solid #00a6fb;
-    border-radius: 10px;
-    font-size: 0.85rem;
-    font-weight: 600;
+  .btn-settings-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: #f8f9fa;
+    border: 1px solid rgba(0, 53, 84, 0.15);
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-decoration: none;
     transition: all 0.2s;
+    flex-shrink: 0;
+
+    i {
+      font-size: 1.2rem;
+    }
 
     &:hover {
       background: #00a6fb;
+      border-color: #00a6fb;
       color: #fff;
-    }
-
-    @media (max-width: 600px) {
-      display: none;
     }
   }
 }
@@ -961,6 +965,43 @@
         opacity: 0.6;
         cursor: not-allowed;
       }
+    }
+  }
+}
+
+// Logout section
+.logout-section {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(0, 53, 84, 0.1);
+
+  .btn-logout {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+    color: #dc2626;
+    border: 1px solid #dc2626;
+
+    svg {
+      flex-shrink: 0;
+    }
+
+    &:hover {
+      background: #dc2626;
+      color: #fff;
+    }
+
+    &:active {
+      transform: scale(0.98);
     }
   }
 }

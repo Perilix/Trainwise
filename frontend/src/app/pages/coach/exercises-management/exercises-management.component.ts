@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -14,6 +14,8 @@ import { NavbarComponent } from '../../../components/navbar/navbar.component';
   styleUrl: './exercises-management.component.scss'
 })
 export class ExercisesManagementComponent implements OnInit {
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+
   exercises = signal<Exercise[]>([]);
   isLoading = signal(true);
   error = signal<string | null>(null);
@@ -28,6 +30,11 @@ export class ExercisesManagementComponent implements OnInit {
   showModal = signal(false);
   editingExercise = signal<Exercise | null>(null);
   isSaving = signal(false);
+
+  // Image upload state
+  selectedFile = signal<File | null>(null);
+  imagePreview = signal<string | null>(null);
+  isUploadingImage = signal(false);
 
   // Form data
   formData = signal<Partial<Exercise>>({
@@ -133,6 +140,8 @@ export class ExercisesManagementComponent implements OnInit {
     this.showModal.set(false);
     this.editingExercise.set(null);
     this.error.set(null);
+    this.selectedFile.set(null);
+    this.imagePreview.set(null);
   }
 
   updateFormField<K extends keyof Exercise>(field: K, value: Exercise[K]) {
@@ -161,7 +170,31 @@ export class ExercisesManagementComponent implements OnInit {
 
     this.isSaving.set(true);
     const editing = this.editingExercise();
+    const file = this.selectedFile();
 
+    // If there's a file to upload, upload it first
+    if (file) {
+      this.isUploadingImage.set(true);
+      this.exerciseService.uploadImage(file).subscribe({
+        next: (result) => {
+          this.isUploadingImage.set(false);
+          // Update imageUrl with the uploaded URL
+          const updatedData = { ...data, imageUrl: result.url };
+          this.performSave(updatedData, editing);
+        },
+        error: (err) => {
+          this.isUploadingImage.set(false);
+          this.isSaving.set(false);
+          this.error.set('Erreur lors de l\'upload de l\'image');
+          console.error(err);
+        }
+      });
+    } else {
+      this.performSave(data, editing);
+    }
+  }
+
+  private performSave(data: Partial<Exercise>, editing: Exercise | null) {
     const request = editing
       ? this.exerciseService.updateExercise(editing._id, data)
       : this.exerciseService.createExercise(data);
@@ -219,5 +252,48 @@ export class ExercisesManagementComponent implements OnInit {
       advanced: 'hard'
     };
     return classes[difficulty] || '';
+  }
+
+  // Image upload methods
+  triggerFileInput() {
+    this.fileInput?.nativeElement.click();
+  }
+
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      this.error.set('Veuillez sélectionner une image');
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      this.error.set('L\'image ne doit pas dépasser 5 Mo');
+      return;
+    }
+
+    this.selectedFile.set(file);
+    this.error.set(null);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.imagePreview.set(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  removeSelectedImage() {
+    this.selectedFile.set(null);
+    this.imagePreview.set(null);
+    this.formData.update(data => ({ ...data, imageUrl: '' }));
+    if (this.fileInput?.nativeElement) {
+      this.fileInput.nativeElement.value = '';
+    }
   }
 }

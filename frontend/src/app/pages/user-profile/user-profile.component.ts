@@ -1,5 +1,5 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
@@ -61,7 +61,8 @@ export class UserProfileComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private http: HttpClient,
-    private chatService: ChatService
+    private chatService: ChatService,
+    private location: Location
   ) {}
 
   ngOnInit(): void {
@@ -117,6 +118,6 @@ export class UserProfileComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/friends']);
+    this.location.back();
   }
 }

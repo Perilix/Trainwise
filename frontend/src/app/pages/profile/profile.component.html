@@ -20,7 +20,9 @@
         <h2>{{ authService.currentUser()?.firstName }} {{ authService.currentUser()?.lastName }}</h2>
         <p class="user-email">{{ authService.currentUser()?.email }}</p>
       </div>
-      <a routerLink="/settings" class="btn-settings">Paramètres</a>
+      <a routerLink="/settings" class="btn-settings-icon" title="Paramètres">
+        <i class="fa-solid fa-gear"></i>
+      </a>
     </section>
 
     <!-- Profil coureur -->
@@ -397,6 +399,18 @@
           }
         </div>
       }
+    </section>
+
+    <!-- Déconnexion -->
+    <section class="logout-section">
+      <button class="btn-logout" (click)="logout()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        Se déconnecter
+      </button>
     </section>
   </main>
 </div>

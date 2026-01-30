@@ -21,8 +21,8 @@ const config: CapacitorConfig = {
       backgroundColor: '#F6F4F0'
     }
   },
+  // Live reload en dev (commenter pour build standalone)
   server: {
-    // Live reload depuis ton Mac
     url: 'http://192.168.1.31:4200',
     cleartext: true
   }
