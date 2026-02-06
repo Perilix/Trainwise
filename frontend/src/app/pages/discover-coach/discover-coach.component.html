@@ -1,0 +1,105 @@
+<app-navbar></app-navbar>
+
+<div class="container">
+  <div class="page-header">
+    <button class="btn-back" (click)="goBack()">
+      <i class="fa-solid fa-arrow-left"></i>
+    </button>
+    <div class="header-text">
+      <h1>Coach Partenaire</h1>
+      <p class="subtitle">Accompagnement personnalisé</p>
+    </div>
+  </div>
+
+  <main>
+    @if (isLoading()) {
+      <div class="loading">
+        <i class="fa-solid fa-spinner fa-spin"></i>
+        <p>Chargement...</p>
+      </div>
+    } @else if (error()) {
+      <div class="error-state">
+        <i class="fa-solid fa-exclamation-circle"></i>
+        <p>{{ error() }}</p>
+      </div>
+    } @else if (partnerCoach()) {
+      <!-- Coach Card -->
+      <section class="coach-card">
+        <div class="coach-avatar">
+          @if (partnerCoach()?.profilePicture) {
+            <img [src]="partnerCoach()?.profilePicture" alt="Photo de profil">
+          } @else {
+            {{ partnerCoach()?.firstName?.charAt(0) }}{{ partnerCoach()?.lastName?.charAt(0) }}
+          }
+        </div>
+        <div class="coach-info">
+          <h2>{{ partnerCoach()?.firstName }} {{ partnerCoach()?.lastName }}</h2>
+          <p class="coach-title">Coach certifié running & trail</p>
+          <span class="badge">
+            <i class="fa-solid fa-star"></i>
+            Partenaire RunIQ
+          </span>
+        </div>
+      </section>
+
+      <!-- À propos -->
+      <section class="info-card">
+        <h3>À propos</h3>
+        <p>Coach sportif spécialisé en course à pied et trail. Je t'accompagne dans tes objectifs, que tu sois débutant ou coureur confirmé, avec une approche personnalisée et un suivi régulier.</p>
+      </section>
+
+      <!-- Spécialités -->
+      <section class="info-card">
+        <h3>Spécialités</h3>
+        <div class="tags">
+          <span class="tag">Course à pied</span>
+          <span class="tag">Trail</span>
+          <span class="tag">Marathon</span>
+          <span class="tag">Préparation physique</span>
+        </div>
+      </section>
+
+      <!-- Ce que tu obtiens -->
+      <section class="info-card">
+        <h3>Ce que tu obtiens</h3>
+        <ul class="benefits-list">
+          <li>
+            <i class="fa-solid fa-check"></i>
+            <span>Programme d'entraînement personnalisé</span>
+          </li>
+          <li>
+            <i class="fa-solid fa-check"></i>
+            <span>Suivi et ajustements réguliers</span>
+          </li>
+          <li>
+            <i class="fa-solid fa-check"></i>
+            <span>Disponible via l'app 7j/7</span>
+          </li>
+          <li>
+            <i class="fa-solid fa-check"></i>
+            <span>Conseils nutrition et récupération</span>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Certifications -->
+      <section class="info-card">
+        <h3>Certifications</h3>
+        <ul class="credentials-list">
+          <li>BPJEPS Activités Physiques pour Tous</li>
+          <li>Diplôme FFA - Entraîneur Course Hors Stade</li>
+          <li>Formation Trail & Ultra</li>
+        </ul>
+      </section>
+
+      <!-- CTA -->
+      <section class="cta-card">
+        <button class="btn-primary" (click)="contactCoach()">
+          <i class="fa-solid fa-message"></i>
+          Contacter le coach
+        </button>
+        <p class="cta-hint">Première consultation gratuite</p>
+      </section>
+    }
+  </main>
+</div>

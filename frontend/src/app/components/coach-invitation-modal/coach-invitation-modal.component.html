@@ -1,0 +1,65 @@
+<div class="modal-overlay" (click)="onBackdropClick($event)">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Invitation {{ packageDetails.name }}</h2>
+      <button class="modal-close" (click)="onClose()">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="invitation-content">
+        <div class="package-badge" [style.background]="packageDetails.gradient">
+          <i [class]="packageDetails.icon"></i>
+          @if (packageDetails.badge) {
+            <span class="badge-label">{{ packageDetails.badge }}</span>
+          }
+        </div>
+
+        <div class="package-price">
+          <span class="price">{{ packageDetails.price }}€</span>
+          <span class="period">/mois</span>
+        </div>
+
+        <div class="coach-info">
+          <div class="coach-avatar">
+            @if (invitation?.coach?.profilePicture) {
+              <img [src]="invitation.coach.profilePicture" alt="Coach">
+            } @else {
+              {{ invitation?.coach?.firstName?.[0] }}{{ invitation?.coach?.lastName?.[0] }}
+            }
+          </div>
+          <div class="coach-details">
+            <h3>{{ invitation?.coach?.firstName }} {{ invitation?.coach?.lastName }}</h3>
+            <p>te propose un accompagnement personnalisé</p>
+          </div>
+        </div>
+
+        <div class="package-features">
+          <h4>Ce que comprend cette offre :</h4>
+          <ul>
+            @for (feature of packageDetails.features; track feature) {
+              <li>
+                <i class="fa-solid fa-check"></i>
+                <span>{{ feature }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+
+        <div class="guarantee-note">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>Tu peux annuler à tout moment</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="onReject()">
+        Refuser
+      </button>
+      <button class="btn-confirm" [style.background]="packageDetails.gradient" (click)="onAccept()">
+        <i class="fa-solid fa-check"></i>
+        Accepter
+      </button>
+    </div>
+  </div>
+</div>

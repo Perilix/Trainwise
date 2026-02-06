@@ -1,0 +1,191 @@
+<app-navbar></app-navbar>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Mon Profil Coach</h1>
+    <p class="subtitle">Informations visibles par tes athlètes</p>
+  </div>
+
+  <main>
+    <!-- Infos utilisateur -->
+    <section class="user-card">
+      <div class="user-avatar">
+        @if (authService.currentUser()?.profilePicture) {
+          <img [src]="authService.currentUser()?.profilePicture" alt="Photo de profil">
+        } @else {
+          {{ authService.currentUser()?.firstName?.charAt(0) }}{{ authService.currentUser()?.lastName?.charAt(0) }}
+        }
+      </div>
+      <div class="user-info">
+        <h2>{{ authService.currentUser()?.firstName }} {{ authService.currentUser()?.lastName }}</h2>
+        <p class="user-email">{{ authService.currentUser()?.email }}</p>
+        <span class="coach-badge">Coach</span>
+      </div>
+      <a routerLink="/settings" class="btn-settings-icon" title="Paramètres">
+        <i class="fa-solid fa-gear"></i>
+      </a>
+    </section>
+
+    <!-- Profil coach -->
+    <section class="coach-profile-section">
+      <div class="section-header">
+        <h3>Profil coach</h3>
+        <button class="btn-edit" (click)="toggleEdit()">
+          @if (isEditing()) {
+            Annuler
+          } @else {
+            Modifier
+          }
+        </button>
+      </div>
+
+      @if (saveSuccess()) {
+        <div class="success-box">Profil mis à jour avec succès !</div>
+      }
+
+      @if (saveError()) {
+        <div class="error-box">{{ saveError() }}</div>
+      }
+
+      @if (!isEditing()) {
+        <!-- Mode lecture -->
+        <div class="profile-content">
+          <div class="profile-item">
+            <span class="profile-label">Disciplines</span>
+            <div class="profile-value">
+              @if (profileForm.disciplines.length > 0) {
+                <div class="tags-list">
+                  @for (discipline of profileForm.disciplines; track discipline) {
+                    <span class="tag">{{ getDisciplineLabel(discipline) }}</span>
+                  }
+                </div>
+              } @else {
+                <span class="empty">Non renseigné</span>
+              }
+            </div>
+          </div>
+
+          <div class="profile-item">
+            <span class="profile-label">Expérience</span>
+            <span class="profile-value">
+              @if (profileForm.experience) {
+                {{ profileForm.experience }} ans d'expérience
+              } @else {
+                <span class="empty">Non renseigné</span>
+              }
+            </span>
+          </div>
+
+          <div class="profile-item">
+            <span class="profile-label">Diplômes & Certifications</span>
+            <div class="profile-value">
+              @if (profileForm.diplomas.length > 0) {
+                <div class="tags-list">
+                  @for (diploma of profileForm.diplomas; track diploma) {
+                    <span class="tag diploma">{{ getDiplomaLabel(diploma) }}</span>
+                  }
+                </div>
+              } @else {
+                <span class="empty">Non renseigné</span>
+              }
+            </div>
+          </div>
+
+          <div class="profile-item full-width">
+            <span class="profile-label">Bio / Présentation</span>
+            <p class="profile-value bio">
+              @if (profileForm.bio) {
+                {{ profileForm.bio }}
+              } @else {
+                <span class="empty">Non renseigné</span>
+              }
+            </p>
+          </div>
+        </div>
+      } @else {
+        <!-- Mode édition -->
+        <form class="profile-form" (ngSubmit)="saveProfile()">
+          <div class="form-group">
+            <label>Disciplines</label>
+            <p class="form-hint">Sélectionne les disciplines que tu coaches</p>
+            <div class="checkbox-grid">
+              @for (discipline of disciplineOptions; track discipline.value) {
+                <button
+                  type="button"
+                  class="checkbox-btn"
+                  [class.selected]="isDisciplineSelected(discipline.value)"
+                  (click)="toggleDiscipline(discipline.value)">
+                  {{ discipline.label }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="experience">Années d'expérience</label>
+            <input
+              type="number"
+              id="experience"
+              [(ngModel)]="profileForm.experience"
+              name="experience"
+              min="0"
+              max="50"
+              placeholder="Ex: 5"
+            >
+          </div>
+
+          <div class="form-group">
+            <label>Diplômes & Certifications</label>
+            <p class="form-hint">Sélectionne tes diplômes et certifications</p>
+            <div class="checkbox-grid">
+              @for (diploma of diplomaOptions; track diploma.value) {
+                <button
+                  type="button"
+                  class="checkbox-btn"
+                  [class.selected]="isDiplomaSelected(diploma.value)"
+                  (click)="toggleDiploma(diploma.value)">
+                  {{ diploma.label }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="bio">Bio / Présentation</label>
+            <p class="form-hint">Présente-toi à tes futurs athlètes</p>
+            <textarea
+              id="bio"
+              [(ngModel)]="profileForm.bio"
+              name="bio"
+              rows="4"
+              placeholder="Ex: Coach running depuis 10 ans, spécialisé dans la préparation marathon. J'accompagne des coureurs de tous niveaux vers leurs objectifs..."
+            ></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-secondary" (click)="toggleEdit()">Annuler</button>
+            <button type="submit" class="btn-primary" [disabled]="isSaving()">
+              @if (isSaving()) {
+                Enregistrement...
+              } @else {
+                Enregistrer
+              }
+            </button>
+          </div>
+        </form>
+      }
+    </section>
+
+    <!-- Déconnexion -->
+    <section class="logout-section">
+      <button class="btn-logout" (click)="logout()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        Se déconnecter
+      </button>
+    </section>
+  </main>
+</div>

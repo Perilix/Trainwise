@@ -1,0 +1,27 @@
+<nav class="coach-bottom-nav">
+  <div class="all-items">
+    <a routerLink="/coach" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">
+      <i class="fa-solid fa-house"></i>
+      <span class="nav-label">Accueil</span>
+    </a>
+
+    <a routerLink="/coach/exercises" routerLinkActive="active" class="nav-item">
+      <i class="fa-solid fa-dumbbell"></i>
+      <span class="nav-label">Exercices</span>
+    </a>
+
+    <a routerLink="/chat" routerLinkActive="active" class="nav-item">
+      <div class="icon-wrapper">
+        <i class="fa-solid fa-message"></i>
+        @if (chatService.totalUnread() > 0) {
+          <span class="badge">{{ chatService.totalUnread() > 99 ? '99+' : chatService.totalUnread() }}</span>
+        }
+      </div>
+      <span class="nav-label">Messages</span>
+    </a>
+
+    <a routerLink="/coach/profile" routerLinkActive="active" class="nav-item">
+      <i class="fa-solid fa-user"></i>
+    </a>
+  </div>
+</nav>
