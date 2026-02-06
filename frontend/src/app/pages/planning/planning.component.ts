@@ -2,7 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { PlanningService, PlannedRun, CalendarData, SessionType, ActivityType, RunningSessionType } from '../../services/planning.service';
+import { PlanningService, PlannedSession, CalendarData, SessionType, ActivityType, RunningSessionType } from '../../services/planning.service';
 import { RunService, Run } from '../../services/run.service';
 import { StrengthSession, StrengthSessionType, SESSION_TYPE_LABELS as STRENGTH_SESSION_LABELS } from '../../interfaces/strength.interfaces';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
@@ -13,7 +13,7 @@ interface CalendarDay {
   isCurrentMonth: boolean;
   isToday: boolean;
   runs: Run[];
-  plannedRuns: PlannedRun[];
+  plannedRuns: PlannedSession[];
   strengthSessions: StrengthSession[];
 }
 
@@ -41,12 +41,23 @@ export class PlanningComponent implements OnInit {
 
   // Preview modal
   showPreview = signal(false);
-  previewSessions = signal<Partial<PlannedRun>[]>([]);
+  previewSessions = signal<Partial<PlannedSession>[]>([]);
   isConfirming = signal(false);
 
   // Generate options
   showGenerateOptions = signal(false);
   generateStartDate = this.getNextMonday();
+
+  // Day configuration for generation
+  generateDays: { day: string; dayIndex: number; running: boolean; strength: boolean }[] = [
+    { day: 'Lundi', dayIndex: 0, running: false, strength: false },
+    { day: 'Mardi', dayIndex: 1, running: false, strength: false },
+    { day: 'Mercredi', dayIndex: 2, running: true, strength: false },
+    { day: 'Jeudi', dayIndex: 3, running: false, strength: true },
+    { day: 'Vendredi', dayIndex: 4, running: true, strength: false },
+    { day: 'Samedi', dayIndex: 5, running: false, strength: false },
+    { day: 'Dimanche', dayIndex: 6, running: false, strength: false }
+  ];
 
   newSession = {
     activityType: 'running' as ActivityType,
@@ -224,13 +235,34 @@ export class PlanningComponent implements OnInit {
     this.showGenerateOptions.set(false);
   }
 
+  toggleDayRunning(dayIndex: number) {
+    this.generateDays[dayIndex].running = !this.generateDays[dayIndex].running;
+  }
+
+  toggleDayStrength(dayIndex: number) {
+    this.generateDays[dayIndex].strength = !this.generateDays[dayIndex].strength;
+  }
+
+  hasAnyDaySelected(): boolean {
+    return this.generateDays.some(d => d.running || d.strength);
+  }
+
   generatePlan(weeks: number = 1) {
     this.isGenerating.set(true);
     this.error.set(null);
     this.successMessage.set(null);
     this.showGenerateOptions.set(false);
 
-    this.planningService.generatePlan(weeks, this.generateStartDate).subscribe({
+    // Build day config for API
+    const dayConfig = this.generateDays
+      .filter(d => d.running || d.strength)
+      .map(d => ({
+        dayIndex: d.dayIndex,
+        running: d.running,
+        strength: d.strength
+      }));
+
+    this.planningService.generatePlan(weeks, this.generateStartDate, dayConfig).subscribe({
       next: (response) => {
         this.isGenerating.set(false);
         this.previewSessions.set(response.sessions);
@@ -277,7 +309,7 @@ export class PlanningComponent implements OnInit {
     });
   }
 
-  markAsCompleted(plannedRun: PlannedRun) {
+  markAsCompleted(plannedRun: PlannedSession) {
     if (!plannedRun._id) return;
 
     this.planningService.updateStatus(plannedRun._id, 'completed').subscribe({
@@ -288,7 +320,7 @@ export class PlanningComponent implements OnInit {
     });
   }
 
-  markAsSkipped(plannedRun: PlannedRun) {
+  markAsSkipped(plannedRun: PlannedSession) {
     if (!plannedRun._id) return;
 
     this.planningService.updateStatus(plannedRun._id, 'skipped').subscribe({
@@ -299,10 +331,10 @@ export class PlanningComponent implements OnInit {
     });
   }
 
-  deletePlannedRun(plannedRun: PlannedRun) {
+  deletePlannedSession(plannedRun: PlannedSession) {
     if (!plannedRun._id) return;
 
-    this.planningService.deletePlannedRun(plannedRun._id).subscribe({
+    this.planningService.deletePlannedSession(plannedRun._id).subscribe({
       next: () => {
         this.loadCalendar();
         this.refreshSelectedDay();
@@ -352,8 +384,14 @@ export class PlanningComponent implements OnInit {
     return activityType === 'strength' ? '💪' : '🏃';
   }
 
-  navigateToStrengthLog() {
-    this.router.navigate(['/strength/log']);
+  navigateToStrengthLog(plannedSession?: PlannedSession) {
+    if (plannedSession?._id) {
+      this.router.navigate(['/strength/log'], {
+        queryParams: { plannedId: plannedSession._id }
+      });
+    } else {
+      this.router.navigate(['/strength/log']);
+    }
   }
 
   formatDate(date: Date): string {
@@ -400,7 +438,7 @@ export class PlanningComponent implements OnInit {
 
     this.isSaving.set(true);
 
-    const plannedRun: Partial<PlannedRun> = {
+    const plannedRun: Partial<PlannedSession> = {
       date: day.date,
       activityType: this.newSession.activityType,
       sessionType: this.newSession.sessionType,
@@ -412,7 +450,7 @@ export class PlanningComponent implements OnInit {
       status: 'planned'
     };
 
-    this.planningService.createPlannedRun(plannedRun).subscribe({
+    this.planningService.createPlannedSession(plannedRun).subscribe({
       next: () => {
         this.isSaving.set(false);
         this.isAddingSession.set(false);

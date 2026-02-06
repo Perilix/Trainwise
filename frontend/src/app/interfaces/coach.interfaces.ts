@@ -1,4 +1,4 @@
-import { PlannedRun } from '../services/planning.service';
+import { PlannedSession } from '../services/planning.service';
 
 export interface Athlete {
   _id: string;
@@ -84,7 +84,7 @@ export interface PendingInvitation {
 
 export interface CalendarData {
   runs: any[];
-  plannedRuns: PlannedRun[];
+  plannedRuns: PlannedSession[];
   month: number;
   year: number;
 }

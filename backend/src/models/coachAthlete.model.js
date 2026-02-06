@@ -28,6 +28,11 @@ const coachAthleteSchema = new mongoose.Schema({
     type: String,
     enum: ['code', 'direct'],
     required: true
+  },
+  packageType: {
+    type: String,
+    enum: ['bronze', 'silver', 'gold'],
+    default: 'silver'
   }
 }, {
   timestamps: true

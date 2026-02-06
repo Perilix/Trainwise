@@ -143,8 +143,9 @@
 
           <!-- Séances planifiées -->
           @for (planned of selectedDay()!.plannedRuns; track planned._id) {
-            <div class="session-card" [class.coach-session]="isCoachSession(planned)">
+            <div class="session-card" [class.coach-session]="isCoachSession(planned)" [class.strength-session]="planned.activityType === 'strength'">
               <div class="session-header">
+                <span class="activity-icon">{{ getActivityIcon(planned.activityType) }}</span>
                 <span class="session-type">{{ getSessionTypeLabel(planned.sessionType) }}</span>
                 <span class="session-badge" [class]="planned.status">
                   {{ planned.status === 'planned' ? 'Planifiée' : planned.status === 'completed' ? 'Complétée' : 'Sautée' }}
@@ -179,50 +180,74 @@
         } @else {
           <!-- Formulaire d'ajout -->
           <form (ngSubmit)="saveSession()">
+            <div class="activity-type-selector">
+              <button type="button" class="activity-btn" [class.active]="newSession.activityType === 'running'" (click)="onActivityTypeChange('running')">
+                Course
+              </button>
+              <button type="button" class="activity-btn" [class.active]="newSession.activityType === 'strength'" (click)="onActivityTypeChange('strength')">
+                Musculation
+              </button>
+            </div>
+
             <div class="form-group">
               <label>Type de séance</label>
               <select [(ngModel)]="newSession.sessionType" name="sessionType" required>
-                @for (type of sessionTypes; track type.value) {
-                  <option [value]="type.value">{{ type.label }}</option>
+                @if (newSession.activityType === 'running') {
+                  @for (type of runningSessionTypes; track type.value) {
+                    <option [value]="type.value">{{ type.label }}</option>
+                  }
+                } @else {
+                  @for (type of strengthSessionTypes; track type.value) {
+                    <option [value]="type.value">{{ type.label }}</option>
+                  }
                 }
               </select>
             </div>
 
-            <div class="form-row">
-              <div class="form-group">
-                <label>Distance (km)</label>
-                <input type="number" [(ngModel)]="newSession.targetDistance" name="targetDistance" step="0.1" min="0">
+            @if (newSession.activityType === 'running') {
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Distance (km)</label>
+                  <input type="number" [(ngModel)]="newSession.targetDistance" name="targetDistance" step="0.1" min="0">
+                </div>
+                <div class="form-group">
+                  <label>Durée (min)</label>
+                  <input type="number" [(ngModel)]="newSession.targetDuration" name="targetDuration" min="0">
+                </div>
               </div>
+
               <div class="form-group">
-                <label>Durée (min)</label>
+                <label>Allure cible</label>
+                <input type="text" [(ngModel)]="newSession.targetPace" name="targetPace" placeholder="ex: 5:30">
+              </div>
+            } @else {
+              <div class="form-group">
+                <label>Durée estimée (min)</label>
                 <input type="number" [(ngModel)]="newSession.targetDuration" name="targetDuration" min="0">
               </div>
-            </div>
-
-            <div class="form-group">
-              <label>Allure cible</label>
-              <input type="text" [(ngModel)]="newSession.targetPace" name="targetPace" placeholder="ex: 5:30">
-            </div>
+            }
 
             <div class="form-group">
               <label>Description / Consignes</label>
               <textarea [(ngModel)]="newSession.description" name="description" rows="3" placeholder="Instructions pour l'athlète..."></textarea>
             </div>
 
-            <div class="form-group">
-              <label>Échauffement</label>
-              <textarea [(ngModel)]="newSession.warmup" name="warmup" rows="2" placeholder="Ex: 15 min footing progressif"></textarea>
-            </div>
+            @if (newSession.activityType === 'running') {
+              <div class="form-group">
+                <label>Échauffement</label>
+                <textarea [(ngModel)]="newSession.warmup" name="warmup" rows="2" placeholder="Ex: 15 min footing progressif"></textarea>
+              </div>
 
-            <div class="form-group">
-              <label>Corps de séance</label>
-              <textarea [(ngModel)]="newSession.mainWorkout" name="mainWorkout" rows="3" placeholder="Ex: 6 x 1000m avec 2min récup"></textarea>
-            </div>
+              <div class="form-group">
+                <label>Corps de séance</label>
+                <textarea [(ngModel)]="newSession.mainWorkout" name="mainWorkout" rows="3" placeholder="Ex: 6 x 1000m avec 2min récup"></textarea>
+              </div>
 
-            <div class="form-group">
-              <label>Retour au calme</label>
-              <textarea [(ngModel)]="newSession.cooldown" name="cooldown" rows="2" placeholder="Ex: 10 min footing + étirements"></textarea>
-            </div>
+              <div class="form-group">
+                <label>Retour au calme</label>
+                <textarea [(ngModel)]="newSession.cooldown" name="cooldown" rows="2" placeholder="Ex: 10 min footing + étirements"></textarea>
+              </div>
+            }
 
             <div class="form-actions">
               <button type="button" class="btn-secondary" (click)="cancelAddSession()">Annuler</button>

@@ -1,5 +1,22 @@
-<router-outlet></router-outlet>
+<div class="page-scroll">
+  <router-outlet></router-outlet>
+</div>
 <!--<app-chat-fab></app-chat-fab>-->
-@if (authService.isAuthenticated() && !authService.isCoach()) {
+@if (authService.isAuthenticated() && !authService.isCoach() && !isOnChatDetail()) {
   <app-bottom-nav></app-bottom-nav>
+}
+@if (authService.isAuthenticated() && authService.isCoach() && !isOnChatDetail()) {
+  <app-coach-bottom-nav></app-coach-bottom-nav>
+}
+@if (isOnChatDetail()) {
+  <div class="safe-area-fill-beige"></div>
+}
+
+@if (invitationModalService.isOpen()) {
+  <app-coach-invitation-modal
+    [invitation]="invitationModalService.invitation()"
+    (accept)="onAcceptInvitation()"
+    (reject)="onRejectInvitation()"
+    (close)="onCloseInvitationModal()"
+  ></app-coach-invitation-modal>
 }

@@ -3,11 +3,11 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 120px;
+  height: calc(20px + env(safe-area-inset-top));
   padding-top: env(safe-area-inset-top);
   background: #003554;
   border-bottom: 1px solid #003554;
-  z-index: 9999;
+  z-index: 1000;
   font-family: 'Poppins', sans-serif;
 }
 
@@ -298,7 +298,8 @@
 // Responsive
 @media (max-width: 768px) {
   .navbar {
-    height: calc(90px + env(safe-area-inset-top));
+    height: calc(80px + env(safe-area-inset-top));
+    padding-top: 50px;
   }
 
   .navbar-container {
@@ -349,21 +350,3 @@
   }
 }
 
-@media (max-width: 500px) {
-  .navbar {
-    height: calc(85px + env(safe-area-inset-top));
-  }
-
-  .navbar-logo .logo-text {
-    font-size: 1.4rem;
-  }
-
-  .mobile-profile-link {
-    .mobile-header-avatar,
-    .mobile-header-avatar-placeholder {
-      width: 60px;
-      height: 60px;
-      font-size: 1rem;
-    }
-  }
-}

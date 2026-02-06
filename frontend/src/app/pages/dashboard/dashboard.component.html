@@ -70,9 +70,34 @@
             }
           </section>
         } @else {
-          <!-- Utilisateur sans coach -->
           <section class="coaching-section no-coach">
-            <!-- Coach partenaire -->
+            @if (pendingCoachInvitations().length > 0) {
+              <div class="invitations-block">
+                <h4 class="invitations-title">
+                  Invitations en attente
+                </h4>
+                @for (invitation of pendingCoachInvitations(); track invitation._id) {
+                  <div class="invitation-item" (click)="openInvitationModal(invitation)">
+                    <div class="invitation-coach">
+                      <div class="coach-avatar small">
+                        @if (invitation.coach?.profilePicture) {
+                          <img [src]="invitation.coach.profilePicture" alt="Coach">
+                        } @else {
+                          {{ invitation.coach?.firstName?.[0] }}{{ invitation.coach?.lastName?.[0] }}
+                        }
+                      </div>
+                      <div class="invitation-info">
+                        <span class="coach-name">{{ invitation.coach?.firstName }} {{ invitation.coach?.lastName }}</span>
+                        <span class="invitation-text">souhaite devenir votre coach</span>
+                      </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right"></i>
+                  </div>
+                }
+              </div>
+              <div class="section-divider"></div>
+            }
+
             @if (partnerCoach()) {
               <div class="promo-content">
                 <div class="coach-avatar large">

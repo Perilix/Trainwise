@@ -3,10 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { RunService, Run } from '../../services/run.service';
-import { PlanningService, PlannedRun } from '../../services/planning.service';
+import { PlanningService, PlannedSession } from '../../services/planning.service';
 import { AuthService } from '../../services/auth.service';
 import { ChatService, Conversation } from '../../services/chat.service';
 import { AthleteService } from '../../services/athlete.service';
+import { CoachInvitationModalService } from '../../services/coach-invitation-modal.service';
 import { Coach } from '../../interfaces/coach.interfaces';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 
@@ -17,7 +18,7 @@ interface WeekDay {
   isToday: boolean;
   isPast: boolean;
   runs: Run[];
-  plannedRuns: PlannedRun[];
+  plannedRuns: PlannedSession[];
 }
 
 @Component({
@@ -30,14 +31,15 @@ interface WeekDay {
 export class DashboardComponent implements OnInit {
   // Data
   recentRuns = signal<Run[]>([]);
-  upcomingRuns = signal<PlannedRun[]>([]);
+  upcomingRuns = signal<PlannedSession[]>([]);
   weekDays = signal<WeekDay[]>([]);
-  upcomingSession = signal<PlannedRun | null>(null);
+  upcomingSession = signal<PlannedSession | null>(null);
   recentConversations = signal<Conversation[]>([]);
 
   // Coach
   currentCoach = signal<Coach | null>(null);
-  coachPlannedSessions = signal<PlannedRun[]>([]);
+  coachPlannedSessions = signal<PlannedSession[]>([]);
+  pendingCoachInvitations = signal<any[]>([]);
 
   // Coach partenaire (chargé dynamiquement)
   partnerCoach = signal<{ _id: string; firstName: string; lastName: string; profilePicture?: string } | null>(null);
@@ -60,6 +62,7 @@ export class DashboardComponent implements OnInit {
     public authService: AuthService,
     public chatService: ChatService,
     private athleteService: AthleteService,
+    public invitationModalService: CoachInvitationModalService,
     private router: Router
   ) {}
 
@@ -67,7 +70,18 @@ export class DashboardComponent implements OnInit {
     this.loadDashboardData();
     this.loadRecentConversations();
     this.loadCurrentCoach();
+    this.loadPendingInvitations();
     this.loadPartnerCoach();
+
+    // Écouter les événements d'acceptation/rejet d'invitations
+    this.invitationModalService.invitationAccepted$.subscribe(() => {
+      this.loadPendingInvitations();
+      this.loadCurrentCoach();
+    });
+
+    this.invitationModalService.invitationRejected$.subscribe(() => {
+      this.loadPendingInvitations();
+    });
   }
 
   loadDashboardData() {
@@ -98,7 +112,7 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  buildWeekView(runs: Run[], plannedRuns: PlannedRun[]) {
+  buildWeekView(runs: Run[], plannedRuns: PlannedSession[]) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -230,7 +244,7 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  findUpcomingSession(plannedRuns: PlannedRun[]) {
+  findUpcomingSession(plannedRuns: PlannedSession[]) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -553,6 +567,57 @@ export class DashboardComponent implements OnInit {
           type: 'error'
         });
         setTimeout(() => this.joinMessage.set(null), 3000);
+      }
+    });
+  }
+
+  // Invitations methods
+  loadPendingInvitations() {
+    this.athleteService.getPendingInvitations().subscribe({
+      next: (invitations) => {
+        this.pendingCoachInvitations.set(invitations);
+      },
+      error: (err) => {
+        console.error('Error loading pending invitations:', err);
+      }
+    });
+  }
+
+  openInvitationModal(invitation: any) {
+    this.invitationModalService.open(invitation);
+  }
+
+  closeInvitationModal() {
+    this.invitationModalService.close();
+  }
+
+  acceptInvitation() {
+    const invitation = this.invitationModalService.invitation();
+    if (!invitation) return;
+
+    this.athleteService.acceptInvitation(invitation._id).subscribe({
+      next: () => {
+        this.closeInvitationModal();
+        this.loadPendingInvitations();
+        this.loadCurrentCoach();
+      },
+      error: (err) => {
+        console.error('Error accepting invitation:', err);
+      }
+    });
+  }
+
+  rejectInvitation() {
+    const invitation = this.invitationModalService.invitation();
+    if (!invitation) return;
+
+    this.athleteService.rejectInvitation(invitation._id).subscribe({
+      next: () => {
+        this.closeInvitationModal();
+        this.loadPendingInvitations();
+      },
+      error: (err) => {
+        console.error('Error rejecting invitation:', err);
       }
     });
   }

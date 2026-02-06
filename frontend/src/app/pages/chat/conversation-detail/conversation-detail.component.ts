@@ -1,5 +1,5 @@
-import { Component, OnInit, OnDestroy, signal, computed, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, OnDestroy, signal, computed, ViewChild, ElementRef, AfterViewChecked, ViewEncapsulation } from '@angular/core';
+import { CommonModule, Location } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ChatService, Conversation, Message, Attachment, TypingEvent } from '../../../services/chat.service';
@@ -12,7 +12,8 @@ import { Subject, debounceTime, takeUntil } from 'rxjs';
   standalone: true,
   imports: [CommonModule, FormsModule, NavbarComponent],
   templateUrl: './conversation-detail.component.html',
-  styleUrl: './conversation-detail.component.scss'
+  styleUrl: './conversation-detail.component.scss',
+  encapsulation: ViewEncapsulation.None
 })
 export class ConversationDetailComponent implements OnInit, OnDestroy, AfterViewChecked {
   @ViewChild('messagesContainer') messagesContainer!: ElementRef;
@@ -42,7 +43,8 @@ export class ConversationDetailComponent implements OnInit, OnDestroy, AfterView
     public chatService: ChatService,
     public authService: AuthService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private location: Location
   ) {
     // Typing debounce
     this.typingSubject.pipe(
@@ -54,6 +56,9 @@ export class ConversationDetailComponent implements OnInit, OnDestroy, AfterView
   }
 
   ngOnInit() {
+    // Ajouter classe pour le fond beige du safe-area
+    document.body.classList.add('chat-detail-active');
+
     this.route.params.subscribe(params => {
       const conversationId = params['id'];
       if (conversationId) {
@@ -68,6 +73,9 @@ export class ConversationDetailComponent implements OnInit, OnDestroy, AfterView
   }
 
   ngOnDestroy() {
+    // Retirer classe pour le fond beige
+    document.body.classList.remove('chat-detail-active');
+
     this.destroy$.next();
     this.destroy$.complete();
     this.chatService.clearCurrentConversation();
@@ -236,7 +244,7 @@ export class ConversationDetailComponent implements OnInit, OnDestroy, AfterView
   }
 
   goBack() {
-    this.router.navigate(['/chat']);
+    this.location.back();
   }
 
   getConversationName(): string {

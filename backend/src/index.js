@@ -15,6 +15,7 @@ const notificationRoutes = require('./routes/notification.routes');
 const friendRoutes = require('./routes/friend.routes');
 const exerciseRoutes = require('./routes/exercise.routes');
 const strengthRoutes = require('./routes/strength.routes');
+const pushNotificationRoutes = require('./routes/pushNotification.routes');
 const { initializeSocket } = require('./socket/index');
 
 const app = express();
@@ -55,6 +56,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/friends', friendRoutes);
 app.use('/api/exercises', exerciseRoutes);
 app.use('/api/strength', strengthRoutes);
+app.use('/api/users', pushNotificationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

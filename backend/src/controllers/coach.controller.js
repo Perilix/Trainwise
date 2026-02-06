@@ -4,6 +4,7 @@ const PlannedRun = require('../models/plannedRun.model');
 const Run = require('../models/run.model');
 const crypto = require('crypto');
 const { createNotification } = require('./notification.controller');
+const { sendPushNotification } = require('../services/pushNotification.service');
 
 // Générer un code d'invitation unique
 const generateUniqueCode = () => {
@@ -328,7 +329,7 @@ exports.getInviteCode = async (req, res) => {
 // Envoyer une invitation directe
 exports.sendDirectInvite = async (req, res) => {
   try {
-    const { athleteId } = req.body;
+    const { athleteId, packageType } = req.body;
 
     if (!athleteId) {
       return res.status(400).json({ error: 'ID de l\'athlète requis' });
@@ -354,23 +355,40 @@ exports.sendDirectInvite = async (req, res) => {
       return res.status(400).json({ error: 'Cet athlète a déjà un coach' });
     }
 
-    // Vérifier s'il y a déjà une invitation en attente
-    const existingInvite = await CoachAthlete.findOne({
+    // Vérifier s'il y a déjà une relation existante (peu importe le status)
+    const existingRelation = await CoachAthlete.findOne({
       coach: req.user._id,
-      athlete: athleteId,
-      status: 'pending'
+      athlete: athleteId
     });
 
-    if (existingInvite) {
-      return res.status(400).json({ error: 'Une invitation est déjà en attente pour cet athlète' });
+    let invitation;
+
+    if (existingRelation) {
+      if (existingRelation.status === 'pending') {
+        return res.status(400).json({ error: 'Une invitation est déjà en attente pour cet athlète' });
+      }
+
+      if (existingRelation.status === 'rejected') {
+        // Réutiliser la relation rejetée et la remettre en pending
+        existingRelation.status = 'pending';
+        existingRelation.packageType = packageType || 'silver';
+        existingRelation.invitedAt = new Date();
+        existingRelation.respondedAt = null;
+        await existingRelation.save();
+        invitation = existingRelation;
+      } else {
+        // La relation est déjà acceptée (ne devrait pas arriver car vérifié plus haut)
+        return res.status(400).json({ error: 'Cet athlète fait déjà partie de votre équipe' });
+      }
+    } else {
+      // Créer une nouvelle invitation
+      invitation = await CoachAthlete.create({
+        coach: req.user._id,
+        athlete: athleteId,
+        inviteMethod: 'direct',
+        packageType: packageType || 'silver'
+      });
     }
-
-    // Créer l'invitation
-    const invitation = await CoachAthlete.create({
-      coach: req.user._id,
-      athlete: athleteId,
-      inviteMethod: 'direct'
-    });
 
     const populatedInvitation = await CoachAthlete.findById(invitation._id)
       .populate('athlete', 'firstName lastName email profilePicture');
@@ -384,6 +402,16 @@ exports.sendDirectInvite = async (req, res) => {
       title: 'Nouvelle invitation coach',
       message: `${req.user.firstName} ${req.user.lastName} vous invite à rejoindre son équipe`,
       actionUrl: '/profile'
+    });
+
+    // Envoyer notification push
+    await sendPushNotification(athleteId, {
+      title: 'Nouvelle invitation coach',
+      body: `${req.user.firstName} ${req.user.lastName} vous invite à rejoindre son équipe`,
+      data: {
+        type: 'invitation',
+        actionUrl: '/profile'
+      }
     });
 
     res.status(201).json(populatedInvitation);

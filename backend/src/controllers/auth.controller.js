@@ -44,7 +44,11 @@ exports.register = async (req, res) => {
         availableDays: user.availableDays,
         preferredTime: user.preferredTime,
         age: user.age,
-        gender: user.gender
+        gender: user.gender,
+        disciplines: user.disciplines,
+        experience: user.experience,
+        diplomas: user.diplomas,
+        bio: user.bio
       }
     });
   } catch (error) {
@@ -95,7 +99,11 @@ exports.login = async (req, res) => {
         availableDays: user.availableDays,
         preferredTime: user.preferredTime,
         age: user.age,
-        gender: user.gender
+        gender: user.gender,
+        disciplines: user.disciplines,
+        experience: user.experience,
+        diplomas: user.diplomas,
+        bio: user.bio
       }
     });
   } catch (error) {
@@ -124,6 +132,10 @@ exports.getMe = async (req, res) => {
       preferredTime: user.preferredTime,
       age: user.age,
       gender: user.gender,
+      disciplines: user.disciplines,
+      experience: user.experience,
+      diplomas: user.diplomas,
+      bio: user.bio,
       createdAt: user.createdAt
     });
   } catch (error) {
@@ -146,7 +158,11 @@ exports.updateProfile = async (req, res) => {
       'availableDays',
       'preferredTime',
       'age',
-      'gender'
+      'gender',
+      'disciplines',
+      'experience',
+      'diplomas',
+      'bio'
     ];
 
     const updates = {};
@@ -179,6 +195,10 @@ exports.updateProfile = async (req, res) => {
       preferredTime: user.preferredTime,
       age: user.age,
       gender: user.gender,
+      disciplines: user.disciplines,
+      experience: user.experience,
+      diplomas: user.diplomas,
+      bio: user.bio,
       createdAt: user.createdAt
     });
   } catch (error) {
@@ -248,6 +268,10 @@ exports.uploadAvatar = async (req, res) => {
       preferredTime: user.preferredTime,
       age: user.age,
       gender: user.gender,
+      disciplines: user.disciplines,
+      experience: user.experience,
+      diplomas: user.diplomas,
+      bio: user.bio,
       createdAt: user.createdAt
     });
   } catch (error) {
@@ -292,6 +316,10 @@ exports.deleteAvatar = async (req, res) => {
       preferredTime: user.preferredTime,
       age: user.age,
       gender: user.gender,
+      disciplines: user.disciplines,
+      experience: user.experience,
+      diplomas: user.diplomas,
+      bio: user.bio,
       createdAt: user.createdAt
     });
   } catch (error) {

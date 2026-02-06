@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1002254054572",
+    "project_id": "trainwise-ac8cc",
+    "storage_bucket": "trainwise-ac8cc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1002254054572:android:dd7d5cdfa4e5900f3a1b09",
+        "android_client_info": {
+          "package_name": "com.trainwise.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBc_yiaAqa5iSg0sArqqb-cSGShOILHeA8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

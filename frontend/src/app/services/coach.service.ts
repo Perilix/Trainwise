@@ -10,7 +10,7 @@ import {
   PendingInvitation,
   CalendarData
 } from '../interfaces/coach.interfaces';
-import { PlannedRun } from './planning.service';
+import { PlannedSession } from './planning.service';
 
 @Injectable({
   providedIn: 'root'
@@ -46,22 +46,22 @@ export class CoachService {
     );
   }
 
-  getAthletePlanning(athleteId: string, params?: { startDate?: string; endDate?: string; status?: string }): Observable<PlannedRun[]> {
-    return this.http.get<PlannedRun[]>(
+  getAthletePlanning(athleteId: string, params?: { startDate?: string; endDate?: string; status?: string }): Observable<PlannedSession[]> {
+    return this.http.get<PlannedSession[]>(
       `${this.API_URL}/athletes/${athleteId}/planning`,
       { params: params as any }
     );
   }
 
-  createAthleteSession(athleteId: string, session: Partial<PlannedRun>): Observable<PlannedRun> {
-    return this.http.post<PlannedRun>(
+  createAthleteSession(athleteId: string, session: Partial<PlannedSession>): Observable<PlannedSession> {
+    return this.http.post<PlannedSession>(
       `${this.API_URL}/athletes/${athleteId}/planning`,
       session
     );
   }
 
-  updateAthleteSession(athleteId: string, planId: string, updates: Partial<PlannedRun>): Observable<PlannedRun> {
-    return this.http.patch<PlannedRun>(
+  updateAthleteSession(athleteId: string, planId: string, updates: Partial<PlannedSession>): Observable<PlannedSession> {
+    return this.http.patch<PlannedSession>(
       `${this.API_URL}/athletes/${athleteId}/planning/${planId}`,
       updates
     );
@@ -82,8 +82,8 @@ export class CoachService {
     return this.http.post<{ code: string }>(`${this.API_URL}/invite/code`, {});
   }
 
-  sendDirectInvite(athleteId: string): Observable<PendingInvitation> {
-    return this.http.post<PendingInvitation>(`${this.API_URL}/invite/direct`, { athleteId });
+  sendDirectInvite(athleteId: string, packageType: string): Observable<PendingInvitation> {
+    return this.http.post<PendingInvitation>(`${this.API_URL}/invite/direct`, { athleteId, packageType });
   }
 
   getPendingInvitations(): Observable<PendingInvitation[]> {

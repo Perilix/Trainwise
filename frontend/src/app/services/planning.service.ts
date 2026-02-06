@@ -14,9 +14,9 @@ export type RunningSessionType = 'endurance' | 'fractionne' | 'tempo' | 'recuper
 // Type de séance (running + strength combinés)
 export type SessionType = RunningSessionType | StrengthSessionType;
 
-export type PlannedRunStatus = 'planned' | 'completed' | 'skipped';
+export type PlannedSessionStatus = 'planned' | 'completed' | 'skipped';
 
-export interface PlannedRun {
+export interface PlannedSession {
   _id?: string;
   user: string;
   date: Date;
@@ -33,7 +33,7 @@ export interface PlannedRun {
   // Champs strength
   strengthPlan?: StrengthPlan;
   // Common
-  status: PlannedRunStatus;
+  status: PlannedSessionStatus;
   linkedRun?: Run;
   weekNumber?: number;
   generatedBy: 'ai' | 'manual' | 'coach';
@@ -43,7 +43,7 @@ export interface PlannedRun {
 
 export interface CalendarData {
   runs: Run[];
-  plannedRuns: PlannedRun[];
+  plannedRuns: PlannedSession[];
   strengthSessions: StrengthSession[];
   month: number;
   year: number;
@@ -62,7 +62,7 @@ export const RUNNING_SESSION_LABELS: Record<RunningSessionType, string> = {
 
 export interface GeneratePlanResponse {
   message: string;
-  sessions: PlannedRun[];
+  sessions: PlannedSession[];
 }
 
 @Injectable({
@@ -73,38 +73,46 @@ export class PlanningService {
 
   constructor(private http: HttpClient) {}
 
-  getPlannedRuns(params?: { startDate?: string; endDate?: string; status?: string }): Observable<PlannedRun[]> {
-    return this.http.get<PlannedRun[]>(this.apiUrl, { params: params as any });
+  getPlannedSessions(params?: { startDate?: string; endDate?: string; status?: string }): Observable<PlannedSession[]> {
+    return this.http.get<PlannedSession[]>(this.apiUrl, { params: params as any });
   }
 
-  getPlannedRunById(id: string): Observable<PlannedRun> {
-    return this.http.get<PlannedRun>(`${this.apiUrl}/${id}`);
+  getPlannedSessionById(id: string): Observable<PlannedSession> {
+    return this.http.get<PlannedSession>(`${this.apiUrl}/${id}`);
   }
 
-  createPlannedRun(plannedRun: Partial<PlannedRun>): Observable<PlannedRun> {
-    return this.http.post<PlannedRun>(this.apiUrl, plannedRun);
+  createPlannedSession(plannedRun: Partial<PlannedSession>): Observable<PlannedSession> {
+    return this.http.post<PlannedSession>(this.apiUrl, plannedRun);
   }
 
-  updatePlannedRun(id: string, updates: Partial<PlannedRun>): Observable<PlannedRun> {
-    return this.http.patch<PlannedRun>(`${this.apiUrl}/${id}`, updates);
+  updatePlannedSession(id: string, updates: Partial<PlannedSession>): Observable<PlannedSession> {
+    return this.http.patch<PlannedSession>(`${this.apiUrl}/${id}`, updates);
   }
 
-  deletePlannedRun(id: string): Observable<{ message: string }> {
+  deletePlannedSession(id: string): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}`);
   }
 
-  updateStatus(id: string, status: PlannedRunStatus, linkedRunId?: string): Observable<PlannedRun> {
-    return this.http.patch<PlannedRun>(`${this.apiUrl}/${id}/status`, {
+  updateStatus(id: string, status: PlannedSessionStatus, linkedRunId?: string): Observable<PlannedSession> {
+    return this.http.patch<PlannedSession>(`${this.apiUrl}/${id}/status`, {
       status,
       linkedRunId
     });
   }
 
-  generatePlan(weeks: number = 1, startDate?: string): Observable<GeneratePlanResponse> {
-    return this.http.post<GeneratePlanResponse>(`${this.apiUrl}/generate`, { weeks, startDate });
+  generatePlan(
+    weeks: number = 1,
+    startDate?: string,
+    dayConfig?: { dayIndex: number; running: boolean; strength: boolean }[]
+  ): Observable<GeneratePlanResponse> {
+    return this.http.post<GeneratePlanResponse>(`${this.apiUrl}/generate`, {
+      weeks,
+      startDate,
+      dayConfig
+    });
   }
 
-  confirmPlan(sessions: Partial<PlannedRun>[]): Observable<GeneratePlanResponse> {
+  confirmPlan(sessions: Partial<PlannedSession>[]): Observable<GeneratePlanResponse> {
     return this.http.post<GeneratePlanResponse>(`${this.apiUrl}/confirm`, { sessions });
   }
 

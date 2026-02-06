@@ -6,6 +6,7 @@ import { CoachService } from '../../../services/coach.service';
 import { AuthService } from '../../../services/auth.service';
 import { Athlete, CoachStats, UserSearchResult, PendingInvitation } from '../../../interfaces/coach.interfaces';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
+import { COACH_PACKAGES, PackageType } from '../../../interfaces/package.interface';
 
 @Component({
   selector: 'app-coach-dashboard',
@@ -30,6 +31,15 @@ export class CoachDashboardComponent implements OnInit {
   searchResults = signal<UserSearchResult[]>([]);
   isSearching = signal(false);
   isSendingInvite = signal(false);
+  selectedPackage = signal<PackageType>('silver'); // Package par défaut
+
+  // Packages disponibles
+  packages = COACH_PACKAGES;
+  packagesList: { key: PackageType; value: typeof COACH_PACKAGES[PackageType] }[] = [
+    { key: 'bronze', value: COACH_PACKAGES.bronze },
+    { key: 'silver', value: COACH_PACKAGES.silver },
+    { key: 'gold', value: COACH_PACKAGES.gold }
+  ];
 
   constructor(
     private coachService: CoachService,
@@ -67,6 +77,11 @@ export class CoachDashboardComponent implements OnInit {
     this.showInviteModal.set(true);
     this.searchQuery.set('');
     this.searchResults.set([]);
+    this.selectedPackage.set('silver'); // Reset au package par défaut
+  }
+
+  selectPackage(packageType: PackageType) {
+    this.selectedPackage.set(packageType);
   }
 
   closeInviteModal() {
@@ -119,10 +134,12 @@ export class CoachDashboardComponent implements OnInit {
 
   sendInvite(user: UserSearchResult) {
     this.isSendingInvite.set(true);
-    this.coachService.sendDirectInvite(user._id).subscribe({
+    const packageType = this.selectedPackage();
+    this.coachService.sendDirectInvite(user._id, packageType).subscribe({
       next: () => {
         this.isSendingInvite.set(false);
-        this.successMessage.set(`Invitation envoyée à ${user.firstName} ${user.lastName}`);
+        const packageName = this.packages[packageType].name;
+        this.successMessage.set(`Invitation ${packageName} envoyée à ${user.firstName} ${user.lastName}`);
         // Mettre à jour la liste
         const updated = this.searchResults().map(u =>
           u._id === user._id ? { ...u, relationStatus: 'pending' as const } : u

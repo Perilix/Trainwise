@@ -2,14 +2,20 @@
   max-width: 1000px;
   margin: 0 auto;
   padding: 2rem;
-  padding-top: calc(120px + 2rem);
+  padding-top: calc(var(--navbar-height, 120px) + 1rem);
+  padding-bottom: 120px;
   font-family: 'Poppins', sans-serif;
   min-height: 100vh;
   background: #F6F4F0;
 
   @media (max-width: 768px) {
     padding: 1rem;
-    padding-top: calc(70px + 1rem);
+    padding-top: calc(var(--navbar-height, 90px) + 0.5rem);
+    padding-bottom: 120px;
+  }
+
+  @media (min-width: 769px) {
+    padding-bottom: 2rem;
   }
 }
 
@@ -325,14 +331,16 @@
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 10000;
   padding: 1rem;
+  box-sizing: border-box;
 }
 
 .modal {
@@ -340,15 +348,30 @@
   border-radius: 16px;
   width: 100%;
   max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
+  max-height: 85vh;
+  max-height: 85dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: modalAppear 0.2s ease-out;
+  margin: auto;
+
+  @media (max-width: 768px) {
+    max-height: 80vh;
+    max-height: 80dvh;
+    margin: auto 0.5rem;
+    border-radius: 12px;
+  }
 
   .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1.5rem;
+    padding: 1.25rem 1.5rem;
     border-bottom: 1px solid #eee;
+    background: #fafafa;
+    flex-shrink: 0;
 
     h2 {
       margin: 0;
@@ -357,13 +380,21 @@
     }
 
     .close-btn {
-      background: none;
+      background: #f3f4f6;
       border: none;
       font-size: 1.5rem;
       cursor: pointer;
       color: #666;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
 
       &:hover {
+        background: #e5e7eb;
         color: #000;
       }
     }
@@ -371,6 +402,30 @@
 
   .modal-body {
     padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e5e7eb;
+    background: #fafafa;
+    flex-shrink: 0;
+  }
+}
+
+@keyframes modalAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
   }
 }
 
@@ -388,6 +443,10 @@
 
   &.coach-session {
     background: #faf5ff;
+  }
+
+  &.strength-session {
+    background: #f5f3ff;
   }
 
   .session-header {
@@ -544,4 +603,38 @@
   gap: 0.75rem;
   justify-content: flex-end;
   margin-top: 1.5rem;
+}
+
+.activity-type-selector {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+
+  .activity-btn {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    background: #f8f9fa;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #666;
+
+    &:hover {
+      border-color: #00a6fb;
+      color: #00a6fb;
+    }
+
+    &.active {
+      background: linear-gradient(135deg, rgba(0, 166, 251, 0.1) 0%, rgba(0, 166, 251, 0.05) 100%);
+      border-color: #00a6fb;
+      color: #00a6fb;
+    }
+  }
+}
+
+.activity-icon {
+  font-size: 1rem;
 }

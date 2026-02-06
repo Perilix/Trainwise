@@ -612,28 +612,16 @@
 // Modal
 .modal-backdrop {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: rgba(5, 25, 35, 0.7);
   backdrop-filter: blur(4px);
-  z-index: 1000;
+  z-index: 10000;
 }
 
-.modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 90%;
-  max-width: 500px;
-  max-height: 80vh;
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 25px 80px rgba(5, 25, 35, 0.3);
-  z-index: 1001;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
+// Modal styles - utilise les styles globaux de .modal-overlay et .modal
 
 .modal-header {
   display: flex;
@@ -642,6 +630,7 @@
   padding: 1.25rem 1.5rem;
   border-bottom: 1px solid #f0f0f0;
   background: #fafafa;
+  flex-shrink: 0;
 
   h2 {
     margin: 0;
@@ -698,6 +687,8 @@
 .modal-body {
   padding: 1.5rem;
   overflow-y: auto;
+  flex: 1;
+  -webkit-overflow-scrolling: touch;
 
   .empty-day {
     text-align: center;
@@ -1042,13 +1033,23 @@
       transition: all 0.2s;
     }
 
-    .btn-done {
-      background: #00a6fb;
+    .btn-detail {
+      background: #8b5cf6;
       color: #fff;
       border: none;
 
       &:hover {
-        background: #0582ca;
+        background: #7c3aed;
+      }
+    }
+
+    .btn-done {
+      background: #10b981;
+      color: #fff;
+      border: none;
+
+      &:hover {
+        background: #059669;
       }
     }
 
@@ -1068,7 +1069,6 @@
 // Generate modal
 .generate-modal {
   max-width: 420px;
-  border-top: 4px solid #00a6fb;
 
   .modal-header {
     background: linear-gradient(135deg, rgba(0, 166, 251, 0.08) 0%, #fafafa 100%);
@@ -1079,13 +1079,14 @@
       gap: 0.5rem;
 
       &::before {
-        content: '🤖';
         font-size: 1.2rem;
       }
     }
   }
 
   .form-group {
+    margin-bottom: 1.25rem;
+
     label {
       display: block;
       font-size: 0.85rem;
@@ -1095,11 +1096,11 @@
     }
 
     input[type="date"] {
-      width: 100%;
-      padding: 1rem;
+      width: 90%;
+      padding: 0.75rem 1rem;
       border: 2px solid #e5e7eb;
-      border-radius: 12px;
-      font-size: 1rem;
+      border-radius: 10px;
+      font-size: 0.9rem;
       font-family: 'Poppins', sans-serif;
       background: #f8f9fa;
       transition: all 0.2s;
@@ -1119,7 +1120,65 @@
       padding: 0.75rem;
       background: rgba(0, 166, 251, 0.05);
       border-radius: 8px;
-      border-left: 3px solid #00a6fb;
+    }
+  }
+
+  .day-config-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .day-config-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: #f8f9fa;
+    border-radius: 10px;
+    transition: all 0.2s;
+
+    &:hover {
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .day-name {
+      font-weight: 600;
+      color: #051923;
+      font-size: 0.9rem;
+    }
+
+    .day-toggles {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .toggle-btn {
+      width: 40px;
+      height: 40px;
+      border: 2px solid #e5e7eb;
+      background: #fff;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.5;
+
+      &:hover {
+        border-color: #00a6fb;
+        opacity: 0.8;
+      }
+
+      &.active {
+        opacity: 1;
+        border-color: #00a6fb;
+        background: linear-gradient(135deg, rgba(0, 166, 251, 0.15) 0%, rgba(0, 166, 251, 0.05) 100%);
+        box-shadow: 0 2px 8px rgba(0, 166, 251, 0.2);
+      }
     }
   }
 }
@@ -1127,8 +1186,12 @@
 // Preview modal
 .preview-modal {
   max-width: 620px;
-  max-height: 85vh;
+  max-height: 85dvh;
   border-top: 4px solid #00a6fb;
+
+  @media (max-width: 500px) {
+    max-height: 80dvh;
+  }
 
   .modal-header {
     background: linear-gradient(135deg, rgba(0, 166, 251, 0.08) 0%, #fafafa 100%);
@@ -1139,7 +1202,6 @@
       gap: 0.5rem;
 
       &::before {
-        content: '📋';
         font-size: 1.1rem;
       }
     }
@@ -1174,9 +1236,10 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    max-height: 400px;
+    max-height: 50vh;
     overflow-y: auto;
     padding-right: 0.5rem;
+    -webkit-overflow-scrolling: touch;
 
     &::-webkit-scrollbar {
       width: 6px;
@@ -1347,6 +1410,7 @@
   padding: 1.25rem 1.5rem;
   border-top: 1px solid #f0f0f0;
   background: #fafafa;
+  flex-shrink: 0;
 
   .btn-cancel {
     padding: 0.75rem 1.5rem;
@@ -1382,7 +1446,6 @@
     gap: 0.5rem;
 
     &::before {
-      content: '✓';
       font-weight: 700;
     }
 
