@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect } = require('../middleware/auth');
+const { protect } = require('../middleware/auth.middleware');
 const pushNotificationController = require('../controllers/pushNotification.controller');
 
 // @route   POST /api/users/push-token
