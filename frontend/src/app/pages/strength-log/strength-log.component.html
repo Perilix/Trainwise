@@ -8,6 +8,13 @@
     </div>
   </header>
 
+  @if (linkedPlannedSession()) {
+    <div class="alert info">
+      <span class="planned-badge">📅 Séance planifiée</span>
+      Vous êtes en train de détailler une séance planifiée.
+    </div>
+  }
+
   @if (error()) {
     <div class="alert error">{{ error() }}</div>
   }

@@ -1,27 +1,40 @@
 <nav class="bottom-nav">
-  <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">
-    <i class="fa-solid fa-house"></i>
-  </a>
+  <div class="all-items">
+    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">
+      <i class="fa-solid fa-house"></i>
+    </a>
 
-  <a routerLink="/chat" routerLinkActive="active" class="nav-item">
-    <div class="icon-wrapper">
-      <i class="fa-solid fa-message"></i>
-      @if (chatService.totalUnread() > 0) {
-        <span class="badge">{{ chatService.totalUnread() > 99 ? '99+' : chatService.totalUnread() }}</span>
-      }
-    </div>
-  </a>
+<!--    <a routerLink="/chat" routerLinkActive="active" class="nav-item">
+      <div class="icon-wrapper">
+        <i class="fa-solid fa-message"></i>
+        @if (chatService.totalUnread() > 0) {
+          <span class="badge">{{ chatService.totalUnread() > 99 ? '99+' : chatService.totalUnread() }}</span>
+        }
+      </div>
+    </a>-->
 
-  <a routerLink="/friends" routerLinkActive="active" class="nav-item">
-    <div class="icon-wrapper">
-      <i class="fa-solid fa-users"></i>
-      @if (friendService.pendingCount() > 0) {
-        <span class="badge">{{ friendService.pendingCount() }}</span>
-      }
-    </div>
-  </a>
+    @if (!isLoadingCoach()) {
+      <button (click)="navigateToCoach()" class="nav-item" [class.active]="isCoachPageActive()">
+        @if (currentCoach()) {
+          <div class="icon-wrapper">
+            <i class="fa-solid fa-message"></i>
+            @if (getCoachUnreadCount() > 0) {
+              <span class="badge">{{ getCoachUnreadCount() > 99 ? '99+' : getCoachUnreadCount() }}</span>
+            }
+          </div>
+        } @else {
+          <i class="fa-solid fa-chart-line"></i>
+        }
+      </button>
+    }
 
-  <a routerLink="/planning" routerLinkActive="active" class="nav-item">
-    <i class="fa-solid fa-calendar-days"></i>
-  </a>
+    <a routerLink="/planning" routerLinkActive="active" class="nav-item">
+      <i class="fa-solid fa-calendar-days"></i>
+    </a>
+
+    <a routerLink="/profile" routerLinkActive="active" class="nav-item">
+      <i class="fa-solid fa-user"></i>
+    </a>
+  </div>
+
 </nav>

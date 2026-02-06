@@ -4,7 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CoachService } from '../../../services/coach.service';
 import { AthleteDetail, CalendarData } from '../../../interfaces/coach.interfaces';
-import { PlannedRun, SessionType } from '../../../services/planning.service';
+import { PlannedSession, SessionType, ActivityType, RunningSessionType } from '../../../services/planning.service';
+import { StrengthSessionType, SESSION_TYPE_LABELS as STRENGTH_SESSION_LABELS } from '../../../interfaces/strength.interfaces';
 import { Run } from '../../../services/run.service';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
 
@@ -14,7 +15,7 @@ interface CalendarDay {
   isCurrentMonth: boolean;
   isToday: boolean;
   runs: Run[];
-  plannedRuns: PlannedRun[];
+  plannedRuns: PlannedSession[];
 }
 
 @Component({
@@ -44,6 +45,7 @@ export class AthletePlanningComponent implements OnInit {
   weekDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
   newSession = {
+    activityType: 'running' as ActivityType,
     sessionType: 'endurance' as SessionType,
     targetDistance: null as number | null,
     targetDuration: null as number | null,
@@ -54,7 +56,7 @@ export class AthletePlanningComponent implements OnInit {
     cooldown: ''
   };
 
-  sessionTypes: { value: SessionType; label: string }[] = [
+  runningSessionTypes: { value: RunningSessionType; label: string }[] = [
     { value: 'endurance', label: 'Endurance' },
     { value: 'fractionne', label: 'Fractionné' },
     { value: 'tempo', label: 'Tempo' },
@@ -62,6 +64,17 @@ export class AthletePlanningComponent implements OnInit {
     { value: 'sortie_longue', label: 'Sortie longue' },
     { value: 'cotes', label: 'Côtes' },
     { value: 'fartlek', label: 'Fartlek' }
+  ];
+
+  strengthSessionTypes: { value: StrengthSessionType; label: string }[] = [
+    { value: 'upper_body', label: 'Haut du corps' },
+    { value: 'lower_body', label: 'Bas du corps' },
+    { value: 'full_body', label: 'Corps complet' },
+    { value: 'push', label: 'Push (Poussée)' },
+    { value: 'pull', label: 'Pull (Tirage)' },
+    { value: 'legs', label: 'Jambes' },
+    { value: 'core', label: 'Abdos / Core' },
+    { value: 'hiit', label: 'HIIT' }
   ];
 
   constructor(
@@ -215,6 +228,7 @@ export class AthletePlanningComponent implements OnInit {
 
   resetNewSession() {
     this.newSession = {
+      activityType: 'running',
       sessionType: 'endurance',
       targetDistance: null,
       targetDuration: null,
@@ -226,24 +240,37 @@ export class AthletePlanningComponent implements OnInit {
     };
   }
 
+  onActivityTypeChange(type: ActivityType) {
+    this.newSession.activityType = type;
+    if (type === 'running') {
+      this.newSession.sessionType = 'endurance';
+    } else {
+      this.newSession.sessionType = 'full_body';
+    }
+  }
+
   saveSession() {
     const day = this.selectedDay();
     if (!day) return;
 
     this.isSaving.set(true);
 
-    const plannedRun: Partial<PlannedRun> = {
+    const plannedRun: Partial<PlannedSession> = {
       date: day.date,
+      activityType: this.newSession.activityType,
       sessionType: this.newSession.sessionType,
-      targetDistance: this.newSession.targetDistance || undefined,
       targetDuration: this.newSession.targetDuration || undefined,
-      targetPace: this.newSession.targetPace || undefined,
       description: this.newSession.description || undefined,
-      warmup: this.newSession.warmup || undefined,
-      mainWorkout: this.newSession.mainWorkout || undefined,
-      cooldown: this.newSession.cooldown || undefined,
       status: 'planned'
     };
+
+    if (this.newSession.activityType === 'running') {
+      plannedRun.targetDistance = this.newSession.targetDistance || undefined;
+      plannedRun.targetPace = this.newSession.targetPace || undefined;
+      plannedRun.warmup = this.newSession.warmup || undefined;
+      plannedRun.mainWorkout = this.newSession.mainWorkout || undefined;
+      plannedRun.cooldown = this.newSession.cooldown || undefined;
+    }
 
     this.coachService.createAthleteSession(this.athleteId, plannedRun).subscribe({
       next: () => {
@@ -263,7 +290,7 @@ export class AthletePlanningComponent implements OnInit {
     });
   }
 
-  deleteSession(plannedRun: PlannedRun) {
+  deleteSession(plannedRun: PlannedSession) {
     if (!plannedRun._id) return;
     if (!confirm('Supprimer cette séance ?')) return;
 
@@ -299,8 +326,15 @@ export class AthletePlanningComponent implements OnInit {
   }
 
   getSessionTypeLabel(type: string): string {
-    const found = this.sessionTypes.find(t => t.value === type);
+    if (STRENGTH_SESSION_LABELS[type as StrengthSessionType]) {
+      return STRENGTH_SESSION_LABELS[type as StrengthSessionType];
+    }
+    const found = this.runningSessionTypes.find(t => t.value === type);
     return found ? found.label : type;
+  }
+
+  getActivityIcon(activityType?: ActivityType): string {
+    return activityType === 'strength' ? '💪' : '🏃';
   }
 
   formatDate(date: Date): string {
@@ -352,7 +386,7 @@ export class AthletePlanningComponent implements OnInit {
     return `${firstName[0]}${lastName[0]}`.toUpperCase();
   }
 
-  isCoachSession(plannedRun: PlannedRun): boolean {
+  isCoachSession(plannedRun: PlannedSession): boolean {
     return plannedRun.generatedBy === 'coach';
   }
 }

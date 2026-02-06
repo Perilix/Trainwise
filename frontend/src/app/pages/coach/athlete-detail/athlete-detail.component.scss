@@ -2,14 +2,20 @@
   max-width: 1000px;
   margin: 0 auto;
   padding: 2rem;
-  padding-top: calc(120px + 2rem);
+  padding-top: calc(var(--navbar-height, 120px) + 1rem);
+  padding-bottom: 120px;
   font-family: 'Poppins', sans-serif;
   min-height: 100vh;
   background: #F6F4F0;
 
   @media (max-width: 768px) {
     padding: 1rem;
-    padding-top: calc(70px + 1rem);
+    padding-top: calc(var(--navbar-height, 90px) + 0.5rem);
+    padding-bottom: 120px;
+  }
+
+  @media (min-width: 769px) {
+    padding-bottom: 2rem;
   }
 }
 

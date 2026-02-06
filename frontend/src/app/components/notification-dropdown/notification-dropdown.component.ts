@@ -2,6 +2,8 @@ import { Component, OnInit, signal, HostListener, ElementRef } from '@angular/co
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { NotificationService } from '../../services/notification.service';
+import { AthleteService } from '../../services/athlete.service';
+import { CoachInvitationModalService } from '../../services/coach-invitation-modal.service';
 import { Notification } from '../../interfaces/notification.interface';
 
 @Component({
@@ -17,6 +19,8 @@ export class NotificationDropdownComponent implements OnInit {
 
   constructor(
     public notificationService: NotificationService,
+    private athleteService: AthleteService,
+    private invitationModalService: CoachInvitationModalService,
     private router: Router,
     private elementRef: ElementRef
   ) {}
@@ -58,7 +62,34 @@ export class NotificationDropdownComponent implements OnInit {
       this.notificationService.markAsRead(notification._id).subscribe();
     }
 
-    // Naviguer si actionUrl existe
+    // Gestion spéciale pour les invitations coach
+    if (notification.type === 'invitation') {
+      console.log('🔔 Notification clicked:', notification);
+      // Charger les invitations et ouvrir la modale pour celle-ci
+      this.athleteService.getPendingInvitations().subscribe({
+        next: (invitations) => {
+          console.log('📋 Invitations loaded:', invitations);
+          // Trouver l'invitation correspondante (on suppose qu'il y a un lien via le sender)
+          const invitation = invitations.find(inv =>
+            inv.coach._id === notification.sender?._id
+          );
+          console.log('🎯 Matching invitation found:', invitation);
+          if (invitation) {
+            console.log('✅ Opening modal with invitation');
+            this.invitationModalService.open(invitation);
+          } else {
+            console.warn('⚠️ No matching invitation found for sender:', notification.sender?._id);
+          }
+        },
+        error: (err) => {
+          console.error('❌ Error loading invitations:', err);
+        }
+      });
+      this.isOpen.set(false);
+      return;
+    }
+
+    // Naviguer si actionUrl existe (pour les autres types de notifs)
     if (notification.actionUrl) {
       this.router.navigateByUrl(notification.actionUrl);
     }

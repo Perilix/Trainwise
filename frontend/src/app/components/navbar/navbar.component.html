@@ -1,7 +1,7 @@
 <nav class="navbar">
   <div class="navbar-container">
     <!-- Mobile: Photo profil à gauche -->
-    <a routerLink="/profile" class="mobile-profile-link mobile-only">
+    <a [routerLink]="authService.isCoach() ? '/coach/profile' : '/profile'" class="mobile-profile-link mobile-only">
       @if (authService.currentUser()?.profilePicture) {
         <img [src]="authService.currentUser()?.profilePicture" alt="Avatar" class="mobile-header-avatar">
       } @else {
@@ -70,9 +70,7 @@
               <span class="dropdown-name">{{ authService.currentUser()?.firstName }} {{ authService.currentUser()?.lastName }}</span>
               <span class="dropdown-email">{{ authService.currentUser()?.email }}</span>
             </div>
-            @if (!authService.isCoach()) {
-              <a routerLink="/profile" class="dropdown-item" (click)="closeMenu()">Mon profil</a>
-            }
+            <a [routerLink]="authService.isCoach() ? '/coach/profile' : '/profile'" class="dropdown-item" (click)="closeMenu()">Mon profil</a>
             <a routerLink="/settings" class="dropdown-item" (click)="closeMenu()">Paramètres</a>
             <button class="dropdown-item dropdown-logout" (click)="logout()">Déconnexion</button>
           </div>

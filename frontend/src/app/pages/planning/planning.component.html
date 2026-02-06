@@ -14,6 +14,25 @@
     <div class="error-box">{{ error() }}</div>
   }
 
+  <!-- Carte Résumé du mois -->
+  <div class="sidebar-card week-summary">
+    <h3>Ce mois</h3>
+    <div class="summary-stats">
+      <div class="stat-item">
+        <span class="stat-value">{{ getMonthStats().planned }}</span>
+        <span class="stat-label">Planifiées</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-value">{{ getMonthStats().completed }}</span>
+        <span class="stat-label">Complétées</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-value">{{ getMonthStats().totalKm }}</span>
+        <span class="stat-label">km</span>
+      </div>
+    </div>
+  </div>
+
   <div class="main-layout">
     <!-- Zone principale : Calendrier -->
     <div class="main-content">
@@ -66,11 +85,11 @@
       <div class="legend">
         <div class="legend-item">
           <span class="legend-dot completed"></span>
-          <span>🏃 Course effectuée</span>
+          <span>Course effectuée</span>
         </div>
         <div class="legend-item">
           <span class="legend-dot strength"></span>
-          <span>💪 Muscu effectuée</span>
+          <span>Muscu effectuée</span>
         </div>
         <div class="legend-item">
           <span class="legend-dot planned"></span>
@@ -100,48 +119,14 @@
           }
         </button>
       </div>
-
-      <!-- Carte Résumé du mois -->
-      <div class="sidebar-card week-summary">
-        <h3>Ce mois</h3>
-        <div class="summary-stats">
-          <div class="stat-item">
-            <span class="stat-value">{{ getMonthStats().planned }}</span>
-            <span class="stat-label">Planifiées</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-value">{{ getMonthStats().completed }}</span>
-            <span class="stat-label">Complétées</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-value">{{ getMonthStats().totalKm }}</span>
-            <span class="stat-label">km</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Carte Actions rapides -->
-      <div class="sidebar-card quick-actions">
-        <h3>Actions rapides</h3>
-        <div class="quick-actions-list">
-          <button class="quick-action-btn" (click)="goToToday()">
-            <span class="action-icon">📅</span>
-            Aujourd'hui
-          </button>
-          <a routerLink="/strength/log" class="quick-action-btn">
-            <span class="action-icon">💪</span>
-            Logger une muscu
-          </a>
-        </div>
-      </div>
     </div>
   </div>
 </div>
 
 <!-- Modal détail du jour -->
 @if (selectedDay()) {
-  <div class="modal-backdrop" (click)="closeDetail()"></div>
-  <div class="modal">
+  <div class="modal-overlay" (click)="closeDetail()">
+    <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h2>{{ formatDate(selectedDay()!.date) }}</h2>
       <div class="modal-header-actions">
@@ -165,14 +150,14 @@
               [class.active]="newSession.activityType === 'running'"
               (click)="onActivityTypeChange('running')"
             >
-              🏃 Course
+              Course
             </button>
             <button
               class="activity-btn"
               [class.active]="newSession.activityType === 'strength'"
               (click)="onActivityTypeChange('strength')"
             >
-              💪 Musculation
+              Musculation
             </button>
           </div>
 
@@ -279,11 +264,11 @@
           <h3>Séances planifiées</h3>
           @for (planned of selectedDay()!.plannedRuns; track planned._id) {
             <div class="event-card" [class.done]="planned.status === 'completed'" [class.skipped]="planned.status === 'skipped'" [class.ai-generated]="planned.generatedBy === 'ai'" [class.strength]="planned.activityType === 'strength'">
-              <button class="delete-btn" (click)="deletePlannedRun(planned)" title="Supprimer">×</button>
+              <button class="delete-btn" (click)="deletePlannedSession(planned)" title="Supprimer">×</button>
               <span class="event-status" [class]="planned.status">
-                @if (planned.status === 'planned') {<i class="fa-solid fa-house"></i>}
-                @if (planned.status === 'completed') { <i class="fa-solid fa-house"></i>}
-                @if (planned.status === 'skipped') { Passé }
+                @if (planned.status === 'planned') {<i class="fa-solid fa-clock"></i>}
+                @if (planned.status === 'completed') { <i class="fa-solid fa-check"></i>}
+                @if (planned.status === 'skipped') { <i class="fa-solid fa-ban"></i> }
               </span>
               @if (planned.generatedBy === 'ai') {
                 <span class="coach-badge">Séance du coach IA</span>
@@ -318,11 +303,13 @@
               @if (planned.status === 'planned') {
                 <div class="event-actions">
                   @if (planned.activityType === 'strength') {
-                    <button class="btn-done" (click)="navigateToStrengthLog()">Détailler la séance</button>
+                    <button class="btn-detail" (click)="navigateToStrengthLog(planned)">Détailler</button>
+                    <button class="btn-done" (click)="markAsCompleted(planned)">Fait</button>
+                    <button class="btn-skip" (click)="markAsSkipped(planned)">Passer</button>
                   } @else {
                     <button class="btn-done" (click)="markAsCompleted(planned)">Marquer fait</button>
+                    <button class="btn-skip" (click)="markAsSkipped(planned)">Passer</button>
                   }
-                  <button class="btn-skip" (click)="markAsSkipped(planned)">Passer</button>
                 </div>
               }
             </div>
@@ -360,38 +347,67 @@
       }
     </div>
   </div>
+</div>
 }
 
 <!-- Modal options de génération -->
 @if (showGenerateOptions()) {
-  <div class="modal-backdrop" (click)="closeGenerateOptions()"></div>
-  <div class="modal generate-modal">
-    <div class="modal-header">
-      <h2>Générer un plan</h2>
-      <button class="modal-close" (click)="closeGenerateOptions()">×</button>
-    </div>
-
-    <div class="modal-body">
-      <div class="form-group">
-        <label>Semaine du</label>
-        <input type="date" [(ngModel)]="generateStartDate">
-        <p class="form-hint">Les séances seront générées sur tes jours d'entraînement à partir de cette date</p>
+  <div class="modal-overlay" (click)="closeGenerateOptions()">
+    <div class="modal generate-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Générer un plan</h2>
+        <button class="modal-close" (click)="closeGenerateOptions()">×</button>
       </div>
-    </div>
 
-    <div class="modal-footer">
-      <button class="btn-cancel" (click)="closeGenerateOptions()">Annuler</button>
-      <button class="btn-confirm" (click)="generatePlan(1)">
-        Générer
-      </button>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Semaine du</label>
+          <input type="date" class="input-date" [(ngModel)]="generateStartDate">
+        </div>
+
+        <div class="form-group">
+          <label>Sélectionne tes jours</label>
+          <div class="day-config-list">
+            @for (day of generateDays; track day.dayIndex) {
+              <div class="day-config-row">
+                <span class="day-name">{{ day.day }}</span>
+                <div class="day-toggles">
+                  <button
+                    class="toggle-btn"
+                    [class.active]="day.running"
+                    (click)="toggleDayRunning(day.dayIndex)"
+                    title="Course">
+                    🏃
+                  </button>
+                  <button
+                    class="toggle-btn"
+                    [class.active]="day.strength"
+                    (click)="toggleDayStrength(day.dayIndex)"
+                    title="Musculation">
+                    💪
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeGenerateOptions()">Annuler</button>
+        <button class="btn-confirm" (click)="generatePlan(1)" [disabled]="!hasAnyDaySelected()">
+          Générer
+        </button>
+      </div>
     </div>
   </div>
 }
 
+
 <!-- Modal preview des séances générées -->
 @if (showPreview()) {
-  <div class="modal-backdrop" (click)="cancelPreview()"></div>
-  <div class="modal preview-modal">
+  <div class="modal-overlay" (click)="cancelPreview()">
+    <div class="modal preview-modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h2>Séances générées</h2>
       <button class="modal-close" (click)="cancelPreview()">×</button>
@@ -438,5 +454,6 @@
         @if (isConfirming()) { Confirmation... } @else { Confirmer }
       </button>
     </div>
+  </div>
   </div>
 }

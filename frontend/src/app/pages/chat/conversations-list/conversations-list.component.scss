@@ -15,7 +15,7 @@
   padding: 1.5rem;
   border-bottom: 1px solid rgba(0, 53, 84, 0.1);
   position: sticky;
-  top: var(--navbar-height, 120px);
+  top: calc(var(--navbar-height, 120px) - 5px);
   z-index: 10;
 
   @media (max-width: 768px) {
@@ -27,11 +27,36 @@
     justify-content: space-between;
     align-items: center;
 
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
     h1 {
       font-family: 'GulfsDisplay', serif;
       font-size: 1.5rem;
       color: #051923;
       margin: 0;
+    }
+
+    .back-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #fff;
+      color: #051923;
+      border: 1px solid #e5e7eb;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+
+      &:hover {
+        background: #f3f4f6;
+        border-color: #d1d5db;
+      }
     }
   }
 

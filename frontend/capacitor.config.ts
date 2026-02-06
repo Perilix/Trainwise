@@ -5,10 +5,9 @@ const config: CapacitorConfig = {
   appName: 'Trainwise',
   webDir: 'dist/frontend/browser',
   ios: {
-    contentInset: 'automatic',
     preferredContentMode: 'mobile',
     scheme: 'App',
-    backgroundColor: '#F6F4F0'
+    backgroundColor: '#003554'
   },
   plugins: {
     Keyboard: {
@@ -18,14 +17,14 @@ const config: CapacitorConfig = {
     StatusBar: {
       style: 'light',
       overlaysWebView: true,
-      backgroundColor: '#F6F4F0'
+      backgroundColor: '#003554'
     }
-  },
-  // Live reload en dev (commenter pour build standalone)
-  server: {
-    url: 'http://192.168.1.31:4200',
-    cleartext: true
   }
+  // Live reload en dev - COMMENTÉ pour utiliser le build production
+  // server: {
+  //   url: 'http://localhost:4200',
+  //   cleartext: true
+  // }
 };
 
 export default config;

@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
 const Message = require('../models/message.model');
 const Conversation = require('../models/conversation.model');
+const { sendPushNotification } = require('../services/pushNotification.service');
 
 let io;
 
@@ -120,6 +121,23 @@ const initializeSocket = (httpServer) => {
 
         io.to(`conversation:${conversationId}`).emit('conversation:updated', {
           conversation: updatedConversation
+        });
+
+        // Envoyer notification push aux participants offline
+        conversation.participants.forEach(async (participantId) => {
+          const pId = participantId.toString();
+          // Ne pas envoyer au sender et seulement aux utilisateurs offline
+          if (pId !== userId && !isUserOnline(pId)) {
+            await sendPushNotification(pId, {
+              title: `${socket.user.firstName} ${socket.user.lastName}`,
+              body: type === 'text' ? content : `A envoyé ${type === 'image' ? 'une image' : 'un fichier'}`,
+              data: {
+                type: 'message',
+                conversationId: conversationId.toString(),
+                actionUrl: `/chat/${conversationId}`
+              }
+            });
+          }
         });
 
       } catch (error) {

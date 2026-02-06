@@ -2,7 +2,20 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem 1rem;
-  margin-top: 2.5rem;
+  padding-top: calc(var(--navbar-height, 120px) + 1rem);
+  padding-bottom: 120px;
+  min-height: 100vh;
+  background: #F6F4F0;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    padding-top: calc(var(--navbar-height, 90px) + 0.5rem);
+    padding-bottom: 120px;
+  }
+
+  @media (min-width: 769px) {
+    padding-bottom: 2rem;
+  }
 }
 
 .header-content {
@@ -47,12 +60,13 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  background: #9159f1;
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
@@ -338,53 +352,90 @@
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 10000;
   padding: 1rem;
+  box-sizing: border-box;
+  overflow-y: auto;
 }
 
 .modal {
   background: white;
-  border-radius: 12px;
+  border-radius: 16px;
   width: 100%;
   max-width: 500px;
-  max-height: 90vh;
+  max-height: 85vh;
+  max-height: 85dvh; // Dynamic viewport height (meilleur sur mobile)
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: modalAppear 0.2s ease-out;
+  margin: auto;
 
   &.large {
     max-width: 700px;
   }
 
+  @media (max-width: 768px) {
+    max-height: 80vh;
+    max-height: 80dvh;
+    margin: auto 0.5rem;
+    border-radius: 12px;
+  }
+}
+
+@keyframes modalAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal {
   .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 1.25rem 1.5rem;
     border-bottom: 1px solid #e5e7eb;
+    background: #fafafa;
+    flex-shrink: 0;
 
     h2 {
       margin: 0;
       font-size: 1.25rem;
       font-weight: 600;
+      color: #1f2937;
     }
 
     .close-btn {
-      background: none;
+      background: #f3f4f6;
       border: none;
       font-size: 1.5rem;
       color: #6b7280;
       cursor: pointer;
-      padding: 0.25rem 0.5rem;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       line-height: 1;
+      transition: all 0.2s;
 
       &:hover {
+        background: #e5e7eb;
         color: #374151;
       }
     }
@@ -394,6 +445,7 @@
     padding: 1.5rem;
     overflow-y: auto;
     flex: 1;
+    -webkit-overflow-scrolling: touch;
   }
 
   .modal-footer {
@@ -402,6 +454,8 @@
     gap: 0.75rem;
     padding: 1rem 1.5rem;
     border-top: 1px solid #e5e7eb;
+    background: #fafafa;
+    flex-shrink: 0;
   }
 }
 

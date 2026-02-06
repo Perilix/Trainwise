@@ -46,6 +46,11 @@ export const routes: Routes = [
     canActivate: [authGuard, athleteGuard]
   },
   {
+    path: 'discover-coach',
+    loadComponent: () => import('./pages/discover-coach/discover-coach.component').then(m => m.DiscoverCoachComponent),
+    canActivate: [authGuard, athleteGuard]
+  },
+  {
     path: 'user/:id',
     loadComponent: () => import('./pages/user-profile/user-profile.component').then(m => m.UserProfileComponent),
     canActivate: [authGuard, athleteGuard]
@@ -79,6 +84,11 @@ export const routes: Routes = [
   {
     path: 'coach/exercises',
     loadComponent: () => import('./pages/coach/exercises-management/exercises-management.component').then(m => m.ExercisesManagementComponent),
+    canActivate: [authGuard, coachGuard]
+  },
+  {
+    path: 'coach/profile',
+    loadComponent: () => import('./pages/coach/coach-profile/coach-profile.component').then(m => m.CoachProfileComponent),
     canActivate: [authGuard, coachGuard]
   },
   {

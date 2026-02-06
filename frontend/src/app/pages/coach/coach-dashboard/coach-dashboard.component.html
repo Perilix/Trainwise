@@ -11,7 +11,7 @@
         Exercices
       </a>
       <button class="btn-primary" (click)="openInviteModal()">
-        + Inviter un athlète
+        Inviter un athlète
       </button>
     </div>
   </header>
@@ -162,6 +162,36 @@
         <div class="invite-section">
           <h3>Invitation directe</h3>
           <p class="section-desc">Recherchez un utilisateur pour lui envoyer une invitation.</p>
+
+          <!-- Sélection du package -->
+          <div class="package-selector">
+            <h4>Offre proposée</h4>
+            <div class="packages-grid">
+              @for (pkg of packagesList; track pkg.key) {
+                <div
+                  class="package-card"
+                  [class.selected]="selectedPackage() === pkg.key"
+                  [attr.data-package]="pkg.key"
+                  (click)="selectPackage(pkg.key)"
+                >
+                  <div class="package-icon" [style.background]="pkg.value.gradient">
+                    <i [class]="pkg.value.icon"></i>
+                  </div>
+                  <div class="package-content">
+                    <div class="package-name">{{ pkg.value.name }}</div>
+                    <div class="package-price">{{ pkg.value.price }}€<span>/mois</span></div>
+                    @if (pkg.value.badge) {
+                      <div class="package-badge-label">{{ pkg.value.badge }}</div>
+                    }
+                  </div>
+                  <div class="package-check">
+                    <i class="fa-solid fa-check"></i>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
           <div class="search-box">
             <input
               type="text"

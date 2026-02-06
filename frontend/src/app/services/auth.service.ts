@@ -1,8 +1,9 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
+import { PushNotificationService } from './push-notification.service';
 
 
 export type DayOfWeek = 'lundi' | 'mardi' | 'mercredi' | 'jeudi' | 'vendredi' | 'samedi' | 'dimanche';
@@ -26,6 +27,10 @@ export interface User {
   preferredTime?: PreferredTime;
   age?: number;
   gender?: 'homme' | 'femme' | 'autre';
+  disciplines?: string[];
+  experience?: number;
+  diplomas?: string[];
+  bio?: string;
 }
 
 export interface UpdateProfileData {
@@ -41,6 +46,10 @@ export interface UpdateProfileData {
   preferredTime?: string;
   age?: number;
   gender?: string;
+  disciplines?: string[];
+  experience?: number | null;
+  diplomas?: string[];
+  bio?: string;
 }
 
 export interface RegisterData {
@@ -65,6 +74,7 @@ export class AuthService {
   private readonly USER_KEY = 'runiq_user';
 
   currentUser = signal<User | null>(null);
+  private pushNotificationService = inject(PushNotificationService);
 
   constructor(private http: HttpClient, private router: Router) {
     this.loadStoredUser();
@@ -92,9 +102,19 @@ export class AuthService {
     localStorage.setItem(this.TOKEN_KEY, response.token);
     localStorage.setItem(this.USER_KEY, JSON.stringify(response.user));
     this.currentUser.set(response.user);
+
+    // Initialiser les notifications push après le login
+    this.pushNotificationService.initializePushNotifications().catch(err => {
+      console.error('Failed to initialize push notifications:', err);
+    });
   }
 
-  logout(): void {
+  async logout(): Promise<void> {
+    // Supprimer les notifications push
+    await this.pushNotificationService.unregister().catch(err => {
+      console.error('Failed to unregister push notifications:', err);
+    });
+
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
     this.currentUser.set(null);

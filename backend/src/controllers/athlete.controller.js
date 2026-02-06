@@ -153,6 +153,8 @@ exports.joinViaCode = async (req, res) => {
       athlete: req.user._id
     });
 
+    let relationship;
+
     if (existingRelation) {
       if (existingRelation.status === 'accepted') {
         return res.status(400).json({ error: 'Vous êtes déjà avec ce coach' });
@@ -160,18 +162,22 @@ exports.joinViaCode = async (req, res) => {
       if (existingRelation.status === 'pending') {
         return res.status(400).json({ error: 'Une invitation est déjà en attente avec ce coach' });
       }
-      // Si rejected, on peut recréer
-      await CoachAthlete.deleteOne({ _id: existingRelation._id });
+      // Si rejected, on réutilise la relation et on la met à jour
+      existingRelation.status = 'accepted';
+      existingRelation.respondedAt = new Date();
+      existingRelation.inviteMethod = 'code';
+      await existingRelation.save();
+      relationship = existingRelation;
+    } else {
+      // Créer la relation directement acceptée (car c'est l'athlète qui rejoint)
+      relationship = await CoachAthlete.create({
+        coach: coach._id,
+        athlete: req.user._id,
+        status: 'accepted',
+        respondedAt: new Date(),
+        inviteMethod: 'code'
+      });
     }
-
-    // Créer la relation directement acceptée (car c'est l'athlète qui rejoint)
-    const relationship = await CoachAthlete.create({
-      coach: coach._id,
-      athlete: req.user._id,
-      status: 'accepted',
-      respondedAt: new Date(),
-      inviteMethod: 'code'
-    });
 
     // Rejeter automatiquement les autres invitations en attente
     await CoachAthlete.updateMany(

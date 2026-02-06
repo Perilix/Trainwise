@@ -93,6 +93,24 @@ const userSchema = new mongoose.Schema({
     enum: ['homme', 'femme', 'autre'],
     default: null
   },
+  // Profil coach
+  disciplines: {
+    type: [String],
+    default: []
+  },
+  experience: {
+    type: Number,
+    default: null
+  },
+  diplomas: {
+    type: [String],
+    default: []
+  },
+  bio: {
+    type: String,
+    trim: true,
+    default: ''
+  },
   // Intégration Strava
   strava: {
     athleteId: {
@@ -115,6 +133,16 @@ const userSchema = new mongoose.Schema({
       type: Date,
       default: null
     }
+  },
+  // Push notifications
+  pushToken: {
+    type: String,
+    default: null
+  },
+  pushPlatform: {
+    type: String,
+    enum: ['ios', 'android', 'web'],
+    default: null
   },
   createdAt: {
     type: Date,
