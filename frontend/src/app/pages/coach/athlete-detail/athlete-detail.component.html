@@ -19,6 +19,7 @@
     </div>
   } @else if (athlete()) {
     <div class="athlete-profile">
+
       <!-- Header -->
       <div class="profile-header">
         <div class="avatar-section">
@@ -40,7 +41,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>
-            Envoyer un message
+            Message
           </button>
           <button class="btn-primary" (click)="viewPlanning()">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -49,51 +50,67 @@
               <line x1="8" y1="2" x2="8" y2="6"></line>
               <line x1="3" y1="10" x2="21" y2="10"></line>
             </svg>
-            Voir le planning
+            Planning
           </button>
         </div>
       </div>
 
-      <!-- Stats rapides -->
-      <div class="stats-grid">
-        <div class="stat-card">
-          <span class="stat-value">{{ athlete()!.recentStats.weeklyRuns }}</span>
-          <span class="stat-label">Courses cette semaine</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-value">{{ athlete()!.recentStats.weeklyDistance }} km</span>
-          <span class="stat-label">Distance cette semaine</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-value">{{ athlete()!.recentStats.streak }}</span>
-          <span class="stat-label">Jours de streak</span>
-        </div>
-      </div>
-
-      <!-- Profil détaillé -->
       <div class="profile-sections">
+
+        <!-- Profil sportif -->
         <div class="section-card">
-          <h2>Profil coureur</h2>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="label">Niveau</span>
-              <span class="value">{{ getLevelLabel(athlete()!.runningLevel) }}</span>
+          <h2>Profil sportif</h2>
+
+          <div class="sport-block">
+            <div class="sport-block-title">
+              <span class="sport-icon">🏃</span>
+              <span>Course à pied</span>
             </div>
-            <div class="info-item">
-              <span class="label">Objectif</span>
-              <span class="value">{{ getGoalLabel(athlete()!.goal) }}</span>
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="label">Niveau</span>
+                <span class="value">{{ getLevelLabel(athlete()!.runningLevel) }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Objectif</span>
+                <span class="value">{{ getGoalLabel(athlete()!.goal) }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Fréquence</span>
+                <span class="value">{{ athlete()!.weeklyFrequency ? athlete()!.weeklyFrequency + ' séances/sem.' : 'Non défini' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Blessures / Limitations</span>
+                <span class="value">{{ athlete()!.injuries || 'Aucune' }}</span>
+              </div>
             </div>
-            <div class="info-item">
-              <span class="label">Fréquence hebdomadaire</span>
-              <span class="value">{{ athlete()!.weeklyFrequency || 'Non défini' }} séances/semaine</span>
+          </div>
+
+          <div class="sport-divider"></div>
+
+          <div class="sport-block">
+            <div class="sport-block-title">
+              <span class="sport-icon">💪</span>
+              <span>Musculation</span>
             </div>
-            <div class="info-item">
-              <span class="label">Blessures / Limitations</span>
-              <span class="value">{{ athlete()!.injuries || 'Aucune' }}</span>
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="label">Objectif</span>
+                <span class="value">{{ getStrengthGoalLabel(athlete()!.strengthGoal) }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Type d'entraînement</span>
+                <span class="value">{{ getStrengthTypeLabel(athlete()!.strengthType) }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Fréquence</span>
+                <span class="value">{{ athlete()!.strengthFrequency != null ? athlete()!.strengthFrequency + ' séances/sem.' : 'Non défini' }}</span>
+              </div>
             </div>
           </div>
         </div>
 
+        <!-- Disponibilités -->
         <div class="section-card">
           <h2>Disponibilités</h2>
           <div class="info-grid">
@@ -108,11 +125,12 @@
           </div>
         </div>
 
+        <!-- Infos perso -->
         <div class="section-card">
-          <h2>Informations personnelles</h2>
+          <h2>Infos personnelles</h2>
           <div class="info-grid">
             <div class="info-item">
-              <span class="label">Age</span>
+              <span class="label">Âge</span>
               <span class="value">{{ athlete()!.age ? athlete()!.age + ' ans' : 'Non défini' }}</span>
             </div>
             <div class="info-item">
@@ -121,7 +139,153 @@
             </div>
           </div>
         </div>
+
+        <!-- Dernière activité -->
+        <div class="section-card">
+          <h2>Dernière activité <span class="section-subtitle">7 derniers jours</span></h2>
+
+          @if (athlete()!.recentStats.recentActivities.length === 0) {
+            <p class="empty-state">Aucune activité sur les 7 derniers jours.</p>
+          } @else {
+            <div class="activity-list">
+              @for (activity of athlete()!.recentStats.recentActivities; track $index) {
+                <div class="activity-item clickable" (click)="openActivity(activity)">
+                  <div class="activity-icon" [class.run]="activity.type === 'run'" [class.strength]="activity.type === 'strength'">
+                    {{ activity.type === 'run' ? '🏃' : '💪' }}
+                  </div>
+                  <div class="activity-body">
+                    <div class="activity-top">
+                      <span class="activity-name">
+                        @if (activity.type === 'run') {
+                          Course
+                        } @else {
+                          {{ getSessionTypeLabel(activity.sessionType || '') }}
+                        }
+                      </span>
+                      <span class="activity-date">{{ formatActivityDate(activity.date) }}</span>
+                    </div>
+                    <div class="activity-stats">
+                      @if (activity.type === 'run') {
+                        @if (activity.distance) {
+                          <span class="stat-chip">{{ activity.distance }} km</span>
+                        }
+                        @if (activity.duration) {
+                          <span class="stat-chip">{{ formatDuration(activity.duration) }}</span>
+                        }
+                        @if (activity.averagePace) {
+                          <span class="stat-chip">{{ activity.averagePace }}/km</span>
+                        }
+                      } @else {
+                        @if (activity.duration) {
+                          <span class="stat-chip">{{ formatDuration(activity.duration) }}</span>
+                        }
+                        @if (activity.exerciseCount) {
+                          <span class="stat-chip">{{ activity.exerciseCount }} exo{{ activity.exerciseCount > 1 ? 's' : '' }}</span>
+                        }
+                      }
+                      @if (activity.feeling) {
+                        <span class="stat-chip feeling">{{ activity.feeling }}/10</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
       </div>
     </div>
   }
 </div>
+
+<!-- Modal détail activité -->
+@if (selectedActivityData) {
+  <div class="modal-overlay" (click)="closeActivity()">
+    <div class="activity-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <div class="activity-icon large" [class.run]="selectedActivityData.type === 'run'" [class.strength]="selectedActivityData.type === 'strength'">
+            {{ selectedActivityData.type === 'run' ? '🏃' : '💪' }}
+          </div>
+          <div>
+            <h3>
+              @if (selectedActivityData.type === 'run') { Course }
+              @else { {{ getSessionTypeLabel(selectedActivityData.sessionType || '') }} }
+            </h3>
+            <p class="modal-date">{{ formatDate(selectedActivityData.date) }}</p>
+          </div>
+        </div>
+        <button class="close-btn" (click)="closeActivity()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Stats principales -->
+        <div class="detail-stats">
+          @if (selectedActivityData.type === 'run') {
+            @if (selectedActivityData.distance) {
+              <div class="detail-stat">
+                <span class="detail-stat-value">{{ selectedActivityData.distance }} <br> km</span>
+                <span class="detail-stat-label">Distance</span>
+              </div>
+            }
+            @if (selectedActivityData.duration) {
+              <div class="detail-stat">
+                <span class="detail-stat-value">{{ formatDuration(selectedActivityData.duration!) }}</span>
+                <span class="detail-stat-label">Durée</span>
+              </div>
+            }
+            @if (selectedActivityData.averagePace) {
+              <div class="detail-stat">
+                <span class="detail-stat-value">{{ selectedActivityData.averagePace }} <br> /km</span>
+                <span class="detail-stat-label">Allure</span>
+              </div>
+            }
+          } @else {
+            @if (selectedActivityData.duration) {
+              <div class="detail-stat">
+                <span class="detail-stat-value">{{ formatDuration(selectedActivityData.duration!) }}</span>
+                <span class="detail-stat-label">Durée</span>
+              </div>
+            }
+            @if (selectedActivityData.exercises?.length) {
+              <div class="detail-stat">
+                <span class="detail-stat-value">{{ selectedActivityData.exercises!.length }}</span>
+                <span class="detail-stat-label">Exercices</span>
+              </div>
+            }
+          }
+          @if (selectedActivityData.feeling) {
+            <div class="detail-stat highlight">
+              <span class="detail-stat-value">{{ selectedActivityData.feeling }}/10</span>
+              <span class="detail-stat-label">Ressenti</span>
+            </div>
+          }
+        </div>
+
+        <!-- Exercices (muscu) -->
+        @if (selectedActivityData.type === 'strength' && selectedActivityData.exercises?.length) {
+          <div class="detail-section">
+            <h4>Exercices</h4>
+            <div class="exercise-list">
+              @for (ex of selectedActivityData.exercises!; track $index) {
+                <div class="exercise-row">
+                  <span class="exercise-name">{{ ex.name }}</span>
+                  <span class="exercise-sets">{{ ex.sets }} série{{ ex.sets > 1 ? 's' : '' }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Notes -->
+        @if (selectedActivityData.notes) {
+          <div class="detail-section">
+            <h4>Notes</h4>
+            <p class="detail-notes">{{ selectedActivityData.notes }}</p>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}

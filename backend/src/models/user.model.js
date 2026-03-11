@@ -111,6 +111,23 @@ const userSchema = new mongoose.Schema({
     trim: true,
     default: ''
   },
+  // Profil muscu
+  strengthFrequency: {
+    type: Number,
+    min: 0,
+    max: 14,
+    default: null
+  },
+  strengthGoal: {
+    type: String,
+    enum: ['force', 'hypertrophie', 'endurance_musculaire', 'remise_en_forme', 'fonctionnel'],
+    default: null
+  },
+  strengthType: {
+    type: String,
+    enum: ['poids_libres', 'machines', 'bodyweight', 'crossfit', 'mixte'],
+    default: null
+  },
   // Intégration Strava
   strava: {
     athleteId: {
@@ -144,6 +161,8 @@ const userSchema = new mongoose.Schema({
     enum: ['ios', 'android', 'web'],
     default: null
   },
+  passwordResetToken: { type: String, select: false },
+  passwordResetExpires: { type: Date, select: false },
   createdAt: {
     type: Date,
     default: Date.now

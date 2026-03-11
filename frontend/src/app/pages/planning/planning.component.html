@@ -105,19 +105,24 @@
     <!-- Sidebar : Génération IA et actions -->
     <div class="sidebar">
       <!-- Carte Génération IA -->
-      <div class="sidebar-card generate-card">
+      <div class="sidebar-card generate-card" [class.is-generating]="isGenerating()">
         <h3>Génération IA</h3>
         <p class="card-description">Laisse l'IA créer ton programme d'entraînement personnalisé pour la semaine.</p>
         <button
           class="btn-generate"
+          [class.generating]="isGenerating()"
           (click)="openGenerateOptions()"
           [disabled]="isGenerating()">
           @if (isGenerating()) {
-            Génération...
+            <span class="generate-spinner"></span>
+            <span>Génération en cours...</span>
           } @else {
             Générer une semaine
           }
         </button>
+        @if (isGenerating()) {
+          <p class="generating-hint">L'IA analyse ton profil et crée ton programme, ça peut prendre quelques secondes.</p>
+        }
       </div>
     </div>
   </div>
@@ -312,6 +317,21 @@
                   }
                 </div>
               }
+              @if (planned.status === 'completed') {
+                <div class="feeling-row">
+                  @if (planned.feeling != null) {
+                    <span class="feeling-chip" [style.color]="getFeelingColor(planned.feeling)" [style.background]="getFeelingColor(planned.feeling) + '1a'">
+                      <span class="feeling-chip-num">{{ planned.feeling }}/10</span>
+                      <span class="feeling-chip-label">{{ getFeelingLabel(planned.feeling) }}</span>
+                    </span>
+                  } @else {
+                    <span class="feeling-chip feeling-empty">Ressenti non renseigné</span>
+                  }
+                  <button class="feeling-edit-btn" (click)="markAsCompleted(planned)" title="Modifier le ressenti">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                </div>
+              }
             </div>
           }
         </div>
@@ -323,10 +343,20 @@
           <h3>Séances muscu effectuées</h3>
           @for (session of selectedDay()!.strengthSessions; track session._id) {
             <div class="event-card strength completed">
+              @if (session.stravaActivityId) {
+                <span class="strava-badge">Strava</span>
+              }
               <div class="event-header">
-                <span class="activity-icon">💪</span>
                 <span class="event-type">{{ getSessionTypeLabel(session.sessionType) }}</span>
               </div>
+              @if (session.notes) {
+                <div class="run-notes">
+                  <span class="run-title">{{ getRunTitle(session.notes) }}</span>
+                  @if (getRunDescription(session.notes)) {
+                    <p class="run-description">{{ getRunDescription(session.notes) }}</p>
+                  }
+                </div>
+              }
               <div class="event-stats">
                 @if (session.duration) {
                   <span>{{ session.duration }} min</span>
@@ -338,9 +368,6 @@
                   <span>{{ session.totalVolume }} kg</span>
                 }
               </div>
-              @if (session.feeling) {
-                <p class="event-description">Ressenti : {{ session.feeling }}/10</p>
-              }
             </div>
           }
         </div>
@@ -348,6 +375,41 @@
     </div>
   </div>
 </div>
+}
+
+<!-- Modal feeling -->
+@if (feelingModal().open) {
+  <div class="modal-overlay" (click)="closeFeelingModal()">
+    <div class="modal feeling-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Ressenti de séance</h2>
+        <button class="modal-close" (click)="closeFeelingModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="feeling-session-label">{{ getSessionTypeLabel(feelingModal().session?.sessionType || '') }}</p>
+        <div class="feeling-value-display">
+          <span class="feeling-number" [style.color]="getFeelingColor(feelingModal().value)">{{ feelingModal().value }}</span>
+          <span class="feeling-label" [style.color]="getFeelingColor(feelingModal().value)">{{ getFeelingLabel(feelingModal().value) }}</span>
+        </div>
+        <div class="feeling-slider-wrapper">
+          <span class="slider-hint-text">Épuisant</span>
+          <input
+            type="range"
+            min="1"
+            max="10"
+            step="1"
+            [value]="feelingModal().value"
+            (input)="feelingModal.set({ open: true, session: feelingModal().session, value: +$any($event.target).value })"
+            class="feeling-slider"/>
+          <span class="slider-hint-text">Excellent</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="confirmFeelingAndComplete()">Passer</button>
+        <button class="btn-confirm" (click)="confirmFeelingAndComplete(feelingModal().value)">Confirmer</button>
+      </div>
+    </div>
+  </div>
 }
 
 <!-- Modal options de génération -->
@@ -408,52 +470,48 @@
 @if (showPreview()) {
   <div class="modal-overlay" (click)="cancelPreview()">
     <div class="modal preview-modal" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h2>Séances générées</h2>
-      <button class="modal-close" (click)="cancelPreview()">×</button>
-    </div>
+      <div class="modal-header">
+        <h2>✨ {{ previewSessions().length }} séance{{ previewSessions().length > 1 ? 's' : '' }} générée{{ previewSessions().length > 1 ? 's' : '' }}</h2>
+        <button class="modal-close" (click)="cancelPreview()">×</button>
+      </div>
 
-    <div class="modal-body">
-      <p class="preview-intro">
-        <span class="coach-badge">Séances du coach</span>
-        L'IA a généré {{ previewSessions().length }} séance(s) pour toi. Confirme pour les ajouter à ton planning.
-      </p>
-
-      <div class="preview-list">
-        @for (session of previewSessions(); track session.date) {
-          <div class="preview-card">
-            <div class="preview-date">{{ formatPreviewDate(session.date!) }}</div>
-            <div class="preview-content">
-              <span class="preview-type">{{ getSessionTypeLabel(session.sessionType!) }}</span>
-              <div class="preview-stats">
-                @if (session.targetDistance) {
-                  <span>{{ session.targetDistance }} km</span>
-                }
-                @if (session.targetDuration) {
-                  <span>{{ session.targetDuration }} min</span>
-                }
-                @if (session.targetPace) {
-                  <span>{{ session.targetPace }}/km</span>
-                }
+      <div class="modal-body">
+        <div class="preview-list">
+          @for (session of previewSessions(); track session.date) {
+            <div class="preview-card">
+              <div class="preview-card-header">
+                <span class="preview-card-date">{{ formatPreviewDate(session.date!) }}</span>
+                <span class="preview-card-type">{{ getActivityIcon(session.activityType) }} {{ getSessionTypeLabel(session.sessionType!) }}</span>
               </div>
+              @if (session.targetDistance || session.targetDuration || session.targetPace) {
+                <div class="preview-card-stats">
+                  @if (session.targetDistance) { <span>{{ session.targetDistance }} km</span> }
+                  @if (session.targetDuration) { <span>{{ session.targetDuration }} min</span> }
+                  @if (session.targetPace) { <span>{{ session.targetPace }}/km</span> }
+                </div>
+              }
               @if (session.description) {
-                <p class="preview-description">{{ session.description }}</p>
+                <p class="preview-card-desc">{{ session.description }}</p>
               }
               @if (session.mainWorkout) {
-                <p class="preview-workout">{{ session.mainWorkout }}</p>
+                <p class="preview-card-workout">{{ session.mainWorkout }}</p>
               }
             </div>
-          </div>
-        }
+          }
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="cancelPreview()">Annuler</button>
+        <button class="btn-confirm" (click)="confirmPlan()" [disabled]="isConfirming()">
+          @if (isConfirming()) {
+            <span class="confirm-spinner"></span>
+            Ajout en cours...
+          } @else {
+            Ajouter au planning
+          }
+        </button>
       </div>
     </div>
-
-    <div class="modal-footer">
-      <button class="btn-cancel" (click)="cancelPreview()">Annuler</button>
-      <button class="btn-confirm" (click)="confirmPlan()" [disabled]="isConfirming()">
-        @if (isConfirming()) { Confirmation... } @else { Confirmer }
-      </button>
-    </div>
-  </div>
   </div>
 }

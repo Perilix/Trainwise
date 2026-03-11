@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -8,6 +8,18 @@ import { StravaService, StravaStatus } from '../../services/strava.service';
 import { AthleteService } from '../../services/athlete.service';
 import { CoachInvitation, Coach } from '../../interfaces/coach.interfaces';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
+
+type Metric = 'seances' | 'distance' | 'temps';
+
+interface WeekStat {
+  label: string;
+  isCurrent: boolean;
+  seances: number;
+  distance: number;
+  temps: number;
+  weekStart: Date;
+  weekEnd: Date;
+}
 
 @Component({
   selector: 'app-profile',
@@ -23,6 +35,7 @@ export class ProfileComponent implements OnInit {
 
   // Edition du profil
   isEditing = signal(false);
+  profileExpanded = signal(false);
   isSaving = signal(false);
   saveError = signal<string | null>(null);
   saveSuccess = signal(false);
@@ -32,6 +45,68 @@ export class ProfileComponent implements OnInit {
   stravaLoading = signal(false);
   stravaSyncing = signal(false);
   stravaMessage = signal<string | null>(null);
+  stravaFeelingModal = signal<{ open: boolean; items: { run: Run; feeling: number }[] }>({ open: false, items: [] });
+
+  // Graphique hebdomadaire
+  selectedMetric = signal<Metric>('seances');
+  selectedWeekIndex = signal<number | null>(null);
+
+  chartData = computed(() => {
+    const stats = this.computeWeeklyStats();
+    const metric = this.selectedMetric();
+    const values = stats.map(s => s[metric]);
+    const dataMax = Math.max(...values, 0);
+
+    const padL = 30, padR = 8, padT = 12, plotW = 262, plotH = 75;
+    const bottomY = padT + plotH;
+
+    const { ticks, niceMax } = this.computeNiceTicks(dataMax, metric);
+    const scaleMax = niceMax;
+
+    const points = stats.map((s, i) => {
+      const x = padL + (i / (stats.length - 1)) * plotW;
+      const value = s[metric];
+      const y = scaleMax > 0 ? padT + plotH - (value / scaleMax) * plotH : bottomY;
+      return {
+        x, y, value, label: s.label, isCurrent: s.isCurrent,
+        displayValue: this.formatMetricValue(value, metric),
+        index: i,
+        seances: s.seances,
+        distance: s.distance,
+        temps: s.temps,
+        weekStart: s.weekStart,
+        weekEnd: s.weekEnd
+      };
+    });
+
+    const linePath = this.smoothLinePath(points);
+    const areaPath = `${linePath} L ${points[points.length - 1].x},${bottomY} L ${points[0].x},${bottomY} Z`;
+
+    const tickLines = ticks.map(v => ({
+      value: v,
+      y: padT + plotH - (v / scaleMax) * plotH,
+      label: this.formatTickLabel(v, metric)
+    }));
+
+    return { points, linePath, areaPath, bottomY, tickLines, padL };
+  });
+
+
+
+  selectedPointData = computed(() => {
+    const idx = this.selectedWeekIndex();
+    if (idx === null) return null;
+    return this.chartData().points[idx] ?? null;
+  });
+
+  periodTotals = computed(() => {
+    const stats = this.computeWeeklyStats();
+    return {
+      seances: stats.reduce((sum, s) => sum + s.seances, 0),
+      distance: Math.round(stats.reduce((sum, s) => sum + s.distance, 0) * 10) / 10,
+      temps: Math.round(stats.reduce((sum, s) => sum + s.temps, 0))
+    };
+  });
 
   // Coach
   currentCoach = signal<Coach | null>(null);
@@ -51,7 +126,10 @@ export class ProfileComponent implements OnInit {
     availableDays: [],
     preferredTime: undefined,
     age: 0,
-    gender: ''
+    gender: '',
+    strengthFrequency: undefined,
+    strengthGoal: undefined,
+    strengthType: undefined
   };
 
   allDays = [
@@ -93,6 +171,22 @@ export class ProfileComponent implements OnInit {
     { value: 'trail', label: 'Trail' },
     { value: 'ultra', label: 'Ultra-trail' },
     { value: 'autre', label: 'Autre' }
+  ];
+
+  strengthGoals = [
+    { value: 'force', label: 'Force / Puissance' },
+    { value: 'hypertrophie', label: 'Hypertrophie' },
+    { value: 'endurance_musculaire', label: 'Endurance musculaire' },
+    { value: 'remise_en_forme', label: 'Remise en forme' },
+    { value: 'fonctionnel', label: 'Fonctionnel / Mobilité' }
+  ];
+
+  strengthTypes = [
+    { value: 'poids_libres', label: 'Poids libres' },
+    { value: 'machines', label: 'Machines' },
+    { value: 'bodyweight', label: 'Poids de corps' },
+    { value: 'crossfit', label: 'CrossFit / HIIT' },
+    { value: 'mixte', label: 'Mixte' }
   ];
 
   constructor(
@@ -163,11 +257,28 @@ export class ProfileComponent implements OnInit {
     this.stravaService.syncActivities().subscribe({
       next: (result) => {
         this.stravaSyncing.set(false);
-        this.stravaMessage.set(result.message);
-        if (result.imported.length > 0) {
+        const hasRuns = result.imported.length > 0;
+        const hasStrength = (result.importedStrength?.length ?? 0) > 0;
+
+        if (hasRuns) {
           this.loadRuns();
+          this.stravaFeelingModal.set({
+            open: true,
+            items: result.imported.map((run: Run) => ({ run, feeling: 5 }))
+          });
         }
-        setTimeout(() => this.stravaMessage.set(null), 5000);
+
+        if (hasStrength) {
+          const s = result.importedStrength.length;
+          const msg = `${s} séance${s > 1 ? 's' : ''} muscu importée${s > 1 ? 's' : ''} !`;
+          this.stravaMessage.set(msg);
+          setTimeout(() => this.stravaMessage.set(null), 5000);
+        }
+
+        if (!hasRuns && !hasStrength) {
+          this.stravaMessage.set(result.message);
+          setTimeout(() => this.stravaMessage.set(null), 5000);
+        }
       },
       error: (err) => {
         this.stravaSyncing.set(false);
@@ -175,6 +286,31 @@ export class ProfileComponent implements OnInit {
         console.error(err);
       }
     });
+  }
+
+  saveStravaFeelings() {
+    const items = this.stravaFeelingModal().items;
+    this.stravaFeelingModal.set({ open: false, items: [] });
+    items.forEach(item => {
+      if (item.run._id) {
+        this.runService.updateRun(item.run._id, { feeling: item.feeling }).subscribe();
+      }
+    });
+    this.stravaMessage.set(`${items.length} course${items.length > 1 ? 's' : ''} importée${items.length > 1 ? 's' : ''} !`);
+    setTimeout(() => this.stravaMessage.set(null), 4000);
+  }
+
+  skipStravaFeelings() {
+    const count = this.stravaFeelingModal().items.length;
+    this.stravaFeelingModal.set({ open: false, items: [] });
+    this.stravaMessage.set(`${count} course${count > 1 ? 's' : ''} importée${count > 1 ? 's' : ''} !`);
+    setTimeout(() => this.stravaMessage.set(null), 4000);
+  }
+
+  setStravaFeeling(index: number, value: number) {
+    const items = [...this.stravaFeelingModal().items];
+    items[index] = { ...items[index], feeling: value };
+    this.stravaFeelingModal.set({ open: true, items });
   }
 
   resyncStrava() {
@@ -227,9 +363,22 @@ export class ProfileComponent implements OnInit {
         availableDays: user.availableDays || [],
         preferredTime: user.preferredTime || undefined,
         age: user.age || 0,
-        gender: user.gender || ''
+        gender: user.gender || '',
+        strengthFrequency: user.strengthFrequency ?? undefined,
+        strengthGoal: user.strengthGoal || undefined,
+        strengthType: user.strengthType || undefined
       };
     }
+  }
+
+  getStrengthGoalLabel(value: string | undefined): string {
+    if (!value) return 'Non défini';
+    return this.strengthGoals.find(g => g.value === value)?.label ?? value;
+  }
+
+  getStrengthTypeLabel(value: string | undefined): string {
+    if (!value) return 'Non défini';
+    return this.strengthTypes.find(t => t.value === value)?.label ?? value;
   }
 
   toggleDay(day: string) {
@@ -352,10 +501,27 @@ export class ProfileComponent implements OnInit {
 
   getFeelingEmoji(feeling: number | undefined): string {
     if (!feeling) return '';
-    if (feeling >= 8) return '😄';
-    if (feeling >= 6) return '🙂';
-    if (feeling >= 4) return '😐';
-    return '😓';
+    if (feeling >= 9) return '🔥';
+    if (feeling >= 7) return '😊';
+    if (feeling >= 5) return '😐';
+    if (feeling >= 3) return '😕';
+    return '😫';
+  }
+
+  getFeelingLabel(value: number): string {
+    if (value >= 9) return 'Excellent';
+    if (value >= 7) return 'Bien';
+    if (value >= 5) return 'Correct';
+    if (value >= 3) return 'Difficile';
+    return 'Épuisant';
+  }
+
+  getFeelingColor(value: number): string {
+    if (value >= 9) return '#16a34a';
+    if (value >= 7) return '#22c55e';
+    if (value >= 5) return '#eab308';
+    if (value >= 3) return '#f97316';
+    return '#ef4444';
   }
 
   getLevelLabel(level: string | undefined): string {
@@ -469,5 +635,134 @@ export class ProfileComponent implements OnInit {
     if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
       this.authService.logout();
     }
+  }
+
+  selectMetric(metric: Metric) {
+    this.selectedMetric.set(metric);
+    this.selectedWeekIndex.set(null);
+  }
+
+  selectWeek(index: number) {
+    this.selectedWeekIndex.set(this.selectedWeekIndex() === index ? null : index);
+  }
+
+  private getWeekStart(date: Date, weekOffset = 0): Date {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    d.setDate(diff + weekOffset * 7);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  private computeWeeklyStats(): WeekStat[] {
+    const result: WeekStat[] = [];
+    const now = new Date();
+    const monthLabels = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+
+    for (let i = 11; i >= 0; i--) {
+      const weekStart = this.getWeekStart(now, -i);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+
+      const weekRuns = this.runs().filter(run => {
+        const d = new Date(run.date);
+        return d >= weekStart && d <= weekEnd;
+      });
+
+      const prevMonth = result.length > 0 ? result[result.length - 1].weekStart.getMonth() : -1;
+      const label = weekStart.getMonth() !== prevMonth ? monthLabels[weekStart.getMonth()] : '';
+
+      result.push({
+        label,
+        isCurrent: i === 0,
+        seances: weekRuns.length,
+        distance: Math.round(weekRuns.reduce((sum, r) => sum + (r.distance || 0), 0) * 10) / 10,
+        temps: Math.round(weekRuns.reduce((sum, r) => sum + (r.duration || 0), 0)),
+        weekStart: new Date(weekStart),
+        weekEnd: new Date(weekEnd)
+      });
+    }
+    return result;
+  }
+
+  formatWeekRange(weekStart: Date, weekEnd: Date): string {
+    const months = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'aoû', 'sep', 'oct', 'nov', 'déc'];
+    const s = `${weekStart.getDate()} ${months[weekStart.getMonth()]}`;
+    const e = `${weekEnd.getDate()} ${months[weekEnd.getMonth()]}`;
+    return `${s} → ${e}`;
+  }
+
+  getMetricDisplay(pt: { seances: number; distance: number; temps: number }): string {
+    const metric = this.selectedMetric();
+    if (metric === 'seances') return `${pt.seances} séance${pt.seances > 1 ? 's' : ''}`;
+    if (metric === 'distance') return `${pt.distance.toFixed(1)} km`;
+    return this.formatDuration(pt.temps);
+  }
+
+  getPeriodTotalDisplay(): string {
+    const t = this.periodTotals();
+    const metric = this.selectedMetric();
+    if (metric === 'seances') return `${t.seances} séance${t.seances > 1 ? 's' : ''}`;
+    if (metric === 'distance') return `${t.distance.toFixed(1)} km`;
+    return this.formatDuration(t.temps);
+  }
+
+  private computeNiceTicks(max: number, metric: Metric): { ticks: number[]; niceMax: number } {
+    if (max === 0) return { ticks: [0], niceMax: 1 };
+    let step: number;
+    if (metric === 'seances') {
+      step = Math.max(1, Math.ceil(max / 3));
+    } else if (metric === 'distance') {
+      const rough = max / 3;
+      if (rough <= 2) step = 2;
+      else if (rough <= 5) step = 5;
+      else if (rough <= 10) step = 10;
+      else if (rough <= 20) step = 20;
+      else if (rough <= 50) step = 50;
+      else step = 100;
+    } else {
+      const rough = max / 3;
+      if (rough <= 15) step = 15;
+      else if (rough <= 30) step = 30;
+      else if (rough <= 45) step = 45;
+      else if (rough <= 60) step = 60;
+      else if (rough <= 90) step = 90;
+      else step = 120;
+    }
+    const niceMax = Math.ceil(max / step) * step;
+    const ticks: number[] = [];
+    for (let v = 0; v <= niceMax; v += step) ticks.push(v);
+    return { ticks, niceMax };
+  }
+
+  private formatTickLabel(value: number, metric: Metric): string {
+    if (value === 0) return '0';
+    if (metric === 'seances') return `${value}`;
+    if (metric === 'distance') return `${value}`;
+    const h = Math.floor(value / 60);
+    const m = value % 60;
+    if (h === 0) return `${m}m`;
+    if (m === 0) return `${h}h`;
+    return `${h}h${m}`;
+  }
+
+  private smoothLinePath(points: { x: number; y: number }[]): string {
+    if (points.length < 2) return '';
+    let d = `M ${points[0].x},${points[0].y}`;
+    for (let i = 1; i < points.length; i++) {
+      const prev = points[i - 1];
+      const curr = points[i];
+      const cpx = (prev.x + curr.x) / 2;
+      d += ` C ${cpx},${prev.y} ${cpx},${curr.y} ${curr.x},${curr.y}`;
+    }
+    return d;
+  }
+
+  private formatMetricValue(value: number, metric: Metric): string {
+    if (!value) return '';
+    if (metric === 'distance') return `${value.toFixed(1)}`;
+    if (metric === 'temps') return this.formatDuration(value);
+    return `${value}`;
   }
 }

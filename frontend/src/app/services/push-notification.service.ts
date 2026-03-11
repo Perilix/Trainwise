@@ -86,7 +86,7 @@ export class PushNotificationService {
    */
   private async sendTokenToBackend(token: string): Promise<void> {
     try {
-      await this.http.post(`${this.apiUrl}/users/push-token`, {
+      await this.http.post(`${this.apiUrl}/api/users/push-token`, {
         pushToken: token,
         platform: Capacitor.getPlatform()
       }).toPromise();
@@ -105,7 +105,7 @@ export class PushNotificationService {
     }
 
     try {
-      await this.http.delete(`${this.apiUrl}/users/push-token`).toPromise();
+      await this.http.delete(`${this.apiUrl}/api/users/push-token`).toPromise();
       console.log('Push token removed from backend');
     } catch (error) {
       console.error('Error removing push token:', error);

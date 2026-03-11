@@ -144,6 +144,7 @@
           [value]="messageText()"
           (input)="messageText.set($any($event.target).value); onInput()"
           (keydown)="onKeyDown($event)"
+          (focus)="onTextareaFocus()"
           rows="1"
         ></textarea>
       </div>

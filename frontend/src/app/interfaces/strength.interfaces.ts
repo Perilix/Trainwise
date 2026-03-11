@@ -88,6 +88,7 @@ export interface StrengthSession {
   notes?: string;
   feeling?: number; // 1-10
   linkedPlannedSession?: string;
+  stravaActivityId?: number;
   // Virtuals
   totalSets?: number;
   totalReps?: number;

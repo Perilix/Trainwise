@@ -15,12 +15,13 @@
   top: var(--navbar-height, 120px);
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: var(--keyboard-height, 0px);
   display: flex;
   flex-direction: column;
   font-family: 'Poppins', sans-serif;
   background: #F6F4F0;
   overflow: hidden;
+  transition: bottom 0.25s ease;
 }
 
 // Header
@@ -440,7 +441,7 @@
 
   .input-row {
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     gap: 0.5rem;
   }
 

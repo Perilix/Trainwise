@@ -1,6 +1,7 @@
 const axios = require('axios');
 const User = require('../models/user.model');
 const Run = require('../models/run.model');
+const StrengthSession = require('../models/strengthSession.model');
 
 const STRAVA_AUTH_URL = 'https://www.strava.com/oauth/authorize';
 const STRAVA_TOKEN_URL = 'https://www.strava.com/oauth/token';
@@ -90,15 +91,38 @@ const speedToPace = (metersPerSecond) => {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 };
 
-// Helper: Mapper le type Strava vers nos types de session
+// Helper: Récupérer le type d'activité (sport_type en priorité, type en fallback)
+const getActivityType = (activity) => activity.sport_type || activity.type || '';
+
+// Helper: Mapper le type Strava vers nos types de session (course)
 const mapStravaType = (stravaType) => {
   const typeMap = {
     'Run': 'endurance',
     'TrailRun': 'trail',
-    'VirtualRun': 'endurance',
-    'Workout': 'fractionné'
+    'VirtualRun': 'endurance'
   };
   return typeMap[stravaType] || 'endurance';
+};
+
+// Types Strava considérés comme de la course à pied
+const STRAVA_RUN_TYPES = ['Run', 'TrailRun', 'VirtualRun'];
+
+// Types Strava considérés comme de la muscu / strength
+const STRAVA_STRENGTH_TYPES = ['WeightTraining', 'Crossfit', 'Workout', 'Yoga', 'Pilates', 'Elliptical', 'StairStepper', 'Rowing'];
+
+// Helper: Mapper le type Strava vers nos types de séance muscu
+const mapStravaStrengthType = (stravaType) => {
+  const typeMap = {
+    'WeightTraining': 'full_body',
+    'Crossfit': 'hiit',
+    'Workout': 'full_body',
+    'Yoga': 'other',
+    'Pilates': 'core',
+    'Elliptical': 'other',
+    'StairStepper': 'legs',
+    'Rowing': 'full_body'
+  };
+  return typeMap[stravaType] || 'other';
 };
 
 // Helper: Rafraîchir le token si expiré
@@ -225,22 +249,28 @@ exports.syncActivities = async (req, res) => {
     if (after) params.after = Math.floor(new Date(after).getTime() / 1000);
     if (before) params.before = Math.floor(new Date(before).getTime() / 1000);
 
-    // Récupérer les activités de type Run uniquement
+    // Récupérer toutes les activités
     const response = await axios.get(`${STRAVA_API_URL}/athlete/activities`, {
       headers: { Authorization: `Bearer ${accessToken}` },
       params
     });
 
-    const activities = response.data.filter(a =>
-      ['Run', 'TrailRun', 'VirtualRun'].includes(a.type)
+    console.log('=== STRAVA ACTIVITIES ===');
+    response.data.forEach(a => console.log(`[${getActivityType(a)}] ${a.name} — ${a.start_date}`));
+    console.log('=========================');
+
+    const runActivities = response.data.filter(a =>
+      STRAVA_RUN_TYPES.includes(getActivityType(a))
+    );
+    const strengthActivities = response.data.filter(a =>
+      STRAVA_STRENGTH_TYPES.includes(getActivityType(a))
     );
 
-    // Importer les activités
+    // --- Importer les courses ---
     const imported = [];
     const skipped = [];
 
-    for (const activity of activities) {
-      // Vérifier si déjà importée
+    for (const activity of runActivities) {
       const existing = await Run.findOne({
         user: req.user._id,
         stravaActivityId: activity.id
@@ -251,7 +281,6 @@ exports.syncActivities = async (req, res) => {
         continue;
       }
 
-      // Récupérer les détails de l'activité (pour avoir la description et la polyline détaillée)
       let description = '';
       let polyline = activity.map?.summary_polyline || null;
       let startLatLng = activity.start_latlng || null;
@@ -262,7 +291,6 @@ exports.syncActivities = async (req, res) => {
           headers: { Authorization: `Bearer ${accessToken}` }
         });
         description = detailResponse.data.description || '';
-        // Préférer la polyline détaillée si disponible
         if (detailResponse.data.map?.polyline) {
           polyline = detailResponse.data.map.polyline;
         }
@@ -276,25 +304,23 @@ exports.syncActivities = async (req, res) => {
         console.error(`Failed to fetch details for activity ${activity.id}`);
       }
 
-      // Construire les notes avec titre et description
       let notes = activity.name;
       if (description) {
         notes += `\n\n${description}`;
       }
 
-      // Créer la course
       const run = new Run({
         user: req.user._id,
         stravaActivityId: activity.id,
         date: new Date(activity.start_date),
-        distance: Math.round(activity.distance / 1000 * 100) / 100, // mètres -> km
+        distance: Math.round(activity.distance / 1000 * 100) / 100,
         duration: secondsToMinutes(activity.moving_time),
         averagePace: speedToPace(activity.average_speed),
         averageHeartRate: activity.average_heartrate || null,
         maxHeartRate: activity.max_heartrate || null,
-        averageCadence: activity.average_cadence ? Math.round(activity.average_cadence * 2) : null, // Strava = steps/min/2
+        averageCadence: activity.average_cadence ? Math.round(activity.average_cadence * 2) : null,
         elevationGain: activity.total_elevation_gain || null,
-        sessionType: mapStravaType(activity.type),
+        sessionType: mapStravaType(getActivityType(activity)),
         notes,
         polyline,
         startLatLng,
@@ -302,8 +328,6 @@ exports.syncActivities = async (req, res) => {
       });
 
       await run.save();
-
-      // Lancer l'analyse IA en arrière-plan (sans bloquer)
       analyzeRunInBackground(run, fullUser);
 
       imported.push({
@@ -315,9 +339,56 @@ exports.syncActivities = async (req, res) => {
       });
     }
 
+    // --- Importer les séances muscu ---
+    const importedStrength = [];
+
+    for (const activity of strengthActivities) {
+      const existing = await StrengthSession.findOne({
+        user: req.user._id,
+        stravaActivityId: activity.id
+      });
+
+      if (existing) continue;
+
+      let description = '';
+      try {
+        const detailResponse = await axios.get(`${STRAVA_API_URL}/activities/${activity.id}`, {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        description = detailResponse.data.description || '';
+      } catch (e) {
+        console.error(`Failed to fetch strength details for activity ${activity.id}`);
+      }
+
+      let notes = activity.name;
+      if (description) notes += `\n\n${description}`;
+
+      const session = new StrengthSession({
+        user: req.user._id,
+        stravaActivityId: activity.id,
+        date: new Date(activity.start_date),
+        duration: secondsToMinutes(activity.moving_time || activity.elapsed_time),
+        sessionType: mapStravaStrengthType(getActivityType(activity)),
+        notes,
+        exercises: []
+      });
+
+      await session.save();
+
+      importedStrength.push({
+        id: session._id,
+        stravaId: activity.id,
+        name: activity.name,
+        date: session.date,
+        sessionType: session.sessionType
+      });
+    }
+
+    const totalImported = imported.length + importedStrength.length;
     res.json({
-      message: `${imported.length} activité(s) importée(s), ${skipped.length} déjà présente(s). L'analyse IA est en cours...`,
+      message: `${imported.length} course(s) et ${importedStrength.length} séance(s) muscu importée(s), ${skipped.length} déjà présente(s). L'analyse IA est en cours...`,
       imported,
+      importedStrength,
       skipped
     });
   } catch (error) {

@@ -31,6 +31,9 @@ export interface User {
   experience?: number;
   diplomas?: string[];
   bio?: string;
+  strengthFrequency?: number;
+  strengthGoal?: 'force' | 'hypertrophie' | 'endurance_musculaire' | 'remise_en_forme' | 'fonctionnel';
+  strengthType?: 'poids_libres' | 'machines' | 'bodyweight' | 'crossfit' | 'mixte';
 }
 
 export interface UpdateProfileData {
@@ -50,6 +53,9 @@ export interface UpdateProfileData {
   experience?: number | null;
   diplomas?: string[];
   bio?: string;
+  strengthFrequency?: number;
+  strengthGoal?: string;
+  strengthType?: string;
 }
 
 export interface RegisterData {
@@ -165,5 +171,13 @@ export class AuthService {
         localStorage.setItem(this.USER_KEY, JSON.stringify(user));
         this.currentUser.set(user);
       }));
+  }
+
+  forgotPassword(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.API_URL}/forgot-password`, { email });
+  }
+
+  resetPassword(token: string, password: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.API_URL}/reset-password/${token}`, { password });
   }
 }

@@ -44,6 +44,10 @@ export class RunService {
     return this.http.get<Run>(`${this.apiUrl}/${id}`);
   }
 
+  updateRun(id: string, data: Partial<Run>): Observable<Run> {
+    return this.http.patch<Run>(`${this.apiUrl}/${id}`, data);
+  }
+
   deleteRun(id: string): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}`);
   }

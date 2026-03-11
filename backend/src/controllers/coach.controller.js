@@ -2,6 +2,7 @@ const User = require('../models/user.model');
 const CoachAthlete = require('../models/coachAthlete.model');
 const PlannedRun = require('../models/plannedRun.model');
 const Run = require('../models/run.model');
+const StrengthSession = require('../models/strengthSession.model');
 const crypto = require('crypto');
 const { createNotification } = require('./notification.controller');
 const { sendPushNotification } = require('../services/pushNotification.service');
@@ -9,6 +10,63 @@ const { sendPushNotification } = require('../services/pushNotification.service')
 // Générer un code d'invitation unique
 const generateUniqueCode = () => {
   return crypto.randomBytes(4).toString('hex').toUpperCase();
+};
+
+// Calculer le statut d'un athlète (vert / orange / rouge)
+const computeAthleteStatus = async (athleteId) => {
+  const fourteenDaysAgo = new Date();
+  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 28);
+
+  const [lastRun, lastStrength, skippedCount, recentRunsWithFeeling] = await Promise.all([
+    Run.findOne({ user: athleteId }).sort({ date: -1 }).select('date').lean(),
+    StrengthSession.findOne({ user: athleteId }).sort({ date: -1 }).select('date').lean(),
+    PlannedRun.countDocuments({
+      user: athleteId,
+      status: 'skipped',
+      date: { $gte: fourteenDaysAgo }
+    }),
+    Run.find({
+      user: athleteId,
+      date: { $gte: fourteenDaysAgo },
+      feeling: { $exists: true, $ne: null }
+    }).select('feeling').lean()
+  ]);
+
+  // Dernière activité
+  const dates = [lastRun?.date, lastStrength?.date].filter(Boolean);
+  const lastActivityDate = dates.length > 0
+    ? new Date(Math.max(...dates.map(d => new Date(d).getTime())))
+    : null;
+
+  const daysSince = lastActivityDate
+    ? (Date.now() - new Date(lastActivityDate).getTime()) / (1000 * 60 * 60 * 24)
+    : Infinity;
+
+  // Ressenti moyen sur 14 jours
+  const avgFeeling = recentRunsWithFeeling.length > 0
+    ? recentRunsWithFeeling.reduce((sum, r) => sum + r.feeling, 0) / recentRunsWithFeeling.length
+    : null;
+
+  // Statut par critère
+  const statusOrder = { green: 0, orange: 1, red: 2 };
+
+  const inactivityStatus = daysSince > 14 ? 'red' : daysSince > 7 ? 'orange' : 'green';
+  const skipStatus = skippedCount >= 3 ? 'red' : skippedCount >= 1 ? 'orange' : 'green';
+  const feelingStatus = avgFeeling !== null
+    ? (avgFeeling < 4 ? 'red' : avgFeeling < 7 ? 'orange' : 'green')
+    : 'green';
+
+  // Statut global = le pire des 3
+  const status = [inactivityStatus, skipStatus, feelingStatus]
+    .sort((a, b) => statusOrder[b] - statusOrder[a])[0];
+
+  return {
+    status,
+    lastActivityDate,
+    daysSinceActivity: isFinite(daysSince) ? Math.floor(daysSince) : null,
+    skippedCount,
+    avgFeeling: avgFeeling !== null ? Math.round(avgFeeling * 10) / 10 : null
+  };
 };
 
 // Obtenir la liste des athlètes du coach
@@ -19,15 +77,20 @@ exports.getAthletes = async (req, res) => {
       status: 'accepted'
     }).populate('athlete', 'firstName lastName email profilePicture runningLevel goal');
 
-    const athletes = relationships.map(rel => ({
-      _id: rel.athlete._id,
-      firstName: rel.athlete.firstName,
-      lastName: rel.athlete.lastName,
-      email: rel.athlete.email,
-      profilePicture: rel.athlete.profilePicture,
-      runningLevel: rel.athlete.runningLevel,
-      goal: rel.athlete.goal,
-      joinedAt: rel.respondedAt
+    const athletes = await Promise.all(relationships.map(async (rel) => {
+      const statusData = await computeAthleteStatus(rel.athlete._id);
+
+      return {
+        _id: rel.athlete._id,
+        firstName: rel.athlete.firstName,
+        lastName: rel.athlete.lastName,
+        email: rel.athlete.email,
+        profilePicture: rel.athlete.profilePicture,
+        runningLevel: rel.athlete.runningLevel,
+        goal: rel.athlete.goal,
+        joinedAt: rel.respondedAt,
+        ...statusData
+      };
     }));
 
     res.json(athletes);
@@ -60,19 +123,28 @@ exports.getAthleteById = async (req, res) => {
     weekStart.setDate(today.getDate() - today.getDay() + 1);
     weekStart.setHours(0, 0, 0, 0);
 
-    const weekRuns = await Run.find({
-      user: athleteId,
-      date: { $gte: weekStart }
-    });
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(today.getDate() - 7);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    const [weekRuns, weekStrengthSessions, recentRuns, sevenDayRuns, sevenDayStrength] = await Promise.all([
+      Run.find({ user: athleteId, date: { $gte: weekStart } }),
+      StrengthSession.countDocuments({ user: athleteId, date: { $gte: weekStart } }),
+      Run.find({ user: athleteId }).sort({ date: -1 }).limit(30),
+      Run.find({ user: athleteId, date: { $gte: sevenDaysAgo } })
+        .sort({ date: -1 })
+        .select('date distance duration averagePace type feeling notes')
+        .lean(),
+      StrengthSession.find({ user: athleteId, date: { $gte: sevenDaysAgo } })
+        .sort({ date: -1 })
+        .populate('exercises.exercise', 'name')
+        .lean()
+    ]);
 
     const weeklyDistance = weekRuns.reduce((sum, r) => sum + (r.distance || 0), 0);
     const weeklyRuns = weekRuns.length;
 
     // Calculer le streak (simplifié)
-    const recentRuns = await Run.find({ user: athleteId })
-      .sort({ date: -1 })
-      .limit(30);
-
     let streak = 0;
     const runDates = new Set(recentRuns.map(r =>
       new Date(r.date).toISOString().split('T')[0]
@@ -90,12 +162,42 @@ exports.getAthleteById = async (req, res) => {
       }
     }
 
+    // Combiner et trier les activités des 7 derniers jours
+    const recentActivities = [
+      ...sevenDayRuns.map(r => ({
+        _id: r._id,
+        type: 'run',
+        date: r.date,
+        distance: r.distance,
+        duration: r.duration,
+        averagePace: r.averagePace,
+        feeling: r.feeling,
+        notes: r.notes
+      })),
+      ...sevenDayStrength.map(s => ({
+        _id: s._id,
+        type: 'strength',
+        date: s.date,
+        sessionType: s.sessionType,
+        duration: s.duration,
+        feeling: s.feeling,
+        notes: s.notes,
+        exerciseCount: (s.exercises || []).length,
+        exercises: (s.exercises || []).map(e => ({
+          name: e.exercise?.name || 'Exercice',
+          sets: e.sets?.length || 0
+        }))
+      }))
+    ].sort((a, b) => new Date(b.date) - new Date(a.date));
+
     res.json({
       ...athlete.toObject(),
       recentStats: {
         weeklyDistance: Math.round(weeklyDistance * 10) / 10,
         weeklyRuns,
-        streak
+        streak,
+        weeklyStrengthSessions: weekStrengthSessions,
+        recentActivities
       },
       joinedAt: relationship.respondedAt
     });

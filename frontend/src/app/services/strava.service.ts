@@ -22,6 +22,13 @@ export interface StravaSyncResult {
     date: Date;
     distance: number;
   }>;
+  importedStrength: Array<{
+    id: string;
+    stravaId: number;
+    name: string;
+    date: Date;
+    sessionType: string;
+  }>;
   skipped: number[];
 }
 

@@ -34,6 +34,7 @@ export interface PlannedSession {
   strengthPlan?: StrengthPlan;
   // Common
   status: PlannedSessionStatus;
+  feeling?: number;
   linkedRun?: Run;
   weekNumber?: number;
   generatedBy: 'ai' | 'manual' | 'coach';
@@ -93,10 +94,11 @@ export class PlanningService {
     return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}`);
   }
 
-  updateStatus(id: string, status: PlannedSessionStatus, linkedRunId?: string): Observable<PlannedSession> {
+  updateStatus(id: string, status: PlannedSessionStatus, linkedRunId?: string, feeling?: number): Observable<PlannedSession> {
     return this.http.patch<PlannedSession>(`${this.apiUrl}/${id}/status`, {
       status,
-      linkedRunId
+      linkedRunId,
+      ...(feeling !== undefined ? { feeling } : {})
     });
   }
 

@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.trainwise.app',
+  appId: 'com.trainwise.appli',
   appName: 'Trainwise',
   webDir: 'dist/frontend/browser',
   ios: {
@@ -19,12 +19,12 @@ const config: CapacitorConfig = {
       overlaysWebView: true,
       backgroundColor: '#003554'
     }
+  },
+  // Live reload en dev
+  server: {
+    url: 'http://localhost:4200',
+    cleartext: true
   }
-  // Live reload en dev - COMMENTÉ pour utiliser le build production
-  // server: {
-  //   url: 'http://localhost:4200',
-  //   cleartext: true
-  // }
 };
 
 export default config;

@@ -86,12 +86,6 @@
             <span class="stat-label">Cadence</span>
           </div>
         }
-        @if (run()?.feeling) {
-          <div class="stat-card">
-            <span class="stat-value">{{ run()!.feeling }}/10</span>
-            <span class="stat-label">Ressenti</span>
-          </div>
-        }
         @if (run()?.sessionType) {
           <div class="stat-card">
             <span class="stat-value type">{{ run()!.sessionType }}</span>
@@ -99,6 +93,27 @@
           </div>
         }
       </div>
+    </section>
+
+    <!-- Ressenti -->
+    <section class="feeling-section">
+      <h2>Ressenti de séance</h2>
+      <div class="feeling-display">
+        <span class="feeling-number" [style.color]="getFeelingColor(feelingValue())">{{ feelingValue() }}</span>
+        <span class="feeling-label" [style.color]="getFeelingColor(feelingValue())">{{ getFeelingLabel(feelingValue()) }}</span>
+      </div>
+      <div class="feeling-slider-wrapper">
+        <span class="slider-hint-text">Épuisant</span>
+        <input
+          type="range" min="1" max="10" step="1"
+          [value]="feelingValue()"
+          (input)="onFeelingChange(+$any($event.target).value)"
+          class="feeling-slider"/>
+        <span class="slider-hint-text">Excellent</span>
+      </div>
+      @if (feelingSaved()) {
+        <p class="feeling-saved-msg">Ressenti enregistré</p>
+      }
     </section>
 
     <!-- Description -->

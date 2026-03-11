@@ -28,7 +28,14 @@
           placeholder="Votre mot de passe"
           autocomplete="current-password"
         >
+        <a routerLink="/forgot-password" class="forgot-link">Mot de passe oublié ?</a>
       </div>
+
+      @if (resetSuccess()) {
+        <div class="success-box">
+          Mot de passe réinitialisé avec succès. Vous pouvez vous connecter.
+        </div>
+      }
 
       @if (error()) {
         <div class="error-box">

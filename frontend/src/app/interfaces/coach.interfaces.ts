@@ -9,6 +9,28 @@ export interface Athlete {
   runningLevel?: string;
   goal?: string;
   joinedAt: Date;
+  // Statut calculé côté backend
+  status?: 'green' | 'orange' | 'red';
+  lastActivityDate?: Date | null;
+  daysSinceActivity?: number | null;
+  skippedCount?: number;
+  avgFeeling?: number | null;
+}
+
+export interface RecentActivity {
+  _id: string;
+  type: 'run' | 'strength';
+  date: Date | string;
+  duration?: number;
+  feeling?: number;
+  notes?: string;
+  // Run
+  distance?: number;
+  averagePace?: string;
+  // Strength
+  sessionType?: string;
+  exerciseCount?: number;
+  exercises?: { name: string; sets: number }[];
 }
 
 export interface AthleteDetail extends Athlete {
@@ -18,10 +40,15 @@ export interface AthleteDetail extends Athlete {
   preferredTime?: string;
   age?: number;
   gender?: string;
+  strengthFrequency?: number;
+  strengthGoal?: string;
+  strengthType?: string;
   recentStats: {
     weeklyDistance: number;
     weeklyRuns: number;
     streak: number;
+    weeklyStrengthSessions: number;
+    recentActivities: RecentActivity[];
   };
 }
 

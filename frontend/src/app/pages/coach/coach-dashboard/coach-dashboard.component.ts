@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -22,6 +22,15 @@ export class CoachDashboardComponent implements OnInit {
   isLoading = signal(true);
   error = signal<string | null>(null);
   successMessage = signal<string | null>(null);
+  athleteSearch = signal('');
+  filteredAthletes = computed(() => {
+    const q = this.athleteSearch().toLowerCase().trim();
+    if (!q) return this.athletes();
+    return this.athletes().filter(a =>
+      `${a.firstName} ${a.lastName}`.toLowerCase().includes(q) ||
+      a.email.toLowerCase().includes(q)
+    );
+  });
 
   // Invitation modal
   showInviteModal = signal(false);
@@ -180,6 +189,35 @@ export class CoachDashboardComponent implements OnInit {
 
   viewAthletePlanning(athlete: Athlete) {
     this.router.navigate(['/coach/athletes', athlete._id, 'planning']);
+  }
+
+  getActivityStatus(athlete: Athlete): 'green' | 'orange' | 'red' {
+    return athlete.status ?? 'red';
+  }
+
+  getActivityBadgeLabel(athlete: Athlete): string {
+    const s = athlete.status ?? 'red';
+    if (s === 'green') return 'Top';
+    if (s === 'orange') return 'À surveiller';
+    return 'Alerte';
+  }
+
+  getActivityTooltip(athlete: Athlete): string {
+    const parts: string[] = [];
+    if (athlete.daysSinceActivity === null || athlete.daysSinceActivity === undefined) {
+      parts.push('Aucune activité enregistrée');
+    } else if (athlete.daysSinceActivity === 0) {
+      parts.push("Actif aujourd'hui");
+    } else {
+      parts.push(`Dernière activité il y a ${athlete.daysSinceActivity} jour${athlete.daysSinceActivity > 1 ? 's' : ''}`);
+    }
+    if (athlete.skippedCount && athlete.skippedCount > 0) {
+      parts.push(`${athlete.skippedCount} séance${athlete.skippedCount > 1 ? 's' : ''} passée${athlete.skippedCount > 1 ? 's' : ''} (4 sem.)`);
+    }
+    if (athlete.avgFeeling !== null && athlete.avgFeeling !== undefined) {
+      parts.push(`Ressenti moyen : ${athlete.avgFeeling}/10 (4 sem.)`);
+    }
+    return parts.join(' · ');
   }
 
   formatDate(date: Date | string): string {
