@@ -9,7 +9,7 @@ import { NavbarComponent } from '../../../components/navbar/navbar.component';
 @Component({
   selector: 'app-exercises-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, NavbarComponent],
+  imports: [CommonModule, FormsModule, NavbarComponent],
   templateUrl: './exercises-management.component.html',
   styleUrl: './exercises-management.component.scss'
 })

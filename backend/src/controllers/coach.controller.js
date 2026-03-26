@@ -5,7 +5,6 @@ const Run = require('../models/run.model');
 const StrengthSession = require('../models/strengthSession.model');
 const crypto = require('crypto');
 const { createNotification } = require('./notification.controller');
-const { sendPushNotification } = require('../services/pushNotification.service');
 
 // Générer un code d'invitation unique
 const generateUniqueCode = () => {
@@ -495,7 +494,7 @@ exports.sendDirectInvite = async (req, res) => {
     const populatedInvitation = await CoachAthlete.findById(invitation._id)
       .populate('athlete', 'firstName lastName email profilePicture');
 
-    // Créer notification pour l'athlète
+    // Créer notification pour l'athlète (le push est géré dans createNotification)
     await createNotification({
       recipient: athleteId,
       sender: req.user._id,
@@ -504,16 +503,6 @@ exports.sendDirectInvite = async (req, res) => {
       title: 'Nouvelle invitation coach',
       message: `${req.user.firstName} ${req.user.lastName} vous invite à rejoindre son équipe`,
       actionUrl: '/profile'
-    });
-
-    // Envoyer notification push
-    await sendPushNotification(athleteId, {
-      title: 'Nouvelle invitation coach',
-      body: `${req.user.firstName} ${req.user.lastName} vous invite à rejoindre son équipe`,
-      data: {
-        type: 'invitation',
-        actionUrl: '/profile'
-      }
     });
 
     res.status(201).json(populatedInvitation);

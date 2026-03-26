@@ -3,7 +3,6 @@ import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 import { Capacitor } from '@capacitor/core';
-import { ChatFabComponent } from './components/chat-fab/chat-fab.component';
 import { BottomNavComponent } from './components/bottom-nav/bottom-nav.component';
 import { CoachBottomNavComponent } from './components/coach-bottom-nav/coach-bottom-nav.component';
 import { CoachInvitationModalComponent } from './components/coach-invitation-modal/coach-invitation-modal.component';
@@ -14,7 +13,7 @@ import { PushNotificationService } from './services/push-notification.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, ChatFabComponent, BottomNavComponent, CoachBottomNavComponent, CoachInvitationModalComponent],
+  imports: [RouterOutlet, BottomNavComponent, CoachBottomNavComponent, CoachInvitationModalComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })

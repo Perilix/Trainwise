@@ -9,7 +9,7 @@ import { NavbarComponent } from '../../../components/navbar/navbar.component';
 @Component({
   selector: 'app-athlete-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, NavbarComponent],
+  imports: [CommonModule, NavbarComponent],
   templateUrl: './athlete-detail.component.html',
   styleUrl: './athlete-detail.component.scss'
 })

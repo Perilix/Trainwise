@@ -1,6 +1,7 @@
 const User = require('../models/user.model');
 const CoachAthlete = require('../models/coachAthlete.model');
 const { createNotification } = require('./notification.controller');
+const { sendPushNotification } = require('../services/pushNotification.service');
 
 // Obtenir les invitations en attente pour l'athlète
 exports.getPendingInvitations = async (req, res) => {
@@ -193,6 +194,17 @@ exports.joinViaCode = async (req, res) => {
 
     const populatedRelationship = await CoachAthlete.findById(relationship._id)
       .populate('coach', 'firstName lastName email profilePicture');
+
+    // Notifier le coach qu'un athlète l'a rejoint via code
+    await createNotification({
+      recipient: coach._id,
+      sender: req.user._id,
+      type: 'invitation_response',
+      action: 'invitation_accepted',
+      title: 'Nouvel athlète',
+      message: `${req.user.firstName} ${req.user.lastName} a rejoint votre équipe`,
+      actionUrl: '/coach'
+    });
 
     res.status(201).json({
       message: `Vous avez rejoint le coach ${coach.firstName} ${coach.lastName}`,

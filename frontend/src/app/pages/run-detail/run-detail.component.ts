@@ -16,7 +16,7 @@ L.Icon.Default.mergeOptions({
 @Component({
   selector: 'app-run-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, NavbarComponent],
+  imports: [CommonModule, NavbarComponent],
   templateUrl: './run-detail.component.html',
   styleUrl: './run-detail.component.scss'
 })

@@ -21,7 +21,7 @@ interface CalendarDay {
 @Component({
   selector: 'app-athlete-planning',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, NavbarComponent],
+  imports: [CommonModule, FormsModule, NavbarComponent],
   templateUrl: './athlete-planning.component.html',
   styleUrl: './athlete-planning.component.scss'
 })

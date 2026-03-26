@@ -20,7 +20,7 @@ interface CalendarDay {
 @Component({
   selector: 'app-planning',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, NavbarComponent],
+  imports: [CommonModule, FormsModule, NavbarComponent],
   templateUrl: './planning.component.html',
   styleUrl: './planning.component.scss'
 })

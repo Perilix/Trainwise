@@ -369,7 +369,7 @@
               @if (currentCoach()!.profilePicture) {
                 <img [src]="currentCoach()!.profilePicture" alt="Coach">
               } @else {
-                {{ currentCoach()!.firstName?.charAt(0) }}{{ currentCoach()!.lastName?.charAt(0) }}
+                {{ currentCoach()!.firstName.charAt(0) }}{{ currentCoach()!.lastName.charAt(0) }}
               }
             </div>
             <div class="coach-info">

@@ -20,11 +20,11 @@ const config: CapacitorConfig = {
       backgroundColor: '#003554'
     }
   },
-  // Live reload en dev
-  server: {
-    url: 'http://localhost:4200',
-    cleartext: true
-  }
+  // DEV ONLY — décommenter pour le live reload local (remplace l'IP par celle de ton Mac : ipconfig getifaddr en0)
+  // server: {
+  //   url: 'http://192.168.1.11:4200',
+  //   cleartext: true
+  // }
 };
 
 export default config;
