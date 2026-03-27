@@ -193,6 +193,102 @@
   }
 }
 
+// Feeling Section
+.feeling-section {
+  background: #F6F4F0;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 0 10px 4px rgba(0, 53, 84, 0.15);
+  border: 1px solid rgba(0, 53, 84, 0.2);
+  margin-bottom: 1.5rem;
+
+  h2 {
+    margin: 0 0 1.25rem;
+    font-size: 1rem;
+    color: #003554;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .feeling-display {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+
+    .feeling-number {
+      font-family: 'GulfsDisplay', serif;
+      font-size: 3rem;
+      font-weight: 700;
+      line-height: 1;
+      transition: color 0.2s;
+    }
+
+    .feeling-label {
+      font-size: 1.1rem;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+  }
+
+  .feeling-slider-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+
+    .slider-hint-text {
+      font-size: 0.65rem;
+      color: #bbb;
+      font-weight: 500;
+      flex-shrink: 0;
+      letter-spacing: 0.2px;
+      text-transform: uppercase;
+    }
+  }
+
+  .feeling-saved-msg {
+    margin: 0.75rem 0 0;
+    font-size: 0.8rem;
+    color: #16a34a;
+    font-weight: 600;
+  }
+}
+
+// Slider
+.feeling-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to right, #ef4444, #f97316, #eab308, #22c55e);
+  outline: none;
+  cursor: pointer;
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2.5px solid #0582ca;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  &::-moz-range-thumb {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2.5px solid #0582ca;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+}
+
 // Description Section
 .description-section {
   background: #F6F4F0;
@@ -322,7 +418,6 @@
 
   .page-header {
     flex-wrap: wrap;
-    margin-top: 4rem;
 
     h1 {
       font-size: 1.25rem;

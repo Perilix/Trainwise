@@ -73,9 +73,10 @@ body {
 app-root {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: calc(100% - var(--keyboard-height, 0px));
   overflow: hidden;
   background: #F6F4F0;
+  transition: height 0.25s ease;
 }
 
 .page-scroll {
@@ -84,6 +85,7 @@ app-root {
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: none;
 }
 
 app-bottom-nav,

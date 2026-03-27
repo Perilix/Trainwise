@@ -70,6 +70,7 @@ export class ConversationDetailComponent implements OnInit, OnDestroy, AfterView
     if (!this.chatService.isConnected()) {
       this.chatService.connect();
     }
+
   }
 
   ngOnDestroy() {
@@ -82,6 +83,10 @@ export class ConversationDetailComponent implements OnInit, OnDestroy, AfterView
     if (this.typingTimeout) {
       clearTimeout(this.typingTimeout);
     }
+  }
+
+  onTextareaFocus() {
+    setTimeout(() => this.scrollToBottom(), 300);
   }
 
   ngAfterViewChecked() {

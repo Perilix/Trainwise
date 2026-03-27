@@ -113,16 +113,15 @@ exports.deletePlannedRun = async (req, res) => {
 // Marquer une séance comme complétée ou skippée
 exports.updateStatus = async (req, res) => {
   try {
-    const { status, linkedRunId } = req.body;
+    const { status, linkedRunId, feeling } = req.body;
 
     if (!['completed', 'skipped', 'planned'].includes(status)) {
       return res.status(400).json({ error: 'Statut invalide' });
     }
 
     const updateData = { status };
-    if (linkedRunId) {
-      updateData.linkedRun = linkedRunId;
-    }
+    if (linkedRunId) updateData.linkedRun = linkedRunId;
+    if (feeling !== undefined && feeling !== null) updateData.feeling = feeling;
 
     const plannedRun = await PlannedRun.findOneAndUpdate(
       { _id: req.params.id, user: req.user._id },

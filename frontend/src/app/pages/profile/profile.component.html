@@ -1,5 +1,55 @@
 <app-navbar></app-navbar>
 
+<!-- Modal feeling Strava -->
+@if (stravaFeelingModal().open) {
+  <div class="feeling-overlay">
+    <div class="feeling-popup">
+      <div class="feeling-popup-header">
+        <div>
+          <h2>Courses importées</h2>
+          <p>{{ stravaFeelingModal().items.length }} course{{ stravaFeelingModal().items.length > 1 ? 's' : '' }} depuis Strava — note ton ressenti</p>
+        </div>
+        <button class="feeling-popup-close" (click)="skipStravaFeelings()">×</button>
+      </div>
+
+      <div class="feeling-popup-list">
+        @for (item of stravaFeelingModal().items; track item.run._id; let i = $index) {
+          <div class="feeling-run-card">
+            <div class="feeling-run-info">
+              <span class="feeling-run-date">{{ formatDate(item.run.date) }}</span>
+              <div class="feeling-run-stats">
+                @if (item.run.distance) { <span>{{ item.run.distance }} km</span> }
+                @if (item.run.duration) { <span>{{ formatDuration(item.run.duration) }}</span> }
+              </div>
+            </div>
+            <div class="feeling-run-slider">
+              <div class="feeling-run-val">
+                <span class="feeling-val-num" [style.color]="getFeelingColor(item.feeling || 5)">{{ item.feeling }}</span>
+                <span class="feeling-val-label" [style.color]="getFeelingColor(item.feeling || 5)">{{ getFeelingLabel(item.feeling || 5) }}</span>
+              </div>
+              <div class="feeling-slider-row">
+                <span class="slider-hint-text">Épuisant</span>
+                <input
+                  type="range"
+                  min="1" max="10" step="1"
+                  [value]="item.feeling"
+                  (input)="setStravaFeeling(i, +$any($event.target).value)"
+                  class="feeling-slider"/>
+                <span class="slider-hint-text">Excellent</span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="feeling-popup-footer">
+        <button class="btn-skip-feeling" (click)="skipStravaFeelings()">Passer</button>
+        <button class="btn-save-feeling" (click)="saveStravaFeelings()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+}
+
 <div class="container">
   <div class="page-header">
     <h1>Mon Profil</h1>
@@ -28,7 +78,7 @@
     <!-- Profil coureur -->
     <section class="runner-profile">
       <div class="section-header">
-        <h3>Profil coureur</h3>
+        <h3>Profil sportif</h3>
         <button class="btn-edit" (click)="toggleEdit()">
           @if (isEditing()) {
             Annuler
@@ -49,14 +99,7 @@
       @if (!isEditing()) {
         <!-- Mode lecture -->
         <div class="profile-grid">
-        <div class="profile-item">
-          <span class="profile-label">Age</span>
-          <span class="profile-value">{{ authService.currentUser()?.age || 'Non défini' }}</span>
-        </div>
-        <div class="profile-item">
-          <span class="profile-label">Genre</span>
-          <span class="profile-value">{{ authService.currentUser()?.gender || 'Non défini'}}</span>
-        </div>
+          <div class="profile-divider full-width"><span>Running</span></div>
           <div class="profile-item">
             <span class="profile-label">Niveau</span>
             <span class="profile-value">{{ getLevelLabel(authService.currentUser()?.runningLevel) }}</span>
@@ -69,29 +112,61 @@
             <span class="profile-label">Fréquence</span>
             <span class="profile-value">
               @if (authService.currentUser()?.weeklyFrequency) {
-                {{ authService.currentUser()?.weeklyFrequency }} séances/semaine
-              } @else {
-                Non défini
-              }
+                {{ authService.currentUser()?.weeklyFrequency }} séances/sem.
+              } @else { Non défini }
+            </span>
+          </div>
+          @if (profileExpanded()) {
+            <div class="profile-item">
+              <span class="profile-label">Age</span>
+              <span class="profile-value">{{ authService.currentUser()?.age || 'Non défini' }}</span>
+            </div>
+            <div class="profile-item">
+              <span class="profile-label">Genre</span>
+              <span class="profile-value">{{ authService.currentUser()?.gender || 'Non défini' }}</span>
+            </div>
+            <div class="profile-item">
+              <span class="profile-label">Détails objectif</span>
+              <span class="profile-value">{{ authService.currentUser()?.goalDetails || 'Non défini' }}</span>
+            </div>
+            <div class="profile-item full-width">
+              <span class="profile-label">Blessures / Points de vigilance</span>
+              <span class="profile-value">{{ authService.currentUser()?.injuries || 'Aucun' }}</span>
+            </div>
+            <div class="profile-item">
+              <span class="profile-label">Jours disponibles</span>
+              <span class="profile-value">{{ getAvailableDaysDisplay() }}</span>
+            </div>
+            <div class="profile-item">
+              <span class="profile-label">Créneau préféré</span>
+              <span class="profile-value">{{ getPreferredTimeLabel(authService.currentUser()?.preferredTime) }}</span>
+            </div>
+          }
+
+          <div class="profile-divider full-width"><span>Musculation</span></div>
+          <div class="profile-item">
+            <span class="profile-label">Fréquence</span>
+            <span class="profile-value">
+              @if (authService.currentUser()?.strengthFrequency != null) {
+                {{ authService.currentUser()?.strengthFrequency }} séance{{ (authService.currentUser()?.strengthFrequency ?? 0) > 1 ? 's' : '' }}/sem.
+              } @else { Non défini }
             </span>
           </div>
           <div class="profile-item">
-            <span class="profile-label">Détails objectif</span>
-            <span class="profile-value">{{ authService.currentUser()?.goalDetails || 'Non défini' }}</span>
+            <span class="profile-label">Objectif</span>
+            <span class="profile-value">{{ getStrengthGoalLabel(authService.currentUser()?.strengthGoal) }}</span>
           </div>
-          <div class="profile-item full-width">
-            <span class="profile-label">Blessures / Points de vigilance</span>
-            <span class="profile-value">{{ authService.currentUser()?.injuries || 'Aucun' }}</span>
-          </div>
-          <div class="profile-item">
-            <span class="profile-label">Jours disponibles</span>
-            <span class="profile-value">{{ getAvailableDaysDisplay() }}</span>
-          </div>
-          <div class="profile-item">
-            <span class="profile-label">Créneau préféré</span>
-            <span class="profile-value">{{ getPreferredTimeLabel(authService.currentUser()?.preferredTime) }}</span>
-          </div>
+          @if (profileExpanded()) {
+            <div class="profile-item">
+              <span class="profile-label">Type d'entraînement</span>
+              <span class="profile-value">{{ getStrengthTypeLabel(authService.currentUser()?.strengthType) }}</span>
+            </div>
+          }
         </div>
+
+        <button class="btn-expand" (click)="profileExpanded.set(!profileExpanded())">
+          @if (profileExpanded()) { Voir moins ▲ } @else { Voir plus ▼ }
+        </button>
       } @else {
         <!-- Mode édition -->
         <form class="profile-form" (ngSubmit)="saveProfile()">
@@ -170,6 +245,33 @@
                 }
               </select>
             </div>
+
+            <div class="form-section-title full-width">Musculation</div>
+
+            <div class="form-group">
+              <label for="strengthFrequency">Séances muscu / semaine</label>
+              <input type="number" id="strengthFrequency" [(ngModel)]="profileForm.strengthFrequency" name="strengthFrequency" min="0" max="14" placeholder="0">
+            </div>
+
+            <div class="form-group">
+              <label for="strengthGoal">Objectif musculation</label>
+              <select id="strengthGoal" [(ngModel)]="profileForm.strengthGoal" name="strengthGoal">
+                <option [ngValue]="undefined">-- Sélectionner --</option>
+                @for (g of strengthGoals; track g.value) {
+                  <option [value]="g.value">{{ g.label }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="strengthType">Type d'entraînement</label>
+              <select id="strengthType" [(ngModel)]="profileForm.strengthType" name="strengthType">
+                <option [ngValue]="undefined">-- Sélectionner --</option>
+                @for (t of strengthTypes; track t.value) {
+                  <option [value]="t.value">{{ t.label }}</option>
+                }
+              </select>
+            </div>
           </div>
 
           <div class="form-actions">
@@ -212,19 +314,16 @@
             <span>Connecté depuis le {{ stravaStatus()?.connectedAt | date:'dd/MM/yyyy' }}</span>
           </div>
           <div class="strava-actions">
-            <button class="btn-strava-sync" (click)="syncStrava()" [disabled]="stravaSyncing()">
-              @if (stravaSyncing()) {
-                Synchronisation...
-              } @else {
-                Importer mes courses
-              }
-            </button>
-            <button class="btn-strava-resync" (click)="resyncStrava()" [disabled]="stravaSyncing()">
-              Mettre à jour
-            </button>
-            <button class="btn-strava-disconnect" (click)="disconnectStrava()">
-              Déconnecter
-            </button>
+            @if (stravaSyncing()) {
+              <div class="strava-syncing">
+                <span class="strava-sync-spinner"></span>
+                <span>Synchronisation en cours...</span>
+              </div>
+            } @else {
+              <button class="btn-strava-sync" (click)="syncStrava()">Importer mes courses</button>
+              <button class="btn-strava-resync" (click)="resyncStrava()">Mettre à jour</button>
+              <button class="btn-strava-disconnect" (click)="disconnectStrava()">Déconnecter</button>
+            }
           </div>
         </div>
       } @else {
@@ -270,7 +369,7 @@
               @if (currentCoach()!.profilePicture) {
                 <img [src]="currentCoach()!.profilePicture" alt="Coach">
               } @else {
-                {{ currentCoach()!.firstName?.charAt(0) }}{{ currentCoach()!.lastName?.charAt(0) }}
+                {{ currentCoach()!.firstName.charAt(0) }}{{ currentCoach()!.lastName.charAt(0) }}
               }
             </div>
             <div class="coach-info">
@@ -329,6 +428,98 @@
       }
     </section>
 
+    <!-- Graphique hebdomadaire -->
+    <section class="chart-section">
+      <div class="chart-header">
+        <h3>Stats hebdomadaires</h3>
+      </div>
+
+      <div class="metric-toggles">
+        <button class="metric-btn" [class.active]="selectedMetric() === 'seances'" (click)="selectMetric('seances')">
+          Séances
+        </button>
+        <button class="metric-btn" [class.active]="selectedMetric() === 'distance'" (click)="selectMetric('distance')">
+          Distance
+        </button>
+        <button class="metric-btn" [class.active]="selectedMetric() === 'temps'" (click)="selectMetric('temps')">
+          Temps
+        </button>
+      </div>
+
+      <svg viewBox="0 0 300 120" class="chart-svg" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#0582ca" stop-opacity="0.2"/>
+            <stop offset="100%" stop-color="#0582ca" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Grid lines + Y-axis labels -->
+        @for (tick of chartData().tickLines; track tick.value) {
+          <line
+            [attr.x1]="chartData().padL"
+            [attr.y1]="tick.y"
+            x2="292"
+            [attr.y2]="tick.y"
+            stroke="rgba(0,53,84,0.07)"
+            stroke-width="1"/>
+          <text
+            [attr.x]="chartData().padL - 4"
+            [attr.y]="tick.y + 3"
+            text-anchor="end"
+            class="svg-tick">{{ tick.label }}</text>
+        }
+
+        <!-- Gradient fill -->
+        <path [attr.d]="chartData().areaPath" fill="url(#areaGradient)"/>
+
+        <!-- Curve -->
+        <path [attr.d]="chartData().linePath" fill="none" stroke="#0582ca" stroke-width="2" stroke-linecap="round"/>
+
+        @for (pt of chartData().points; track pt.label) {
+          <!-- Dot -->
+          <circle
+            [attr.cx]="pt.x"
+            [attr.cy]="pt.y"
+            [attr.r]="selectedWeekIndex() === pt.index ? 6 : (pt.isCurrent ? 5 : 3.5)"
+            [attr.fill]="selectedWeekIndex() === pt.index ? '#0582ca' : 'white'"
+            [attr.stroke]="'#0582ca'"
+            [attr.stroke-width]="2"
+            style="cursor: pointer"/>
+          <!-- Zone cliquable invisible (plus grande pour le tactile) -->
+          <circle
+            [attr.cx]="pt.x"
+            [attr.cy]="pt.y"
+            r="14"
+            fill="transparent"
+            style="cursor: pointer"
+            (click)="selectWeek(pt.index)"/>
+          <!-- Week label -->
+          <text
+            [attr.x]="pt.x"
+            [attr.y]="chartData().bottomY + 15"
+            text-anchor="middle"
+            [attr.fill]="selectedWeekIndex() === pt.index ? '#0582ca' : '#bbb'"
+            [attr.font-weight]="selectedWeekIndex() === pt.index ? '700' : '400'"
+            class="svg-label">{{ pt.label }}</text>
+        }
+      </svg>
+
+      <div class="chart-summary">
+        <div class="period-total">
+          <span class="period-total-label">Total</span>
+          <span class="period-total-value">{{ getPeriodTotalDisplay() }}</span>
+        </div>
+        @if (selectedPointData()) {
+          <div class="month-info">
+            <span class="info-date">{{ formatWeekRange(selectedPointData()!.weekStart, selectedPointData()!.weekEnd) }}</span>
+            <span class="info-sep">·</span>
+            <span class="info-value">{{ getMetricDisplay(selectedPointData()!) }}</span>
+          </div>
+        }
+      </div>
+    </section>
+
     <!-- Statistiques globales -->
     <section class="stats-grid">
       <div class="stat-card">
@@ -346,7 +537,7 @@
     </section>
 
     <!-- Historique des runs -->
-    <section class="runs-section">
+    <!--<section class="runs-section">
       <h3>Historique des courses</h3>
 
       @if (isLoading()) {
@@ -399,7 +590,7 @@
           }
         </div>
       }
-    </section>
+    </section>-->
 
     <!-- Déconnexion -->
     <section class="logout-section">

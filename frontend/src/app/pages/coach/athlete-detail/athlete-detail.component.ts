@@ -1,15 +1,15 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CoachService } from '../../../services/coach.service';
 import { ChatService } from '../../../services/chat.service';
-import { AthleteDetail } from '../../../interfaces/coach.interfaces';
+import { AthleteDetail, RecentActivity } from '../../../interfaces/coach.interfaces';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
 
 @Component({
   selector: 'app-athlete-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, NavbarComponent],
+  imports: [CommonModule, NavbarComponent],
   templateUrl: './athlete-detail.component.html',
   styleUrl: './athlete-detail.component.scss'
 })
@@ -18,13 +18,16 @@ export class AthleteDetailComponent implements OnInit {
   athlete = signal<AthleteDetail | null>(null);
   isLoading = signal(true);
   error = signal<string | null>(null);
+  selectedActivity = signal<RecentActivity | null>(null);
+  selectedActivityData: RecentActivity | null = null;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private coachService: CoachService,
     private chatService: ChatService,
-    private location: Location
+    private location: Location,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -122,6 +125,72 @@ export class AthleteDetailComponent implements OnInit {
       'autre': 'Autre'
     };
     return gender ? genders[gender] || gender : 'Non défini';
+  }
+
+  getSessionTypeLabel(type: string): string {
+    const types: Record<string, string> = {
+      'upper_body': 'Haut du corps',
+      'lower_body': 'Bas du corps',
+      'full_body': 'Full body',
+      'push': 'Push',
+      'pull': 'Pull',
+      'legs': 'Jambes',
+      'core': 'Gainage',
+      'hiit': 'HIIT',
+      'other': 'Autre'
+    };
+    return types[type] || type;
+  }
+
+  getStrengthGoalLabel(value: string | undefined): string {
+    const goals: Record<string, string> = {
+      'force': 'Force / Puissance',
+      'hypertrophie': 'Hypertrophie',
+      'endurance_musculaire': 'Endurance musculaire',
+      'remise_en_forme': 'Remise en forme',
+      'fonctionnel': 'Fonctionnel / Mobilité'
+    };
+    return value ? goals[value] || value : 'Non défini';
+  }
+
+  getStrengthTypeLabel(value: string | undefined): string {
+    const types: Record<string, string> = {
+      'poids_libres': 'Poids libres',
+      'machines': 'Machines',
+      'bodyweight': 'Poids de corps',
+      'crossfit': 'CrossFit / HIIT',
+      'mixte': 'Mixte'
+    };
+    return value ? types[value] || value : 'Non défini';
+  }
+
+  formatDuration(minutes: number): string {
+    const h = Math.floor(minutes / 60);
+    const m = Math.round(minutes % 60);
+    if (h > 0) return `${h}h${m > 0 ? m + 'min' : ''}`;
+    return `${m}min`;
+  }
+
+  openActivity(activity: RecentActivity) {
+    this.selectedActivityData = activity;
+    this.selectedActivity.set(activity);
+    this.cdr.detectChanges();
+  }
+
+  closeActivity() {
+    this.selectedActivityData = null;
+    this.selectedActivity.set(null);
+    this.cdr.detectChanges();
+  }
+
+  formatActivityDate(date: Date | string): string {
+    const d = new Date(date);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (d.toDateString() === today.toDateString()) return "Aujourd'hui";
+    if (d.toDateString() === yesterday.toDateString()) return 'Hier';
+    return d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
   }
 
   getAvailableDaysLabel(days: string[] | undefined): string {

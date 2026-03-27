@@ -20,7 +20,7 @@ interface CalendarDay {
 @Component({
   selector: 'app-planning',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, NavbarComponent],
+  imports: [CommonModule, FormsModule, NavbarComponent],
   templateUrl: './planning.component.html',
   styleUrl: './planning.component.scss'
 })
@@ -43,6 +43,11 @@ export class PlanningComponent implements OnInit {
   showPreview = signal(false);
   previewSessions = signal<Partial<PlannedSession>[]>([]);
   isConfirming = signal(false);
+
+  // Modal feeling
+  feelingModal = signal<{ open: boolean; session: PlannedSession | null; value: number }>({
+    open: false, session: null, value: 5
+  });
 
   // Generate options
   showGenerateOptions = signal(false);
@@ -310,14 +315,32 @@ export class PlanningComponent implements OnInit {
   }
 
   markAsCompleted(plannedRun: PlannedSession) {
-    if (!plannedRun._id) return;
+    this.feelingModal.set({ open: true, session: plannedRun, value: plannedRun.feeling ?? 5 });
+  }
 
-    this.planningService.updateStatus(plannedRun._id, 'completed').subscribe({
+  confirmFeelingAndComplete(feeling?: number) {
+    const session = this.feelingModal().session;
+    if (!session?._id) return;
+    this.feelingModal.set({ open: false, session: null, value: 5 });
+
+    this.planningService.updateStatus(session._id, 'completed', undefined, feeling).subscribe({
       next: () => {
+        // Met à jour la modale du jour en place sans la fermer
+        const day = this.selectedDay();
+        if (day) {
+          const updatedPlannedRuns = day.plannedRuns.map(p =>
+            p._id === session._id ? { ...p, status: 'completed' as const, feeling } : p
+          );
+          this.selectedDay.set({ ...day, plannedRuns: updatedPlannedRuns });
+        }
         this.loadCalendar();
       },
       error: (err) => console.error(err)
     });
+  }
+
+  closeFeelingModal() {
+    this.feelingModal.set({ open: false, session: null, value: 5 });
   }
 
   markAsSkipped(plannedRun: PlannedSession) {
@@ -535,6 +558,22 @@ export class PlanningComponent implements OnInit {
     this.currentMonth.set(today.getMonth() + 1);
     this.currentYear.set(today.getFullYear());
     this.loadCalendar();
+  }
+
+  getFeelingLabel(value: number): string {
+    if (value >= 9) return 'Excellent';
+    if (value >= 7) return 'Bien';
+    if (value >= 5) return 'Correct';
+    if (value >= 3) return 'Difficile';
+    return 'Épuisant';
+  }
+
+  getFeelingColor(value: number): string {
+    if (value >= 9) return '#16a34a';
+    if (value >= 7) return '#22c55e';
+    if (value >= 5) return '#eab308';
+    if (value >= 3) return '#f97316';
+    return '#ef4444';
   }
 
   getRunTitle(notes: string): string {

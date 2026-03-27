@@ -102,6 +102,16 @@ export const routes: Routes = [
     canActivate: [guestGuard]
   },
   {
+    path: 'forgot-password',
+    loadComponent: () => import('./pages/forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent),
+    canActivate: [guestGuard]
+  },
+  {
+    path: 'reset-password/:token',
+    loadComponent: () => import('./pages/reset-password/reset-password.component').then(m => m.ResetPasswordComponent),
+    canActivate: [guestGuard]
+  },
+  {
     path: '**',
     redirectTo: ''
   }

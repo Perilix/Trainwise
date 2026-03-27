@@ -67,6 +67,12 @@ const strengthSessionSchema = new mongoose.Schema({
   linkedPlannedSession: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'PlannedRun'
+  },
+
+  // Import Strava
+  stravaActivityId: {
+    type: Number,
+    default: null
   }
 }, {
   timestamps: true

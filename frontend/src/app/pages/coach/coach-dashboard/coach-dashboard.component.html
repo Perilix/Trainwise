@@ -77,16 +77,37 @@
 
     <!-- Liste des athlètes -->
     <section class="section">
-      <h2>Mes athlètes</h2>
+      <div class="section-header">
+        <h2>Mes athlètes</h2>
+        @if (athletes().length > 0) {
+          <div class="athletes-search">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input
+              type="text"
+              placeholder="Rechercher..."
+              [ngModel]="athleteSearch()"
+              (ngModelChange)="athleteSearch.set($event)"
+            >
+          </div>
+        }
+      </div>
       @if (athletes().length === 0) {
         <div class="empty-state">
           <p>Vous n'avez pas encore d'athlètes.</p>
           <button class="btn-secondary" (click)="openInviteModal()">Inviter un athlète</button>
         </div>
+      } @else if (filteredAthletes().length === 0) {
+        <div class="empty-state">
+          <p>Aucun athlète ne correspond à "{{ athleteSearch() }}"</p>
+        </div>
       } @else {
         <div class="athletes-grid">
-          @for (athlete of athletes(); track athlete._id) {
+          @for (athlete of filteredAthletes(); track athlete._id) {
             <div class="athlete-card">
+              <div class="activity-badge status-{{ getActivityStatus(athlete) }}" [title]="getActivityTooltip(athlete)">
+                <span class="activity-dot"></span>
+                <span class="activity-text">{{ getActivityBadgeLabel(athlete) }}</span>
+              </div>
               <div class="athlete-header">
                 <div class="user-avatar large">
                   @if (athlete.profilePicture) {
@@ -152,7 +173,7 @@
             } @else {
               <span class="no-code">Aucun code généré</span>
             }
-            <button class="btn-secondary" (click)="generateCode()" [disabled]="isGeneratingCode()">
+            <button class="btn-secondary generation-btn" (click)="generateCode()" [disabled]="isGeneratingCode()">
               {{ inviteCode() ? 'Régénérer' : 'Générer' }}
             </button>
           </div>
@@ -230,6 +251,7 @@
                       class="btn-primary small"
                       (click)="sendInvite(user)"
                       [disabled]="isSendingInvite()"
+                      style="font-size: 0.75rem"
                     >
                       Inviter
                     </button>

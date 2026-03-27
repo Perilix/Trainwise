@@ -172,36 +172,6 @@
   }
 }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-
-  @media (max-width: 600px) {
-    grid-template-columns: 1fr;
-  }
-}
-
-.stat-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 1.5rem;
-  text-align: center;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-
-  .stat-value {
-    display: block;
-    font-family: 'GulfsDisplay', serif;
-    font-size: 2rem;
-    color: #00a6fb;
-  }
-
-  .stat-label {
-    color: #666;
-    font-size: 0.85rem;
-  }
-}
 
 .profile-sections {
   display: flex;
@@ -232,6 +202,288 @@
 
   @media (max-width: 600px) {
     grid-template-columns: 1fr;
+  }
+}
+
+.section-subtitle {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: #999;
+  margin-left: 0.5rem;
+}
+
+.empty-state {
+  color: #999;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 1rem 0;
+  margin: 0;
+}
+
+// Profil sportif
+.sport-block {
+  .sport-block-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: #051923;
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+
+    .sport-icon {
+      font-size: 1.1rem;
+    }
+  }
+}
+
+.sport-divider {
+  border: none;
+  border-top: 1px solid #eee;
+  margin: 1.25rem 0;
+}
+
+// Activités récentes
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  padding: 0.875rem 1rem;
+  background: #F6F4F0;
+  border-radius: 10px;
+
+  .activity-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+
+    &.run { background: #e0f5ff; }
+    &.strength { background: #fef3c7; }
+  }
+
+  .activity-body {
+    flex: 1;
+    min-width: 0;
+
+    .activity-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.4rem;
+
+      .activity-name {
+        font-weight: 600;
+        color: #051923;
+        font-size: 0.9rem;
+      }
+
+      .activity-date {
+        font-size: 0.78rem;
+        color: #999;
+        white-space: nowrap;
+      }
+    }
+
+    .activity-stats {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+  }
+}
+
+.activity-item.clickable {
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+
+  &:hover {
+    background: #ece9e4;
+    transform: translateX(2px);
+  }
+}
+
+// Modal détail activité
+.activity-modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 460px;
+  overflow: hidden;
+  animation: modalAppear 0.2s ease-out;
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #eee;
+    background: #fafafa;
+
+    .modal-title-row {
+      display: flex;
+      align-items: center;
+      gap: 0.875rem;
+
+      h3 {
+        margin: 0 0 0.15rem;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #051923;
+      }
+
+      .modal-date {
+        margin: 0;
+        font-size: 0.82rem;
+        color: #999;
+      }
+    }
+
+    .close-btn {
+      background: #f3f4f6;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      font-size: 1.4rem;
+      color: #666;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      flex-shrink: 0;
+
+      &:hover { background: #e5e7eb; }
+    }
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .activity-icon.large {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    font-size: 1.4rem;
+  }
+}
+
+.detail-stats {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.detail-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #F6F4F0;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  min-width: 80px;
+  flex: 1;
+
+  .detail-stat-value {
+    font-family: 'GulfsDisplay', serif;
+    font-size: 1.2rem;
+    align-items: center;
+    text-align: center;
+    color: #051923;
+    font-weight: 700;
+  }
+
+  .detail-stat-label {
+    font-size: 0.72rem;
+    color: #999;
+    margin-top: 0.2rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  &.highlight {
+    background: #e0f5ff;
+    .detail-stat-value { color: #0582ca; }
+  }
+}
+
+.detail-section {
+  h4 {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 0.75rem;
+  }
+}
+
+.exercise-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.exercise-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  background: #F6F4F0;
+  border-radius: 8px;
+
+  .exercise-name {
+    font-size: 0.9rem;
+    color: #051923;
+    font-weight: 500;
+  }
+
+  .exercise-sets {
+    font-size: 0.8rem;
+    color: #666;
+  }
+}
+
+.detail-notes {
+  font-size: 0.9rem;
+  color: #444;
+  line-height: 1.5;
+  margin: 0;
+  background: #F6F4F0;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+}
+
+.stat-chip {
+  display: inline-block;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  color: #555;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 20px;
+  white-space: nowrap;
+
+  &.feeling {
+    background: #e0f5ff;
+    border-color: #b3e5fc;
+    color: #0582ca;
+    font-weight: 600;
   }
 }
 

@@ -1,6 +1,8 @@
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
 const { cloudinary } = require('../config/cloudinary');
+const emailService = require('../services/email.service');
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -136,6 +138,9 @@ exports.getMe = async (req, res) => {
       experience: user.experience,
       diplomas: user.diplomas,
       bio: user.bio,
+      strengthFrequency: user.strengthFrequency,
+      strengthGoal: user.strengthGoal,
+      strengthType: user.strengthType,
       createdAt: user.createdAt
     });
   } catch (error) {
@@ -162,7 +167,10 @@ exports.updateProfile = async (req, res) => {
       'disciplines',
       'experience',
       'diplomas',
-      'bio'
+      'bio',
+      'strengthFrequency',
+      'strengthGoal',
+      'strengthType'
     ];
 
     const updates = {};
@@ -199,6 +207,9 @@ exports.updateProfile = async (req, res) => {
       experience: user.experience,
       diplomas: user.diplomas,
       bio: user.bio,
+      strengthFrequency: user.strengthFrequency,
+      strengthGoal: user.strengthGoal,
+      strengthType: user.strengthType,
       createdAt: user.createdAt
     });
   } catch (error) {
@@ -322,6 +333,68 @@ exports.deleteAvatar = async (req, res) => {
       bio: user.bio,
       createdAt: user.createdAt
     });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Forgot password
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(200).json({ message: 'Si cet email est enregistré, vous recevrez un lien de réinitialisation.' });
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    user.passwordResetToken = hashedToken;
+    user.passwordResetExpires = Date.now() + 30 * 60 * 1000;
+    await user.save({ validateBeforeSave: false });
+
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${token}`;
+
+    try {
+      await emailService.sendPasswordResetEmail(user.email, resetUrl);
+    } catch (emailError) {
+      user.passwordResetToken = undefined;
+      user.passwordResetExpires = undefined;
+      await user.save({ validateBeforeSave: false });
+      return res.status(500).json({ error: "Erreur lors de l'envoi de l'email. Veuillez réessayer." });
+    }
+
+    res.status(200).json({ message: 'Si cet email est enregistré, vous recevrez un lien de réinitialisation.' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Reset password
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await User.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: Date.now() }
+    }).select('+passwordResetToken +passwordResetExpires');
+
+    if (!user) {
+      return res.status(400).json({ error: 'Lien de réinitialisation invalide ou expiré.' });
+    }
+
+    user.password = password;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
+
+    res.status(200).json({ message: 'Mot de passe réinitialisé avec succès.' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -122,7 +122,10 @@ exports.createRun = async (req, res) => {
             goal: user.goal,
             goalDetails: user.goalDetails,
             weeklyFrequency: user.weeklyFrequency,
-            injuries: user.injuries
+            injuries: user.injuries,
+            strengthFrequency: user.strengthFrequency,
+            strengthGoal: user.strengthGoal,
+            strengthType: user.strengthType
           },
 
           // Historique récent
@@ -256,7 +259,10 @@ exports.analyzeRun = async (req, res) => {
         goal: user.goal,
         goalDetails: user.goalDetails,
         weeklyFrequency: user.weeklyFrequency,
-        injuries: user.injuries
+        injuries: user.injuries,
+        strengthFrequency: user.strengthFrequency,
+        strengthGoal: user.strengthGoal,
+        strengthType: user.strengthType
       },
       recentRuns: formatRunsForContext(recentRuns),
       lastAnalysis: lastAnalyzedRun ? {
@@ -306,6 +312,28 @@ exports.updateAnalysis = async (req, res) => {
       return res.status(404).json({ error: 'Course non trouvée' });
     }
 
+    res.json(run);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Mettre à jour une course (feeling, notes, etc.)
+exports.updateRun = async (req, res) => {
+  try {
+    const allowed = ['feeling', 'notes', 'sessionType'];
+    const updates = {};
+    allowed.forEach(field => {
+      if (req.body[field] !== undefined) updates[field] = req.body[field];
+    });
+
+    const run = await Run.findOneAndUpdate(
+      { _id: req.params.id, user: req.user._id },
+      updates,
+      { new: true }
+    );
+
+    if (!run) return res.status(404).json({ error: 'Course non trouvée' });
     res.json(run);
   } catch (error) {
     res.status(500).json({ error: error.message });

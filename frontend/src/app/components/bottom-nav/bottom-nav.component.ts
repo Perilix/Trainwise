@@ -61,9 +61,6 @@ export class BottomNavComponent implements OnInit {
         }
       });
     } else {
-      // Si pas de coach, rediriger vers la page de découverte (profil d'Hugo)
-      // Pour l'instant, on va créer une route vers /discover-coach
-      // TODO: Obtenir l'ID d'Hugo depuis le backend ou config
       this.router.navigate(['/discover-coach']);
     }
   }

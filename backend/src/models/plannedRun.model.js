@@ -83,6 +83,12 @@ const plannedRunSchema = new mongoose.Schema({
   weekNumber: {
     type: Number // numéro de semaine dans le plan
   },
+  feeling: {
+    type: Number,
+    min: 1,
+    max: 10,
+    default: null
+  },
   generatedBy: {
     type: String,
     enum: ['ai', 'manual', 'coach'],

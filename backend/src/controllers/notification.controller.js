@@ -1,5 +1,6 @@
 const Notification = require('../models/notification.model');
-const { getIO } = require('../socket/index');
+const { getIO, isUserOnline } = require('../socket/index');
+const { sendPushNotification } = require('../services/pushNotification.service');
 
 // Créer une notification (fonction utilitaire)
 exports.createNotification = async ({ recipient, sender, type, action, title, message, actionUrl }) => {
@@ -21,6 +22,19 @@ exports.createNotification = async ({ recipient, sender, type, action, title, me
     const io = getIO();
     if (io) {
       io.to(`user:${recipient.toString()}`).emit('notification:new', populatedNotification);
+    }
+
+    // Envoyer une notification push si l'utilisateur est hors ligne
+    if (!isUserOnline(recipient.toString())) {
+      await sendPushNotification(recipient, {
+        title,
+        body: message,
+        data: {
+          type,
+          actionUrl: actionUrl || '/',
+          notificationId: notification._id.toString()
+        }
+      });
     }
 
     return populatedNotification;

@@ -27,7 +27,7 @@ interface UserStats {
 @Component({
   selector: 'app-user-profile',
   standalone: true,
-  imports: [CommonModule, RouterLink, NavbarComponent],
+  imports: [CommonModule, NavbarComponent],
   templateUrl: './user-profile.component.html',
   styleUrl: './user-profile.component.scss'
 })

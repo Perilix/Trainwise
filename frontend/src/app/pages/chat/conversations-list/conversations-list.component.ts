@@ -5,14 +5,12 @@ import { FormsModule } from '@angular/forms';
 import { ChatService, Conversation, UserPreview } from '../../../services/chat.service';
 import { AuthService } from '../../../services/auth.service';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
-import { BottomNavComponent } from '../../../components/bottom-nav/bottom-nav.component';
-import { CoachBottomNavComponent } from '../../../components/coach-bottom-nav/coach-bottom-nav.component';
 import { debounceTime, Subject } from 'rxjs';
 
 @Component({
   selector: 'app-conversations-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavbarComponent, BottomNavComponent, CoachBottomNavComponent, RouterLink],
+  imports: [CommonModule, FormsModule, NavbarComponent, RouterLink],
   templateUrl: './conversations-list.component.html',
   styleUrl: './conversations-list.component.scss'
 })

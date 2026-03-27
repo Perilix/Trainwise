@@ -1,7 +1,9 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { PushNotifications, Token, ActionPerformed, PushNotificationSchema } from '@capacitor/push-notifications';
 import { Capacitor } from '@capacitor/core';
+import { ToastController } from '@ionic/angular/standalone';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -9,6 +11,8 @@ import { environment } from '../../environments/environment';
 })
 export class PushNotificationService {
   private readonly apiUrl = environment.apiUrl;
+  private toastController = inject(ToastController);
+  private router = inject(Router);
 
   constructor(private http: HttpClient) {}
 
@@ -63,21 +67,32 @@ export class PushNotificationService {
     });
 
     // Appelé quand une notification est reçue (app en premier plan)
-    PushNotifications.addListener('pushNotificationReceived', (notification: PushNotificationSchema) => {
+    PushNotifications.addListener('pushNotificationReceived', async (notification: PushNotificationSchema) => {
       console.log('Push notification received:', notification);
-      // Tu peux afficher une alerte ou une notification locale ici
+      const toast = await this.toastController.create({
+        header: notification.title,
+        message: notification.body,
+        duration: 4000,
+        position: 'top',
+        color: 'dark',
+        buttons: [
+          {
+            text: 'Voir',
+            handler: () => {
+              const url = notification.data?.actionUrl;
+              if (url) this.router.navigateByUrl(url);
+            }
+          }
+        ]
+      });
+      await toast.present();
     });
 
-    // Appelé quand l'utilisateur clique sur une notification
+    // Appelé quand l'utilisateur clique sur une notification (app en arrière-plan)
     PushNotifications.addListener('pushNotificationActionPerformed', (notification: ActionPerformed) => {
       console.log('Push notification action performed:', notification);
-
-      // Gérer la navigation en fonction de la notification
-      const data = notification.notification.data;
-      if (data?.actionUrl) {
-        // Naviguer vers l'URL spécifiée
-        window.location.href = data.actionUrl;
-      }
+      const url = notification.notification.data?.actionUrl;
+      if (url) this.router.navigateByUrl(url);
     });
   }
 
@@ -86,7 +101,7 @@ export class PushNotificationService {
    */
   private async sendTokenToBackend(token: string): Promise<void> {
     try {
-      await this.http.post(`${this.apiUrl}/users/push-token`, {
+      await this.http.post(`${this.apiUrl}/api/users/push-token`, {
         pushToken: token,
         platform: Capacitor.getPlatform()
       }).toPromise();
@@ -105,7 +120,7 @@ export class PushNotificationService {
     }
 
     try {
-      await this.http.delete(`${this.apiUrl}/users/push-token`).toPromise();
+      await this.http.delete(`${this.apiUrl}/api/users/push-token`).toPromise();
       console.log('Push token removed from backend');
     } catch (error) {
       console.error('Error removing push token:', error);

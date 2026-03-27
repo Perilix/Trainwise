@@ -3,17 +3,17 @@ import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 import { Capacitor } from '@capacitor/core';
-import { ChatFabComponent } from './components/chat-fab/chat-fab.component';
 import { BottomNavComponent } from './components/bottom-nav/bottom-nav.component';
 import { CoachBottomNavComponent } from './components/coach-bottom-nav/coach-bottom-nav.component';
 import { CoachInvitationModalComponent } from './components/coach-invitation-modal/coach-invitation-modal.component';
 import { AuthService } from './services/auth.service';
 import { CoachInvitationModalService } from './services/coach-invitation-modal.service';
 import { AthleteService } from './services/athlete.service';
+import { PushNotificationService } from './services/push-notification.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, ChatFabComponent, BottomNavComponent, CoachBottomNavComponent, CoachInvitationModalComponent],
+  imports: [RouterOutlet, BottomNavComponent, CoachBottomNavComponent, CoachInvitationModalComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
@@ -22,6 +22,7 @@ export class App {
   invitationModalService = inject(CoachInvitationModalService);
   private athleteService = inject(AthleteService);
   private router = inject(Router);
+  private pushNotificationService = inject(PushNotificationService);
 
   private currentUrl = toSignal(this.router.events.pipe(
     map(() => this.router.url)
@@ -43,6 +44,24 @@ export class App {
     });
 
     this.initSafeAreas();
+    this.setupKeyboardAdjustment();
+
+    // Si l'utilisateur est déjà connecté (session persistée), initialiser les notifications push
+    if (this.authService.isAuthenticated()) {
+      this.pushNotificationService.initializePushNotifications().catch(err => {
+        console.error('Failed to initialize push notifications:', err);
+      });
+    }
+  }
+
+  private setupKeyboardAdjustment() {
+    if (!window.visualViewport) return;
+
+    window.visualViewport.addEventListener('resize', () => {
+      const vp = window.visualViewport!;
+      const kbHeight = Math.max(0, window.innerHeight - vp.height - vp.offsetTop);
+      document.documentElement.style.setProperty('--keyboard-height', `${kbHeight}px`);
+    });
   }
 
   private initSafeAreas() {

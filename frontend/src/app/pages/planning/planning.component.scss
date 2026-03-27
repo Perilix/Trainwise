@@ -118,6 +118,10 @@
       font-size: 1rem;
     }
 
+    &.generating::before {
+      display: none;
+    }
+
     &:hover:not(:disabled) {
       background: linear-gradient(135deg, #0582ca 0%, #006494 100%);
       transform: translateY(-2px);
@@ -125,10 +129,39 @@
     }
 
     &:disabled {
-      opacity: 0.5;
+      opacity: 0.85;
       cursor: not-allowed;
       box-shadow: none;
+      transform: none;
     }
+  }
+
+  .generate-spinner {
+    width: 17px;
+    height: 17px;
+    border: 2.5px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: gen-spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes gen-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .generating-hint {
+    margin: 0.75rem 0 0;
+    font-size: 0.78rem;
+    color: #0582ca;
+    text-align: center;
+    line-height: 1.4;
+    animation: hint-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes hint-pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
   }
 }
 
@@ -926,7 +959,26 @@
     background: #FC4C02;
     color: #fff;
     border-radius: 4px;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .strava-block {
+    background: rgba(252, 76, 2, 0.06);
+    border: 1px solid rgba(252, 76, 2, 0.2);
+    border-radius: 8px;
+    padding: 0.6rem 0.75rem;
+    margin-bottom: 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .strava-duration {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #555;
+    margin-top: 0.25rem;
   }
 
   .run-notes {
@@ -1064,6 +1116,145 @@
       }
     }
   }
+
+  .feeling-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+
+  .feeling-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+
+    .feeling-chip-num {
+      font-weight: 700;
+    }
+
+    .feeling-chip-label {
+      font-weight: 500;
+    }
+
+    &.feeling-empty {
+      background: #f3f4f6;
+      color: #9ca3af;
+      font-weight: 400;
+      font-style: italic;
+    }
+  }
+
+  .feeling-edit-btn {
+    background: transparent;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 0.3rem 0.4rem;
+    cursor: pointer;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+
+    &:hover {
+      border-color: #00a6fb;
+      color: #00a6fb;
+      background: rgba(0, 166, 251, 0.06);
+    }
+  }
+}
+
+// Feeling modal
+.feeling-modal {
+  max-width: 340px;
+  text-align: center;
+
+  .feeling-session-label {
+    font-size: 0.75rem;
+    color: #aaa;
+    margin: 0 0 1.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-weight: 600;
+  }
+
+  .feeling-value-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.1rem;
+    margin-bottom: 1.75rem;
+
+    .feeling-number {
+      font-family: 'GulfsDisplay', serif;
+      font-size: 4rem;
+      font-weight: 700;
+      line-height: 1;
+      transition: color 0.2s;
+    }
+
+    .feeling-label {
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      transition: color 0.2s;
+    }
+  }
+
+  .feeling-slider-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+
+    .slider-hint-text {
+      font-size: 0.65rem;
+      color: #bbb;
+      font-weight: 500;
+      flex-shrink: 0;
+      letter-spacing: 0.2px;
+      text-transform: uppercase;
+    }
+  }
+}
+
+// Slider commun
+.feeling-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to right, #ef4444, #f97316, #22c55e);
+  outline: none;
+  cursor: pointer;
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2.5px solid #0582ca;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  &::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2.5px solid #0582ca;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
 }
 
 // Generate modal
@@ -1185,144 +1376,100 @@
 
 // Preview modal
 .preview-modal {
-  max-width: 620px;
-  max-height: 85dvh;
-  border-top: 4px solid #00a6fb;
-
-  @media (max-width: 500px) {
-    max-height: 80dvh;
-  }
-
-  .modal-header {
-    background: linear-gradient(135deg, rgba(0, 166, 251, 0.08) 0%, #fafafa 100%);
-
-    h2 {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-
-      &::before {
-        font-size: 1.1rem;
-      }
-    }
-  }
-
-  .preview-intro {
-    margin: 0 0 1.5rem;
-    color: #555;
-    font-size: 0.95rem;
-    padding: 1rem;
-    background: linear-gradient(135deg, rgba(0, 166, 251, 0.08) 0%, rgba(0, 166, 251, 0.02) 100%);
-    border-radius: 10px;
-    border-left: 3px solid #00a6fb;
-
-    .coach-badge {
-      display: inline-block;
-      font-size: 0.65rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      padding: 0.3rem 0.7rem;
-      background: linear-gradient(135deg, #00a6fb 0%, #0582ca 100%);
-      color: #fff;
-      border-radius: 5px;
-      margin-right: 0.5rem;
-      vertical-align: middle;
-      box-shadow: 0 2px 6px rgba(0, 166, 251, 0.3);
-    }
-  }
+  max-width: 520px;
 
   .preview-list {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    max-height: 50vh;
-    overflow-y: auto;
-    padding-right: 0.5rem;
-    -webkit-overflow-scrolling: touch;
-
-    &::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    &::-webkit-scrollbar-track {
-      background: #f0f0f0;
-      border-radius: 3px;
-    }
-
-    &::-webkit-scrollbar-thumb {
-      background: #00a6fb;
-      border-radius: 3px;
-    }
+    gap: 0.5rem;
   }
 
   .preview-card {
-    display: flex;
-    gap: 1rem;
-    padding: 1.25rem;
-    background: #fff;
-    border-radius: 14px;
-    border-left: 4px solid #006494;
-    box-shadow: 0 2px 8px rgba(5, 25, 35, 0.06);
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
     transition: all 0.2s;
 
     &:hover {
-      box-shadow: 0 4px 15px rgba(5, 25, 35, 0.1);
-      transform: translateX(3px);
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     }
+  }
 
-    .preview-date {
-      min-width: 75px;
-      font-weight: 700;
-      font-size: 0.8rem;
-      color: #0582ca;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-      padding-top: 0.2rem;
-    }
+  .preview-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
 
-    .preview-content {
-      flex: 1;
+  .preview-card-date {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #0582ca;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
 
-      .preview-type {
-        font-weight: 700;
-        color: #051923;
-        display: block;
-        margin-bottom: 0.35rem;
-        font-size: 1rem;
+  .preview-card-type {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #051923;
+  }
+
+  .preview-card-stats {
+    display: flex;
+    gap: 0.75rem;
+    font-size: 0.82rem;
+    color: #555;
+    margin-bottom: 0.4rem;
+
+    span {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+
+      &::before {
+        content: '·';
+        color: #ccc;
       }
 
-      .preview-stats {
-        display: flex;
-        gap: 1rem;
-        font-size: 0.85rem;
-        color: #666;
-        margin-bottom: 0.5rem;
-
-        span {
-          display: flex;
-          align-items: center;
-          gap: 0.25rem;
-        }
-      }
-
-      .preview-description {
-        margin: 0;
-        font-size: 0.85rem;
-        color: #555;
-        line-height: 1.5;
-      }
-
-      .preview-workout {
-        margin: 0.75rem 0 0;
-        font-size: 0.85rem;
-        color: #333;
-        padding: 0.75rem;
-        background: #f8f9fa;
-        border-radius: 8px;
-        border: 1px solid #e5e7eb;
+      &:first-child::before {
+        display: none;
       }
     }
+  }
+
+  .preview-card-desc {
+    margin: 0.4rem 0 0;
+    font-size: 0.82rem;
+    color: #666;
+    line-height: 1.45;
+  }
+
+  .preview-card-workout {
+    margin: 0.5rem 0 0;
+    padding: 0.5rem 0.75rem;
+    background: #fff;
+    border-radius: 8px;
+    border-left: 3px solid #00a6fb;
+    font-size: 0.8rem;
+    color: #333;
+    line-height: 1.4;
+  }
+
+  .confirm-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: confirm-spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes confirm-spin {
+    to { transform: rotate(360deg); }
   }
 }
 

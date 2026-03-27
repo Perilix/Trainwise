@@ -21,6 +21,9 @@ router.post('/:id/analyze', runController.analyzeRun);
 // PATCH /api/runs/:id/analysis - Mettre à jour l'analyse (callback n8n)
 router.patch('/:id/analysis', runController.updateAnalysis);
 
+// PATCH /api/runs/:id - Mettre à jour une course (feeling, notes...)
+router.patch('/:id', runController.updateRun);
+
 // DELETE /api/runs/:id - Supprimer une course
 router.delete('/:id', runController.deleteRun);
 

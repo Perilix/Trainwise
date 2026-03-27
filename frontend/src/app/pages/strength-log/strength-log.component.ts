@@ -216,64 +216,32 @@ export class StrengthLogComponent implements OnInit {
 
     const plannedId = this.linkedPlannedId();
 
-    // If linked to a planned session, update the PlannedSession with strengthPlan
-    if (plannedId) {
-      const strengthPlan = {
-        exercises: this.exercises().map((e) => ({
-          exercise: typeof e.exercise === 'string' ? e.exercise : (e.exercise as Exercise)._id,
-          targetSets: e.sets.length,
-          targetReps: e.sets[0]?.reps?.toString() || '10',
-          targetWeight: e.sets[0]?.weight || undefined,
-          notes: undefined
-        })),
-        estimatedDuration: this.sessionDuration()
-      };
+    const session: Partial<StrengthSession> = {
+      date: new Date(this.sessionDate()),
+      sessionType: this.sessionType(),
+      duration: this.sessionDuration(),
+      feeling: this.sessionFeeling(),
+      notes: this.sessionNotes() || undefined,
+      exercises: this.exercises().map((e, i) => ({
+        exercise: typeof e.exercise === 'string' ? e.exercise : (e.exercise as Exercise)._id,
+        sets: e.sets,
+        order: i
+      })),
+      ...(plannedId ? { linkedPlannedSession: plannedId } : {})
+    };
 
-      this.planningService.updatePlannedSession(plannedId, {
-        strengthPlan,
-        targetDuration: this.sessionDuration(),
-        description: this.sessionNotes() || undefined
-      }).subscribe({
-        next: () => {
-          this.successMessage.set('Séance détaillée !');
-          setTimeout(() => {
-            this.router.navigate(['/planning']);
-          }, 1500);
-        },
-        error: (err) => {
-          this.error.set(err.error?.error || 'Erreur lors de la mise à jour');
-          this.isSaving.set(false);
-          console.error(err);
-        }
-      });
-    } else {
-      // No linked session, create a new StrengthSession
-      const session: Partial<StrengthSession> = {
-        date: new Date(this.sessionDate()),
-        sessionType: this.sessionType(),
-        duration: this.sessionDuration(),
-        feeling: this.sessionFeeling(),
-        notes: this.sessionNotes() || undefined,
-        exercises: this.exercises().map((e, i) => ({
-          exercise: typeof e.exercise === 'string' ? e.exercise : (e.exercise as Exercise)._id,
-          sets: e.sets,
-          order: i
-        }))
-      };
-
-      this.strengthService.createSession(session).subscribe({
-        next: () => {
-          this.successMessage.set('Séance enregistrée !');
-          setTimeout(() => {
-            this.router.navigate(['/planning']);
-          }, 1500);
-        },
-        error: (err) => {
-          this.error.set(err.error?.error || 'Erreur lors de l\'enregistrement');
-          this.isSaving.set(false);
-          console.error(err);
-        }
-      });
-    }
+    this.strengthService.createSession(session).subscribe({
+      next: () => {
+        this.successMessage.set('Séance enregistrée !');
+        setTimeout(() => {
+          this.router.navigate(['/planning']);
+        }, 1500);
+      },
+      error: (err) => {
+        this.error.set(err.error?.error || 'Erreur lors de l\'enregistrement');
+        this.isSaving.set(false);
+        console.error(err);
+      }
+    });
   }
 }

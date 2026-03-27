@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.trainwise.app</string>
+	<string>com.trainwise.appli</string>
 	<key>PROJECT_ID</key>
 	<string>trainwise-ac8cc</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:1002254054572:ios:7b6b23a5e089882e3a1b09</string>
+	<string>1:1002254054572:ios:75ce8cb72e1bdae93a1b09</string>
 </dict>
 </plist>

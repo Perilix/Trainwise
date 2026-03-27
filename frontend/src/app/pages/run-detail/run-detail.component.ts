@@ -16,7 +16,7 @@ L.Icon.Default.mergeOptions({
 @Component({
   selector: 'app-run-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, NavbarComponent],
+  imports: [CommonModule, NavbarComponent],
   templateUrl: './run-detail.component.html',
   styleUrl: './run-detail.component.scss'
 })
@@ -26,6 +26,8 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   error = signal<string | null>(null);
   isAnalyzing = signal(false);
   analyzeSuccess = signal(false);
+  feelingValue = signal<number>(5);
+  feelingSaved = signal(false);
 
   private map: L.Map | null = null;
 
@@ -58,6 +60,7 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     this.runService.getRunById(id).subscribe({
       next: (run) => {
         this.run.set(run);
+        this.feelingValue.set(run.feeling ?? 5);
         this.isLoading.set(false);
         // Initialize map after a small delay to ensure DOM is ready
         setTimeout(() => this.initMap(), 100);
@@ -211,6 +214,36 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
       return `${hours}h ${mins}min`;
     }
     return `${mins}min`;
+  }
+
+  onFeelingChange(value: number) {
+    this.feelingValue.set(value);
+    const run = this.run();
+    if (!run?._id) return;
+    this.runService.updateRun(run._id, { feeling: value }).subscribe({
+      next: () => {
+        this.run.set({ ...run, feeling: value });
+        this.feelingSaved.set(true);
+        setTimeout(() => this.feelingSaved.set(false), 2000);
+      },
+      error: (err) => console.error(err)
+    });
+  }
+
+  getFeelingLabel(value: number): string {
+    if (value >= 9) return 'Excellent';
+    if (value >= 7) return 'Bien';
+    if (value >= 5) return 'Correct';
+    if (value >= 3) return 'Difficile';
+    return 'Épuisant';
+  }
+
+  getFeelingColor(value: number): string {
+    if (value >= 9) return '#16a34a';
+    if (value >= 7) return '#22c55e';
+    if (value >= 5) return '#eab308';
+    if (value >= 3) return '#f97316';
+    return '#ef4444';
   }
 
   goBack() {
