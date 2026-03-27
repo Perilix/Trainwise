@@ -20,7 +20,7 @@ function initializeFirebase() {
     }
 
     admin.initializeApp({
-      credential: admin.credential.cert(JSON.parse(serviceAccount))
+      credential: admin.credential.cert(JSON.parse(serviceAccount.replace(/\n/g, '\\n')))
     });
 
     firebaseInitialized = true;

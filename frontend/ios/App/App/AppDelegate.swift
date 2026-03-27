@@ -1,5 +1,7 @@
 import UIKit
 import Capacitor
+import FirebaseCore
+import FirebaseMessaging
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -7,6 +9,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        // Initialiser Firebase (doit être fait avant tout le reste)
+        FirebaseApp.configure()
+        Messaging.messaging().delegate = self
+
         // Set background color to match app (beige #F6F4F0)
         let beigeColor = UIColor(red: 246/255, green: 244/255, blue: 240/255, alpha: 1.0)
 
@@ -46,10 +52,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
-        // Called when the app was launched with an activity, including Universal Links.
-        // Feel free to add additional processing here, but if you want the App API to support
-        // tracking app url opens, make sure to keep this call
         return ApplicationDelegateProxy.shared.application(application, continue: userActivity, restorationHandler: restorationHandler)
     }
 
+}
+
+extension AppDelegate: MessagingDelegate {
+    func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+        guard let token = fcmToken else { return }
+        print("✅ FCM Token reçu, mise en cache: \(token.prefix(20))...")
+        // Stocker dans UserDefaults avec le préfixe Capacitor Preferences
+        UserDefaults.standard.set(token, forKey: "CapacitorStorage.fcmToken")
+    }
 }

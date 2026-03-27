@@ -16,6 +16,7 @@ node_modules/
 # Environment files
 /.env
 /backend/.env
+backend/firebase-service-account.json
 
 # Angular CLI and build artefacts
 /.angular-cli.json
