@@ -436,13 +436,17 @@
 // Popup Strava feeling
 .feeling-overlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: var(--keyboard-height, 0px);
   background: rgba(5, 25, 35, 0.55);
   backdrop-filter: blur(4px);
   z-index: 10000;
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  transition: bottom 0.25s ease;
 }
 
 .feeling-popup {
@@ -584,6 +588,7 @@
     display: flex;
     gap: 0.75rem;
     padding: 1rem 1.25rem;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
     border-top: 1px solid rgba(0, 53, 84, 0.08);
     background: #F6F4F0;
 

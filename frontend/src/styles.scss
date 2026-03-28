@@ -152,8 +152,8 @@ input, select, textarea, button {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
+  right: 0;
+  bottom: var(--keyboard-height, 0px);
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
   display: flex;
@@ -163,6 +163,7 @@ input, select, textarea, button {
   padding: 1rem;
   box-sizing: border-box;
   overflow-y: auto;
+  transition: bottom 0.25s ease;
 }
 
 .modal {
@@ -170,7 +171,7 @@ input, select, textarea, button {
   border-radius: 16px;
   width: 100%;
   max-width: 500px;
-  max-height: 85dvh; // Dynamic viewport height (meilleur sur mobile)
+  max-height: 92%;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -187,8 +188,7 @@ input, select, textarea, button {
   }
 
   @media (max-width: 768px) {
-    max-height: 80vh;
-    max-height: 80dvh;
+    max-height: 92%;
     margin: auto 0.5rem;
     border-radius: 12px;
   }
@@ -243,6 +243,7 @@ input, select, textarea, button {
     justify-content: flex-end;
     gap: 0.75rem;
     padding: 1rem 1.5rem;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
     border-top: 1px solid #e5e7eb;
     background: #fafafa;
     flex-shrink: 0;

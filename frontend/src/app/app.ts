@@ -3,6 +3,7 @@ import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 import { Capacitor } from '@capacitor/core';
+import { Keyboard } from '@capacitor/keyboard';
 import { BottomNavComponent } from './components/bottom-nav/bottom-nav.component';
 import { CoachBottomNavComponent } from './components/coach-bottom-nav/coach-bottom-nav.component';
 import { CoachInvitationModalComponent } from './components/coach-invitation-modal/coach-invitation-modal.component';
@@ -55,13 +56,28 @@ export class App {
   }
 
   private setupKeyboardAdjustment() {
-    if (!window.visualViewport) return;
-
-    window.visualViewport.addEventListener('resize', () => {
-      const vp = window.visualViewport!;
-      const kbHeight = Math.max(0, window.innerHeight - vp.height - vp.offsetTop);
-      document.documentElement.style.setProperty('--keyboard-height', `${kbHeight}px`);
-    });
+    if (Capacitor.isNativePlatform()) {
+      Keyboard.addListener('keyboardWillShow', (info) => {
+        document.documentElement.style.setProperty('--keyboard-height', `${info.keyboardHeight}px`);
+        setTimeout(() => {
+          const el = document.activeElement as HTMLElement;
+          if (el && el !== document.body) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 150);
+      });
+      Keyboard.addListener('keyboardWillHide', () => {
+        document.documentElement.style.setProperty('--keyboard-height', '0px');
+      });
+    } else {
+      // Fallback navigateur
+      if (!window.visualViewport) return;
+      window.visualViewport.addEventListener('resize', () => {
+        const vp = window.visualViewport!;
+        const kbHeight = Math.max(0, window.innerHeight - vp.height - vp.offsetTop);
+        document.documentElement.style.setProperty('--keyboard-height', `${kbHeight}px`);
+      });
+    }
   }
 
   private initSafeAreas() {

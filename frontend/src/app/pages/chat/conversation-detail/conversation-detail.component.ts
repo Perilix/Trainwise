@@ -6,7 +6,6 @@ import { ChatService, Conversation, Message, Attachment, TypingEvent } from '../
 import { AuthService } from '../../../services/auth.service';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
-import { Keyboard } from '@capacitor/keyboard';
 
 @Component({
   selector: 'app-conversation-detail',
@@ -56,9 +55,6 @@ export class ConversationDetailComponent implements OnInit, OnDestroy, AfterView
     });
   }
 
-  private keyboardShowListener: any;
-  private keyboardHideListener: any;
-
   ngOnInit() {
     document.body.classList.add('chat-detail-active');
 
@@ -72,27 +68,10 @@ export class ConversationDetailComponent implements OnInit, OnDestroy, AfterView
     if (!this.chatService.isConnected()) {
       this.chatService.connect();
     }
-
-    this.setupKeyboardListeners();
-  }
-
-  private async setupKeyboardListeners() {
-    this.keyboardShowListener = await Keyboard.addListener('keyboardWillShow', (info) => {
-      document.documentElement.style.setProperty('--keyboard-height', info.keyboardHeight + 'px');
-      setTimeout(() => this.scrollToBottom(), 100);
-    });
-    this.keyboardHideListener = await Keyboard.addListener('keyboardWillHide', () => {
-      document.documentElement.style.setProperty('--keyboard-height', '0px');
-    });
   }
 
   ngOnDestroy() {
     document.body.classList.remove('chat-detail-active');
-
-    this.keyboardShowListener?.remove();
-    this.keyboardHideListener?.remove();
-    document.documentElement.style.setProperty('--keyboard-height', '0px');
-
     this.destroy$.next();
     this.destroy$.complete();
     this.chatService.clearCurrentConversation();
