@@ -52,6 +52,7 @@ async function sendPushNotification(userId, notification) {
     }
 
     const tokenData = await jwtClient.getAccessToken();
+    console.log('🔑 tokenData:', JSON.stringify(tokenData));
 
     const message = {
       message: {
