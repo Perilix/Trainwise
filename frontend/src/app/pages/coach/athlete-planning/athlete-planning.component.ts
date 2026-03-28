@@ -103,6 +103,12 @@ export class AthletePlanningComponent implements OnInit, OnDestroy {
   private async setupKeyboardListeners() {
     this.keyboardShowListener = await Keyboard.addListener('keyboardWillShow', (info) => {
       document.documentElement.style.setProperty('--keyboard-height', info.keyboardHeight + 'px');
+      setTimeout(() => {
+        const activeEl = document.activeElement as HTMLElement;
+        if (activeEl) {
+          activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 150);
     });
     this.keyboardHideListener = await Keyboard.addListener('keyboardWillHide', () => {
       document.documentElement.style.setProperty('--keyboard-height', '0px');

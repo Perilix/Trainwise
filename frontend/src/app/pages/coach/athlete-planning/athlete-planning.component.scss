@@ -350,18 +350,17 @@
   border-radius: 16px;
   width: 100%;
   max-width: 500px;
-  max-height: 85vh;
-  max-height: 85dvh;
+  max-height: calc(85vh - var(--keyboard-height, 0px));
   overflow: hidden;
   display: flex;
   flex-direction: column;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   animation: modalAppear 0.2s ease-out;
   margin: auto;
+  transition: max-height 0.25s ease;
 
   @media (max-width: 768px) {
-    max-height: 80vh;
-    max-height: 80dvh;
+    max-height: calc(80vh - var(--keyboard-height, 0px));
     margin: auto 0.5rem;
     border-radius: 12px;
   }
