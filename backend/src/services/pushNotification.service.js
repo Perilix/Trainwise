@@ -1,8 +1,9 @@
 const admin = require('firebase-admin');
+const axios = require('axios');
 const User = require('../models/user.model');
 
-// Initialiser Firebase Admin (sera configuré plus tard avec les credentials)
 let firebaseInitialized = false;
+let projectId = null;
 
 function initializeFirebase() {
   if (firebaseInitialized) {
@@ -10,46 +11,30 @@ function initializeFirebase() {
   }
 
   try {
-    // Vérifier si les credentials Firebase sont configurés
     const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
 
     if (!serviceAccount) {
       console.warn('⚠️  Firebase credentials not configured. Push notifications will not work.');
-      console.warn('   Set FIREBASE_SERVICE_ACCOUNT environment variable with your Firebase service account JSON.');
       return;
     }
 
     const parsed = JSON.parse(Buffer.from(serviceAccount, 'base64').toString('utf8'));
+    projectId = parsed.project_id;
 
     admin.initializeApp({
-      credential: admin.credential.cert(parsed)
+      credential: admin.credential.cert(parsed),
+      projectId: parsed.project_id
     });
 
     firebaseInitialized = true;
     console.log('✅ Firebase Admin initialized for push notifications');
-
-    // Debug: tester que le credential peut obtenir un OAuth token
-    admin.app().options.credential.getAccessToken().then(token => {
-      console.log('✅ OAuth token OK:', token.access_token.substring(0, 20) + '...');
-    }).catch(err => {
-      console.error('❌ OAuth token FAILED:', err.message);
-    });
   } catch (error) {
     console.error('❌ Error initializing Firebase Admin:', error.message);
   }
 }
 
-// Initialiser Firebase au chargement du module
 initializeFirebase();
 
-/**
- * Envoie une notification push à un utilisateur
- * @param {string} userId - ID de l'utilisateur
- * @param {Object} notification - Objet de notification
- * @param {string} notification.title - Titre de la notification
- * @param {string} notification.body - Corps de la notification
- * @param {Object} notification.data - Données additionnelles (optionnel)
- */
 async function sendPushNotification(userId, notification) {
   if (!firebaseInitialized) {
     console.warn('Firebase not initialized, skipping push notification');
@@ -57,7 +42,6 @@ async function sendPushNotification(userId, notification) {
   }
 
   try {
-    // Récupérer l'utilisateur pour obtenir son push token
     const user = await User.findById(userId).select('pushToken pushPlatform');
 
     if (!user || !user.pushToken) {
@@ -65,94 +49,75 @@ async function sendPushNotification(userId, notification) {
       return { success: false, error: 'No push token' };
     }
 
+    const tokenData = await admin.app().options.credential.getAccessToken();
+
     const message = {
-      token: user.pushToken,
-      notification: {
-        title: notification.title,
-        body: notification.body
-      },
-      data: notification.data || {},
-      // Configuration spécifique iOS
-      apns: {
-        payload: {
-          aps: {
-            sound: 'default',
-            badge: 1
-          }
-        }
-      },
-      // Configuration spécifique Android
-      android: {
+      message: {
+        token: user.pushToken,
         notification: {
-          sound: 'default',
-          channelId: 'runiq_notifications'
+          title: notification.title,
+          body: notification.body
+        },
+        data: notification.data || {},
+        apns: {
+          payload: {
+            aps: {
+              sound: 'default',
+              badge: 1
+            }
+          }
+        },
+        android: {
+          notification: {
+            sound: 'default',
+            channelId: 'runiq_notifications'
+          }
         }
       }
     };
 
-    const response = await admin.messaging().send(message);
-    console.log('✅ Push notification sent successfully:', response);
-    return { success: true, response };
+    const response = await axios.post(
+      `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
+      message,
+      {
+        headers: {
+          Authorization: `Bearer ${tokenData.access_token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    console.log('✅ Push notification sent successfully:', response.data);
+    return { success: true, response: response.data };
 
   } catch (error) {
-    console.error('❌ Error sending push notification:', error);
+    const errData = error.response?.data || error.message;
+    console.error('❌ Error sending push notification:', errData);
 
-    // Si le token est invalide, le supprimer de la base de données
-    if (error.code === 'messaging/invalid-registration-token' ||
-        error.code === 'messaging/registration-token-not-registered') {
-      await User.findByIdAndUpdate(userId, {
-        pushToken: null,
-        pushPlatform: null
-      });
+    if (error.response?.data?.error?.details?.some(d =>
+      d.errorCode === 'INVALID_ARGUMENT' || d.errorCode === 'UNREGISTERED'
+    )) {
+      await User.findByIdAndUpdate(userId, { pushToken: null, pushPlatform: null });
       console.log(`Invalid token removed for user ${userId}`);
     }
 
-    return { success: false, error: error.message };
+    return { success: false, error: errData };
   }
 }
 
-/**
- * Envoie une notification push à plusieurs utilisateurs
- * @param {Array<string>} userIds - IDs des utilisateurs
- * @param {Object} notification - Objet de notification
- */
 async function sendPushNotificationToMultiple(userIds, notification) {
   if (!firebaseInitialized) {
     console.warn('Firebase not initialized, skipping push notifications');
     return { success: false, error: 'Firebase not initialized' };
   }
 
-  try {
-    // Récupérer les tokens de tous les utilisateurs
-    const users = await User.find({
-      _id: { $in: userIds },
-      pushToken: { $ne: null }
-    }).select('pushToken');
+  const results = await Promise.all(
+    userIds.map(userId => sendPushNotification(userId, notification))
+  );
 
-    const tokens = users.map(u => u.pushToken);
-
-    if (tokens.length === 0) {
-      console.log('No push tokens found for the provided users');
-      return { success: false, error: 'No push tokens' };
-    }
-
-    const message = {
-      notification: {
-        title: notification.title,
-        body: notification.body
-      },
-      data: notification.data || {},
-      tokens
-    };
-
-    const response = await admin.messaging().sendEachForMulticast(message);
-    console.log(`✅ Sent ${response.successCount} notifications, ${response.failureCount} failed`);
-    return { success: true, response };
-
-  } catch (error) {
-    console.error('❌ Error sending push notifications:', error);
-    return { success: false, error: error.message };
-  }
+  const successCount = results.filter(r => r.success).length;
+  console.log(`✅ Sent ${successCount}/${userIds.length} notifications`);
+  return { success: true, successCount, failureCount: userIds.length - successCount };
 }
 
 module.exports = {
