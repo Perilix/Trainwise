@@ -19,8 +19,10 @@ function initializeFirebase() {
       return;
     }
 
+    const parsed = JSON.parse(Buffer.from(serviceAccount, 'base64').toString('utf8'));
+
     admin.initializeApp({
-      credential: admin.credential.cert(JSON.parse(serviceAccount.replace(/\n/g, '\\n')))
+      credential: admin.credential.cert(parsed)
     });
 
     firebaseInitialized = true;
