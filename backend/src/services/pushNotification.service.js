@@ -1,9 +1,10 @@
-const admin = require('firebase-admin');
 const axios = require('axios');
+const { JWT } = require('google-auth-library');
 const User = require('../models/user.model');
 
 let firebaseInitialized = false;
 let projectId = null;
+let jwtClient = null;
 
 function initializeFirebase() {
   if (firebaseInitialized) {
@@ -21,9 +22,10 @@ function initializeFirebase() {
     const parsed = JSON.parse(Buffer.from(serviceAccount, 'base64').toString('utf8'));
     projectId = parsed.project_id;
 
-    admin.initializeApp({
-      credential: admin.credential.cert(parsed),
-      projectId: parsed.project_id
+    jwtClient = new JWT({
+      email: parsed.client_email,
+      key: parsed.private_key,
+      scopes: ['https://www.googleapis.com/auth/firebase.messaging']
     });
 
     firebaseInitialized = true;
@@ -49,7 +51,7 @@ async function sendPushNotification(userId, notification) {
       return { success: false, error: 'No push token' };
     }
 
-    const tokenData = await admin.app().options.credential.getAccessToken();
+    const tokenData = await jwtClient.getAccessToken();
 
     const message = {
       message: {
