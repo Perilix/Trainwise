@@ -27,6 +27,13 @@ function initializeFirebase() {
 
     firebaseInitialized = true;
     console.log('✅ Firebase Admin initialized for push notifications');
+
+    // Debug: tester que le credential peut obtenir un OAuth token
+    admin.app().options.credential.getAccessToken().then(token => {
+      console.log('✅ OAuth token OK:', token.access_token.substring(0, 20) + '...');
+    }).catch(err => {
+      console.error('❌ OAuth token FAILED:', err.message);
+    });
   } catch (error) {
     console.error('❌ Error initializing Firebase Admin:', error.message);
   }
