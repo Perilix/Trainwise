@@ -95,7 +95,7 @@ async function sendPushNotification(userId, notification) {
 
   } catch (error) {
     const errData = error.response?.data || error.message;
-    console.error('❌ Error sending push notification:', errData);
+    console.error('❌ Error sending push notification:', JSON.stringify(errData, null, 2));
 
     if (error.response?.data?.error?.details?.some(d =>
       d.errorCode === 'INVALID_ARGUMENT' || d.errorCode === 'UNREGISTERED'
