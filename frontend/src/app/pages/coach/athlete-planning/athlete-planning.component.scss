@@ -331,9 +331,8 @@
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
-  height: 100dvh;
+  right: 0;
+  bottom: var(--keyboard-height, 0px);
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
   display: flex;
@@ -341,9 +340,9 @@
   justify-content: center;
   z-index: 10000;
   padding: 1rem;
-  padding-bottom: max(1rem, env(safe-area-inset-bottom));
   box-sizing: border-box;
   overflow-y: auto;
+  transition: bottom 0.25s ease;
 }
 
 .modal {

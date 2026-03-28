@@ -6,6 +6,7 @@ import { ChatService, Conversation, Message, Attachment, TypingEvent } from '../
 import { AuthService } from '../../../services/auth.service';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
+import { Keyboard } from '@capacitor/keyboard';
 
 @Component({
   selector: 'app-conversation-detail',
@@ -55,10 +56,10 @@ export class ConversationDetailComponent implements OnInit, OnDestroy, AfterView
     });
   }
 
-  private viewportResizeHandler = () => this.onViewportResize();
+  private keyboardShowListener: any;
+  private keyboardHideListener: any;
 
   ngOnInit() {
-    // Ajouter classe pour le fond beige du safe-area
     document.body.classList.add('chat-detail-active');
 
     this.route.params.subscribe(params => {
@@ -68,25 +69,28 @@ export class ConversationDetailComponent implements OnInit, OnDestroy, AfterView
       }
     });
 
-    // Ensure socket is connected
     if (!this.chatService.isConnected()) {
       this.chatService.connect();
     }
 
-    // Gérer la hauteur du clavier iOS via visualViewport
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', this.viewportResizeHandler);
-    }
+    this.setupKeyboardListeners();
+  }
+
+  private async setupKeyboardListeners() {
+    this.keyboardShowListener = await Keyboard.addListener('keyboardWillShow', (info) => {
+      document.documentElement.style.setProperty('--keyboard-height', info.keyboardHeight + 'px');
+      setTimeout(() => this.scrollToBottom(), 100);
+    });
+    this.keyboardHideListener = await Keyboard.addListener('keyboardWillHide', () => {
+      document.documentElement.style.setProperty('--keyboard-height', '0px');
+    });
   }
 
   ngOnDestroy() {
-    // Retirer classe pour le fond beige
     document.body.classList.remove('chat-detail-active');
 
-    // Nettoyer visualViewport listener et reset keyboard height
-    if (window.visualViewport) {
-      window.visualViewport.removeEventListener('resize', this.viewportResizeHandler);
-    }
+    this.keyboardShowListener?.remove();
+    this.keyboardHideListener?.remove();
     document.documentElement.style.setProperty('--keyboard-height', '0px');
 
     this.destroy$.next();
@@ -94,16 +98,6 @@ export class ConversationDetailComponent implements OnInit, OnDestroy, AfterView
     this.chatService.clearCurrentConversation();
     if (this.typingTimeout) {
       clearTimeout(this.typingTimeout);
-    }
-  }
-
-  private onViewportResize() {
-    const viewport = window.visualViewport;
-    if (!viewport) return;
-    const keyboardHeight = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
-    document.documentElement.style.setProperty('--keyboard-height', keyboardHeight + 'px');
-    if (keyboardHeight > 0) {
-      setTimeout(() => this.scrollToBottom(), 50);
     }
   }
 

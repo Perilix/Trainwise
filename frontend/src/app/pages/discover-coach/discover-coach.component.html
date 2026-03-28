@@ -23,6 +23,7 @@
         <p>{{ error() }}</p>
       </div>
     } @else if (partnerCoach()) {
+
       <!-- Coach Card -->
       <section class="coach-card">
         <div class="coach-avatar">
@@ -33,15 +34,14 @@
           }
         </div>
         <div class="coach-info">
-          <div class="badge">
-            <i class="fa-solid fa-star"></i>
-            Partenaire RunIQ
-          </div>
+          <span class="partner-badge">
+            <i class="fa-solid fa-star"></i> Partenaire RunIQ
+          </span>
           <h2>{{ partnerCoach()?.firstName }} {{ partnerCoach()?.lastName }}</h2>
           @if (partnerCoach()?.experience) {
-            <p class="coach-title">{{ partnerCoach()?.experience }} ans d'expérience</p>
+            <p class="coach-meta">{{ partnerCoach()?.experience }} ans d'expérience</p>
           } @else {
-            <p class="coach-title">Coach certifié running & trail</p>
+            <p class="coach-meta">Coach certifié running & trail</p>
           }
         </div>
       </section>
@@ -49,15 +49,15 @@
       <!-- À propos -->
       @if (partnerCoach()?.bio) {
         <section class="info-card">
-          <h3><i class="fa-solid fa-user"></i> À propos</h3>
-          <p>{{ partnerCoach()?.bio }}</p>
+          <h3>À propos</h3>
+          <p class="bio-text">{{ partnerCoach()?.bio }}</p>
         </section>
       }
 
       <!-- Spécialités -->
       @if (partnerCoach()?.disciplines && partnerCoach()!.disciplines!.length > 0) {
         <section class="info-card">
-          <h3><i class="fa-solid fa-person-running"></i> Spécialités</h3>
+          <h3>Spécialités</h3>
           <div class="tags">
             @for (discipline of partnerCoach()!.disciplines!; track discipline) {
               <span class="tag">{{ discipline }}</span>
@@ -66,49 +66,91 @@
         </section>
       }
 
-      <!-- Ce que tu obtiens -->
-      <section class="info-card">
-        <h3><i class="fa-solid fa-check-circle"></i> Ce que tu obtiens</h3>
-        <ul class="benefits-list">
-          <li>
-            <i class="fa-solid fa-check"></i>
-            <span>Programme d'entraînement personnalisé</span>
-          </li>
-          <li>
-            <i class="fa-solid fa-check"></i>
-            <span>Suivi et ajustements réguliers</span>
-          </li>
-          <li>
-            <i class="fa-solid fa-check"></i>
-            <span>Disponible via l'app 7j/7</span>
-          </li>
-          <li>
-            <i class="fa-solid fa-check"></i>
-            <span>Conseils nutrition et récupération</span>
-          </li>
-        </ul>
-      </section>
-
       <!-- Certifications -->
       @if (partnerCoach()?.diplomas && partnerCoach()!.diplomas!.length > 0) {
         <section class="info-card">
-          <h3><i class="fa-solid fa-certificate"></i> Certifications</h3>
+          <h3>Certifications</h3>
           <ul class="credentials-list">
             @for (diploma of partnerCoach()!.diplomas!; track diploma) {
-              <li>{{ diploma }}</li>
+              <li><i class="fa-solid fa-certificate"></i> {{ diploma }}</li>
             }
           </ul>
         </section>
       }
 
-      <!-- CTA -->
-      <section class="cta-card">
-        <button class="btn-primary" (click)="contactCoach()">
-          <i class="fa-solid fa-message"></i>
-          Contacter le coach
-        </button>
-        <p class="cta-hint">Première consultation gratuite</p>
+      <!-- Forfaits -->
+      <section class="forfaits-section">
+        <h3 class="section-title">Choisir un forfait</h3>
+
+        <div class="forfait-card">
+          <div class="forfait-header">
+            <span class="forfait-icon">🎯</span>
+            <div>
+              <h4>Découverte</h4>
+              <p>1ère consultation</p>
+            </div>
+            <div class="forfait-price">
+              <span class="price">Gratuit</span>
+            </div>
+          </div>
+          <ul class="forfait-features">
+            <li><i class="fa-solid fa-check"></i> Bilan sportif complet</li>
+            <li><i class="fa-solid fa-check"></i> Définition de tes objectifs</li>
+            <li><i class="fa-solid fa-check"></i> Conseils personnalisés</li>
+          </ul>
+          <button class="btn-outline" (click)="contactCoach()">
+            <i class="fa-solid fa-message"></i> Contacter le coach
+          </button>
+        </div>
+
+        <div class="forfait-card featured">
+          <div class="featured-badge">Populaire</div>
+          <div class="forfait-header">
+            <span class="forfait-icon">⚡</span>
+            <div>
+              <h4>Suivi Mensuel</h4>
+              <p>Engagement 1 mois</p>
+            </div>
+            <div class="forfait-price">
+              <span class="price">79€</span>
+              <span class="period">/mois</span>
+            </div>
+          </div>
+          <ul class="forfait-features">
+            <li><i class="fa-solid fa-check"></i> Plan d'entraînement personnalisé</li>
+            <li><i class="fa-solid fa-check"></i> Ajustements hebdomadaires</li>
+            <li><i class="fa-solid fa-check"></i> Messagerie directe 7j/7</li>
+            <li><i class="fa-solid fa-check"></i> Analyse de tes sorties</li>
+          </ul>
+          <button class="btn-primary" (click)="contactCoach()">
+            <i class="fa-solid fa-message"></i> Commencer maintenant
+          </button>
+        </div>
+
+        <div class="forfait-card">
+          <div class="forfait-header">
+            <span class="forfait-icon">🏆</span>
+            <div>
+              <h4>Préparation Race</h4>
+              <p>Objectif compétition</p>
+            </div>
+            <div class="forfait-price">
+              <span class="price">199€</span>
+              <span class="period">/3 mois</span>
+            </div>
+          </div>
+          <ul class="forfait-features">
+            <li><i class="fa-solid fa-check"></i> Tout le forfait mensuel</li>
+            <li><i class="fa-solid fa-check"></i> Plan périodisé sur 3 mois</li>
+            <li><i class="fa-solid fa-check"></i> Stratégie de course</li>
+            <li><i class="fa-solid fa-check"></i> Nutrition & récupération</li>
+          </ul>
+          <button class="btn-outline" (click)="contactCoach()">
+            <i class="fa-solid fa-message"></i> En savoir plus
+          </button>
+        </div>
       </section>
+
     }
   </main>
 </div>

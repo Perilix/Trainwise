@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -8,6 +8,7 @@ import { PlannedSession, SessionType, ActivityType, RunningSessionType } from '.
 import { StrengthSessionType, SESSION_TYPE_LABELS as STRENGTH_SESSION_LABELS } from '../../../interfaces/strength.interfaces';
 import { Run } from '../../../services/run.service';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
+import { Keyboard } from '@capacitor/keyboard';
 
 interface CalendarDay {
   date: Date;
@@ -25,7 +26,7 @@ interface CalendarDay {
   templateUrl: './athlete-planning.component.html',
   styleUrl: './athlete-planning.component.scss'
 })
-export class AthletePlanningComponent implements OnInit {
+export class AthletePlanningComponent implements OnInit, OnDestroy {
   athleteId = '';
   athlete = signal<AthleteDetail | null>(null);
 
@@ -83,11 +84,29 @@ export class AthletePlanningComponent implements OnInit {
     private coachService: CoachService
   ) {}
 
+  private keyboardShowListener: any;
+  private keyboardHideListener: any;
+
   ngOnInit() {
     this.athleteId = this.route.snapshot.paramMap.get('id') || '';
     if (this.athleteId) {
       this.loadData();
     }
+    this.setupKeyboardListeners();
+  }
+
+  ngOnDestroy() {
+    this.keyboardShowListener?.remove();
+    this.keyboardHideListener?.remove();
+  }
+
+  private async setupKeyboardListeners() {
+    this.keyboardShowListener = await Keyboard.addListener('keyboardWillShow', (info) => {
+      document.documentElement.style.setProperty('--keyboard-height', info.keyboardHeight + 'px');
+    });
+    this.keyboardHideListener = await Keyboard.addListener('keyboardWillHide', () => {
+      document.documentElement.style.setProperty('--keyboard-height', '0px');
+    });
   }
 
   loadData() {
