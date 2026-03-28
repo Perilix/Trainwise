@@ -79,16 +79,16 @@ async function sendPushNotification(userId, notification) {
       }
     };
 
-    const response = await axios.post(
-      `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
-      message,
-      {
-        headers: {
-          Authorization: `Bearer ${tokenData.token}`,
-          'Content-Type': 'application/json'
-        }
+    const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
+    console.log('📡 FCM URL:', fcmUrl);
+    console.log('🔐 Auth header:', `Bearer ${tokenData.token?.substring(0, 30)}...`);
+
+    const response = await axios.post(fcmUrl, message, {
+      headers: {
+        Authorization: `Bearer ${tokenData.token}`,
+        'Content-Type': 'application/json'
       }
-    );
+    });
 
     console.log('✅ Push notification sent successfully:', response.data);
     return { success: true, response: response.data };
