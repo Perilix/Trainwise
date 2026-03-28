@@ -335,7 +335,7 @@ exports.getPartnerCoach = async (req, res) => {
     const coach = await User.findOne({
       email: PARTNER_COACH_EMAIL,
       role: 'coach'
-    }).select('_id firstName lastName email profilePicture');
+    }).select('_id firstName lastName email profilePicture bio disciplines diplomas experience');
 
     if (!coach) {
       return res.status(404).json({ error: 'Coach partenaire non trouvé' });

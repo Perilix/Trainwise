@@ -14,6 +14,13 @@ export interface UserPreview {
   isOnline?: boolean;
 }
 
+export interface PartnerCoachPreview extends UserPreview {
+  bio?: string;
+  disciplines?: string[];
+  diplomas?: string[];
+  experience?: number | null;
+}
+
 export interface LastMessage {
   content: string;
   sender?: UserPreview;
@@ -315,8 +322,8 @@ export class ChatService {
       .pipe(tap(response => this.totalUnread.set(response.unreadCount)));
   }
 
-  getPartnerCoach(): Observable<UserPreview> {
-    return this.http.get<UserPreview>(`${this.API_URL}/partner-coach`);
+  getPartnerCoach(): Observable<PartnerCoachPreview> {
+    return this.http.get<PartnerCoachPreview>(`${this.API_URL}/partner-coach`);
   }
 
   private calculateTotalUnread(conversations: Conversation[]): void {

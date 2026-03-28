@@ -33,35 +33,42 @@
           }
         </div>
         <div class="coach-info">
-          <h2>{{ partnerCoach()?.firstName }} {{ partnerCoach()?.lastName }}</h2>
-          <p class="coach-title">Coach certifié running & trail</p>
-          <span class="badge">
+          <div class="badge">
             <i class="fa-solid fa-star"></i>
             Partenaire RunIQ
-          </span>
+          </div>
+          <h2>{{ partnerCoach()?.firstName }} {{ partnerCoach()?.lastName }}</h2>
+          @if (partnerCoach()?.experience) {
+            <p class="coach-title">{{ partnerCoach()?.experience }} ans d'expérience</p>
+          } @else {
+            <p class="coach-title">Coach certifié running & trail</p>
+          }
         </div>
       </section>
 
       <!-- À propos -->
-      <section class="info-card">
-        <h3>À propos</h3>
-        <p>Coach sportif spécialisé en course à pied et trail. Je t'accompagne dans tes objectifs, que tu sois débutant ou coureur confirmé, avec une approche personnalisée et un suivi régulier.</p>
-      </section>
+      @if (partnerCoach()?.bio) {
+        <section class="info-card">
+          <h3><i class="fa-solid fa-user"></i> À propos</h3>
+          <p>{{ partnerCoach()?.bio }}</p>
+        </section>
+      }
 
       <!-- Spécialités -->
-      <section class="info-card">
-        <h3>Spécialités</h3>
-        <div class="tags">
-          <span class="tag">Course à pied</span>
-          <span class="tag">Trail</span>
-          <span class="tag">Marathon</span>
-          <span class="tag">Préparation physique</span>
-        </div>
-      </section>
+      @if (partnerCoach()?.disciplines && partnerCoach()!.disciplines!.length > 0) {
+        <section class="info-card">
+          <h3><i class="fa-solid fa-person-running"></i> Spécialités</h3>
+          <div class="tags">
+            @for (discipline of partnerCoach()!.disciplines!; track discipline) {
+              <span class="tag">{{ discipline }}</span>
+            }
+          </div>
+        </section>
+      }
 
       <!-- Ce que tu obtiens -->
       <section class="info-card">
-        <h3>Ce que tu obtiens</h3>
+        <h3><i class="fa-solid fa-check-circle"></i> Ce que tu obtiens</h3>
         <ul class="benefits-list">
           <li>
             <i class="fa-solid fa-check"></i>
@@ -83,14 +90,16 @@
       </section>
 
       <!-- Certifications -->
-      <section class="info-card">
-        <h3>Certifications</h3>
-        <ul class="credentials-list">
-          <li>BPJEPS Activités Physiques pour Tous</li>
-          <li>Diplôme FFA - Entraîneur Course Hors Stade</li>
-          <li>Formation Trail & Ultra</li>
-        </ul>
-      </section>
+      @if (partnerCoach()?.diplomas && partnerCoach()!.diplomas!.length > 0) {
+        <section class="info-card">
+          <h3><i class="fa-solid fa-certificate"></i> Certifications</h3>
+          <ul class="credentials-list">
+            @for (diploma of partnerCoach()!.diplomas!; track diploma) {
+              <li>{{ diploma }}</li>
+            }
+          </ul>
+        </section>
+      }
 
       <!-- CTA -->
       <section class="cta-card">

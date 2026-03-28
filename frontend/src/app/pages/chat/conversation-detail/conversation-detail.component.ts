@@ -55,6 +55,8 @@ export class ConversationDetailComponent implements OnInit, OnDestroy, AfterView
     });
   }
 
+  private viewportResizeHandler = () => this.onViewportResize();
+
   ngOnInit() {
     // Ajouter classe pour le fond beige du safe-area
     document.body.classList.add('chat-detail-active');
@@ -71,17 +73,37 @@ export class ConversationDetailComponent implements OnInit, OnDestroy, AfterView
       this.chatService.connect();
     }
 
+    // Gérer la hauteur du clavier iOS via visualViewport
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', this.viewportResizeHandler);
+    }
   }
 
   ngOnDestroy() {
     // Retirer classe pour le fond beige
     document.body.classList.remove('chat-detail-active');
 
+    // Nettoyer visualViewport listener et reset keyboard height
+    if (window.visualViewport) {
+      window.visualViewport.removeEventListener('resize', this.viewportResizeHandler);
+    }
+    document.documentElement.style.setProperty('--keyboard-height', '0px');
+
     this.destroy$.next();
     this.destroy$.complete();
     this.chatService.clearCurrentConversation();
     if (this.typingTimeout) {
       clearTimeout(this.typingTimeout);
+    }
+  }
+
+  private onViewportResize() {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const keyboardHeight = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+    document.documentElement.style.setProperty('--keyboard-height', keyboardHeight + 'px');
+    if (keyboardHeight > 0) {
+      setTimeout(() => this.scrollToBottom(), 50);
     }
   }
 

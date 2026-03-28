@@ -2,7 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { Router } from '@angular/router';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
-import { ChatService, UserPreview } from '../../services/chat.service';
+import { ChatService, PartnerCoachPreview } from '../../services/chat.service';
 import { AthleteService } from '../../services/athlete.service';
 
 @Component({
@@ -13,7 +13,7 @@ import { AthleteService } from '../../services/athlete.service';
   styleUrl: './discover-coach.component.scss'
 })
 export class DiscoverCoachComponent implements OnInit {
-  partnerCoach = signal<UserPreview | null>(null);
+  partnerCoach = signal<PartnerCoachPreview | null>(null);
   isLoading = signal(true);
   error = signal<string | null>(null);
   isJoining = signal(false);
