@@ -3,6 +3,7 @@ import { CommonModule, Location } from '@angular/common';
 import { Router } from '@angular/router';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 import { ChatService, PartnerCoachPreview } from '../../services/chat.service';
+import { COACH_PACKAGES } from '../../interfaces/package.interface';
 import { AthleteService } from '../../services/athlete.service';
 
 @Component({
@@ -17,6 +18,7 @@ export class DiscoverCoachComponent implements OnInit {
   isLoading = signal(true);
   error = signal<string | null>(null);
   isJoining = signal(false);
+  readonly packages = [COACH_PACKAGES.bronze, COACH_PACKAGES.silver, COACH_PACKAGES.gold];
 
   constructor(
     private chatService: ChatService,

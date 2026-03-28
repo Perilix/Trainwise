@@ -34,7 +34,6 @@
     cursor: pointer;
     color: #051923;
     flex-shrink: 0;
-
     &:active { background: #f0f0f0; }
   }
 
@@ -67,7 +66,6 @@ main {
   padding: 4rem 2rem;
   text-align: center;
   color: #666;
-
   i { font-size: 2.5rem; margin-bottom: 1rem; color: #00a6fb; }
 }
 .error-state i { color: #ff4757; }
@@ -98,7 +96,6 @@ main {
     overflow: hidden;
     flex-shrink: 0;
     border: 3px solid rgba(0, 166, 251, 0.2);
-
     img { width: 100%; height: 100%; object-fit: cover; }
   }
 
@@ -116,7 +113,6 @@ main {
       font-size: 0.72rem;
       font-weight: 600;
       margin-bottom: 0.5rem;
-
       i { color: #f59e0b; font-size: 0.7rem; }
     }
 
@@ -127,11 +123,7 @@ main {
       color: #051923;
     }
 
-    .coach-meta {
-      margin: 0;
-      color: #888;
-      font-size: 0.82rem;
-    }
+    .coach-meta { margin: 0; color: #888; font-size: 0.82rem; }
   }
 
   @media (max-width: 400px) {
@@ -195,28 +187,22 @@ main {
       gap: 0.6rem;
       color: #444;
       font-size: 0.9rem;
-
       i { color: #f59e0b; font-size: 0.8rem; flex-shrink: 0; }
     }
   }
 }
 
-// ─── Forfaits ─────────────────────────────────────────────
-.forfaits-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.875rem;
-
-  .section-title {
-    font-size: 0.8rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    color: #003554;
-    margin: 0.5rem 0 0;
-  }
+// ─── Section title ────────────────────────────────────────
+.section-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #003554;
+  margin-top: 0.5rem;
 }
 
+// ─── Forfait Cards ────────────────────────────────────────
 .forfait-card {
   background: #fff;
   border-radius: 16px;
@@ -227,7 +213,7 @@ main {
 
   &.featured {
     border-color: #00a6fb;
-    box-shadow: 0 4px 16px rgba(0, 166, 251, 0.15);
+    box-shadow: 0 4px 16px rgba(0, 166, 251, 0.12);
   }
 
   .featured-badge {
@@ -235,11 +221,10 @@ main {
     top: -12px;
     left: 50%;
     transform: translateX(-50%);
-    background: linear-gradient(135deg, #00a6fb 0%, #0582ca 100%);
     color: #fff;
     padding: 0.25rem 1rem;
     border-radius: 20px;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 700;
     white-space: nowrap;
   }
@@ -251,42 +236,38 @@ main {
     margin-bottom: 1rem;
 
     .forfait-icon {
-      font-size: 1.75rem;
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       flex-shrink: 0;
+
+      i { color: #fff; font-size: 1.2rem; }
     }
 
-    > div:nth-child(2) {
+    .forfait-info {
       flex: 1;
 
       h4 {
-        margin: 0 0 0.15rem;
-        font-size: 1rem;
+        margin: 0 0 0.2rem;
+        font-size: 1.05rem;
         font-weight: 700;
         color: #051923;
       }
 
-      p {
+      .forfait-price {
         margin: 0;
-        font-size: 0.8rem;
-        color: #888;
-      }
-    }
-
-    .forfait-price {
-      text-align: right;
-      flex-shrink: 0;
-
-      .price {
-        font-size: 1.4rem;
+        font-size: 1.3rem;
         font-weight: 700;
         color: #051923;
-        display: block;
-        line-height: 1;
-      }
 
-      .period {
-        font-size: 0.75rem;
-        color: #888;
+        span {
+          font-size: 0.8rem;
+          font-weight: 400;
+          color: #888;
+        }
       }
     }
   }
@@ -297,20 +278,17 @@ main {
     margin: 0 0 1.25rem;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.55rem;
 
     li {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 0.6rem;
       font-size: 0.88rem;
       color: #555;
+      line-height: 1.4;
 
-      i {
-        color: #10b981;
-        font-size: 0.8rem;
-        flex-shrink: 0;
-      }
+      i { color: #10b981; font-size: 0.8rem; flex-shrink: 0; margin-top: 0.15rem; }
     }
   }
 
@@ -321,7 +299,7 @@ main {
     color: #fff;
     border: none;
     border-radius: 12px;
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     font-weight: 600;
     cursor: pointer;
     display: flex;
@@ -329,8 +307,7 @@ main {
     justify-content: center;
     gap: 0.6rem;
     font-family: 'Poppins', sans-serif;
-
-    &:active { opacity: 0.9; }
+    &:active { opacity: 0.88; }
   }
 
   .btn-outline {
@@ -338,9 +315,9 @@ main {
     padding: 0.85rem;
     background: transparent;
     color: #0582ca;
-    border: 1.5px solid #00a6fb;
+    border: 1.5px solid rgba(0, 166, 251, 0.5);
     border-radius: 12px;
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     font-weight: 600;
     cursor: pointer;
     display: flex;
@@ -348,7 +325,6 @@ main {
     justify-content: center;
     gap: 0.6rem;
     font-family: 'Poppins', sans-serif;
-
     &:active { background: rgba(0, 166, 251, 0.05); }
   }
 }
