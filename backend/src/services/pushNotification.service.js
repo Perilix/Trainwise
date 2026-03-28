@@ -83,7 +83,7 @@ async function sendPushNotification(userId, notification) {
       message,
       {
         headers: {
-          Authorization: `Bearer ${tokenData.access_token}`,
+          Authorization: `Bearer ${tokenData.token}`,
           'Content-Type': 'application/json'
         }
       }
