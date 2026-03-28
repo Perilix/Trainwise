@@ -52,7 +52,6 @@ async function sendPushNotification(userId, notification) {
     }
 
     const tokenData = await jwtClient.getAccessToken();
-    console.log('🔑 tokenData:', JSON.stringify(tokenData));
 
     const message = {
       message: {
@@ -80,9 +79,6 @@ async function sendPushNotification(userId, notification) {
     };
 
     const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
-    console.log('📡 FCM URL:', fcmUrl);
-    console.log('🔐 Auth header:', `Bearer ${tokenData.token?.substring(0, 30)}...`);
-
     const response = await axios.post(fcmUrl, message, {
       headers: {
         Authorization: `Bearer ${tokenData.token}`,
@@ -90,12 +86,12 @@ async function sendPushNotification(userId, notification) {
       }
     });
 
-    console.log('✅ Push notification sent successfully:', response.data);
+    console.log('✅ Push notification sent successfully');
     return { success: true, response: response.data };
 
   } catch (error) {
     const errData = error.response?.data || error.message;
-    console.error('❌ Error sending push notification:', JSON.stringify(errData, null, 2));
+    console.error('❌ Error sending push notification:', errData);
 
     if (error.response?.data?.error?.details?.some(d =>
       d.errorCode === 'INVALID_ARGUMENT' || d.errorCode === 'UNREGISTERED'
