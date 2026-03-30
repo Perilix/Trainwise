@@ -75,7 +75,7 @@ export class SubscriptionService {
     if (!Capacitor.isNativePlatform()) return false;
     try {
       const { Purchases } = await import('@revenuecat/purchases-capacitor');
-      const { offerings } = await Purchases.getOfferings();
+      const offerings = await Purchases.getOfferings();
       const offering = offerings.current;
       if (!offering) throw new Error('Aucune offre disponible');
 
