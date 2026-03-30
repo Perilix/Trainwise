@@ -6,7 +6,7 @@ import { PlanningService, PlannedSession, CalendarData, SessionType, ActivityTyp
 import { RunService, Run } from '../../services/run.service';
 import { StrengthSession, StrengthSessionType, SESSION_TYPE_LABELS as STRENGTH_SESSION_LABELS } from '../../interfaces/strength.interfaces';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
-import { TourTooltipComponent } from '../../components/tour-tooltip/tour-tooltip.component';
+import { TourTooltipComponent, TourStep } from '../../components/tour-tooltip/tour-tooltip.component';
 
 interface CalendarDay {
   date: Date;
@@ -26,6 +26,29 @@ interface CalendarDay {
   styleUrl: './planning.component.scss'
 })
 export class PlanningComponent implements OnInit {
+  readonly planningTourSteps: TourStep[] = [
+    {
+      faIcon: 'fa-calendar-days',
+      title: 'Vue calendrier',
+      description: 'Navigue entre les mois pour voir toutes tes séances planifiées et réalisées.'
+    },
+    {
+      faIcon: 'fa-wand-magic-sparkles',
+      title: 'Plan IA en 1 clic',
+      description: 'Appuie sur Générer pour créer un plan personnalisé basé sur ton niveau, tes objectifs et tes dispo.'
+    },
+    {
+      faIcon: 'fa-circle-plus',
+      title: 'Créer manuellement',
+      description: 'Clique sur n\'importe quel jour du calendrier pour ajouter une séance de course ou de musculation.'
+    },
+    {
+      faIcon: 'fa-chart-line',
+      title: 'Suivi & ressenti',
+      description: 'Après chaque séance, marque-la réalisée et note ton ressenti (1-10) pour affiner tes futurs plans.'
+    }
+  ];
+
   currentDate = new Date();
   currentMonth = signal(this.currentDate.getMonth() + 1);
   currentYear = signal(this.currentDate.getFullYear());

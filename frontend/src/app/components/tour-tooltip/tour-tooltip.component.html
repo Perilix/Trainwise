@@ -1,11 +1,40 @@
 @if (isVisible()) {
   <div class="tour-backdrop" (click)="dismiss()"></div>
-  <div class="tour-tooltip" [class.visible]="isVisible()">
-    <div class="tour-icon">{{ icon }}</div>
-    <div class="tour-content">
-      <p class="tour-title">{{ title }}</p>
-      <p class="tour-description">{{ description }}</p>
+
+  <div class="tour-card" [class.visible]="isVisible()">
+
+    <div class="tour-step-content">
+      <div class="tour-icon-wrap">
+        <i [class]="'fa-solid ' + currentStep().faIcon"></i>
+      </div>
+      <div class="tour-text">
+        <p class="tour-title">{{ currentStep().title }}</p>
+        <p class="tour-description">{{ currentStep().description }}</p>
+      </div>
     </div>
-    <button class="tour-dismiss" (click)="dismiss()">Compris !</button>
+
+    <div class="tour-footer" [class.has-dots]="isMultiStep()">
+      @if (isMultiStep()) {
+        <div class="tour-dots">
+          @for (step of allSteps(); track $index) {
+            <span class="dot" [class.active]="$index === currentStepIndex()"></span>
+          }
+        </div>
+      }
+
+      <div class="tour-actions">
+        <button class="btn-dismiss-text" (click)="dismiss()">Passer</button>
+        @if (!isLastStep()) {
+          <button class="btn-next" (click)="nextStep()">
+            Suivant <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        } @else {
+          <button class="btn-got-it" (click)="dismiss()">
+            Compris <i class="fa-solid fa-check"></i>
+          </button>
+        }
+      </div>
+    </div>
+
   </div>
 }

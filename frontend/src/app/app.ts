@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
@@ -27,6 +27,8 @@ export class App {
   private athleteService = inject(AthleteService);
   private router = inject(Router);
   private pushNotificationService = inject(PushNotificationService);
+
+  isKeyboardOpen = signal(false);
 
   private currentUrl = toSignal(this.router.events.pipe(
     map(() => this.router.url)
@@ -62,6 +64,7 @@ export class App {
     if (Capacitor.isNativePlatform()) {
       Keyboard.addListener('keyboardWillShow', (info) => {
         document.documentElement.style.setProperty('--keyboard-height', `${info.keyboardHeight}px`);
+        this.isKeyboardOpen.set(true);
         setTimeout(() => {
           const el = document.activeElement as HTMLElement;
           if (el && el !== document.body) {
@@ -71,6 +74,7 @@ export class App {
       });
       Keyboard.addListener('keyboardWillHide', () => {
         document.documentElement.style.setProperty('--keyboard-height', '0px');
+        this.isKeyboardOpen.set(false);
       });
     } else {
       // Fallback navigateur
@@ -79,6 +83,7 @@ export class App {
         const vp = window.visualViewport!;
         const kbHeight = Math.max(0, window.innerHeight - vp.height - vp.offsetTop);
         document.documentElement.style.setProperty('--keyboard-height', `${kbHeight}px`);
+        this.isKeyboardOpen.set(kbHeight > 80);
       });
     }
   }

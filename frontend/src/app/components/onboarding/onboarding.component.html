@@ -18,25 +18,25 @@
     @if (currentStep === 0) {
       <div class="step-content step-welcome">
         <div class="welcome-logo">
-          <span class="logo-icon">🏃</span>
+          <i class="fa-solid fa-person-running"></i>
         </div>
         <h1 class="welcome-title">Bienvenue sur<br><span class="brand">Trainwise</span></h1>
-        <p class="welcome-sub">Avant de commencer, on a besoin de 2 minutes pour personnaliser ton expérience.</p>
+        <p class="welcome-sub">On a besoin de 2 minutes pour personnaliser ton expérience.</p>
         <div class="welcome-features">
           <div class="feature-item">
-            <span class="feature-icon">🤖</span>
+            <i class="fa-solid fa-robot feature-icon"></i>
             <span>Plans d'entraînement générés par IA</span>
           </div>
           <div class="feature-item">
-            <span class="feature-icon">📊</span>
+            <i class="fa-solid fa-chart-line feature-icon"></i>
             <span>Suivi de ta progression en temps réel</span>
           </div>
           <div class="feature-item">
-            <span class="feature-icon">🎯</span>
+            <i class="fa-solid fa-bullseye feature-icon"></i>
             <span>Recommandations adaptées à tes objectifs</span>
           </div>
         </div>
-        <button class="btn-primary btn-full" (click)="next()">Commencer →</button>
+        <button class="btn-primary btn-full" (click)="next()">Commencer <i class="fa-solid fa-arrow-right"></i></button>
         <button class="btn-text" (click)="skip()">Configurer plus tard</button>
       </div>
     }
@@ -52,9 +52,11 @@
               class="level-card"
               [class.selected]="runningLevel() === level.value"
               (click)="runningLevel.set(level.value)">
-              <span class="card-icon">{{ level.icon }}</span>
-              <span class="card-label">{{ level.label }}</span>
-              <span class="card-desc">{{ level.desc }}</span>
+              <i [class]="'fa-solid ' + level.faIcon + ' card-icon'"></i>
+              <div>
+                <span class="card-label">{{ level.label }}</span>
+                <span class="card-desc">{{ level.desc }}</span>
+              </div>
             </button>
           }
         </div>
@@ -75,7 +77,7 @@
               class="goal-card"
               [class.selected]="goal() === g.value"
               (click)="goal.set(g.value)">
-              <span class="card-icon">{{ g.icon }}</span>
+              <i [class]="'fa-solid ' + g.faIcon + ' card-icon'"></i>
               <span class="card-label">{{ g.label }}</span>
             </button>
           }
@@ -110,9 +112,13 @@
         <div class="field-group">
           <label class="field-label">Sorties par semaine</label>
           <div class="counter-row">
-            <button class="counter-btn" (click)="decrementFrequency()">−</button>
+            <button class="counter-btn" (click)="decrementFrequency()">
+              <i class="fa-solid fa-minus"></i>
+            </button>
             <span class="counter-value">{{ weeklyFrequency() }}</span>
-            <button class="counter-btn" (click)="incrementFrequency()">+</button>
+            <button class="counter-btn" (click)="incrementFrequency()">
+              <i class="fa-solid fa-plus"></i>
+            </button>
           </div>
         </div>
 
@@ -124,7 +130,7 @@
                 class="time-card"
                 [class.selected]="preferredTime() === t.value"
                 (click)="preferredTime.set(t.value)">
-                <span>{{ t.icon }}</span>
+                <i [class]="'fa-solid ' + t.faIcon"></i>
                 <span>{{ t.label }}</span>
               </button>
             }
@@ -149,6 +155,7 @@
             <input
               class="field-input"
               type="number"
+              inputmode="numeric"
               placeholder="ex: 28"
               min="10" max="90"
               [ngModel]="age()"
@@ -166,39 +173,49 @@
 
         <div class="fields-row">
           <div class="field-group half">
-            <label class="field-label">FCmax <span class="field-hint">(bpm)</span></label>
+            <label class="field-label">
+              <i class="fa-solid fa-heart-pulse field-icon"></i>
+              FCmax <span class="field-hint">bpm</span>
+            </label>
             <input
               class="field-input"
               type="number"
+              inputmode="numeric"
               placeholder="ex: 185"
               min="100" max="220"
               [ngModel]="fcmax()"
               (ngModelChange)="fcmax.set($event)">
-            <span class="field-help">Fréquence cardiaque maximale</span>
           </div>
           <div class="field-group half">
-            <label class="field-label">VMA <span class="field-hint">(km/h)</span></label>
+            <label class="field-label">
+              <i class="fa-solid fa-gauge-high field-icon"></i>
+              VMA <span class="field-hint">km/h</span>
+            </label>
             <input
               class="field-input"
               type="number"
+              inputmode="decimal"
               placeholder="ex: 14"
               min="8" max="30"
               step="0.5"
               [ngModel]="vma()"
               (ngModelChange)="vma.set($event)">
-            <span class="field-help">Vitesse Maximale Aérobie</span>
           </div>
         </div>
 
         <div class="fcmax-hint">
-          <span class="hint-icon">💡</span>
-          <span>Tu ne connais pas ta FCmax ? Une estimation : <strong>220 - ton âge</strong></span>
+          <i class="fa-solid fa-circle-info hint-icon"></i>
+          <span>Tu ne connais pas ta FCmax ? Estimation rapide : <strong>220 − ton âge</strong></span>
         </div>
       </div>
       <div class="step-footer two-buttons">
         <button class="btn-secondary" (click)="prev()">Retour</button>
         <button class="btn-primary" [disabled]="isSaving()" (click)="complete()">
-          @if (isSaving()) { Sauvegarde... } @else { Terminer ! }
+          @if (isSaving()) {
+            <i class="fa-solid fa-circle-notch fa-spin"></i> Sauvegarde...
+          } @else {
+            Terminer !
+          }
         </button>
       </div>
     }
@@ -208,16 +225,18 @@
       <div class="step-content step-done">
         <div class="done-animation">
           <div class="done-circle">
-            <span class="done-check">✓</span>
+            <i class="fa-solid fa-check done-check"></i>
           </div>
         </div>
         <h2 class="done-title">C'est parti !</h2>
         <p class="done-sub">Ton profil est configuré. Trainwise va maintenant générer des plans d'entraînement adaptés à toi.</p>
         @if (!isSaving()) {
-          <button class="btn-primary btn-full" (click)="completed.emit()">Explorer Trainwise</button>
+          <button class="btn-primary btn-full" (click)="completed.emit()">
+            Explorer Trainwise <i class="fa-solid fa-arrow-right"></i>
+          </button>
         } @else {
           <div class="saving-indicator">
-            <div class="saving-spinner"></div>
+            <i class="fa-solid fa-circle-notch fa-spin"></i>
             <span>Sauvegarde en cours...</span>
           </div>
         }

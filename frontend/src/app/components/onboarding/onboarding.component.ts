@@ -46,28 +46,28 @@ export class OnboardingComponent {
   vma = signal<number | null>(null);
 
   readonly levels = [
-    { value: 'debutant', label: 'Débutant', icon: '🌱', desc: 'Je cours occasionnellement ou je débute' },
-    { value: 'intermediaire', label: 'Intermédiaire', icon: '🏃', desc: 'Je cours régulièrement depuis 1-2 ans' },
-    { value: 'confirme', label: 'Confirmé', icon: '⚡', desc: 'Je m\'entraîne sérieusement et régulièrement' },
-    { value: 'expert', label: 'Expert', icon: '🏆', desc: 'Compétiteur ou coureur très expérimenté' },
+    { value: 'debutant', label: 'Débutant', faIcon: 'fa-seedling', desc: 'Je cours occasionnellement ou je débute' },
+    { value: 'intermediaire', label: 'Intermédiaire', faIcon: 'fa-person-running', desc: 'Je cours régulièrement depuis 1-2 ans' },
+    { value: 'confirme', label: 'Confirmé', faIcon: 'fa-bolt', desc: 'Je m\'entraîne sérieusement et régulièrement' },
+    { value: 'expert', label: 'Expert', faIcon: 'fa-trophy', desc: 'Compétiteur ou coureur très expérimenté' },
   ];
 
   readonly goals = [
-    { value: 'remise_en_forme', label: 'Remise en forme', icon: '💪' },
-    { value: '5km', label: '5 km', icon: '🎯' },
-    { value: '10km', label: '10 km', icon: '🎯' },
-    { value: 'semi_marathon', label: 'Semi-marathon', icon: '🥈' },
-    { value: 'marathon', label: 'Marathon', icon: '🏅' },
-    { value: 'trail', label: 'Trail', icon: '🏔️' },
-    { value: 'ultra', label: 'Ultra', icon: '🦅' },
-    { value: 'autre', label: 'Autre', icon: '✨' },
+    { value: 'remise_en_forme', label: 'Remise en forme', faIcon: 'fa-heart-pulse' },
+    { value: '5km', label: '5 km', faIcon: 'fa-flag-checkered' },
+    { value: '10km', label: '10 km', faIcon: 'fa-flag-checkered' },
+    { value: 'semi_marathon', label: 'Semi-marathon', faIcon: 'fa-medal' },
+    { value: 'marathon', label: 'Marathon', faIcon: 'fa-award' },
+    { value: 'trail', label: 'Trail', faIcon: 'fa-mountain' },
+    { value: 'ultra', label: 'Ultra', faIcon: 'fa-feather-pointed' },
+    { value: 'autre', label: 'Autre', faIcon: 'fa-star' },
   ];
 
   readonly times = [
-    { value: 'matin', label: 'Matin', icon: '🌅' },
-    { value: 'midi', label: 'Midi', icon: '☀️' },
-    { value: 'soir', label: 'Soir', icon: '🌙' },
-    { value: 'flexible', label: 'Flexible', icon: '🔄' },
+    { value: 'matin', label: 'Matin', faIcon: 'fa-cloud-sun' },
+    { value: 'midi', label: 'Midi', faIcon: 'fa-sun' },
+    { value: 'soir', label: 'Soir', faIcon: 'fa-moon' },
+    { value: 'flexible', label: 'Flexible', faIcon: 'fa-rotate' },
   ];
 
   get currentStep() { return this.step(); }
