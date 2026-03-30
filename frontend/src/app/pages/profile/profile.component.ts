@@ -664,6 +664,7 @@ export class ProfileComponent implements OnInit {
       const weekStart = this.getWeekStart(now, -i);
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekEnd.getDate() + 6);
+      weekEnd.setHours(23, 59, 59, 999);
 
       const weekRuns = this.runs().filter(run => {
         const d = new Date(run.date);
