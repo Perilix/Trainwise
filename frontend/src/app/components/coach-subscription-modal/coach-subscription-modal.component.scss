@@ -1,0 +1,281 @@
+// -----------------------------------------------
+// Overlay
+// -----------------------------------------------
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+// -----------------------------------------------
+// Card
+// -----------------------------------------------
+.modal-card {
+  background: #F6F4F0;
+  border-radius: 28px 28px 0 0;
+  width: 100%;
+  max-width: 500px;
+  padding: 0 20px calc(28px + var(--safe-bottom, 0px));
+  position: relative;
+  animation: slideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(60px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-handle {
+  width: 40px;
+  height: 4px;
+  background: #ddd;
+  border-radius: 2px;
+  margin: 12px auto 0;
+}
+
+// -----------------------------------------------
+// Header
+// -----------------------------------------------
+.modal-header {
+  padding: 16px 0 20px;
+  position: relative;
+}
+
+.modal-title {
+  font-family: 'GulfsDisplay', serif;
+  font-size: 1.4rem;
+  color: #003554;
+  margin: 0 0 4px;
+}
+
+.modal-sub {
+  font-size: 0.82rem;
+  color: #888;
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+}
+
+.btn-close {
+  position: absolute;
+  top: 12px;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  background: #e5e5e5;
+  border: none;
+  border-radius: 50%;
+  color: #666;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  &:active { background: #d0d0d0; }
+}
+
+// -----------------------------------------------
+// Package cards
+// -----------------------------------------------
+.packages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.pkg-card {
+  background: #fff;
+  border: 2px solid #eee;
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  position: relative;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  text-align: left;
+  width: 100%;
+
+  &:active { transform: scale(0.99); }
+
+  &.pkg-selected {
+    border-color: #003554;
+    box-shadow: 0 0 0 1px #003554;
+    background: #f8fafb;
+  }
+
+  &.pkg-featured {
+    padding-top: 22px;
+  }
+}
+
+.pkg-badge {
+  position: absolute;
+  top: -10px;
+  left: 16px;
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  padding: 3px 10px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.pkg-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pkg-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  i {
+    color: #fff;
+    font-size: 1rem;
+  }
+}
+
+.pkg-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #003554;
+  margin: 0 0 2px;
+  font-family: 'Poppins', sans-serif;
+}
+
+.pkg-price {
+  font-family: 'GulfsDisplay', serif;
+  font-size: 1.1rem;
+  color: #003554;
+  margin: 0;
+  line-height: 1;
+
+  span {
+    font-size: 0.7rem;
+    font-family: 'Poppins', sans-serif;
+    color: #888;
+  }
+}
+
+.pkg-radio {
+  font-size: 1.2rem;
+  color: #ccc;
+
+  &.checked { color: #003554; }
+}
+
+// -----------------------------------------------
+// Selected features
+// -----------------------------------------------
+.selected-features {
+  background: #fff;
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.features-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #003554;
+  font-family: 'Poppins', sans-serif;
+  margin: 0 0 10px;
+}
+
+.selected-features ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+
+  li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.78rem;
+    color: #555;
+    font-family: 'Poppins', sans-serif;
+    line-height: 1.4;
+
+    i {
+      margin-top: 2px;
+      flex-shrink: 0;
+      font-size: 0.7rem;
+    }
+  }
+}
+
+// -----------------------------------------------
+// Messages
+// -----------------------------------------------
+.msg-error,
+.msg-success {
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.8rem;
+  font-family: 'Poppins', sans-serif;
+  margin: 0 0 12px;
+  i { margin-right: 6px; }
+}
+
+.msg-error { background: #fef2f2; color: #ef4444; }
+.msg-success { background: #f0fdf4; color: #16a34a; }
+
+// -----------------------------------------------
+// CTA
+// -----------------------------------------------
+.btn-subscribe {
+  width: 100%;
+  border: none;
+  border-radius: 16px;
+  padding: 15px;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: opacity 0.2s, transform 0.1s;
+  margin-bottom: 12px;
+
+  i { font-size: 0.85rem; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+  &:active:not(:disabled) { transform: scale(0.98); }
+}
+
+.web-note {
+  text-align: center;
+  color: #999;
+  font-size: 0.74rem;
+  font-family: 'Poppins', sans-serif;
+  margin: 0;
+  i { margin-right: 4px; }
+}
