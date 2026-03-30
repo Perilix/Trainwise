@@ -83,7 +83,6 @@ app-root {
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
   overscroll-behavior: none;
 }
 
@@ -150,7 +149,7 @@ input, select, textarea, button {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 12000;
+  z-index: 99999;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
   display: flex;
@@ -159,6 +158,9 @@ input, select, textarea, button {
   padding: 1.5rem;
   box-sizing: border-box;
   animation: fadeInOverlay 0.2s ease;
+  // Force a new GPU compositing layer so iOS renders this above fixed elements
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 @keyframes fadeInOverlay {
