@@ -662,19 +662,14 @@
 // Modal styles - utilise les styles globaux de .modal-overlay et .modal
 
 .modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #f0f0f0;
-  background: #fafafa;
-  flex-shrink: 0;
+  border-radius: 28px 28px 0 0;
+  background: #003554;
+  padding: 14px 20px 18px;
 
   h2 {
-    margin: 0;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #051923;
+    color: #fff;
+    font-family: 'GulfsDisplay', serif;
+    font-size: 1.2rem;
     text-transform: capitalize;
   }
 
@@ -685,40 +680,39 @@
   }
 
   .btn-add {
-    width: 34px;
-    height: 34px;
+    width: 32px;
+    height: 32px;
     border: none;
-    background: #00a6fb;
+    background: rgba(255, 255, 255, 0.2);
     color: #fff;
     font-size: 1.25rem;
     font-weight: 500;
-    border-radius: 8px;
+    border-radius: 50%;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
 
-    &:hover {
-      background: #0582ca;
-    }
+    &:hover { background: rgba(255, 255, 255, 0.3); }
   }
 
   .modal-close {
-    width: 34px;
-    height: 34px;
+    width: 32px;
+    height: 32px;
     border: none;
-    background: transparent;
-    font-size: 1.5rem;
-    color: #999;
+    background: rgba(255, 255, 255, 0.15);
+    font-size: 1.4rem;
+    color: #fff;
     cursor: pointer;
-    border-radius: 8px;
-    transition: all 0.2s;
+    border-radius: 50%;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
 
-    &:hover {
-      background: #f0f0f0;
-      color: #051923;
-    }
+    &:hover { background: rgba(255, 255, 255, 0.25); }
   }
 }
 
@@ -1267,16 +1261,12 @@
   max-width: 420px;
 
   .modal-header {
-    background: linear-gradient(135deg, rgba(0, 166, 251, 0.08) 0%, #fafafa 100%);
+    background: #003554; // keep same dark blue for consistency
 
     h2 {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-
-      &::before {
-        font-size: 1.2rem;
-      }
     }
   }
 

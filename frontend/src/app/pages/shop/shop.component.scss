@@ -3,10 +3,12 @@ $coin-dark: #D97706;
 $pro-color: #003554;
 
 .shop-page {
-  padding: calc(env(safe-area-inset-top) + 60px) 16px 40px;
+  padding: calc(var(--navbar-height, 100px) + 1.5rem) 1rem calc(var(--bottom-nav-height, 100px) + 1rem);
   max-width: 500px;
   margin: 0 auto;
   font-family: 'Poppins', sans-serif;
+  min-height: 100vh;
+  background: #F6F4F0;
 }
 
 // -----------------------------------------------
@@ -15,7 +17,7 @@ $pro-color: #003554;
 .shop-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
   margin-bottom: 20px;
 }
 
