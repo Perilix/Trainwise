@@ -100,16 +100,31 @@
               <li><i class="fa-solid fa-check"></i> {{ feature }}</li>
             }
           </ul>
-          <button
-            [class]="pkg.badge ? 'btn-primary' : 'btn-outline'"
-            [style.--pkg-color]="pkg.color"
-            (click)="contactCoach()">
-            <i class="fa-solid fa-message"></i>
-            Choisir ce forfait
-          </button>
         </section>
       }
 
+      <!-- Spacer pour le bouton sticky -->
+      <div style="height: 90px;"></div>
+
     }
   </main>
+
+  <!-- CTA sticky -->
+  @if (partnerCoach()) {
+    <div class="sticky-cta">
+      <button class="btn-subscribe-cta" (click)="showSubscriptionModal.set(true)">
+        <i class="fa-solid fa-crown"></i>
+        Choisir un abonnement
+      </button>
+    </div>
+  }
+
 </div>
+
+<!-- Modal abonnement -->
+@if (showSubscriptionModal()) {
+  <app-coach-subscription-modal
+    (close)="showSubscriptionModal.set(false)"
+    (contactCoach)="showSubscriptionModal.set(false); contactCoach()"
+  ></app-coach-subscription-modal>
+}
