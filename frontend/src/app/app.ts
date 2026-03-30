@@ -7,20 +7,23 @@ import { Keyboard } from '@capacitor/keyboard';
 import { BottomNavComponent } from './components/bottom-nav/bottom-nav.component';
 import { CoachBottomNavComponent } from './components/coach-bottom-nav/coach-bottom-nav.component';
 import { CoachInvitationModalComponent } from './components/coach-invitation-modal/coach-invitation-modal.component';
+import { OnboardingComponent } from './components/onboarding/onboarding.component';
 import { AuthService } from './services/auth.service';
 import { CoachInvitationModalService } from './services/coach-invitation-modal.service';
+import { OnboardingService } from './services/onboarding.service';
 import { AthleteService } from './services/athlete.service';
 import { PushNotificationService } from './services/push-notification.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, BottomNavComponent, CoachBottomNavComponent, CoachInvitationModalComponent],
+  imports: [RouterOutlet, BottomNavComponent, CoachBottomNavComponent, CoachInvitationModalComponent, OnboardingComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
 export class App {
   authService = inject(AuthService);
   invitationModalService = inject(CoachInvitationModalService);
+  onboardingService = inject(OnboardingService);
   private athleteService = inject(AthleteService);
   private router = inject(Router);
   private pushNotificationService = inject(PushNotificationService);
@@ -137,4 +140,8 @@ export class App {
   onCloseInvitationModal() {
     this.invitationModalService.close();
   }
+
+  // Appelé quand l'onboarding est terminé ou passé
+  // Le signal showOnboarding se met à jour automatiquement via authService.currentUser()
+  onOnboardingDone() {}
 }

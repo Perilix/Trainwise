@@ -1,0 +1,11 @@
+@if (isVisible()) {
+  <div class="tour-backdrop" (click)="dismiss()"></div>
+  <div class="tour-tooltip" [class.visible]="isVisible()">
+    <div class="tour-icon">{{ icon }}</div>
+    <div class="tour-content">
+      <p class="tour-title">{{ title }}</p>
+      <p class="tour-description">{{ description }}</p>
+    </div>
+    <button class="tour-dismiss" (click)="dismiss()">Compris !</button>
+  </div>
+}

@@ -1,0 +1,228 @@
+<div class="onboarding-overlay">
+  <div class="onboarding-card" [class]="'step-' + currentStep">
+
+    <!-- Header commun (steps 1-4) -->
+    @if (currentStep >= 1 && currentStep <= 4) {
+      <div class="onboarding-header">
+        <button class="btn-skip" (click)="skip()">Passer</button>
+        <div class="progress-dots">
+          @for (i of [1, 2, 3, 4]; track i) {
+            <span class="dot" [class.active]="i === currentStep" [class.done]="i < currentStep"></span>
+          }
+        </div>
+        <div style="width: 64px"></div>
+      </div>
+    }
+
+    <!-- STEP 0 : Welcome -->
+    @if (currentStep === 0) {
+      <div class="step-content step-welcome">
+        <div class="welcome-logo">
+          <span class="logo-icon">🏃</span>
+        </div>
+        <h1 class="welcome-title">Bienvenue sur<br><span class="brand">Trainwise</span></h1>
+        <p class="welcome-sub">Avant de commencer, on a besoin de 2 minutes pour personnaliser ton expérience.</p>
+        <div class="welcome-features">
+          <div class="feature-item">
+            <span class="feature-icon">🤖</span>
+            <span>Plans d'entraînement générés par IA</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">📊</span>
+            <span>Suivi de ta progression en temps réel</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">🎯</span>
+            <span>Recommandations adaptées à tes objectifs</span>
+          </div>
+        </div>
+        <button class="btn-primary btn-full" (click)="next()">Commencer →</button>
+        <button class="btn-text" (click)="skip()">Configurer plus tard</button>
+      </div>
+    }
+
+    <!-- STEP 1 : Niveau -->
+    @if (currentStep === 1) {
+      <div class="step-content">
+        <h2 class="step-title">Quel est ton niveau ?</h2>
+        <p class="step-sub">On adapte tes plans d'entraînement en fonction de ton expérience.</p>
+        <div class="level-grid">
+          @for (level of levels; track level.value) {
+            <button
+              class="level-card"
+              [class.selected]="runningLevel() === level.value"
+              (click)="runningLevel.set(level.value)">
+              <span class="card-icon">{{ level.icon }}</span>
+              <span class="card-label">{{ level.label }}</span>
+              <span class="card-desc">{{ level.desc }}</span>
+            </button>
+          }
+        </div>
+      </div>
+      <div class="step-footer">
+        <button class="btn-primary" [disabled]="!canProceed()" (click)="next()">Continuer</button>
+      </div>
+    }
+
+    <!-- STEP 2 : Objectif -->
+    @if (currentStep === 2) {
+      <div class="step-content">
+        <h2 class="step-title">Quel est ton objectif ?</h2>
+        <p class="step-sub">Ton objectif principal guide la structure de tes entraînements.</p>
+        <div class="goal-grid">
+          @for (g of goals; track g.value) {
+            <button
+              class="goal-card"
+              [class.selected]="goal() === g.value"
+              (click)="goal.set(g.value)">
+              <span class="card-icon">{{ g.icon }}</span>
+              <span class="card-label">{{ g.label }}</span>
+            </button>
+          }
+        </div>
+      </div>
+      <div class="step-footer two-buttons">
+        <button class="btn-secondary" (click)="prev()">Retour</button>
+        <button class="btn-primary" [disabled]="!canProceed()" (click)="next()">Continuer</button>
+      </div>
+    }
+
+    <!-- STEP 3 : Planning -->
+    @if (currentStep === 3) {
+      <div class="step-content">
+        <h2 class="step-title">Tes disponibilités</h2>
+        <p class="step-sub">Quand peux-tu t'entraîner ? (optionnel mais recommandé)</p>
+
+        <div class="field-group">
+          <label class="field-label">Jours disponibles</label>
+          <div class="days-row">
+            @for (day of days; track day.key) {
+              <button
+                class="day-btn"
+                [class.selected]="isDaySelected(day.key)"
+                (click)="toggleDay(day.key)">
+                {{ day.short }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Sorties par semaine</label>
+          <div class="counter-row">
+            <button class="counter-btn" (click)="decrementFrequency()">−</button>
+            <span class="counter-value">{{ weeklyFrequency() }}</span>
+            <button class="counter-btn" (click)="incrementFrequency()">+</button>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Moment préféré</label>
+          <div class="time-grid">
+            @for (t of times; track t.value) {
+              <button
+                class="time-card"
+                [class.selected]="preferredTime() === t.value"
+                (click)="preferredTime.set(t.value)">
+                <span>{{ t.icon }}</span>
+                <span>{{ t.label }}</span>
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+      <div class="step-footer two-buttons">
+        <button class="btn-secondary" (click)="prev()">Retour</button>
+        <button class="btn-primary" (click)="next()">Continuer</button>
+      </div>
+    }
+
+    <!-- STEP 4 : Stats physiques -->
+    @if (currentStep === 4) {
+      <div class="step-content">
+        <h2 class="step-title">Tes données physiques</h2>
+        <p class="step-sub">Ces infos permettent de calibrer l'intensité de tes séances. (optionnel)</p>
+
+        <div class="fields-row">
+          <div class="field-group half">
+            <label class="field-label">Âge</label>
+            <input
+              class="field-input"
+              type="number"
+              placeholder="ex: 28"
+              min="10" max="90"
+              [ngModel]="age()"
+              (ngModelChange)="age.set($event)">
+          </div>
+          <div class="field-group half">
+            <label class="field-label">Genre</label>
+            <div class="gender-row">
+              <button class="gender-btn" [class.selected]="gender() === 'homme'" (click)="gender.set('homme')">Homme</button>
+              <button class="gender-btn" [class.selected]="gender() === 'femme'" (click)="gender.set('femme')">Femme</button>
+              <button class="gender-btn" [class.selected]="gender() === 'autre'" (click)="gender.set('autre')">Autre</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="fields-row">
+          <div class="field-group half">
+            <label class="field-label">FCmax <span class="field-hint">(bpm)</span></label>
+            <input
+              class="field-input"
+              type="number"
+              placeholder="ex: 185"
+              min="100" max="220"
+              [ngModel]="fcmax()"
+              (ngModelChange)="fcmax.set($event)">
+            <span class="field-help">Fréquence cardiaque maximale</span>
+          </div>
+          <div class="field-group half">
+            <label class="field-label">VMA <span class="field-hint">(km/h)</span></label>
+            <input
+              class="field-input"
+              type="number"
+              placeholder="ex: 14"
+              min="8" max="30"
+              step="0.5"
+              [ngModel]="vma()"
+              (ngModelChange)="vma.set($event)">
+            <span class="field-help">Vitesse Maximale Aérobie</span>
+          </div>
+        </div>
+
+        <div class="fcmax-hint">
+          <span class="hint-icon">💡</span>
+          <span>Tu ne connais pas ta FCmax ? Une estimation : <strong>220 - ton âge</strong></span>
+        </div>
+      </div>
+      <div class="step-footer two-buttons">
+        <button class="btn-secondary" (click)="prev()">Retour</button>
+        <button class="btn-primary" [disabled]="isSaving()" (click)="complete()">
+          @if (isSaving()) { Sauvegarde... } @else { Terminer ! }
+        </button>
+      </div>
+    }
+
+    <!-- STEP 5 : Done -->
+    @if (currentStep === 5) {
+      <div class="step-content step-done">
+        <div class="done-animation">
+          <div class="done-circle">
+            <span class="done-check">✓</span>
+          </div>
+        </div>
+        <h2 class="done-title">C'est parti !</h2>
+        <p class="done-sub">Ton profil est configuré. Trainwise va maintenant générer des plans d'entraînement adaptés à toi.</p>
+        @if (!isSaving()) {
+          <button class="btn-primary btn-full" (click)="completed.emit()">Explorer Trainwise</button>
+        } @else {
+          <div class="saving-indicator">
+            <div class="saving-spinner"></div>
+            <span>Sauvegarde en cours...</span>
+          </div>
+        }
+      </div>
+    }
+
+  </div>
+</div>

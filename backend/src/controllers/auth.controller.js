@@ -50,7 +50,10 @@ exports.register = async (req, res) => {
         disciplines: user.disciplines,
         experience: user.experience,
         diplomas: user.diplomas,
-        bio: user.bio
+        bio: user.bio,
+        vma: user.vma,
+        fcmax: user.fcmax,
+        hasCompletedOnboarding: user.hasCompletedOnboarding
       }
     });
   } catch (error) {
@@ -105,7 +108,10 @@ exports.login = async (req, res) => {
         disciplines: user.disciplines,
         experience: user.experience,
         diplomas: user.diplomas,
-        bio: user.bio
+        bio: user.bio,
+        vma: user.vma,
+        fcmax: user.fcmax,
+        hasCompletedOnboarding: user.hasCompletedOnboarding
       }
     });
   } catch (error) {
@@ -141,6 +147,9 @@ exports.getMe = async (req, res) => {
       strengthFrequency: user.strengthFrequency,
       strengthGoal: user.strengthGoal,
       strengthType: user.strengthType,
+      vma: user.vma,
+      fcmax: user.fcmax,
+      hasCompletedOnboarding: user.hasCompletedOnboarding,
       createdAt: user.createdAt
     });
   } catch (error) {
@@ -170,7 +179,10 @@ exports.updateProfile = async (req, res) => {
       'bio',
       'strengthFrequency',
       'strengthGoal',
-      'strengthType'
+      'strengthType',
+      'vma',
+      'fcmax',
+      'hasCompletedOnboarding'
     ];
 
     const updates = {};
@@ -210,6 +222,9 @@ exports.updateProfile = async (req, res) => {
       strengthFrequency: user.strengthFrequency,
       strengthGoal: user.strengthGoal,
       strengthType: user.strengthType,
+      vma: user.vma,
+      fcmax: user.fcmax,
+      hasCompletedOnboarding: user.hasCompletedOnboarding,
       createdAt: user.createdAt
     });
   } catch (error) {

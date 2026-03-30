@@ -20,3 +20,10 @@
     (close)="onCloseInvitationModal()"
   ></app-coach-invitation-modal>
 }
+
+@if (onboardingService.showOnboarding()) {
+  <app-onboarding
+    (completed)="onOnboardingDone()"
+    (skipped)="onOnboardingDone()"
+  ></app-onboarding>
+}

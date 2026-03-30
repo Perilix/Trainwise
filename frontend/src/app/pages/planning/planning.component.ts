@@ -6,6 +6,7 @@ import { PlanningService, PlannedSession, CalendarData, SessionType, ActivityTyp
 import { RunService, Run } from '../../services/run.service';
 import { StrengthSession, StrengthSessionType, SESSION_TYPE_LABELS as STRENGTH_SESSION_LABELS } from '../../interfaces/strength.interfaces';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
+import { TourTooltipComponent } from '../../components/tour-tooltip/tour-tooltip.component';
 
 interface CalendarDay {
   date: Date;
@@ -20,7 +21,7 @@ interface CalendarDay {
 @Component({
   selector: 'app-planning',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavbarComponent],
+  imports: [CommonModule, FormsModule, NavbarComponent, TourTooltipComponent],
   templateUrl: './planning.component.html',
   styleUrl: './planning.component.scss'
 })

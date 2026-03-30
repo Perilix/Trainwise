@@ -496,6 +496,18 @@
   box-sizing: border-box;
   animation: fadeIn 0.25s ease;
   transition: bottom 0.25s ease;
+
+  &::after {
+    content: '';
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: env(safe-area-inset-bottom, 0px);
+    background: #fafafa;
+    z-index: 100000;
+    pointer-events: none;
+  }
 }
 
 @keyframes fadeIn {

@@ -111,6 +111,24 @@ const userSchema = new mongoose.Schema({
     trim: true,
     default: ''
   },
+  // Données physiques running
+  vma: {
+    type: Number,
+    min: 8,
+    max: 30,
+    default: null
+  },
+  fcmax: {
+    type: Number,
+    min: 100,
+    max: 220,
+    default: null
+  },
+  // Onboarding
+  hasCompletedOnboarding: {
+    type: Boolean,
+    default: false
+  },
   // Profil muscu
   strengthFrequency: {
     type: Number,

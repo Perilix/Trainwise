@@ -10,6 +10,7 @@ import { AthleteService } from '../../services/athlete.service';
 import { CoachInvitationModalService } from '../../services/coach-invitation-modal.service';
 import { Coach } from '../../interfaces/coach.interfaces';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
+import { TourTooltipComponent } from '../../components/tour-tooltip/tour-tooltip.component';
 
 interface WeekDay {
   date: Date;
@@ -24,7 +25,7 @@ interface WeekDay {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, NavbarComponent],
+  imports: [CommonModule, FormsModule, RouterLink, NavbarComponent, TourTooltipComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })

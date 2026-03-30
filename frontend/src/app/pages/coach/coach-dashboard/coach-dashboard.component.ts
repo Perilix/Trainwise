@@ -6,12 +6,13 @@ import { CoachService } from '../../../services/coach.service';
 import { AuthService } from '../../../services/auth.service';
 import { Athlete, CoachStats, UserSearchResult, PendingInvitation } from '../../../interfaces/coach.interfaces';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
+import { TourTooltipComponent } from '../../../components/tour-tooltip/tour-tooltip.component';
 import { COACH_PACKAGES, PackageType } from '../../../interfaces/package.interface';
 
 @Component({
   selector: 'app-coach-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, NavbarComponent],
+  imports: [CommonModule, FormsModule, RouterLink, NavbarComponent, TourTooltipComponent],
   templateUrl: './coach-dashboard.component.html',
   styleUrl: './coach-dashboard.component.scss'
 })

@@ -1,0 +1,612 @@
+// -----------------------------------------------
+// Overlay
+// -----------------------------------------------
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 53, 84, 0.82);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: env(safe-area-inset-top) 0 0;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+// -----------------------------------------------
+// Card
+// -----------------------------------------------
+.onboarding-card {
+  background: #F6F4F0;
+  border-radius: 28px 28px 0 0;
+  width: 100%;
+  max-width: 540px;
+  max-height: calc(100vh - env(safe-area-inset-top) - 20px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  &.step-5 {
+    border-radius: 28px;
+    margin: 20px 16px;
+    max-height: auto;
+    align-self: center;
+  }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+// -----------------------------------------------
+// Header (progress)
+// -----------------------------------------------
+.onboarding-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 0;
+  flex-shrink: 0;
+}
+
+.btn-skip {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 0.85rem;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  padding: 4px 8px;
+
+  &:active { opacity: 0.7; }
+}
+
+.progress-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ddd;
+  transition: all 0.3s;
+
+  &.active {
+    background: #003554;
+    width: 24px;
+    border-radius: 4px;
+  }
+
+  &.done {
+    background: #0077B6;
+  }
+}
+
+// -----------------------------------------------
+// Step content
+// -----------------------------------------------
+.step-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 20px 20px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.step-title {
+  font-family: 'GulfsDisplay', serif;
+  font-size: 1.5rem;
+  color: #003554;
+  margin: 0 0 8px;
+  line-height: 1.2;
+}
+
+.step-sub {
+  color: #666;
+  font-size: 0.88rem;
+  margin: 0 0 24px;
+  line-height: 1.5;
+}
+
+// -----------------------------------------------
+// Step footer (navigation)
+// -----------------------------------------------
+.step-footer {
+  padding: 12px 20px calc(20px + var(--safe-bottom, 0px));
+  flex-shrink: 0;
+
+  &.two-buttons {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 10px;
+  }
+}
+
+// -----------------------------------------------
+// Buttons
+// -----------------------------------------------
+.btn-primary {
+  width: 100%;
+  background: #003554;
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  padding: 14px 20px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  &.btn-full { display: block; }
+}
+
+.btn-secondary {
+  background: #fff;
+  color: #003554;
+  border: 1.5px solid #003554;
+  border-radius: 14px;
+  padding: 14px 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: opacity 0.2s;
+
+  &:active { opacity: 0.7; }
+}
+
+.btn-text {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 0.83rem;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  display: block;
+  margin: 12px auto 0;
+  padding: 4px;
+}
+
+// -----------------------------------------------
+// Welcome step
+// -----------------------------------------------
+.step-welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-top: 32px;
+}
+
+.welcome-logo {
+  width: 72px;
+  height: 72px;
+  background: #003554;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+
+  .logo-icon { font-size: 2rem; }
+}
+
+.welcome-title {
+  font-family: 'GulfsDisplay', serif;
+  font-size: 1.9rem;
+  color: #003554;
+  margin: 0 0 12px;
+  line-height: 1.15;
+
+  .brand {
+    color: #0077B6;
+  }
+}
+
+.welcome-sub {
+  color: #666;
+  font-size: 0.9rem;
+  margin: 0 0 24px;
+  max-width: 300px;
+  line-height: 1.5;
+}
+
+.welcome-features {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 28px;
+  text-align: left;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 0.88rem;
+  color: #333;
+  font-weight: 500;
+}
+
+.feature-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+// -----------------------------------------------
+// Level cards
+// -----------------------------------------------
+.level-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.level-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  background: #fff;
+  border: 2px solid transparent;
+  border-radius: 16px;
+  padding: 14px 16px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+  width: 100%;
+
+  .card-icon { font-size: 1.5rem; flex-shrink: 0; }
+
+  .card-label {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #003554;
+    display: block;
+    font-family: 'Poppins', sans-serif;
+  }
+
+  .card-desc {
+    font-size: 0.78rem;
+    color: #888;
+    display: block;
+    font-family: 'Poppins', sans-serif;
+    margin-top: 2px;
+  }
+
+  &.selected {
+    border-color: #003554;
+    background: #EBF4FA;
+
+    .card-label { color: #003554; }
+  }
+
+  &:active { transform: scale(0.98); }
+}
+
+// -----------------------------------------------
+// Goal cards
+// -----------------------------------------------
+.goal-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.goal-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  padding: 14px 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  .card-icon { font-size: 1.4rem; }
+
+  .card-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #003554;
+    font-family: 'Poppins', sans-serif;
+    text-align: center;
+  }
+
+  &.selected {
+    border-color: #003554;
+    background: #EBF4FA;
+  }
+
+  &:active { transform: scale(0.95); }
+}
+
+// -----------------------------------------------
+// Schedule step
+// -----------------------------------------------
+.field-group {
+  margin-bottom: 20px;
+
+  &.half { flex: 1; min-width: 0; }
+}
+
+.field-label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #003554;
+  margin-bottom: 10px;
+  font-family: 'Poppins', sans-serif;
+}
+
+.days-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.day-btn {
+  flex: 1;
+  background: #fff;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  padding: 8px 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #555;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &.selected {
+    background: #003554;
+    color: #fff;
+    border-color: #003554;
+  }
+}
+
+.counter-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.counter-btn {
+  width: 40px;
+  height: 40px;
+  background: #fff;
+  border: 2px solid #003554;
+  border-radius: 10px;
+  font-size: 1.3rem;
+  color: #003554;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+
+  &:active { background: #EBF4FA; }
+}
+
+.counter-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #003554;
+  font-family: 'GulfsDisplay', serif;
+  min-width: 32px;
+  text-align: center;
+}
+
+.time-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.time-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: #fff;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  padding: 10px 4px;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #555;
+  font-family: 'Poppins', sans-serif;
+  transition: all 0.15s;
+
+  span:first-child { font-size: 1.2rem; }
+
+  &.selected {
+    background: #EBF4FA;
+    border-color: #003554;
+    color: #003554;
+  }
+}
+
+// -----------------------------------------------
+// Physical step
+// -----------------------------------------------
+.fields-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.field-input {
+  width: 100%;
+  background: #fff;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 0.95rem;
+  font-family: 'Poppins', sans-serif;
+  color: #003554;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+
+  &:focus { border-color: #003554; }
+  &::placeholder { color: #bbb; }
+}
+
+.field-hint {
+  font-size: 0.75rem;
+  color: #999;
+  font-weight: 400;
+}
+
+.field-help {
+  display: block;
+  font-size: 0.72rem;
+  color: #aaa;
+  margin-top: 4px;
+  font-family: 'Poppins', sans-serif;
+}
+
+.gender-row {
+  display: flex;
+  gap: 6px;
+}
+
+.gender-btn {
+  flex: 1;
+  background: #fff;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 10px 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #555;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &.selected {
+    background: #003554;
+    border-color: #003554;
+    color: #fff;
+  }
+}
+
+.fcmax-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #EBF4FA;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: #444;
+  font-family: 'Poppins', sans-serif;
+  line-height: 1.4;
+
+  .hint-icon { font-size: 1rem; flex-shrink: 0; }
+  strong { color: #003554; }
+}
+
+// -----------------------------------------------
+// Done step
+// -----------------------------------------------
+.step-done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 40px 24px 32px;
+}
+
+.done-animation {
+  margin-bottom: 24px;
+}
+
+.done-circle {
+  width: 80px;
+  height: 80px;
+  background: #003554;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes popIn {
+  from { transform: scale(0); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.done-check {
+  font-size: 2rem;
+  color: #fff;
+  font-weight: 700;
+}
+
+.done-title {
+  font-family: 'GulfsDisplay', serif;
+  font-size: 1.8rem;
+  color: #003554;
+  margin: 0 0 12px;
+}
+
+.done-sub {
+  color: #666;
+  font-size: 0.88rem;
+  margin: 0 0 28px;
+  line-height: 1.5;
+  max-width: 280px;
+}
+
+.saving-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #666;
+  font-size: 0.88rem;
+  font-family: 'Poppins', sans-serif;
+}
+
+.saving-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #ddd;
+  border-top-color: #003554;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

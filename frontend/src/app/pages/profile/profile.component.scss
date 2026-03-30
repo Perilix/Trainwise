@@ -447,6 +447,18 @@
   align-items: flex-end;
   justify-content: center;
   transition: bottom 0.25s ease;
+
+  &::after {
+    content: '';
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: env(safe-area-inset-bottom, 0px);
+    background: #F6F4F0;
+    z-index: 10001;
+    pointer-events: none;
+  }
 }
 
 .feeling-popup {
