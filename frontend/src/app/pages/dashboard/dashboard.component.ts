@@ -88,29 +88,69 @@ export class DashboardComponent implements OnInit {
   loadDashboardData() {
     this.isLoading.set(true);
 
-    // Load current week calendar
     const today = new Date();
     const month = today.getMonth() + 1;
     const year = today.getFullYear();
 
-    this.planningService.getCalendarData(month, year).subscribe({
-      next: (data) => {
-        this.buildWeekView(data.runs, data.plannedRuns);
-        this.calculateStreak(data.runs);
-        this.calculateWeekStats(data.runs);
-        this.findUpcomingSession(data.plannedRuns);
-        // Trier par date décroissante et prendre les 3 dernières courses
-        const sortedRuns = [...data.runs].sort((a, b) =>
+    // Check if current week's Monday is in the previous month
+    const dayOfWeek = today.getDay();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+    monday.setHours(0, 0, 0, 0);
+    const mondayMonth = monday.getMonth() + 1;
+    const mondayYear = monday.getFullYear();
+    const weekSpansTwoMonths = mondayMonth !== month || mondayYear !== year;
+
+    const currentMonthObs = this.planningService.getCalendarData(month, year);
+
+    if (weekSpansTwoMonths) {
+      // Also fetch previous month to cover the full week
+      const prevMonthObs = this.planningService.getCalendarData(mondayMonth, mondayYear);
+      let currentData: any = null;
+      let prevData: any = null;
+
+      const tryMerge = () => {
+        if (!currentData || !prevData) return;
+        const allRuns = [...prevData.runs, ...currentData.runs];
+        const allPlanned = [...prevData.plannedRuns, ...currentData.plannedRuns];
+        this.buildWeekView(allRuns, allPlanned);
+        this.calculateStreak(allRuns);
+        this.calculateWeekStats(allRuns);
+        this.findUpcomingSession(allPlanned);
+        const sortedRuns = [...allRuns].sort((a, b) =>
           new Date(b.date).getTime() - new Date(a.date).getTime()
         );
         this.recentRuns.set(sortedRuns.slice(0, 3));
         this.isLoading.set(false);
-      },
-      error: (err) => {
-        console.error(err);
-        this.isLoading.set(false);
-      }
-    });
+      };
+
+      currentMonthObs.subscribe({
+        next: (data) => { currentData = data; tryMerge(); },
+        error: (err) => { console.error(err); this.isLoading.set(false); }
+      });
+      prevMonthObs.subscribe({
+        next: (data) => { prevData = data; tryMerge(); },
+        error: () => { prevData = { runs: [], plannedRuns: [] }; tryMerge(); }
+      });
+    } else {
+      currentMonthObs.subscribe({
+        next: (data) => {
+          this.buildWeekView(data.runs, data.plannedRuns);
+          this.calculateStreak(data.runs);
+          this.calculateWeekStats(data.runs);
+          this.findUpcomingSession(data.plannedRuns);
+          const sortedRuns = [...data.runs].sort((a, b) =>
+            new Date(b.date).getTime() - new Date(a.date).getTime()
+          );
+          this.recentRuns.set(sortedRuns.slice(0, 3));
+          this.isLoading.set(false);
+        },
+        error: (err) => {
+          console.error(err);
+          this.isLoading.set(false);
+        }
+      });
+    }
   }
 
   buildWeekView(runs: Run[], plannedRuns: PlannedSession[]) {

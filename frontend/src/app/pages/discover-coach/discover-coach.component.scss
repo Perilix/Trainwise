@@ -335,32 +335,36 @@ main {
   bottom: calc(var(--bottom-nav-height, 80px) + var(--safe-bottom, 0px));
   left: 0;
   right: 0;
-  padding: 12px 20px;
-  background: linear-gradient(to top, #F6F4F0 60%, transparent);
+  padding: 16px 20px;
+  background: transparent;
   display: flex;
   justify-content: center;
   z-index: 100;
+  pointer-events: none;
 }
 
 .btn-subscribe-cta {
+  pointer-events: all;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: #003554;
-  color: #fff;
-  border: none;
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  color: #003554;
+  border: 1.5px solid rgba(0, 53, 84, 0.12);
   border-radius: 16px;
   padding: 15px 32px;
   font-size: 0.95rem;
   font-weight: 700;
   font-family: 'Poppins', sans-serif;
   cursor: pointer;
-  box-shadow: 0 4px 20px rgba(0, 53, 84, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 53, 84, 0.18), 0 2px 8px rgba(0, 53, 84, 0.08);
   transition: transform 0.15s, box-shadow 0.15s;
   width: 100%;
   max-width: 440px;
 
-  i { font-size: 0.9rem; }
-  &:active { transform: scale(0.98); box-shadow: 0 2px 10px rgba(0, 53, 84, 0.2); }
+  i { font-size: 0.9rem; color: #00a6fb; }
+  &:active { transform: scale(0.98); box-shadow: 0 4px 16px rgba(0, 53, 84, 0.12); }
 }

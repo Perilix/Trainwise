@@ -1,15 +1,20 @@
 <nav class="navbar">
   <div class="navbar-container">
-    <!-- Mobile: Photo profil à gauche -->
-    <a [routerLink]="authService.isCoach() ? '/coach/profile' : '/profile'" class="mobile-profile-link mobile-only">
-      @if (authService.currentUser()?.profilePicture) {
-        <img [src]="authService.currentUser()?.profilePicture" alt="Avatar" class="mobile-header-avatar">
-      } @else {
-        <div class="mobile-header-avatar-placeholder">
-          {{ getUserInitial() }}
-        </div>
+    <!-- Mobile left: photo profil + coins côte à côte -->
+    <div class="mobile-left mobile-only">
+      <a [routerLink]="authService.isCoach() ? '/coach/profile' : '/profile'" class="mobile-profile-link">
+        @if (authService.currentUser()?.profilePicture) {
+          <img [src]="authService.currentUser()?.profilePicture" alt="Avatar" class="mobile-header-avatar">
+        } @else {
+          <div class="mobile-header-avatar-placeholder">
+            {{ getUserInitial() }}
+          </div>
+        }
+      </a>
+      @if (!authService.isCoach()) {
+        <app-traincoin-badge></app-traincoin-badge>
       }
-    </a>
+    </div>
 
     <!-- Logo au centre (mobile) / à gauche (desktop) -->
     <a [routerLink]="authService.isCoach() ? '/coach' : '/'" class="navbar-logo">
@@ -77,11 +82,6 @@
         }
       </div>
     </div>
-
-    <!-- Mobile: TrainCoins badge (athletes only) -->
-    @if (!authService.isCoach()) {
-      <app-traincoin-badge class="mobile-only mobile-coins"></app-traincoin-badge>
-    }
 
     <!-- Mobile: Notifications à droite -->
     <app-notification-dropdown class="mobile-notification mobile-only"></app-notification-dropdown>

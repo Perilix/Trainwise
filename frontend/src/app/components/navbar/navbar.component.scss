@@ -249,6 +249,18 @@
 }
 
 
+// Mobile left group (photo + coins)
+.mobile-left {
+  display: none;
+  align-items: center;
+  gap: 8px;
+
+  // Inside the group, the profile link is always visible
+  .mobile-profile-link {
+    display: flex;
+  }
+}
+
 // Mobile profile link (left side)
 .mobile-profile-link {
   display: none;
@@ -326,6 +338,10 @@
   }
 
   .mobile-only {
+    display: flex;
+  }
+
+  .mobile-left {
     display: flex;
   }
 

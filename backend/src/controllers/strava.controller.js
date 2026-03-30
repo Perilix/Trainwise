@@ -12,6 +12,18 @@ const analyzeRunInBackground = async (run, user) => {
   if (!process.env.N8N_WEBHOOK_URL) return;
 
   try {
+    // Vérifier et déduire les TrainCoins (0.5 par analyse auto)
+    const freshUser = await User.findById(user._id);
+    if (!freshUser) return;
+
+    const isPro = freshUser.subscriptionStatus === 'pro' &&
+      freshUser.subscriptionExpiry && new Date(freshUser.subscriptionExpiry) > new Date();
+
+    if (!isPro) {
+      if ((freshUser.trainCoins || 0) < 0.5) return; // Pas assez de coins, on ne lance pas l'analyse
+      await User.findByIdAndUpdate(user._id, { $inc: { trainCoins: -0.5 } });
+    }
+
     // Récupérer les 5 dernières courses
     const recentRuns = await Run.find({
       user: user._id,
