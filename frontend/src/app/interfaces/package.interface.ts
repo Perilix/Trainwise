@@ -9,6 +9,7 @@ export interface CoachPackage {
   icon: string;
   features: string[];
   badge?: string;
+  revenueCatId: string;
 }
 
 export const COACH_PACKAGES: Record<PackageType, CoachPackage> = {
@@ -19,6 +20,7 @@ export const COACH_PACKAGES: Record<PackageType, CoachPackage> = {
     color: '#cd7f32',
     gradient: 'linear-gradient(135deg, #cd7f32 0%, #b8722d 100%)',
     icon: 'fa-solid fa-medal',
+    revenueCatId: 'trainwise_coach_bronze_monthly',
     features: [
       'Programme d\'entraînement mensuel',
       'Suivi des performances',
@@ -33,6 +35,7 @@ export const COACH_PACKAGES: Record<PackageType, CoachPackage> = {
     color: '#c0c0c0',
     gradient: 'linear-gradient(135deg, #d4d4d4 0%, #a8a8a8 100%)',
     icon: 'fa-solid fa-crown',
+    revenueCatId: 'trainwise_coach_silver_monthly',
     features: [
       'Programme hebdomadaire personnalisé',
       'Suivi et ajustements en temps réel',
@@ -50,6 +53,7 @@ export const COACH_PACKAGES: Record<PackageType, CoachPackage> = {
     color: '#ffd700',
     gradient: 'linear-gradient(135deg, #ffd700 0%, #ffb700 100%)',
     icon: 'fa-solid fa-trophy',
+    revenueCatId: 'trainwise_coach_gold_monthly',
     features: [
       'Programme sur mesure quotidien',
       'Suivi quotidien personnalisé',

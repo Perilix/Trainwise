@@ -1,0 +1,90 @@
+<div class="modal-overlay" (click)="close.emit()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+
+    <!-- Handle -->
+    <div class="modal-handle"></div>
+
+    <!-- Header -->
+    <div class="modal-header">
+      <h2 class="modal-title">Choisir un forfait</h2>
+      <p class="modal-sub">Sélectionne ton accompagnement coach</p>
+      <button class="btn-close" (click)="close.emit()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- Package cards -->
+    <div class="packages-list">
+      @for (pkg of packages; track pkg.type) {
+        <button
+          class="pkg-card"
+          [class.pkg-selected]="selected() === pkg.type"
+          [class.pkg-featured]="!!pkg.badge"
+          (click)="select(pkg.type)">
+
+          @if (pkg.badge) {
+            <div class="pkg-badge" [style.background]="pkg.gradient">{{ pkg.badge }}</div>
+          }
+
+          <div class="pkg-left">
+            <div class="pkg-icon" [style.background]="pkg.gradient">
+              <i [class]="pkg.icon"></i>
+            </div>
+            <div>
+              <p class="pkg-name">{{ pkg.name }}</p>
+              <p class="pkg-price">{{ pkg.price }}€<span>/mois</span></p>
+            </div>
+          </div>
+
+          <div class="pkg-radio" [class.checked]="selected() === pkg.type">
+            @if (selected() === pkg.type) {
+              <i class="fa-solid fa-circle-check"></i>
+            } @else {
+              <i class="fa-regular fa-circle"></i>
+            }
+          </div>
+
+        </button>
+      }
+    </div>
+
+    <!-- Features du forfait sélectionné -->
+    <div class="selected-features">
+      <p class="features-label">Inclus dans le forfait {{ selectedPackage.name }} :</p>
+      <ul>
+        @for (feature of selectedPackage.features; track feature) {
+          <li><i class="fa-solid fa-check" [style.color]="selectedPackage.color"></i> {{ feature }}</li>
+        }
+      </ul>
+    </div>
+
+    <!-- Messages -->
+    @if (errorMessage()) {
+      <p class="msg-error"><i class="fa-solid fa-triangle-exclamation"></i> {{ errorMessage() }}</p>
+    }
+    @if (successMessage()) {
+      <p class="msg-success"><i class="fa-solid fa-circle-check"></i> {{ successMessage() }}</p>
+    }
+
+    <!-- CTA -->
+    <button class="btn-subscribe" [disabled]="isLoading()" (click)="subscribe()"
+      [style.background]="selectedPackage.gradient">
+      @if (isLoading()) {
+        <i class="fa-solid fa-circle-notch fa-spin"></i>
+      } @else if (!isNative) {
+        <i class="fa-solid fa-message"></i> Contacter le coach
+      } @else {
+        <i class="fa-solid fa-rocket"></i>
+        S'abonner · {{ selectedPackage.price }}€/mois
+      }
+    </button>
+
+    @if (!isNative) {
+      <p class="web-note">
+        <i class="fa-solid fa-mobile-screen"></i>
+        Le paiement s'effectue depuis l'application mobile.
+      </p>
+    }
+
+  </div>
+</div>

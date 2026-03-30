@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { Router } from '@angular/router';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
+import { CoachSubscriptionModalComponent } from '../../components/coach-subscription-modal/coach-subscription-modal.component';
 import { ChatService, PartnerCoachPreview } from '../../services/chat.service';
 import { COACH_PACKAGES } from '../../interfaces/package.interface';
 import { AthleteService } from '../../services/athlete.service';
@@ -9,7 +10,7 @@ import { AthleteService } from '../../services/athlete.service';
 @Component({
   selector: 'app-discover-coach',
   standalone: true,
-  imports: [CommonModule, NavbarComponent],
+  imports: [CommonModule, NavbarComponent, CoachSubscriptionModalComponent],
   templateUrl: './discover-coach.component.html',
   styleUrl: './discover-coach.component.scss'
 })
@@ -18,6 +19,7 @@ export class DiscoverCoachComponent implements OnInit {
   isLoading = signal(true);
   error = signal<string | null>(null);
   isJoining = signal(false);
+  showSubscriptionModal = signal(false);
   readonly packages = [COACH_PACKAGES.bronze, COACH_PACKAGES.silver, COACH_PACKAGES.gold];
 
   constructor(

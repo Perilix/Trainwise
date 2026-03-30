@@ -1,9 +1,10 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { RunService, Run } from '../../services/run.service';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 import { TourTooltipComponent } from '../../components/tour-tooltip/tour-tooltip.component';
+import { SubscriptionService } from '../../services/subscription.service';
 
 @Component({
   selector: 'app-home',
@@ -13,6 +14,7 @@ import { TourTooltipComponent } from '../../components/tour-tooltip/tour-tooltip
   styleUrl: './home.component.scss'
 })
 export class HomeComponent {
+  private subscriptionService = inject(SubscriptionService);
   // Form data
   runData = {
     date: this.getTodayDate(),
@@ -72,7 +74,11 @@ export class HomeComponent {
       },
       error: (err) => {
         this.isLoading.set(false);
-        this.error.set('Erreur lors de l\'envoi. Vérifie que le backend est lancé.');
+        if (err.status === 402) {
+          this.subscriptionService.openPaywall('analyze');
+        } else {
+          this.error.set('Erreur lors de l\'envoi. Vérifie que le backend est lancé.');
+        }
         console.error(err);
       }
     });

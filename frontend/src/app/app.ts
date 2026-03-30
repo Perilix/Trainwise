@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
@@ -8,15 +8,17 @@ import { BottomNavComponent } from './components/bottom-nav/bottom-nav.component
 import { CoachBottomNavComponent } from './components/coach-bottom-nav/coach-bottom-nav.component';
 import { CoachInvitationModalComponent } from './components/coach-invitation-modal/coach-invitation-modal.component';
 import { OnboardingComponent } from './components/onboarding/onboarding.component';
+import { PaywallComponent } from './components/paywall/paywall.component';
 import { AuthService } from './services/auth.service';
 import { CoachInvitationModalService } from './services/coach-invitation-modal.service';
 import { OnboardingService } from './services/onboarding.service';
+import { SubscriptionService } from './services/subscription.service';
 import { AthleteService } from './services/athlete.service';
 import { PushNotificationService } from './services/push-notification.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, BottomNavComponent, CoachBottomNavComponent, CoachInvitationModalComponent, OnboardingComponent],
+  imports: [RouterOutlet, BottomNavComponent, CoachBottomNavComponent, CoachInvitationModalComponent, OnboardingComponent, PaywallComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
@@ -24,6 +26,7 @@ export class App {
   authService = inject(AuthService);
   invitationModalService = inject(CoachInvitationModalService);
   onboardingService = inject(OnboardingService);
+  subscriptionService = inject(SubscriptionService);
   private athleteService = inject(AthleteService);
   private router = inject(Router);
   private pushNotificationService = inject(PushNotificationService);
@@ -52,12 +55,19 @@ export class App {
     this.initSafeAreas();
     this.setupKeyboardAdjustment();
 
-    // Si l'utilisateur est déjà connecté (session persistée), initialiser les notifications push
-    if (this.authService.isAuthenticated()) {
-      this.pushNotificationService.initializePushNotifications().catch(err => {
-        console.error('Failed to initialize push notifications:', err);
-      });
-    }
+    // Initialiser les services natifs quand l'utilisateur se connecte
+    let revenueCatInitialized = false;
+    effect(() => {
+      const user = this.authService.currentUser();
+      if (user && !revenueCatInitialized) {
+        revenueCatInitialized = true;
+        this.pushNotificationService.initializePushNotifications().catch(() => {});
+        this.subscriptionService.initRevenueCat(user.id);
+      }
+      if (!user) {
+        revenueCatInitialized = false;
+      }
+    });
   }
 
   private setupKeyboardAdjustment() {

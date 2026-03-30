@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -7,6 +7,7 @@ import { RunService, Run } from '../../services/run.service';
 import { StrengthSession, StrengthSessionType, SESSION_TYPE_LABELS as STRENGTH_SESSION_LABELS } from '../../interfaces/strength.interfaces';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 import { TourTooltipComponent, TourStep } from '../../components/tour-tooltip/tour-tooltip.component';
+import { SubscriptionService } from '../../services/subscription.service';
 
 interface CalendarDay {
   date: Date;
@@ -122,6 +123,8 @@ export class PlanningComponent implements OnInit {
   sessionTypes = this.runningSessionTypes;
 
   weekDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+
+  private subscriptionService = inject(SubscriptionService);
 
   constructor(
     private planningService: PlanningService,
@@ -299,7 +302,11 @@ export class PlanningComponent implements OnInit {
       },
       error: (err) => {
         this.isGenerating.set(false);
-        this.error.set(err.error?.error || 'Erreur lors de la génération');
+        if (err.status === 402) {
+          this.subscriptionService.openPaywall('generate');
+        } else {
+          this.error.set(err.error?.error || 'Erreur lors de la génération');
+        }
         console.error(err);
       }
     });

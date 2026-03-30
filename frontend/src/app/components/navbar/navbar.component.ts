@@ -7,11 +7,12 @@ import { NotificationService } from '../../services/notification.service';
 import { FriendService } from '../../services/friend.service';
 import { SocketService } from '../../services/socket.service';
 import { NotificationDropdownComponent } from '../notification-dropdown/notification-dropdown.component';
+import { TraincoinBadgeComponent } from '../traincoin-badge/traincoin-badge.component';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, NotificationDropdownComponent],
+  imports: [CommonModule, RouterLink, RouterLinkActive, NotificationDropdownComponent, TraincoinBadgeComponent],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.scss'
 })

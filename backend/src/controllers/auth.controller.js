@@ -53,7 +53,10 @@ exports.register = async (req, res) => {
         bio: user.bio,
         vma: user.vma,
         fcmax: user.fcmax,
-        hasCompletedOnboarding: user.hasCompletedOnboarding
+        hasCompletedOnboarding: user.hasCompletedOnboarding,
+        trainCoins: user.trainCoins,
+        subscriptionStatus: user.subscriptionStatus,
+        subscriptionExpiry: user.subscriptionExpiry
       }
     });
   } catch (error) {
@@ -111,7 +114,10 @@ exports.login = async (req, res) => {
         bio: user.bio,
         vma: user.vma,
         fcmax: user.fcmax,
-        hasCompletedOnboarding: user.hasCompletedOnboarding
+        hasCompletedOnboarding: user.hasCompletedOnboarding,
+        trainCoins: user.trainCoins,
+        subscriptionStatus: user.subscriptionStatus,
+        subscriptionExpiry: user.subscriptionExpiry
       }
     });
   } catch (error) {
@@ -150,6 +156,9 @@ exports.getMe = async (req, res) => {
       vma: user.vma,
       fcmax: user.fcmax,
       hasCompletedOnboarding: user.hasCompletedOnboarding,
+      trainCoins: user.trainCoins,
+      subscriptionStatus: user.subscriptionStatus,
+      subscriptionExpiry: user.subscriptionExpiry,
       createdAt: user.createdAt
     });
   } catch (error) {
@@ -225,6 +234,9 @@ exports.updateProfile = async (req, res) => {
       vma: user.vma,
       fcmax: user.fcmax,
       hasCompletedOnboarding: user.hasCompletedOnboarding,
+      trainCoins: user.trainCoins,
+      subscriptionStatus: user.subscriptionStatus,
+      subscriptionExpiry: user.subscriptionExpiry,
       createdAt: user.createdAt
     });
   } catch (error) {

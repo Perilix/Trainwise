@@ -1,0 +1,288 @@
+$coin-gold: #F59E0B;
+$coin-dark: #D97706;
+$pro-color: #003554;
+
+// -----------------------------------------------
+// Overlay
+// -----------------------------------------------
+.paywall-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 11000;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: var(--safe-bottom, 0px);
+  animation: fadeIn 0.25s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+// -----------------------------------------------
+// Card
+// -----------------------------------------------
+.paywall-card {
+  background: #F6F4F0;
+  border-radius: 28px 28px 0 0;
+  width: 100%;
+  max-width: 480px;
+  padding: 0 20px 28px;
+  position: relative;
+  animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(80px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.btn-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  background: #e5e5e5;
+  border: none;
+  border-radius: 50%;
+  color: #666;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+
+  &:active { background: #d0d0d0; }
+}
+
+// -----------------------------------------------
+// Coin hero animé
+// -----------------------------------------------
+.coin-hero {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 28px 0 16px;
+  position: relative;
+}
+
+.coin-ring {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, $coin-gold, $coin-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 8px rgba(245, 158, 11, 0.15), 0 8px 24px rgba(245, 158, 11, 0.3);
+  animation: pulseCoin 2s ease-in-out infinite;
+}
+
+.coin {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FCD34D, $coin-gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  i {
+    font-size: 1.6rem;
+    color: #fff;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+  }
+}
+
+@keyframes pulseCoin {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 8px rgba(245, 158, 11, 0.15), 0 8px 24px rgba(245, 158, 11, 0.3); }
+  50% { transform: scale(1.05); box-shadow: 0 0 0 12px rgba(245, 158, 11, 0.1), 0 12px 32px rgba(245, 158, 11, 0.4); }
+}
+
+.coin-sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.sparkle {
+  position: absolute;
+  color: $coin-gold;
+  font-size: 0.6rem;
+  animation: sparkleAnim 2s ease-in-out infinite;
+
+  &.s1 { top: 20px; left: calc(50% - 30px); animation-delay: 0s; }
+  &.s2 { top: 28px; right: calc(50% - 40px); animation-delay: 0.6s; }
+  &.s3 { bottom: 20px; left: calc(50% + 20px); animation-delay: 1.2s; }
+}
+
+@keyframes sparkleAnim {
+  0%, 100% { opacity: 0; transform: scale(0.5); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+// -----------------------------------------------
+// Texte
+// -----------------------------------------------
+.paywall-title {
+  font-family: 'GulfsDisplay', serif;
+  font-size: 1.5rem;
+  color: #003554;
+  margin: 0 0 8px;
+  text-align: center;
+}
+
+.paywall-sub {
+  color: #555;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  text-align: center;
+  margin: 0 0 20px;
+  font-family: 'Poppins', sans-serif;
+
+  strong { color: #003554; }
+}
+
+// -----------------------------------------------
+// Options
+// -----------------------------------------------
+.paywall-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.option-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 16px 14px;
+  position: relative;
+  border: 2px solid transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.option-pro {
+  border-color: $pro-color;
+}
+
+.option-badge {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: $pro-color;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  padding: 3px 10px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.option-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.option-icon {
+  font-size: 1.2rem;
+  color: $pro-color;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+
+  .option-coins & { color: $coin-gold; }
+}
+
+.option-name {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #003554;
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+}
+
+.option-desc {
+  font-size: 0.72rem;
+  color: #888;
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+}
+
+.option-price {
+  font-family: 'GulfsDisplay', serif;
+  font-size: 1.4rem;
+  color: #003554;
+  line-height: 1;
+
+  span {
+    font-size: 0.75rem;
+    font-family: 'Poppins', sans-serif;
+    color: #888;
+  }
+}
+
+.btn-pro,
+.btn-coins {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  border-radius: 12px;
+  padding: 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+
+  i { font-size: 0.78rem; }
+
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+  &:active:not(:disabled) { transform: scale(0.97); }
+}
+
+.btn-pro {
+  background: $pro-color;
+  color: #fff;
+}
+
+.btn-coins {
+  background: linear-gradient(135deg, $coin-gold, $coin-dark);
+  color: #fff;
+}
+
+// -----------------------------------------------
+// Messages
+// -----------------------------------------------
+.paywall-error {
+  text-align: center;
+  color: #ef4444;
+  font-size: 0.8rem;
+  font-family: 'Poppins', sans-serif;
+  margin: 0 0 8px;
+
+  i { margin-right: 4px; }
+}
+
+.paywall-web-note {
+  text-align: center;
+  color: #999;
+  font-size: 0.75rem;
+  font-family: 'Poppins', sans-serif;
+  margin: 0;
+
+  i { margin-right: 4px; }
+}

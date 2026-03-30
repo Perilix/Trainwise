@@ -129,6 +129,25 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  // TrainCoins & abonnement
+  trainCoins: {
+    type: Number,
+    default: 10,
+    min: 0
+  },
+  subscriptionStatus: {
+    type: String,
+    enum: ['free', 'pro'],
+    default: 'free'
+  },
+  subscriptionExpiry: {
+    type: Date,
+    default: null
+  },
+  revenueCatUserId: {
+    type: String,
+    default: null
+  },
   // Profil muscu
   strengthFrequency: {
     type: Number,

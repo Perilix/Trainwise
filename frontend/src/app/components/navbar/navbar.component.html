@@ -78,6 +78,11 @@
       </div>
     </div>
 
+    <!-- Mobile: TrainCoins badge (athletes only) -->
+    @if (!authService.isCoach()) {
+      <app-traincoin-badge class="mobile-only mobile-coins"></app-traincoin-badge>
+    }
+
     <!-- Mobile: Notifications à droite -->
     <app-notification-dropdown class="mobile-notification mobile-only"></app-notification-dropdown>
   </div>

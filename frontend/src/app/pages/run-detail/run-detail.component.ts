@@ -1,8 +1,9 @@
-import { Component, OnInit, signal, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, inject, signal, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { RunService, Run } from '../../services/run.service';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
+import { SubscriptionService } from '../../services/subscription.service';
 import * as L from 'leaflet';
 
 // Fix Leaflet default icon issue
@@ -30,6 +31,7 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   feelingSaved = signal(false);
 
   private map: L.Map | null = null;
+  private subscriptionService = inject(SubscriptionService);
 
   constructor(
     private route: ActivatedRoute,
@@ -174,6 +176,9 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
       },
       error: (err) => {
         this.isAnalyzing.set(false);
+        if (err.status === 402) {
+          this.subscriptionService.openPaywall('analyze');
+        }
         console.error(err);
       }
     });

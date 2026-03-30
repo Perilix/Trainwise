@@ -1,0 +1,119 @@
+<app-navbar></app-navbar>
+
+<div class="shop-page">
+
+  <!-- Header -->
+  <div class="shop-header">
+    <button class="btn-back" (click)="goBack()">
+      <i class="fa-solid fa-arrow-left"></i>
+    </button>
+    <h1 class="shop-title">Boutique</h1>
+    <div class="coins-current">
+      <i class="fa-solid fa-bolt"></i>
+      <span>{{ coins }} TrainCoin{{ coins > 1 ? 's' : '' }}</span>
+    </div>
+  </div>
+
+  <!-- Pro status banner -->
+  @if (isPro) {
+    <div class="pro-banner">
+      <i class="fa-solid fa-crown"></i>
+      <span>Tu es abonné <strong>Trainwise Pro</strong> — IA illimitée activée !</span>
+    </div>
+  }
+
+  <!-- Messages -->
+  @if (errorMessage()) {
+    <p class="msg-error"><i class="fa-solid fa-triangle-exclamation"></i> {{ errorMessage() }}</p>
+  }
+  @if (successMessage()) {
+    <p class="msg-success"><i class="fa-solid fa-circle-check"></i> {{ successMessage() }}</p>
+  }
+
+  <!-- Web notice -->
+  @if (!isNative) {
+    <div class="web-notice">
+      <i class="fa-solid fa-mobile-screen"></i>
+      <p>Les achats sont disponibles depuis l'application mobile iOS ou Android.</p>
+    </div>
+  }
+
+  <!-- Pro subscription card -->
+  <div class="product-card card-pro" [class.card-owned]="isPro">
+    <div class="card-badge">Recommandé</div>
+    <div class="card-icon-wrap">
+      <i class="fa-solid fa-crown"></i>
+    </div>
+    <div class="card-content">
+      <h2 class="card-name">Trainwise Pro</h2>
+      <p class="card-desc">Accès illimité à toutes les fonctionnalités IA — analyses de runs, génération de plans, conseils personnalisés.</p>
+      <ul class="card-features">
+        <li><i class="fa-solid fa-check"></i> IA illimitée</li>
+        <li><i class="fa-solid fa-check"></i> Plans personnalisés premium</li>
+        <li><i class="fa-solid fa-check"></i> Analyses détaillées</li>
+        <li><i class="fa-solid fa-check"></i> Priorité support</li>
+      </ul>
+    </div>
+    <div class="card-footer">
+      <div class="card-price">9,99€<span>/mois</span></div>
+      @if (isPro) {
+        <button class="btn-owned" disabled>
+          <i class="fa-solid fa-circle-check"></i> Actif
+        </button>
+      } @else if (isNative) {
+        <button class="btn-buy btn-buy-pro" [disabled]="isLoadingPro()" (click)="subscribePro()">
+          @if (isLoadingPro()) {
+            <i class="fa-solid fa-circle-notch fa-spin"></i>
+          } @else {
+            <i class="fa-solid fa-rocket"></i> S'abonner
+          }
+        </button>
+      } @else {
+        <button class="btn-buy btn-buy-pro" disabled>
+          <i class="fa-solid fa-mobile-screen"></i> App mobile
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Coins pack card -->
+  <div class="product-card card-coins">
+    <div class="card-icon-wrap coins-icon">
+      <i class="fa-solid fa-bolt"></i>
+    </div>
+    <div class="card-content">
+      <h2 class="card-name">Pack TrainCoins</h2>
+      <p class="card-desc">Recharge ton solde pour utiliser les fonctionnalités IA à la carte — sans abonnement.</p>
+      <ul class="card-features">
+        <li><i class="fa-solid fa-bolt"></i> +20 TrainCoins</li>
+        <li><i class="fa-solid fa-magnifying-glass"></i> 1 coin = 1 analyse de run</li>
+        <li><i class="fa-solid fa-wand-magic-sparkles"></i> 3 coins = 1 plan IA</li>
+      </ul>
+    </div>
+    <div class="card-footer">
+      <div class="card-price">2,99€</div>
+      @if (isNative) {
+        <button class="btn-buy btn-buy-coins" [disabled]="isLoadingCoins()" (click)="buyCoins()">
+          @if (isLoadingCoins()) {
+            <i class="fa-solid fa-circle-notch fa-spin"></i>
+          } @else {
+            <i class="fa-solid fa-bolt"></i> Acheter
+          }
+        </button>
+      } @else {
+        <button class="btn-buy btn-buy-coins" disabled>
+          <i class="fa-solid fa-mobile-screen"></i> App mobile
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Restore purchases (Apple requirement) -->
+  @if (isNative) {
+    <button class="btn-restore" (click)="restorePurchases()">
+      <i class="fa-solid fa-arrow-rotate-left"></i>
+      Restaurer mes achats
+    </button>
+  }
+
+</div>

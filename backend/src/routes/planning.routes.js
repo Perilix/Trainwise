@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const planningController = require('../controllers/planning.controller');
 const { protect } = require('../middleware/auth.middleware');
+const checkAIAccess = require('../middleware/checkAIAccess');
 
 // Toutes les routes sont protégées
 router.use(protect);
@@ -9,8 +10,8 @@ router.use(protect);
 // Calendrier
 router.get('/calendar', planningController.getCalendarData);
 
-// Génération de plan IA
-router.post('/generate', planningController.generatePlan);
+// Génération de plan IA (coûte 3 TrainCoins)
+router.post('/generate', checkAIAccess(3), planningController.generatePlan);
 router.post('/confirm', planningController.confirmPlan);
 
 // CRUD séances planifiées

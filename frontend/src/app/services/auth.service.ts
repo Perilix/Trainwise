@@ -37,6 +37,9 @@ export interface User {
   vma?: number;
   fcmax?: number;
   hasCompletedOnboarding?: boolean;
+  trainCoins?: number;
+  subscriptionStatus?: 'free' | 'pro';
+  subscriptionExpiry?: string | null;
 }
 
 export interface UpdateProfileData {
@@ -151,6 +154,15 @@ export class AuthService {
 
   isAdmin(): boolean {
     return this.currentUser()?.role === 'admin';
+  }
+
+  updateLocalUser(updates: Partial<User>): void {
+    const current = this.currentUser();
+    if (current) {
+      const updated = { ...current, ...updates };
+      localStorage.setItem(this.USER_KEY, JSON.stringify(updated));
+      this.currentUser.set(updated);
+    }
   }
 
   updateProfile(data: UpdateProfileData): Observable<User> {

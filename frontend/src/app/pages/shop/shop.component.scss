@@ -1,0 +1,298 @@
+$coin-gold: #F59E0B;
+$coin-dark: #D97706;
+$pro-color: #003554;
+
+.shop-page {
+  padding: calc(env(safe-area-inset-top) + 60px) 16px 40px;
+  max-width: 500px;
+  margin: 0 auto;
+  font-family: 'Poppins', sans-serif;
+}
+
+// -----------------------------------------------
+// Header
+// -----------------------------------------------
+.shop-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.btn-back {
+  width: 36px;
+  height: 36px;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 50%;
+  color: $pro-color;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s;
+  &:active { background: #ddd; }
+}
+
+.shop-title {
+  font-family: 'GulfsDisplay', serif;
+  font-size: 1.6rem;
+  color: $pro-color;
+  margin: 0;
+  flex: 1;
+}
+
+.coins-current {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba($coin-gold, 0.12);
+  border: 1.5px solid rgba($coin-gold, 0.35);
+  border-radius: 20px;
+  padding: 5px 12px;
+
+  i { color: $coin-gold; font-size: 0.8rem; }
+  span {
+    color: $coin-gold;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+}
+
+// -----------------------------------------------
+// Pro banner
+// -----------------------------------------------
+.pro-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, $pro-color, #005080);
+  color: #fff;
+  border-radius: 14px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 0.85rem;
+
+  i { font-size: 1rem; color: $coin-gold; flex-shrink: 0; }
+  strong { font-weight: 700; }
+}
+
+// -----------------------------------------------
+// Messages
+// -----------------------------------------------
+.msg-error,
+.msg-success {
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  margin-bottom: 12px;
+  i { margin-right: 6px; }
+}
+
+.msg-error {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+.msg-success {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+// -----------------------------------------------
+// Web notice
+// -----------------------------------------------
+.web-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f8f8f6;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  color: #888;
+  font-size: 0.82rem;
+
+  i { font-size: 1.1rem; flex-shrink: 0; }
+  p { margin: 0; }
+}
+
+// -----------------------------------------------
+// Product cards
+// -----------------------------------------------
+.product-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 20px 18px 18px;
+  margin-bottom: 16px;
+  border: 2px solid #eee;
+  position: relative;
+}
+
+.card-pro {
+  border-color: $pro-color;
+}
+
+.card-coins {
+  border-color: rgba($coin-gold, 0.4);
+}
+
+.card-owned {
+  border-color: #16a34a;
+}
+
+.card-badge {
+  position: absolute;
+  top: -11px;
+  left: 20px;
+  background: $pro-color;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 3px 12px;
+  border-radius: 10px;
+}
+
+.card-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, $pro-color, #005080);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+
+  i {
+    color: $coin-gold;
+    font-size: 1.3rem;
+  }
+
+  &.coins-icon {
+    background: linear-gradient(135deg, $coin-gold, $coin-dark);
+    i { color: #fff; }
+  }
+}
+
+.card-name {
+  font-family: 'GulfsDisplay', serif;
+  font-size: 1.2rem;
+  color: $pro-color;
+  margin: 0 0 6px;
+}
+
+.card-desc {
+  font-size: 0.8rem;
+  color: #666;
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+
+.card-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: #444;
+
+    i {
+      color: $pro-color;
+      font-size: 0.7rem;
+      width: 14px;
+      text-align: center;
+
+      .card-coins & { color: $coin-gold; }
+    }
+  }
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.card-price {
+  font-family: 'GulfsDisplay', serif;
+  font-size: 1.5rem;
+  color: $pro-color;
+  line-height: 1;
+
+  span {
+    font-size: 0.75rem;
+    font-family: 'Poppins', sans-serif;
+    color: #888;
+  }
+}
+
+.btn-buy,
+.btn-owned {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 18px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+
+  i { font-size: 0.78rem; }
+
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+  &:active:not(:disabled) { transform: scale(0.97); }
+}
+
+.btn-buy-pro {
+  background: $pro-color;
+  color: #fff;
+}
+
+.btn-buy-coins {
+  background: linear-gradient(135deg, $coin-gold, $coin-dark);
+  color: #fff;
+}
+
+.btn-owned {
+  background: #dcfce7;
+  color: #16a34a;
+  cursor: default;
+}
+
+// -----------------------------------------------
+// Restore
+// -----------------------------------------------
+.btn-restore {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 0.8rem;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  padding: 12px;
+  transition: color 0.2s;
+
+  i { font-size: 0.75rem; }
+  &:active { color: $pro-color; }
+}

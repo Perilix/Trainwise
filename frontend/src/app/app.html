@@ -27,3 +27,7 @@
     (skipped)="onOnboardingDone()"
   ></app-onboarding>
 }
+
+@if (subscriptionService.showPaywall()) {
+  <app-paywall></app-paywall>
+}
