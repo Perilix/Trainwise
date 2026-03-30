@@ -662,14 +662,14 @@
 // Modal styles - utilise les styles globaux de .modal-overlay et .modal
 
 .modal-header {
-  border-radius: 28px 28px 0 0;
-  background: #003554;
-  padding: 14px 20px 18px;
+  padding: 16px 20px 20px;
+  position: relative;
 
   h2 {
-    color: #fff;
+    margin: 0;
     font-family: 'GulfsDisplay', serif;
-    font-size: 1.2rem;
+    font-size: 1.25rem;
+    color: #003554;
     text-transform: capitalize;
   }
 
@@ -677,33 +677,36 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    position: absolute;
+    top: 12px;
+    right: 16px;
   }
 
   .btn-add {
     width: 32px;
     height: 32px;
     border: none;
-    background: rgba(255, 255, 255, 0.2);
+    background: #003554;
     color: #fff;
-    font-size: 1.25rem;
-    font-weight: 500;
+    font-size: 1.3rem;
+    font-weight: 400;
     border-radius: 50%;
     cursor: pointer;
     transition: background 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
-
-    &:hover { background: rgba(255, 255, 255, 0.3); }
+    line-height: 1;
+    &:hover { background: #00a6fb; }
   }
 
   .modal-close {
     width: 32px;
     height: 32px;
     border: none;
-    background: rgba(255, 255, 255, 0.15);
-    font-size: 1.4rem;
-    color: #fff;
+    background: #e5e5e5;
+    font-size: 1.3rem;
+    color: #666;
     cursor: pointer;
     border-radius: 50%;
     transition: background 0.2s;
@@ -711,8 +714,7 @@
     align-items: center;
     justify-content: center;
     line-height: 1;
-
-    &:hover { background: rgba(255, 255, 255, 0.25); }
+    &:hover { background: #d0d0d0; }
   }
 }
 
@@ -1260,14 +1262,10 @@
 .generate-modal {
   max-width: 420px;
 
-  .modal-header {
-    background: #003554; // keep same dark blue for consistency
-
-    h2 {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
+  .modal-header h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   .form-group {
