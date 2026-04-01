@@ -1,7 +1,7 @@
 {
-  "name": "runiq-admin",
+  "name": "trainwise-admin",
   "version": "1.0.0",
-  "description": "RunIQ Back-office admin panel",
+  "description": "Trainwise Back-office admin panel",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",

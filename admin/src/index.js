@@ -28,9 +28,9 @@ app.use('/', authRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/users', usersRoutes);
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/runiq')
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/trainwise')
   .then(() => {
     console.log('Connected to MongoDB');
-    app.listen(PORT, () => console.log(`RunIQ Admin running on port ${PORT}`));
+    app.listen(PORT, () => console.log(`Trainwise Admin running on port ${PORT}`));
   })
   .catch(err => console.error('MongoDB connection error:', err));
