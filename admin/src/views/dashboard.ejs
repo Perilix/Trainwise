@@ -1,0 +1,144 @@
+<%- include('_header', { title: 'Dashboard', page: 'dashboard' }) %>
+
+<!-- Stats principales -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-label">Utilisateurs total</div>
+    <div class="stat-value"><%= stats.totalUsers %></div>
+    <div class="stat-sub">+<%= stats.newUsersThisWeek %> cette semaine</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Abonnés Pro</div>
+    <div class="stat-value green"><%= stats.proUsers %></div>
+    <div class="stat-sub"><%= stats.conversionRate %>% de conversion</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Coaches</div>
+    <div class="stat-value purple"><%= stats.coaches %></div>
+    <div class="stat-sub"><%= stats.athletes %> athlètes</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Nouveaux ce mois</div>
+    <div class="stat-value blue"><%= stats.newUsersThisMonth %></div>
+    <div class="stat-sub">inscriptions</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Sorties enregistrées</div>
+    <div class="stat-value orange"><%= stats.totalRuns.toLocaleString('fr-FR') %></div>
+    <div class="stat-sub"><%= stats.totalKm.toLocaleString('fr-FR') %> km au total</div>
+  </div>
+</div>
+
+<div class="two-cols">
+  <!-- Graphe inscriptions -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Inscriptions — 6 derniers mois</span>
+    </div>
+    <div class="card-body">
+      <div class="chart-container">
+        <canvas id="chartUsers"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Répartition -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Répartition</span>
+    </div>
+    <div class="card-body">
+      <% const items = [
+        { label: 'Utilisateurs free', value: stats.totalUsers - stats.proUsers - stats.coaches, color: '#94a3b8' },
+        { label: 'Abonnés Pro', value: stats.proUsers, color: '#10b981' },
+        { label: 'Coaches', value: stats.coaches, color: '#8b5cf6' }
+      ]; %>
+      <% items.forEach(item => { %>
+        <div style="margin-bottom: 14px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+            <span style="font-size:0.82rem;color:#64748b;"><%= item.label %></span>
+            <span style="font-size:0.82rem;font-weight:600;color:#003554;"><%= item.value %></span>
+          </div>
+          <div style="height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden;">
+            <div style="height:100%;background:<%= item.color %>;border-radius:3px;width:<%= stats.totalUsers > 0 ? Math.round((item.value / stats.totalUsers) * 100) : 0 %>%;transition:width 0.5s;"></div>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+</div>
+
+<!-- Derniers inscrits -->
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">Derniers inscrits</span>
+    <a href="/users" class="btn btn-secondary" style="font-size:0.78rem;padding:5px 12px;">Voir tous</a>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Nom</th>
+        <th>Email</th>
+        <th>Rôle</th>
+        <th>Abonnement</th>
+        <th>Inscrit le</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% recentUsers.forEach(u => { %>
+      <tr>
+        <td>
+          <a href="/users/<%= u._id %>" class="table-link">
+            <%= u.firstName || '' %> <%= u.lastName || '' %>
+            <% if (!u.firstName && !u.lastName) { %><span class="text-muted">—</span><% } %>
+          </a>
+        </td>
+        <td class="text-muted text-small"><%= u.email %></td>
+        <td>
+          <span class="badge badge-<%= u.role %>"><%= u.role %></span>
+        </td>
+        <td>
+          <span class="badge badge-<%= u.subscriptionStatus %>"><%= u.subscriptionStatus === 'pro' ? 'Pro' : 'Free' %></span>
+        </td>
+        <td class="text-muted text-small">
+          <%= new Date(u.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) %>
+        </td>
+      </tr>
+      <% }); %>
+      <% if (!recentUsers.length) { %>
+      <tr><td colspan="5" style="text-align:center;padding:32px;color:#94a3b8;">Aucun utilisateur</td></tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  const ctx = document.getElementById('chartUsers').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: <%- JSON.stringify(monthlyLabels) %>,
+      datasets: [{
+        label: 'Inscriptions',
+        data: <%- JSON.stringify(monthlyCounts) %>,
+        backgroundColor: 'rgba(0, 166, 251, 0.2)',
+        borderColor: '#00a6fb',
+        borderWidth: 2,
+        borderRadius: 6,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: 'Poppins', size: 11 }, color: '#94a3b8' } },
+        y: { grid: { color: '#f1f5f9' }, ticks: { font: { family: 'Poppins', size: 11 }, color: '#94a3b8', precision: 0 }, beginAtZero: true }
+      }
+    }
+  });
+</script>
+
+<%- include('_footer') %>

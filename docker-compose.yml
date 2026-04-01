@@ -55,6 +55,26 @@ services:
     networks:
       - runiq-network
 
+  # Admin Back-office
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+    container_name: runiq-admin
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - MONGODB_URI=mongodb://mongodb:27017/runiq
+      - SESSION_SECRET=${SESSION_SECRET:-admin-session-secret-change-me}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@runiq.fr}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+    depends_on:
+      - mongodb
+    networks:
+      - runiq-network
+
   # Frontend Angular
   frontend:
     build:
