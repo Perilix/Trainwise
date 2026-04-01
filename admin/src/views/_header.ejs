@@ -5,35 +5,45 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title || 'Trainwise Admin' %></title>
   <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous">
 </head>
 <body>
 <div class="layout">
-  <aside class="sidebar">
+
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
       <div class="brand-title">Train<span>wise</span></div>
       <div class="brand-sub">Back-office</div>
     </div>
     <nav class="sidebar-nav">
-      <span class="nav-label">Navigation</span>
+      <span class="nav-section-label">Menu</span>
       <a href="/dashboard" class="nav-item <%= page === 'dashboard' ? 'active' : '' %>">
-        <span class="nav-icon">📊</span> Dashboard
+        <i class="fa-solid fa-chart-pie"></i> Dashboard
       </a>
       <a href="/users" class="nav-item <%= page === 'users' ? 'active' : '' %>">
-        <span class="nav-icon">👥</span> Utilisateurs
+        <i class="fa-solid fa-users"></i> Utilisateurs
       </a>
       <a href="/users?role=coach" class="nav-item <%= page === 'coaches' ? 'active' : '' %>">
-        <span class="nav-icon">🏃</span> Coaches
+        <i class="fa-solid fa-person-running"></i> Coaches
       </a>
     </nav>
     <div class="sidebar-footer">
       <a href="/logout" class="btn-logout">
-        <span>🚪</span> Déconnexion
+        <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
       </a>
     </div>
   </aside>
+
   <main class="main">
     <div class="topbar">
-      <div class="topbar-title"><%= title || 'Trainwise Admin' %></div>
-      <div class="topbar-meta">Trainwise &mdash; Panneau d'administration</div>
+      <div class="topbar-left">
+        <button class="hamburger" id="hamburger" onclick="toggleSidebar()" aria-label="Menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="topbar-title"><%= title || 'Trainwise Admin' %></div>
+      </div>
+      <div class="topbar-meta">Trainwise Admin</div>
     </div>
     <div class="content">

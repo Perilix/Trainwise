@@ -1,114 +1,120 @@
-<%- include('_header', { title: 'Utilisateurs', page: role === 'coach' ? 'coaches' : 'users' }) %>
+<%- include('_header', { title: role === 'coach' ? 'Coaches' : 'Utilisateurs', page: role === 'coach' ? 'coaches' : 'users' }) %>
+
+<div class="page-header">
+  <h1><%= role === 'coach' ? 'Coaches' : 'Utilisateurs' %></h1>
+  <p><%= total %> résultat<%= total > 1 ? 's' : '' %><% if (search || role || subscription) { %> &mdash; filtrés<% } %></p>
+</div>
 
 <!-- Filtres -->
 <form method="GET" action="/users">
   <div class="filters">
-    <input
-      type="text"
-      name="search"
-      class="search-input"
-      placeholder="Rechercher par nom ou email..."
-      value="<%= search %>"
-    >
+    <div class="search-wrap">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" name="search" class="search-input" placeholder="Rechercher par nom ou email…" value="<%= search %>">
+    </div>
     <select name="role" class="filter-select">
       <option value="">Tous les rôles</option>
-      <option value="user" <%= role === 'user' ? 'selected' : '' %>>Utilisateurs</option>
+      <option value="user"  <%= role === 'user'  ? 'selected' : '' %>>Utilisateurs</option>
       <option value="coach" <%= role === 'coach' ? 'selected' : '' %>>Coaches</option>
       <option value="admin" <%= role === 'admin' ? 'selected' : '' %>>Admins</option>
     </select>
     <select name="subscription" class="filter-select">
-      <option value="">Tous les abonnements</option>
+      <option value="">Tous abonnements</option>
       <option value="free" <%= subscription === 'free' ? 'selected' : '' %>>Free</option>
-      <option value="pro" <%= subscription === 'pro' ? 'selected' : '' %>>Pro</option>
+      <option value="pro"  <%= subscription === 'pro'  ? 'selected' : '' %>>Pro</option>
     </select>
-    <button type="submit" class="btn btn-primary">Filtrer</button>
+    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filtrer</button>
     <% if (search || role || subscription) { %>
-      <a href="/users" class="btn btn-secondary">Réinitialiser</a>
+      <a href="/users" class="btn btn-secondary"><i class="fa-solid fa-xmark"></i> Réinitialiser</a>
     <% } %>
-    <span class="text-muted text-small" style="margin-left:auto;"><%= total %> résultat<%= total > 1 ? 's' : '' %></span>
   </div>
 </form>
 
 <div class="card">
-  <table>
-    <thead>
-      <tr>
-        <th>Utilisateur</th>
-        <th>Rôle</th>
-        <th>Abonnement</th>
-        <th>TrainCoins</th>
-        <th>Strava</th>
-        <th>Onboarding</th>
-        <th>Inscrit le</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% users.forEach(u => { %>
-      <tr>
-        <td>
-          <a href="/users/<%= u._id %>" class="table-link" style="display:flex;align-items:center;gap:10px;">
-            <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#00a6fb,#0582ca);display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.8rem;font-weight:700;flex-shrink:0;overflow:hidden;">
-              <% if (u.profilePicture) { %>
-                <img src="<%= u.profilePicture %>" style="width:100%;height:100%;object-fit:cover;" alt="">
-              <% } else { %>
-                <%= (u.firstName || u.email || '?')[0].toUpperCase() %>
-              <% } %>
-            </div>
-            <div>
-              <div style="font-weight:500;color:#003554;">
-                <%= u.firstName || '' %> <%= u.lastName || '' %>
-                <% if (!u.firstName && !u.lastName) { %><span class="text-muted">Sans nom</span><% } %>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Utilisateur</th>
+          <th>Rôle</th>
+          <th>Abonnement</th>
+          <th>TrainCoins</th>
+          <th>Strava</th>
+          <th>Onboarding</th>
+          <th>Inscrit le</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% users.forEach(u => { %>
+        <tr>
+          <td>
+            <a href="/users/<%= u._id %>" class="table-link" style="display:flex;align-items:center;gap:10px;">
+              <div style="width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#00a6fb,#0582ca);display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.78rem;font-weight:700;flex-shrink:0;overflow:hidden;">
+                <% if (u.profilePicture) { %>
+                  <img src="<%= u.profilePicture %>" style="width:100%;height:100%;object-fit:cover;" alt="">
+                <% } else { %>
+                  <%= (u.firstName || u.email || '?')[0].toUpperCase() %>
+                <% } %>
               </div>
-              <div class="text-small text-muted"><%= u.email %></div>
+              <div>
+                <div style="font-weight:500;">
+                  <%= u.firstName || '' %> <%= u.lastName || '' %>
+                  <% if (!u.firstName && !u.lastName) { %><span class="text-muted">Sans nom</span><% } %>
+                </div>
+                <div class="text-small text-muted"><%= u.email %></div>
+              </div>
+            </a>
+          </td>
+          <td><span class="badge badge-<%= u.role %>"><%= u.role %></span></td>
+          <td><span class="badge badge-<%= u.subscriptionStatus %>"><%= u.subscriptionStatus === 'pro' ? '✦ Pro' : 'Free' %></span></td>
+          <td style="font-weight:600;color:var(--navy);">
+            <% if (u.trainCoins != null) { %>
+              <i class="fa-solid fa-coins" style="color:var(--warning);font-size:0.75rem;margin-right:4px;"></i><%= u.trainCoins %>
+            <% } else { %>—<% } %>
+          </td>
+          <td>
+            <% if (u.strava && u.strava.athleteId) { %>
+              <span class="strava-dot"><i class="fa-solid fa-circle-dot"></i> Connecté</span>
+            <% } else { %>
+              <span class="text-muted">—</span>
+            <% } %>
+          </td>
+          <td>
+            <% if (u.hasCompletedOnboarding) { %>
+              <span style="color:var(--success);font-size:0.8rem;font-weight:500;"><i class="fa-solid fa-circle-check"></i> Fait</span>
+            <% } else { %>
+              <span class="text-muted text-small"><i class="fa-solid fa-circle-half-stroke"></i> En cours</span>
+            <% } %>
+          </td>
+          <td class="text-muted text-small">
+            <%= new Date(u.createdAt).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' }) %>
+          </td>
+        </tr>
+        <% }); %>
+        <% if (!users.length) { %>
+        <tr>
+          <td colspan="7">
+            <div class="empty-state">
+              <i class="fa-solid fa-users-slash"></i>
+              <p>Aucun utilisateur trouvé</p>
             </div>
-          </a>
-        </td>
-        <td><span class="badge badge-<%= u.role %>"><%= u.role %></span></td>
-        <td><span class="badge badge-<%= u.subscriptionStatus %>"><%= u.subscriptionStatus === 'pro' ? '✦ Pro' : 'Free' %></span></td>
-        <td style="font-weight:600;color:#003554;"><%= u.trainCoins != null ? u.trainCoins : '—' %></td>
-        <td>
-          <% if (u.strava && u.strava.athleteId) { %>
-            <span style="color:#fc4c02;font-size:0.8rem;font-weight:600;">● Connecté</span>
-          <% } else { %>
-            <span class="text-muted text-small">—</span>
-          <% } %>
-        </td>
-        <td>
-          <% if (u.hasCompletedOnboarding) { %>
-            <span style="color:#10b981;font-size:0.8rem;">✓ Fait</span>
-          <% } else { %>
-            <span class="text-muted text-small">En cours</span>
-          <% } %>
-        </td>
-        <td class="text-muted text-small">
-          <%= new Date(u.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) %>
-        </td>
-      </tr>
-      <% }); %>
-      <% if (!users.length) { %>
-      <tr>
-        <td colspan="7">
-          <div class="empty-state">
-            <p>Aucun utilisateur trouvé</p>
-          </div>
-        </td>
-      </tr>
-      <% } %>
-    </tbody>
-  </table>
+          </td>
+        </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
 
-  <!-- Pagination -->
   <% if (pages > 1) { %>
   <div class="pagination">
-    <span class="pagination-info">Page <%= page %> / <%= pages %></span>
-    <a href="/users?search=<%= search %>&role=<%= role %>&subscription=<%= subscription %>&page=<%= Math.max(1, page - 1) %>"
-       class="page-btn <%= page <= 1 ? 'disabled' : '' %>">‹</a>
+    <span class="pagination-info">Page <%= page %> sur <%= pages %></span>
+    <a href="/users?search=<%= search %>&role=<%= role %>&subscription=<%= subscription %>&page=1" class="page-btn <%= page <= 1 ? 'disabled' : '' %>"><i class="fa-solid fa-angles-left"></i></a>
+    <a href="/users?search=<%= search %>&role=<%= role %>&subscription=<%= subscription %>&page=<%= Math.max(1, page - 1) %>" class="page-btn <%= page <= 1 ? 'disabled' : '' %>"><i class="fa-solid fa-angle-left"></i></a>
     <% for (let i = Math.max(1, page - 2); i <= Math.min(pages, page + 2); i++) { %>
-      <a href="/users?search=<%= search %>&role=<%= role %>&subscription=<%= subscription %>&page=<%= i %>"
-         class="page-btn <%= i === page ? 'active' : '' %>"><%= i %></a>
+      <a href="/users?search=<%= search %>&role=<%= role %>&subscription=<%= subscription %>&page=<%= i %>" class="page-btn <%= i === page ? 'active' : '' %>"><%= i %></a>
     <% } %>
-    <a href="/users?search=<%= search %>&role=<%= role %>&subscription=<%= subscription %>&page=<%= Math.min(pages, page + 1) %>"
-       class="page-btn <%= page >= pages ? 'disabled' : '' %>">›</a>
+    <a href="/users?search=<%= search %>&role=<%= role %>&subscription=<%= subscription %>&page=<%= Math.min(pages, page + 1) %>" class="page-btn <%= page >= pages ? 'disabled' : '' %>"><i class="fa-solid fa-angle-right"></i></a>
+    <a href="/users?search=<%= search %>&role=<%= role %>&subscription=<%= subscription %>&page=<%= pages %>" class="page-btn <%= page >= pages ? 'disabled' : '' %>"><i class="fa-solid fa-angles-right"></i></a>
   </div>
   <% } %>
 </div>

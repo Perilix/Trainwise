@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Trainwise Admin — Connexion</title>
   <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous">
 </head>
 <body>
 <div class="login-page">
@@ -15,7 +16,9 @@
     </div>
 
     <% if (error) { %>
-      <div class="alert alert-error">⚠️ <%= error %></div>
+      <div class="alert alert-error">
+        <i class="fa-solid fa-triangle-exclamation"></i> <%= error %>
+      </div>
     <% } %>
 
     <form method="POST" action="/login">
@@ -27,8 +30,8 @@
         <label class="form-label">Mot de passe</label>
         <input type="password" name="password" class="form-control" placeholder="••••••••" required>
       </div>
-      <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 11px;">
-        Se connecter
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:10px;">
+        <i class="fa-solid fa-right-to-bracket"></i> Se connecter
       </button>
     </form>
   </div>

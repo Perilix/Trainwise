@@ -1,16 +1,22 @@
-<%- include('_header', { title: (user.firstName || '') + ' ' + (user.lastName || user.email), page: 'users' }) %>
+<%- include('_header', { title: (user.firstName || user.email || 'Utilisateur'), page: 'users' }) %>
 
-<a href="/users" class="back-link">← Retour aux utilisateurs</a>
+<a href="/users" class="back-link">
+  <i class="fa-solid fa-arrow-left"></i> Retour aux utilisateurs
+</a>
 
 <% if (success) { %>
-  <div class="alert alert-success">✓ Utilisateur mis à jour avec succès</div>
+  <div class="alert alert-success">
+    <i class="fa-solid fa-circle-check"></i> Modifications enregistrées avec succès.
+  </div>
 <% } %>
 <% if (error) { %>
-  <div class="alert alert-error">⚠️ <%= error %></div>
+  <div class="alert alert-error">
+    <i class="fa-solid fa-triangle-exclamation"></i> <%= error %>
+  </div>
 <% } %>
 
-<!-- Header profil -->
-<div class="user-profile-header">
+<!-- Profile header -->
+<div class="profile-header">
   <div class="user-avatar-lg">
     <% if (user.profilePicture) { %>
       <img src="<%= user.profilePicture %>" alt="">
@@ -18,46 +24,54 @@
       <%= (user.firstName || user.email || '?')[0].toUpperCase() %>
     <% } %>
   </div>
-  <div class="user-profile-info">
+  <div class="profile-info">
     <h2>
       <%= user.firstName || '' %> <%= user.lastName || '' %>
       <% if (!user.firstName && !user.lastName) { %><span style="color:#94a3b8;font-weight:400;">Sans nom</span><% } %>
     </h2>
     <p>
-      <%= user.email %>
-      &nbsp;·&nbsp;
+      <i class="fa-solid fa-envelope" style="font-size:0.72rem;"></i> <%= user.email %>
       <span class="badge badge-<%= user.role %>"><%= user.role %></span>
-      &nbsp;
       <span class="badge badge-<%= user.subscriptionStatus %>"><%= user.subscriptionStatus === 'pro' ? '✦ Pro' : 'Free' %></span>
     </p>
-    <p style="margin-top:4px;">
-      Inscrit le <%= new Date(user.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) %>
-      <% if (user.phone) { %>&nbsp;·&nbsp;<%= user.phone %><% } %>
-    </p>
+    <div class="profile-meta">
+      <span><i class="fa-solid fa-calendar"></i> Inscrit le <%= new Date(user.createdAt).toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' }) %></span>
+      <% if (user.phone) { %><span><i class="fa-solid fa-phone"></i> <%= user.phone %></span><% } %>
+      <% if (user.strava && user.strava.athleteId) { %><span style="color:#fc4c02;"><i class="fa-solid fa-circle-dot"></i> Strava connecté</span><% } %>
+    </div>
   </div>
 </div>
 
 <!-- Mini stats -->
 <div class="user-mini-stats">
   <div class="mini-stat">
-    <div class="value"><%= runCount %></div>
-    <div class="label">Sorties</div>
+    <div class="mini-stat-icon stat-icon blue"><i class="fa-solid fa-route"></i></div>
+    <div class="mini-stat-content">
+      <div class="value"><%= runCount %></div>
+      <div class="label">Sorties</div>
+    </div>
   </div>
   <div class="mini-stat">
-    <div class="value"><%= totalKm %> km</div>
-    <div class="label">Distance totale</div>
+    <div class="mini-stat-icon stat-icon navy"><i class="fa-solid fa-ruler"></i></div>
+    <div class="mini-stat-content">
+      <div class="value"><%= totalKm %> km</div>
+      <div class="label">Total</div>
+    </div>
   </div>
   <div class="mini-stat">
-    <div class="value"><%= avgFeeling %><%= avgFeeling !== '-' ? '/10' : '' %></div>
-    <div class="label">Ressenti moyen</div>
+    <div class="mini-stat-icon stat-icon orange"><i class="fa-solid fa-heart-pulse"></i></div>
+    <div class="mini-stat-content">
+      <div class="value"><%= avgFeeling %><%= avgFeeling !== '-' ? '/10' : '' %></div>
+      <div class="label">Ressenti moy.</div>
+    </div>
   </div>
 </div>
 
 <div class="two-cols">
-  <!-- Formulaire d'édition -->
+  <!-- Édition -->
   <div class="card">
     <div class="card-header">
-      <span class="card-title">Modifier les accès</span>
+      <span class="card-title"><i class="fa-solid fa-pen-to-square" style="color:var(--blue);margin-right:6px;"></i>Modifier les accès</span>
     </div>
     <div class="card-body">
       <form method="POST" action="/users/<%= user._id %>">
@@ -65,7 +79,7 @@
           <div class="form-group">
             <label class="form-label">Rôle</label>
             <select name="role" class="form-control">
-              <option value="user" <%= user.role === 'user' ? 'selected' : '' %>>Utilisateur</option>
+              <option value="user"  <%= user.role === 'user'  ? 'selected' : '' %>>Utilisateur</option>
               <option value="coach" <%= user.role === 'coach' ? 'selected' : '' %>>Coach</option>
               <option value="admin" <%= user.role === 'admin' ? 'selected' : '' %>>Admin</option>
             </select>
@@ -74,7 +88,7 @@
             <label class="form-label">Abonnement</label>
             <select name="subscriptionStatus" class="form-control">
               <option value="free" <%= user.subscriptionStatus === 'free' ? 'selected' : '' %>>Free</option>
-              <option value="pro" <%= user.subscriptionStatus === 'pro' ? 'selected' : '' %>>Pro</option>
+              <option value="pro"  <%= user.subscriptionStatus === 'pro'  ? 'selected' : '' %>>Pro</option>
             </select>
           </div>
           <div class="form-group">
@@ -87,37 +101,38 @@
               value="<%= user.subscriptionExpiry ? new Date(user.subscriptionExpiry).toISOString().split('T')[0] : '' %>">
           </div>
         </div>
-        <div style="margin-top:20px;display:flex;justify-content:flex-end;">
-          <button type="submit" class="btn btn-save">Enregistrer</button>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-save"><i class="fa-solid fa-floppy-disk"></i> Enregistrer</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Infos profil (readonly) -->
+  <!-- Profil readonly -->
   <div class="card">
     <div class="card-header">
-      <span class="card-title">Profil coureur</span>
+      <span class="card-title"><i class="fa-solid fa-id-card" style="color:var(--text-muted);margin-right:6px;"></i>Profil coureur</span>
     </div>
     <div class="card-body">
-      <% const profileFields = [
-        { label: 'Niveau', value: user.runningLevel },
-        { label: 'Objectif', value: user.goal },
-        { label: 'Âge', value: user.age },
-        { label: 'Genre', value: user.gender },
-        { label: 'Fréquence semaine', value: user.weeklyFrequency ? user.weeklyFrequency + 'x / sem.' : null },
-        { label: 'VMA', value: user.vma ? user.vma + ' km/h' : null },
-        { label: 'FC max', value: user.fcmax ? user.fcmax + ' bpm' : null },
-        { label: 'Strava', value: user.strava && user.strava.athleteId ? 'Connecté (#' + user.strava.athleteId + ')' : 'Non connecté' },
-        { label: 'Onboarding', value: user.hasCompletedOnboarding ? 'Complété' : 'Non complété' },
-        { label: 'Push token', value: user.pushToken ? user.pushPlatform + ' — ' + user.pushToken.substring(0, 16) + '...' : null }
-      ]; %>
-      <% profileFields.forEach(f => { %>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(0,53,84,0.06);">
-          <span style="font-size:0.8rem;color:#64748b;"><%= f.label %></span>
-          <span style="font-size:0.82rem;font-weight:500;color:#003554;"><%= f.value || '—' %></span>
+      <div class="field-list">
+        <% const fields = [
+          { icon: 'fa-gauge-high',    label: 'Niveau',         value: user.runningLevel },
+          { icon: 'fa-bullseye',      label: 'Objectif',       value: user.goal },
+          { icon: 'fa-cake-candles',  label: 'Âge',            value: user.age },
+          { icon: 'fa-venus-mars',    label: 'Genre',          value: user.gender },
+          { icon: 'fa-calendar-days', label: 'Fréquence',      value: user.weeklyFrequency ? user.weeklyFrequency + 'x / sem.' : null },
+          { icon: 'fa-bolt',          label: 'VMA',            value: user.vma ? user.vma + ' km/h' : null },
+          { icon: 'fa-heart',         label: 'FC max',         value: user.fcmax ? user.fcmax + ' bpm' : null },
+          { icon: 'fa-circle-check',  label: 'Onboarding',     value: user.hasCompletedOnboarding ? 'Complété' : 'Non complété' },
+          { icon: 'fa-bell',          label: 'Push',           value: user.pushToken ? (user.pushPlatform + ' · ' + user.pushToken.substring(0,12) + '…') : null }
+        ]; %>
+        <% fields.forEach(f => { %>
+        <div class="field-row">
+          <span class="field-label"><i class="fa-solid <%= f.icon %>"></i><%= f.label %></span>
+          <span class="field-value"><%= f.value || '—' %></span>
         </div>
-      <% }); %>
+        <% }); %>
+      </div>
     </div>
   </div>
 </div>
