@@ -72,8 +72,17 @@ app.get('/api/health', (req, res) => {
 
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/runiq')
-  .then(() => {
+  .then(async () => {
     console.log('Connected to MongoDB');
+
+    // Fix: drop old non-sparse coachInviteCode index so Mongoose recreates it as sparse
+    try {
+      const User = require('./models/user.model');
+      await User.collection.dropIndex('coachInviteCode_1');
+      console.log('Dropped old coachInviteCode index — will be recreated as sparse');
+    } catch (e) {
+      // Index doesn't exist or already dropped — nothing to do
+    }
 
     // Initialize Socket.io
     initializeSocket(httpServer);

@@ -43,8 +43,8 @@ const userSchema = new mongoose.Schema({
   coachInviteCode: {
     type: String,
     unique: true,
-    sparse: true,
-    default: null
+    sparse: true
+    // pas de default: null — le champ doit être absent (undefined) pour que l'index sparse l'ignore
   },
   // Profil coureur
   runningLevel: {
