@@ -4,7 +4,7 @@ import { Capacitor } from '@capacitor/core';
 import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
 
-export type PaywallAction = 'analyze' | 'generate';
+export type PaywallAction = 'analyze' | 'generate' | 'strava';
 
 @Injectable({ providedIn: 'root' })
 export class SubscriptionService {

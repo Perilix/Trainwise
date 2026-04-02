@@ -23,11 +23,15 @@ export class PaywallComponent {
   get coins() { return this.subscriptionService.trainCoins(); }
 
   get actionLabel(): string {
-    return this.action === 'analyze' ? 'analyser un run' : 'générer un plan IA';
+    if (this.action === 'analyze') return 'analyser un run';
+    if (this.action === 'strava') return 'analyser vos sorties Strava';
+    return 'générer un plan IA';
   }
 
   get coinCost(): number {
-    return this.action === 'analyze' ? 1 : 3;
+    if (this.action === 'analyze') return 1;
+    if (this.action === 'strava') return 0.5;
+    return 3;
   }
 
   async buyCoins() {

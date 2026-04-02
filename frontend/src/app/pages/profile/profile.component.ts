@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { RunService, Run } from '../../services/run.service';
 import { AuthService, UpdateProfileData } from '../../services/auth.service';
 import { StravaService, StravaStatus } from '../../services/strava.service';
+import { SubscriptionService } from '../../services/subscription.service';
 import { AthleteService } from '../../services/athlete.service';
 import { CoachInvitation, Coach } from '../../interfaces/coach.interfaces';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
@@ -195,7 +196,8 @@ export class ProfileComponent implements OnInit {
     private stravaService: StravaService,
     private athleteService: AthleteService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private subscriptionService: SubscriptionService
   ) {}
 
   openRunDetail(run: Run) {
@@ -252,6 +254,12 @@ export class ProfileComponent implements OnInit {
   }
 
   syncStrava() {
+    // Vérifie les coins avant de lancer le sync (analyse IA = 0.5 coins/course)
+    if (!this.subscriptionService.isPro() && this.subscriptionService.trainCoins() < 0.5) {
+      this.subscriptionService.openPaywall('strava');
+      return;
+    }
+
     this.stravaSyncing.set(true);
     this.stravaMessage.set(null);
     this.stravaService.syncActivities().subscribe({
