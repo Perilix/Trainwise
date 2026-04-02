@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { RunService, Run } from '../../services/run.service';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
+import { environment } from '../../../environments/environment';
 
 type Period = 'month' | '3months' | 'all';
 
@@ -173,14 +174,16 @@ export class SortiesComponent implements OnInit {
     return coords;
   }
 
-  getSvgStartX(polyline: string): string {
-    const path = this.getSvgPath(polyline);
-    return path.split('M')[1]?.split(',')[0] ?? '0';
+  getRunTitle(run: Run): string {
+    const name = run.notes?.split('\n')[0];
+    return name || this.formatDate(run.date);
   }
 
-  getSvgStartY(polyline: string): string {
-    const path = this.getSvgPath(polyline);
-    return path.split('M')[1]?.split('L')[0]?.split(',')[1] ?? '0';
+  getMapImageUrl(polyline: string): string {
+    const token = environment.mapboxToken;
+    if (!token) return '';
+    const encoded = encodeURIComponent(polyline);
+    return `https://api.mapbox.com/styles/v1/mapbox/light-v11/static/path-4+00a6fb-1(${encoded})/auto/560x260@2x?padding=30&access_token=${token}`;
   }
 
   getSvgPath(polyline: string): string {

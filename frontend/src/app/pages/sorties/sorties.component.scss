@@ -178,18 +178,14 @@
   text-transform: capitalize;
 }
 
-.run-type {
-  font-size: 0.82rem;
+.run-title {
+  font-size: 0.85rem;
   font-weight: 600;
   color: #003554;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-
-  i {
-    color: #00a6fb;
-    font-size: 0.75rem;
-  }
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
 }
 
 .feeling-badge {
@@ -206,14 +202,26 @@
 // ── Mini map ─────────────────────────────────────────────────
 .run-map {
   width: 100%;
-  background: linear-gradient(135deg, #f0f8ff 0%, #e8f4fd 100%);
+  height: 130px;
+  overflow: hidden;
   border-top: 1px solid rgba(0, 53, 84, 0.05);
   border-bottom: 1px solid rgba(0, 53, 84, 0.05);
 
-  svg {
+  img {
     width: 100%;
-    height: 130px;
+    height: 100%;
+    object-fit: cover;
     display: block;
+  }
+
+  &.run-map-svg {
+    background: linear-gradient(135deg, #f0f8ff 0%, #e8f4fd 100%);
+
+    svg {
+      width: 100%;
+      height: 130px;
+      display: block;
+    }
   }
 }
 
@@ -279,13 +287,6 @@
   }
 }
 
-.run-card-arrow {
-  position: absolute;
-  bottom: 14px;
-  right: 16px;
-  color: rgba(0, 53, 84, 0.2);
-  font-size: 0.75rem;
-}
 
 // ── Skeleton loader ───────────────────────────────────────────
 @keyframes shimmer {

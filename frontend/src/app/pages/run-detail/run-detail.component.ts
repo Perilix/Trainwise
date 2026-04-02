@@ -31,6 +31,7 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   feelingSaved = signal(false);
 
   private map: L.Map | null = null;
+  private feelingTimer: ReturnType<typeof setTimeout> | null = null;
   private subscriptionService = inject(SubscriptionService);
 
   constructor(
@@ -54,6 +55,9 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnDestroy() {
     if (this.map) {
       this.map.remove();
+    }
+    if (this.feelingTimer) {
+      clearTimeout(this.feelingTimer);
     }
   }
 
@@ -225,14 +229,17 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     this.feelingValue.set(value);
     const run = this.run();
     if (!run?._id) return;
-    this.runService.updateRun(run._id, { feeling: value }).subscribe({
-      next: () => {
-        this.run.set({ ...run, feeling: value });
-        this.feelingSaved.set(true);
-        setTimeout(() => this.feelingSaved.set(false), 2000);
-      },
-      error: (err) => console.error(err)
-    });
+    if (this.feelingTimer) clearTimeout(this.feelingTimer);
+    this.feelingTimer = setTimeout(() => {
+      this.runService.updateRun(run._id!, { feeling: value }).subscribe({
+        next: () => {
+          this.run.set({ ...run, feeling: value });
+          this.feelingSaved.set(true);
+          setTimeout(() => this.feelingSaved.set(false), 2000);
+        },
+        error: (err) => console.error(err)
+      });
+    }, 600);
   }
 
   getFeelingLabel(value: number): string {

@@ -65,10 +65,7 @@
           <div class="run-card-header">
             <div class="run-card-meta">
               <span class="run-date">{{ formatDate(run.date) }}</span>
-              <div class="run-type">
-                <i class="fa-solid {{ sessionIcon(run.sessionType) }}"></i>
-                {{ sessionLabel(run.sessionType) }}
-              </div>
+              <div class="run-title">{{ getRunTitle(run) }}</div>
             </div>
             @if (run.feeling) {
               <div class="feeling-badge" [style.background]="feelingColor(run.feeling) + '20'" [style.color]="feelingColor(run.feeling)">
@@ -78,19 +75,19 @@
           </div>
 
           <!-- Mini map -->
-          @if (run.polyline) {
+          @if (run.polyline && getMapImageUrl(run.polyline)) {
             <div class="run-map">
+              <img [src]="getMapImageUrl(run.polyline)" alt="" loading="lazy">
+            </div>
+          } @else if (run.polyline) {
+            <div class="run-map run-map-svg">
               <svg viewBox="0 0 280 140" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
                 <path [attr.d]="getSvgPath(run.polyline)" fill="none" stroke="#00a6fb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                <!-- Start dot -->
-                <circle [attr.cx]="getSvgStartX(run.polyline)"
-                        [attr.cy]="getSvgStartY(run.polyline)"
-                        r="4" fill="#10b981"/>
               </svg>
             </div>
           } @else {
             <div class="run-map-placeholder">
-              <i class="fa-solid {{ sessionIcon(run.sessionType) }}"></i>
+              <i class="fa-solid fa-person-running"></i>
             </div>
           }
 
@@ -136,7 +133,6 @@
             </div>
           }
 
-          <div class="run-card-arrow"><i class="fa-solid fa-chevron-right"></i></div>
         </div>
       }
     </div>
