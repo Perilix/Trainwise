@@ -657,6 +657,8 @@
   background: rgba(5, 25, 35, 0.7);
   backdrop-filter: blur(4px);
   z-index: 10000;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 // Modal styles - utilise les styles globaux de .modal-overlay et .modal

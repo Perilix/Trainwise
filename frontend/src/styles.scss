@@ -146,6 +146,13 @@ input, select, textarea, button {
 // ===========================================
 // Global Modal Styles — floating centered card
 // ===========================================
+
+// Couvre aussi .modal-backdrop utilisé dans le planning
+.modal-backdrop {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
 .modal-overlay {
   position: fixed;
   inset: 0;
