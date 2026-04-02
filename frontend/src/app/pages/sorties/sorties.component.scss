@@ -20,7 +20,7 @@
   margin: 0;
 }
 
-// ── Period toggle ────────────────────────────────────────────
+// ── View mode toggle ──────────────────────────────────────────
 .period-toggle {
   display: flex;
   background: rgba(0, 53, 84, 0.08);
@@ -47,12 +47,103 @@
   }
 }
 
+// ── Period blocks strip ───────────────────────────────────────
+.blocks-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 0 1.25rem 0.75rem;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+
+  &::-webkit-scrollbar { display: none; }
+}
+
+.period-block {
+  flex-shrink: 0;
+  width: 108px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  box-shadow: 0 1px 4px rgba(0, 53, 84, 0.07);
+  scroll-snap-align: start;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &.selected {
+    border-color: #00a6fb;
+    box-shadow: 0 2px 12px rgba(0, 166, 251, 0.15);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+.block-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #003554;
+  text-align: center;
+}
+
+.block-sublabel {
+  font-size: 0.62rem;
+  color: #94a3b8;
+  text-align: center;
+  margin-bottom: 2px;
+}
+
+.block-km {
+  font-family: 'GulfsDisplay', serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #003554;
+  line-height: 1;
+
+  span {
+    font-size: 0.62rem;
+    font-weight: 500;
+    color: #94a3b8;
+    margin-left: 2px;
+    font-family: 'Poppins', sans-serif;
+  }
+}
+
+.block-runs {
+  font-size: 0.65rem;
+  color: #94a3b8;
+}
+
+.block-delta {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  margin-top: 3px;
+
+  &.up {
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+  }
+
+  &.down {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+  }
+}
+
 // ── KPI grid ─────────────────────────────────────────────────
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
-  padding: 0.75rem 1.25rem;
+  padding: 0 1.25rem 0.75rem;
 }
 
 .kpi-card {
@@ -86,112 +177,6 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-weight: 500;
-}
-
-// ── Weeks ─────────────────────────────────────────────────────
-.weeks-section {
-  padding: 0 0 0.75rem;
-}
-
-.weeks-scroll {
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  padding: 0 1.25rem 4px;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-
-  &::-webkit-scrollbar { display: none; }
-}
-
-.week-card {
-  flex-shrink: 0;
-  width: 100px;
-  background: #fff;
-  border-radius: 16px;
-  padding: 12px 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  box-shadow: 0 1px 4px rgba(0, 53, 84, 0.07);
-  scroll-snap-align: start;
-  border: 1.5px solid transparent;
-
-  &.current {
-    border-color: #00a6fb;
-    background: linear-gradient(135deg, #fff 60%, rgba(0, 166, 251, 0.04) 100%);
-  }
-}
-
-.week-label {
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  text-align: center;
-}
-
-.week-km {
-  font-family: 'GulfsDisplay', serif;
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #003554;
-  line-height: 1;
-
-  span {
-    font-size: 0.65rem;
-    font-weight: 500;
-    color: #94a3b8;
-    margin-left: 2px;
-    font-family: 'Poppins', sans-serif;
-  }
-}
-
-.week-runs {
-  font-size: 0.68rem;
-  color: #94a3b8;
-}
-
-.week-delta {
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 10px;
-  margin-top: 2px;
-
-  &.up {
-    background: rgba(16, 185, 129, 0.12);
-    color: #059669;
-  }
-
-  &.down {
-    background: rgba(239, 68, 68, 0.1);
-    color: #dc2626;
-  }
-}
-
-// ── Trend bar ────────────────────────────────────────────────
-.trend-bar {
-  margin: 0 1.25rem 0.75rem;
-  padding: 8px 12px;
-  border-radius: 10px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-
-  &.positive {
-    background: rgba(16, 185, 129, 0.1);
-    color: #059669;
-  }
-
-  &.negative {
-    background: rgba(239, 68, 68, 0.1);
-    color: #dc2626;
-  }
 }
 
 // ── Empty state ───────────────────────────────────────────────
@@ -234,7 +219,10 @@
   box-shadow: 0 2px 8px rgba(0, 53, 84, 0.08);
   cursor: pointer;
   transition: transform 0.15s, box-shadow 0.15s;
+  // Crée un contexte d'empilement pour contenir les z-index Leaflet
   position: relative;
+  z-index: 0;
+  isolation: isolate;
 
   &:active {
     transform: scale(0.99);
@@ -254,6 +242,7 @@
   display: flex;
   flex-direction: column;
   gap: 3px;
+  min-width: 0;
 }
 
 .run-date {
@@ -290,6 +279,9 @@
   overflow: hidden;
   border-top: 1px solid rgba(0, 53, 84, 0.05);
   border-bottom: 1px solid rgba(0, 53, 84, 0.05);
+  // Contient les couches Leaflet dans la card
+  position: relative;
+  z-index: 0;
 
   app-run-mini-map {
     display: block;
@@ -313,7 +305,6 @@
 // ── Run stats ────────────────────────────────────────────────
 .run-stats {
   display: flex;
-  gap: 0;
   padding: 10px 16px;
   border-bottom: 1px solid rgba(0, 53, 84, 0.05);
   flex-wrap: wrap;
@@ -360,7 +351,6 @@
   }
 }
 
-
 // ── Skeleton loader ───────────────────────────────────────────
 @keyframes shimmer {
   0% { background-position: -400px 0; }
@@ -374,9 +364,7 @@
 }
 
 .skeleton-grid {
-  .kpi-card {
-    height: 80px;
-  }
+  .kpi-card { height: 80px; }
 }
 
 .skeleton-card {

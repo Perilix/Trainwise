@@ -6,16 +6,36 @@
   <div class="sorties-header">
     <h1 class="sorties-title">Mes sorties</h1>
 
-    <!-- Period toggle -->
+    <!-- View mode toggle -->
     <div class="period-toggle">
-      <button [class.active]="period() === 'month'" (click)="setPeriod('month')">Ce mois</button>
-      <button [class.active]="period() === '3months'" (click)="setPeriod('3months')">3 mois</button>
-      <button [class.active]="period() === 'all'" (click)="setPeriod('all')">Tout</button>
+      <button [class.active]="viewMode() === 'week'" (click)="setViewMode('week')">Semaine</button>
+      <button [class.active]="viewMode() === 'month'" (click)="setViewMode('month')">Mois</button>
+      <button [class.active]="viewMode() === 'year'" (click)="setViewMode('year')">An</button>
     </div>
   </div>
 
-  <!-- KPIs -->
   @if (!loading()) {
+
+    <!-- Period blocks -->
+    @if (periodBlocks().length > 0) {
+      <div class="blocks-scroll">
+        @for (block of periodBlocks(); track block.id) {
+          <div class="period-block" [class.selected]="selectedBlockId() === block.id" (click)="selectBlock(block.id)">
+            <div class="block-label">{{ block.label }}</div>
+            <div class="block-sublabel">{{ block.sublabel }}</div>
+            <div class="block-km">{{ block.totalKm.toFixed(1) }}<span>km</span></div>
+            <div class="block-runs">{{ block.totalRuns }} sortie{{ block.totalRuns > 1 ? 's' : '' }}</div>
+            @if (block.deltaKm !== null) {
+              <div class="block-delta" [class.up]="block.deltaKm >= 0" [class.down]="block.deltaKm < 0">
+                {{ block.deltaKm >= 0 ? '+' : '' }}{{ block.deltaKm }}%
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- KPIs -->
     <div class="kpi-grid">
       <div class="kpi-card">
         <div class="kpi-icon"><i class="fa-solid fa-road"></i></div>
@@ -38,34 +58,6 @@
         <div class="kpi-label">total</div>
       </div>
     </div>
-
-    <!-- Trend -->
-    @if (kpis().trend !== null && kpis().totalRuns > 0) {
-      <div class="trend-bar" [class.positive]="kpis().trend! >= 0" [class.negative]="kpis().trend! < 0">
-        <i class="fa-solid" [class.fa-arrow-trend-up]="kpis().trend! >= 0" [class.fa-arrow-trend-down]="kpis().trend! < 0"></i>
-        {{ kpis().trend! >= 0 ? '+' : '' }}{{ kpis().trend }}% de km vs période précédente
-      </div>
-    }
-
-    <!-- Semaines -->
-    @if (weeklyData().length > 0) {
-      <div class="weeks-section">
-        <div class="weeks-scroll">
-          @for (week of weeklyData(); track week.label) {
-            <div class="week-card" [class.current]="week.isCurrentWeek">
-              <div class="week-label">{{ week.label }}</div>
-              <div class="week-km">{{ week.totalKm.toFixed(1) }}<span>km</span></div>
-              <div class="week-runs">{{ week.totalRuns }} sortie{{ week.totalRuns > 1 ? 's' : '' }}</div>
-              @if (week.deltaKm !== null) {
-                <div class="week-delta" [class.up]="week.deltaKm >= 0" [class.down]="week.deltaKm < 0">
-                  {{ week.deltaKm >= 0 ? '+' : '' }}{{ week.deltaKm }}%
-                </div>
-              }
-            </div>
-          }
-        </div>
-      </div>
-    }
 
     <!-- Empty state -->
     @if (filteredRuns().length === 0) {
@@ -150,6 +142,7 @@
         </div>
       }
     </div>
+
   } @else {
     <!-- Skeleton loader -->
     <div class="kpi-grid skeleton-grid">
