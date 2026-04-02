@@ -173,6 +173,16 @@ export class SortiesComponent implements OnInit {
     return coords;
   }
 
+  getSvgStartX(polyline: string): string {
+    const path = this.getSvgPath(polyline);
+    return path.split('M')[1]?.split(',')[0] ?? '0';
+  }
+
+  getSvgStartY(polyline: string): string {
+    const path = this.getSvgPath(polyline);
+    return path.split('M')[1]?.split('L')[0]?.split(',')[1] ?? '0';
+  }
+
   getSvgPath(polyline: string): string {
     const coords = this.decodePolyline(polyline);
     if (coords.length < 2) return '';

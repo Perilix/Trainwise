@@ -83,8 +83,8 @@
               <svg viewBox="0 0 280 140" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
                 <path [attr.d]="getSvgPath(run.polyline)" fill="none" stroke="#00a6fb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                 <!-- Start dot -->
-                <circle [attr.cx]="getSvgPath(run.polyline).split('M')[1]?.split(',')[0]"
-                        [attr.cy]="getSvgPath(run.polyline).split('M')[1]?.split('L')[0]?.split(',')[1]"
+                <circle [attr.cx]="getSvgStartX(run.polyline)"
+                        [attr.cy]="getSvgStartY(run.polyline)"
                         r="4" fill="#10b981"/>
               </svg>
             </div>
