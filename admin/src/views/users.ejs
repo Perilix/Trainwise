@@ -1,9 +1,16 @@
 <%- include('_header', { title: role === 'coach' ? 'Coaches' : 'Utilisateurs', page: role === 'coach' ? 'coaches' : 'users' }) %>
 
-<div class="page-header">
-  <h1><%= role === 'coach' ? 'Coaches' : 'Utilisateurs' %></h1>
-  <p><%= total %> résultat<%= total > 1 ? 's' : '' %><% if (search || role || subscription) { %> &mdash; filtrés<% } %></p>
+<div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+  <div>
+    <h1><%= role === 'coach' ? 'Coaches' : 'Utilisateurs' %></h1>
+    <p><%= total %> résultat<%= total > 1 ? 's' : '' %><% if (search || role || subscription) { %> &mdash; filtrés<% } %></p>
+  </div>
+  <a href="/users/new" class="btn btn-primary"><i class="fa-solid fa-user-plus"></i> Nouvel utilisateur</a>
 </div>
+
+<% if (deleted) { %>
+  <div class="alert alert-success"><i class="fa-solid fa-circle-check"></i> Utilisateur supprimé.</div>
+<% } %>
 
 <!-- Filtres -->
 <form method="GET" action="/users">

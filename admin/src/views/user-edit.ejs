@@ -6,7 +6,7 @@
 
 <% if (success) { %>
   <div class="alert alert-success">
-    <i class="fa-solid fa-circle-check"></i> Modifications enregistrées avec succès.
+    <i class="fa-solid fa-circle-check"></i> Modifications enregistrées.
   </div>
 <% } %>
 <% if (error) { %>
@@ -24,7 +24,7 @@
       <%= (user.firstName || user.email || '?')[0].toUpperCase() %>
     <% } %>
   </div>
-  <div class="profile-info">
+  <div class="profile-info" style="flex:1;">
     <h2>
       <%= user.firstName || '' %> <%= user.lastName || '' %>
       <% if (!user.firstName && !user.lastName) { %><span style="color:#94a3b8;font-weight:400;">Sans nom</span><% } %>
@@ -40,6 +40,13 @@
       <% if (user.strava && user.strava.athleteId) { %><span style="color:#fc4c02;"><i class="fa-solid fa-circle-dot"></i> Strava connecté</span><% } %>
     </div>
   </div>
+
+  <!-- Bouton supprimer -->
+  <form method="POST" action="/users/<%= user._id %>/delete" onsubmit="return confirm('Supprimer définitivement cet utilisateur ? Cette action est irréversible.')">
+    <button type="submit" class="btn" style="background:rgba(239,68,68,0.08);color:var(--danger);border-color:rgba(239,68,68,0.2);">
+      <i class="fa-solid fa-trash"></i> Supprimer
+    </button>
+  </form>
 </div>
 
 <!-- Mini stats -->
@@ -68,13 +75,35 @@
 </div>
 
 <div class="two-cols">
-  <!-- Édition -->
+  <!-- Édition identité + accès -->
   <div class="card">
     <div class="card-header">
-      <span class="card-title"><i class="fa-solid fa-pen-to-square" style="color:var(--blue);margin-right:6px;"></i>Modifier les accès</span>
+      <span class="card-title"><i class="fa-solid fa-pen-to-square" style="color:var(--blue);margin-right:6px;"></i>Modifier le profil</span>
     </div>
     <div class="card-body">
       <form method="POST" action="/users/<%= user._id %>">
+
+        <p style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;">Identité</p>
+        <div class="form-grid" style="margin-bottom:20px;">
+          <div class="form-group">
+            <label class="form-label">Prénom</label>
+            <input type="text" name="firstName" class="form-control" value="<%= user.firstName || '' %>" placeholder="Jean">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nom</label>
+            <input type="text" name="lastName" class="form-control" value="<%= user.lastName || '' %>" placeholder="Dupont">
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Email</label>
+            <input type="email" name="email" class="form-control" value="<%= user.email %>">
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Nouveau mot de passe <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0;">(laisser vide = inchangé)</span></label>
+            <input type="password" name="password" class="form-control" placeholder="Min. 6 caractères">
+          </div>
+        </div>
+
+        <p style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;">Accès & abonnement</p>
         <div class="form-grid">
           <div class="form-group">
             <label class="form-label">Rôle</label>
@@ -101,6 +130,7 @@
               value="<%= user.subscriptionExpiry ? new Date(user.subscriptionExpiry).toISOString().split('T')[0] : '' %>">
           </div>
         </div>
+
         <div class="form-actions">
           <button type="submit" class="btn btn-save"><i class="fa-solid fa-floppy-disk"></i> Enregistrer</button>
         </div>

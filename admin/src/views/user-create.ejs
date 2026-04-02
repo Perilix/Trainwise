@@ -1,0 +1,71 @@
+<%- include('_header', { title: 'Nouvel utilisateur', page: 'users' }) %>
+
+<a href="/users" class="back-link">
+  <i class="fa-solid fa-arrow-left"></i> Retour aux utilisateurs
+</a>
+
+<% if (error) { %>
+  <div class="alert alert-error">
+    <i class="fa-solid fa-triangle-exclamation"></i> <%= error %>
+  </div>
+<% } %>
+
+<div class="page-header">
+  <h1>Nouvel utilisateur</h1>
+  <p>Créer un compte manuellement</p>
+</div>
+
+<div class="card" style="max-width: 640px;">
+  <div class="card-header">
+    <span class="card-title"><i class="fa-solid fa-user-plus" style="color:var(--blue);margin-right:6px;"></i>Informations</span>
+  </div>
+  <div class="card-body">
+    <form method="POST" action="/users/new">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Prénom</label>
+          <input type="text" name="firstName" class="form-control" placeholder="Jean">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nom</label>
+          <input type="text" name="lastName" class="form-control" placeholder="Dupont">
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Email <span style="color:var(--danger);">*</span></label>
+          <input type="email" name="email" class="form-control" placeholder="jean@example.com" required>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Mot de passe <span style="color:var(--danger);">*</span></label>
+          <input type="password" name="password" class="form-control" placeholder="Min. 6 caractères" required minlength="6">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Rôle</label>
+          <select name="role" class="form-control">
+            <option value="user">Utilisateur</option>
+            <option value="coach">Coach</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Abonnement</label>
+          <select name="subscriptionStatus" class="form-control">
+            <option value="free">Free</option>
+            <option value="pro">Pro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">TrainCoins initiaux</label>
+          <input type="number" name="trainCoins" class="form-control" value="10" min="0" step="0.5">
+        </div>
+      </div>
+      <div class="form-actions">
+        <a href="/users" class="btn btn-secondary">Annuler</a>
+        <button type="submit" class="btn btn-save">
+          <i class="fa-solid fa-user-plus"></i> Créer l'utilisateur
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<%- include('_footer') %>
