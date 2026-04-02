@@ -52,11 +52,20 @@
   display: flex;
   gap: 10px;
   overflow-x: auto;
-  padding: 0 1.25rem 0.6rem;
+  padding: 0 0 0.6rem;
+  padding-left: 1.25rem;
   scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
 
   &::-webkit-scrollbar { display: none; }
+
+  // Spacer final pour que le dernier bloc ne touche pas le bord droit
+  &::after {
+    content: '';
+    flex-shrink: 0;
+    width: 1.25rem;
+  }
 }
 
 .period-block {
