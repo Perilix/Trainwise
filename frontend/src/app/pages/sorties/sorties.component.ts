@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { RunService, Run } from '../../services/run.service';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
-import { environment } from '../../../environments/environment';
+import { RunMiniMapComponent } from '../../components/run-mini-map/run-mini-map.component';
 
 type Period = 'month' | '3months' | 'all';
 
@@ -12,13 +12,21 @@ interface KPIs {
   totalRuns: number;
   avgPaceStr: string;
   totalDurationMin: number;
-  trend: number | null; // % vs période précédente, null si pas de comparaison
+  trend: number | null;
+}
+
+interface WeekData {
+  label: string;
+  totalKm: number;
+  totalRuns: number;
+  deltaKm: number | null;
+  isCurrentWeek: boolean;
 }
 
 @Component({
   selector: 'app-sorties',
   standalone: true,
-  imports: [CommonModule, NavbarComponent],
+  imports: [CommonModule, NavbarComponent, RunMiniMapComponent],
   templateUrl: './sorties.component.html',
   styleUrl: './sorties.component.scss'
 })
@@ -61,7 +69,6 @@ export class SortiesComponent implements OnInit {
     const totalRuns = runs.length;
     const totalDurationMin = runs.reduce((s, r) => s + (r.duration || 0), 0);
 
-    // Allure moyenne pondérée par distance
     const runsWithPace = runs.filter(r => r.averagePace && r.distance);
     let avgPaceStr = '—';
     if (runsWithPace.length) {
@@ -74,11 +81,62 @@ export class SortiesComponent implements OnInit {
       avgPaceStr = `${Math.floor(avgSec / 60)}:${String(avgSec % 60).padStart(2, '0')}`;
     }
 
-    // Trend vs période précédente
     const trend = this.computeTrend(runs, totalKm);
-
     return { totalKm, totalRuns, avgPaceStr, totalDurationMin, trend };
   });
+
+  weeklyData = computed<WeekData[]>(() => {
+    const runs = this.allRuns();
+    const now = new Date();
+    const currentMonday = this.getMonday(now);
+    const weeks: WeekData[] = [];
+
+    for (let i = 0; i < 10; i++) {
+      const weekStart = new Date(currentMonday);
+      weekStart.setDate(weekStart.getDate() - i * 7);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 7);
+
+      const weekRuns = runs.filter(r => {
+        const d = new Date(r.date);
+        return d >= weekStart && d < weekEnd;
+      });
+
+      const totalKm = weekRuns.reduce((s, r) => s + (r.distance || 0), 0);
+      const day = weekStart.getDate();
+      const month = weekStart.toLocaleDateString('fr-FR', { month: 'short' });
+
+      weeks.push({
+        label: i === 0 ? 'Cette sem.' : `${day} ${month}`,
+        totalKm,
+        totalRuns: weekRuns.length,
+        deltaKm: null,
+        isCurrentWeek: i === 0
+      });
+    }
+
+    // Calcul delta vs semaine précédente
+    for (let i = 0; i < weeks.length - 1; i++) {
+      const prevKm = weeks[i + 1].totalKm;
+      if (prevKm > 0) {
+        weeks[i].deltaKm = Math.round(((weeks[i].totalKm - prevKm) / prevKm) * 100);
+      } else if (weeks[i].totalKm > 0) {
+        weeks[i].deltaKm = null; // Pas de référence
+      }
+    }
+
+    // Garder semaine actuelle + semaines avec des sorties
+    return weeks.filter((w, i) => i === 0 || w.totalRuns > 0);
+  });
+
+  private getMonday(date: Date): Date {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    d.setDate(d.getDate() + diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
 
   private computeTrend(currentRuns: Run[], currentKm: number): number | null {
     const p = this.period();
@@ -135,76 +193,8 @@ export class SortiesComponent implements OnInit {
     return '#ef4444';
   }
 
-  sessionIcon(type?: string): string {
-    const t = (type || '').toLowerCase();
-    if (t.includes('fraction') || t.includes('interval') || t.includes('vitesse')) return 'fa-bolt';
-    if (t.includes('récup') || t.includes('recup')) return 'fa-leaf';
-    if (t.includes('longue') || t.includes('sortie longue')) return 'fa-road';
-    if (t.includes('trail')) return 'fa-mountain';
-    if (t.includes('tempo')) return 'fa-gauge-high';
-    return 'fa-person-running';
-  }
-
-  sessionLabel(type?: string): string {
-    const labels: Record<string, string> = {
-      endurance: 'Endurance',
-      fractionné: 'Fractionné',
-      'sortie longue': 'Sortie longue',
-      récupération: 'Récupération',
-      tempo: 'Tempo',
-      trail: 'Trail',
-      compétition: 'Compétition',
-    };
-    return labels[type?.toLowerCase() || ''] || type || 'Course';
-  }
-
-  // ── SVG Polyline ─────────────────────────────────────
-  decodePolyline(encoded: string): [number, number][] {
-    const coords: [number, number][] = [];
-    let index = 0, lat = 0, lng = 0;
-    while (index < encoded.length) {
-      let b: number, shift = 0, result = 0;
-      do { b = encoded.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
-      lat += (result & 1) ? ~(result >> 1) : (result >> 1);
-      shift = 0; result = 0;
-      do { b = encoded.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
-      lng += (result & 1) ? ~(result >> 1) : (result >> 1);
-      coords.push([lat / 1e5, lng / 1e5]);
-    }
-    return coords;
-  }
-
   getRunTitle(run: Run): string {
     const name = run.notes?.split('\n')[0];
     return name || this.formatDate(run.date);
-  }
-
-  getMapImageUrl(polyline: string): string {
-    const token = environment.mapboxToken;
-    if (!token) return '';
-    const encoded = encodeURIComponent(polyline);
-    return `https://api.mapbox.com/styles/v1/mapbox/light-v11/static/path-4+00a6fb-1(${encoded})/auto/560x260@2x?padding=30&access_token=${token}`;
-  }
-
-  getSvgPath(polyline: string): string {
-    const coords = this.decodePolyline(polyline);
-    if (coords.length < 2) return '';
-    const W = 280, H = 140, PAD = 14;
-    const lats = coords.map(c => c[0]);
-    const lngs = coords.map(c => c[1]);
-    const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-    const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
-    const rangeX = maxLng - minLng || 0.001;
-    const rangeY = maxLat - minLat || 0.001;
-    const scaleX = (W - PAD * 2) / rangeX;
-    const scaleY = (H - PAD * 2) / rangeY;
-    const scale = Math.min(scaleX, scaleY);
-    const offX = (W - rangeX * scale) / 2;
-    const offY = (H - rangeY * scale) / 2;
-    return coords.map((c, i) => {
-      const x = offX + (c[1] - minLng) * scale;
-      const y = H - offY - (c[0] - minLat) * scale;
-      return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
-    }).join(' ');
   }
 }

@@ -47,6 +47,26 @@
       </div>
     }
 
+    <!-- Semaines -->
+    @if (weeklyData().length > 0) {
+      <div class="weeks-section">
+        <div class="weeks-scroll">
+          @for (week of weeklyData(); track week.label) {
+            <div class="week-card" [class.current]="week.isCurrentWeek">
+              <div class="week-label">{{ week.label }}</div>
+              <div class="week-km">{{ week.totalKm.toFixed(1) }}<span>km</span></div>
+              <div class="week-runs">{{ week.totalRuns }} sortie{{ week.totalRuns > 1 ? 's' : '' }}</div>
+              @if (week.deltaKm !== null) {
+                <div class="week-delta" [class.up]="week.deltaKm >= 0" [class.down]="week.deltaKm < 0">
+                  {{ week.deltaKm >= 0 ? '+' : '' }}{{ week.deltaKm }}%
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+
     <!-- Empty state -->
     @if (filteredRuns().length === 0) {
       <div class="empty-state">
@@ -74,16 +94,10 @@
             }
           </div>
 
-          <!-- Mini map -->
-          @if (run.polyline && getMapImageUrl(run.polyline)) {
+          <!-- Mini map Leaflet -->
+          @if (run.polyline) {
             <div class="run-map">
-              <img [src]="getMapImageUrl(run.polyline)" alt="" loading="lazy">
-            </div>
-          } @else if (run.polyline) {
-            <div class="run-map run-map-svg">
-              <svg viewBox="0 0 280 140" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
-                <path [attr.d]="getSvgPath(run.polyline)" fill="none" stroke="#00a6fb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+              <app-run-mini-map [polyline]="run.polyline"></app-run-mini-map>
             </div>
           } @else {
             <div class="run-map-placeholder">
@@ -119,8 +133,8 @@
             }
             @if (run.elevationGain) {
               <div class="run-stat">
-                <i class="fa-solid fa-arrow-trend-up" style="color:#f59e0b;font-size:0.65rem;"></i>
                 <span class="stat-val">{{ run.elevationGain }}m</span>
+                <span class="stat-unit">D+</span>
               </div>
             }
           </div>

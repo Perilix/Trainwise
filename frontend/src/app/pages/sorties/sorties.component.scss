@@ -88,6 +88,90 @@
   font-weight: 500;
 }
 
+// ── Weeks ─────────────────────────────────────────────────────
+.weeks-section {
+  padding: 0 0 0.75rem;
+}
+
+.weeks-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 0 1.25rem 4px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+
+  &::-webkit-scrollbar { display: none; }
+}
+
+.week-card {
+  flex-shrink: 0;
+  width: 100px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  box-shadow: 0 1px 4px rgba(0, 53, 84, 0.07);
+  scroll-snap-align: start;
+  border: 1.5px solid transparent;
+
+  &.current {
+    border-color: #00a6fb;
+    background: linear-gradient(135deg, #fff 60%, rgba(0, 166, 251, 0.04) 100%);
+  }
+}
+
+.week-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.week-km {
+  font-family: 'GulfsDisplay', serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #003554;
+  line-height: 1;
+
+  span {
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: #94a3b8;
+    margin-left: 2px;
+    font-family: 'Poppins', sans-serif;
+  }
+}
+
+.week-runs {
+  font-size: 0.68rem;
+  color: #94a3b8;
+}
+
+.week-delta {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  margin-top: 2px;
+
+  &.up {
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+  }
+
+  &.down {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+  }
+}
+
 // ── Trend bar ────────────────────────────────────────────────
 .trend-bar {
   margin: 0 1.25rem 0.75rem;
@@ -207,21 +291,10 @@
   border-top: 1px solid rgba(0, 53, 84, 0.05);
   border-bottom: 1px solid rgba(0, 53, 84, 0.05);
 
-  img {
+  app-run-mini-map {
+    display: block;
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  &.run-map-svg {
-    background: linear-gradient(135deg, #f0f8ff 0%, #e8f4fd 100%);
-
-    svg {
-      width: 100%;
-      height: 130px;
-      display: block;
-    }
   }
 }
 
