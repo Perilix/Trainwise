@@ -163,8 +163,10 @@ input, select, textarea, button {
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
+  padding-bottom: calc(1.5rem + var(--keyboard-height, 0px));
   box-sizing: border-box;
   animation: fadeInOverlay 0.2s ease;
+  transition: padding-bottom 0.28s ease;
   // Force a new GPU compositing layer so iOS renders this above fixed elements
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
