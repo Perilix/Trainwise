@@ -51,20 +51,13 @@
   display: flex;
   gap: 10px;
   overflow-x: auto;
-  padding: 0 0 0.6rem;
-  scroll-snap-type: x mandatory;
+  padding: 0 1.25rem 0.6rem 1.25rem;
+  scroll-padding-left: 1.25rem;
+  scroll-snap-type: x proximity;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
 
   &::-webkit-scrollbar { display: none; }
-
-  // Spacers gauche/droite via pseudo-éléments (padding ignoré sur iOS scroll)
-  &::before,
-  &::after {
-    content: '';
-    flex-shrink: 0;
-    width: 1.25rem;
-  }
 }
 
 .period-block {
