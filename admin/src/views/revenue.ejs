@@ -1,0 +1,118 @@
+<%- include('_header', { title: 'Revenus', page: 'revenue' }) %>
+
+<div class="page-header">
+  <h1>Revenus</h1>
+  <p>Suivi de la monétisation et des TrainCoins</p>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-card-top">
+      <div class="stat-label">MRR estimé</div>
+      <div class="stat-icon green"><i class="fa-solid fa-euro-sign"></i></div>
+    </div>
+    <div class="stat-value"><%= stats.mrr %>€</div>
+    <div class="stat-sub"><%= stats.proUsers %> abonnés × 9,99€</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-top">
+      <div class="stat-label">Abonnés Pro</div>
+      <div class="stat-icon navy"><i class="fa-solid fa-crown"></i></div>
+    </div>
+    <div class="stat-value"><%= stats.proUsers %></div>
+    <div class="stat-sub"><%= stats.conversionRate %>% de conversion</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-top">
+      <div class="stat-label">Nouveaux Pro ce mois</div>
+      <div class="stat-icon blue"><i class="fa-solid fa-user-plus"></i></div>
+    </div>
+    <div class="stat-value"><%= stats.newProThisMonth %></div>
+    <div class="stat-sub">+<%= (stats.newProThisMonth * 9.99).toFixed(2) %>€ MRR</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-top">
+      <div class="stat-label">TrainCoins en circulation</div>
+      <div class="stat-icon orange"><i class="fa-solid fa-coins"></i></div>
+    </div>
+    <div class="stat-value"><%= stats.totalCoinsVal.toLocaleString('fr-FR') %></div>
+    <div class="stat-sub">moy. <%= stats.avgCoins %> par user</div>
+  </div>
+</div>
+
+<div class="two-cols">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="fa-solid fa-chart-bar" style="color:var(--green);margin-right:6px;"></i>Nouveaux Pro — 6 mois</span>
+    </div>
+    <div class="card-body">
+      <div class="chart-container">
+        <canvas id="chartPro"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="fa-solid fa-clock-rotate-left" style="color:var(--text-muted);margin-right:6px;"></i>Derniers abonnés Pro</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Utilisateur</th><th>TrainCoins</th><th>Inscrit le</th></tr>
+        </thead>
+        <tbody>
+          <% recentPro.forEach(u => { %>
+          <tr>
+            <td>
+              <a href="/users/<%= u._id %>" class="table-link" style="display:flex;align-items:center;gap:10px;">
+                <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#00a6fb,#0582ca);display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.78rem;font-weight:700;flex-shrink:0;">
+                  <%= (u.firstName || u.email || '?')[0].toUpperCase() %>
+                </div>
+                <div>
+                  <div style="font-weight:500;font-size:0.84rem;"><%= u.firstName || '' %> <%= u.lastName || '' %><% if (!u.firstName && !u.lastName) { %><span class="text-muted">Sans nom</span><% } %></div>
+                  <div class="text-small text-muted"><%= u.email %></div>
+                </div>
+              </a>
+            </td>
+            <td style="font-weight:600;color:var(--navy);"><i class="fa-solid fa-coins" style="color:var(--warning);font-size:0.75rem;margin-right:4px;"></i><%= u.trainCoins %></td>
+            <td class="text-muted text-small"><%= new Date(u.createdAt).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' }) %></td>
+          </tr>
+          <% }); %>
+          <% if (!recentPro.length) { %>
+          <tr><td colspan="3"><div class="empty-state"><i class="fa-solid fa-inbox"></i><p>Aucun abonné Pro</p></div></td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  new Chart(document.getElementById('chartPro').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: <%- JSON.stringify(proLabels) %>,
+      datasets: [{
+        label: 'Nouveaux Pro',
+        data: <%- JSON.stringify(proCounts) %>,
+        backgroundColor: 'rgba(16, 185, 129, 0.15)',
+        borderColor: '#10b981',
+        borderWidth: 2,
+        borderRadius: 6,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 }, color: '#94a3b8' } },
+        y: { grid: { color: '#f1f5f9' }, ticks: { font: { family: 'Inter', size: 11 }, color: '#94a3b8', precision: 0 }, beginAtZero: true }
+      }
+    }
+  });
+</script>
+
+<%- include('_footer') %>

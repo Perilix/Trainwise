@@ -1,0 +1,119 @@
+<%- include('_header', { title: 'Activité IA', page: 'ai' }) %>
+
+<div class="page-header">
+  <h1>Activité IA</h1>
+  <p>Utilisation des fonctionnalités d'intelligence artificielle</p>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-card-top">
+      <div class="stat-label">Analyses totales</div>
+      <div class="stat-icon purple"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+    </div>
+    <div class="stat-value"><%= stats.analyzedRuns.toLocaleString('fr-FR') %></div>
+    <div class="stat-sub"><%= stats.analysisRate %>% des sorties</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-top">
+      <div class="stat-label">Cette semaine</div>
+      <div class="stat-icon blue"><i class="fa-solid fa-calendar-week"></i></div>
+    </div>
+    <div class="stat-value"><%= stats.analyzedThisWeek %></div>
+    <div class="stat-sub">analyses</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-top">
+      <div class="stat-label">Ce mois</div>
+      <div class="stat-icon navy"><i class="fa-solid fa-calendar"></i></div>
+    </div>
+    <div class="stat-value"><%= stats.analyzedThisMonth %></div>
+    <div class="stat-sub">analyses</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-top">
+      <div class="stat-label">Sorties totales</div>
+      <div class="stat-icon orange"><i class="fa-solid fa-route"></i></div>
+    </div>
+    <div class="stat-value"><%= stats.totalRuns.toLocaleString('fr-FR') %></div>
+    <div class="stat-sub">dans la base</div>
+  </div>
+</div>
+
+<div class="two-cols">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="fa-solid fa-chart-line" style="color:var(--purple);margin-right:6px;"></i>Analyses — 14 derniers jours</span>
+    </div>
+    <div class="card-body">
+      <div class="chart-container">
+        <canvas id="chartAI"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="fa-solid fa-trophy" style="color:var(--warning);margin-right:6px;"></i>Top utilisateurs IA</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Utilisateur</th><th>Analyses</th></tr>
+        </thead>
+        <tbody>
+          <% topUsers.forEach((item, i) => { %>
+          <tr>
+            <td>
+              <a href="/users/<%= item.userInfo._id %>" class="table-link" style="display:flex;align-items:center;gap:10px;">
+                <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#8b5cf6,#6d28d9);display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.78rem;font-weight:700;flex-shrink:0;">
+                  <%= (item.userInfo.firstName || item.userInfo.email || '?')[0].toUpperCase() %>
+                </div>
+                <div>
+                  <div style="font-weight:500;font-size:0.84rem;"><%= item.userInfo.firstName || '' %> <%= item.userInfo.lastName || '' %><% if (!item.userInfo.firstName && !item.userInfo.lastName) { %><span class="text-muted">Sans nom</span><% } %></div>
+                  <div class="text-small text-muted"><%= item.userInfo.email %></div>
+                </div>
+              </a>
+            </td>
+            <td style="font-weight:700;color:var(--purple);"><%= item.count %></td>
+          </tr>
+          <% }); %>
+          <% if (!topUsers.length) { %>
+          <tr><td colspan="2"><div class="empty-state"><i class="fa-solid fa-inbox"></i><p>Aucune donnée</p></div></td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  new Chart(document.getElementById('chartAI').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: <%- JSON.stringify(dailyLabels) %>,
+      datasets: [{
+        label: 'Analyses',
+        data: <%- JSON.stringify(dailyCounts) %>,
+        borderColor: '#8b5cf6',
+        backgroundColor: 'rgba(139, 92, 246, 0.08)',
+        borderWidth: 2,
+        pointRadius: 3,
+        pointBackgroundColor: '#8b5cf6',
+        tension: 0.4,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 10 }, color: '#94a3b8', maxRotation: 45 } },
+        y: { grid: { color: '#f1f5f9' }, ticks: { font: { family: 'Inter', size: 11 }, color: '#94a3b8', precision: 0 }, beginAtZero: true }
+      }
+    }
+  });
+</script>
+
+<%- include('_footer') %>

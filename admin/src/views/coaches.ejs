@@ -1,0 +1,57 @@
+<%- include('_header', { title: 'Coaches', page: 'coaches' }) %>
+
+<div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+  <div>
+    <h1>Coaches</h1>
+    <p><%= total %> coach<%= total > 1 ? 's' : '' %> actif<%= total > 1 ? 's' : '' %></p>
+  </div>
+  <% if (pendingCount > 0) { %>
+    <div class="alert alert-warning" style="margin:0;"><i class="fa-solid fa-clock"></i> <%= pendingCount %> invitation<%= pendingCount > 1 ? 's' : '' %> en attente</div>
+  <% } %>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Coach</th>
+          <th>Athlètes acceptés</th>
+          <th>En attente</th>
+          <th>Code invitation</th>
+          <th>TrainCoins</th>
+          <th>Inscrit le</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% coaches.forEach(c => { %>
+        <tr>
+          <td>
+            <a href="/users/<%= c._id %>" class="table-link" style="display:flex;align-items:center;gap:10px;">
+              <div style="width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#8b5cf6,#6d28d9);display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.78rem;font-weight:700;flex-shrink:0;">
+                <%= (c.firstName || c.email || '?')[0].toUpperCase() %>
+              </div>
+              <div>
+                <div style="font-weight:500;"><%= c.firstName || '' %> <%= c.lastName || '' %><% if (!c.firstName && !c.lastName) { %><span class="text-muted">Sans nom</span><% } %></div>
+                <div class="text-small text-muted"><%= c.email %></div>
+              </div>
+            </a>
+          </td>
+          <td style="font-weight:700;color:var(--success);"><%= c.accepted %></td>
+          <td><% if (c.pending > 0) { %><span style="color:var(--warning);font-weight:600;"><%= c.pending %></span><% } else { %><span class="text-muted">—</span><% } %></td>
+          <td><code style="font-size:0.78rem;background:#f1f5f9;padding:2px 7px;border-radius:5px;"><%= c.coachInviteCode || '—' %></code></td>
+          <td style="font-weight:600;color:var(--navy);"><i class="fa-solid fa-coins" style="color:var(--warning);font-size:0.75rem;margin-right:4px;"></i><%= c.trainCoins %></td>
+          <td class="text-muted text-small"><%= new Date(c.createdAt).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' }) %></td>
+          <td><a href="/coaches/<%= c._id %>" class="btn btn-secondary" style="padding:5px 10px;font-size:0.78rem;"><i class="fa-solid fa-eye"></i> Athlètes</a></td>
+        </tr>
+        <% }); %>
+        <% if (!coaches.length) { %>
+        <tr><td colspan="7"><div class="empty-state"><i class="fa-solid fa-whistle"></i><p>Aucun coach</p></div></td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('_footer') %>

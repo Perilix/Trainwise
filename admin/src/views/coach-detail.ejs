@@ -1,0 +1,50 @@
+<%- include('_header', { title: 'Athlètes du coach', page: 'coaches' }) %>
+
+<div class="page-header" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+  <a href="/coaches" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i></a>
+  <div>
+    <h1><%= coach.firstName || '' %> <%= coach.lastName || '' %><% if (!coach.firstName && !coach.lastName) { %>Sans nom<% } %></h1>
+    <p><%= coach.email %> — <%= relations.length %> relation<%= relations.length > 1 ? 's' : '' %></p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Athlète</th><th>Statut</th><th>Package</th><th>Invité le</th></tr>
+      </thead>
+      <tbody>
+        <% relations.forEach(r => { %>
+        <tr>
+          <td>
+            <% if (r.athlete) { %>
+            <a href="/users/<%= r.athlete._id %>" class="table-link" style="display:flex;align-items:center;gap:10px;">
+              <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#00a6fb,#0582ca);display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.78rem;font-weight:700;flex-shrink:0;">
+                <%= (r.athlete.firstName || r.athlete.email || '?')[0].toUpperCase() %>
+              </div>
+              <div>
+                <div style="font-weight:500;font-size:0.84rem;"><%= r.athlete.firstName || '' %> <%= r.athlete.lastName || '' %></div>
+                <div class="text-small text-muted"><%= r.athlete.email %></div>
+              </div>
+            </a>
+            <% } else { %><span class="text-muted">Compte supprimé</span><% } %>
+          </td>
+          <td>
+            <span class="badge" style="background:<%= r.status === 'accepted' ? 'rgba(16,185,129,0.1)' : r.status === 'pending' ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)' %>;color:<%= r.status === 'accepted' ? '#059669' : r.status === 'pending' ? '#d97706' : '#ef4444' %>;">
+              <%= r.status === 'accepted' ? '✓ Accepté' : r.status === 'pending' ? '⏳ En attente' : '✗ Refusé' %>
+            </span>
+          </td>
+          <td><span class="badge badge-user" style="text-transform:capitalize;"><%= r.packageType || '—' %></span></td>
+          <td class="text-muted text-small"><%= new Date(r.invitedAt || r.createdAt).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' }) %></td>
+        </tr>
+        <% }); %>
+        <% if (!relations.length) { %>
+        <tr><td colspan="4"><div class="empty-state"><i class="fa-solid fa-users"></i><p>Aucun athlète</p></div></td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('_footer') %>

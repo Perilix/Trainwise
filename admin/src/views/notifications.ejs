@@ -1,0 +1,69 @@
+<%- include('_header', { title: 'Notifications', page: 'notifications' }) %>
+
+<div class="page-header">
+  <h1>Notifications Push</h1>
+  <p>Envoyer une notification à vos utilisateurs</p>
+</div>
+
+<div class="two-cols">
+  <!-- Form -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="fa-solid fa-paper-plane" style="color:var(--blue);margin-right:6px;"></i>Nouvelle notification</span>
+    </div>
+    <div class="card-body">
+      <% if (success) { %>
+        <div class="alert alert-success"><i class="fa-solid fa-circle-check"></i> <%= success %></div>
+      <% } %>
+      <% if (error) { %>
+        <div class="alert alert-error"><i class="fa-solid fa-triangle-exclamation"></i> <%= error %></div>
+      <% } %>
+
+      <form method="POST" action="/notifications">
+        <div class="form-group">
+          <label class="form-label">Titre</label>
+          <input type="text" name="title" class="form-input" placeholder="Ex: Nouvelle fonctionnalité !" required maxlength="100">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Message</label>
+          <textarea name="body" class="form-input" rows="3" placeholder="Votre message…" required maxlength="300" style="resize:vertical;"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Destinataires</label>
+          <select name="segment" class="form-input">
+            <option value="all">Tous les utilisateurs (<%= stats.withToken %> tokens)</option>
+            <option value="pro">Abonnés Pro uniquement</option>
+            <option value="free">Utilisateurs Free uniquement</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
+          <i class="fa-solid fa-paper-plane"></i> Envoyer
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    <div class="stat-card">
+      <div class="stat-card-top">
+        <div class="stat-label">Tokens enregistrés</div>
+        <div class="stat-icon blue"><i class="fa-solid fa-mobile-screen"></i></div>
+      </div>
+      <div class="stat-value"><%= stats.withToken %></div>
+      <div class="stat-sub">sur <%= stats.total %> utilisateurs</div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <p style="font-size:0.82rem;color:var(--text-muted);margin:0 0 8px;font-weight:500;"><i class="fa-solid fa-circle-info" style="margin-right:6px;color:var(--blue);"></i>Infos</p>
+        <ul style="font-size:0.8rem;color:var(--text-muted);padding-left:16px;margin:0;line-height:1.8;">
+          <li>Les notifications nécessitent Firebase FCM</li>
+          <li>Tokens invalides sont nettoyés automatiquement</li>
+          <li>iOS et Android supportés</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('_footer') %>

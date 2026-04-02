@@ -25,8 +25,22 @@
       <a href="/users" class="nav-item <%= page === 'users' ? 'active' : '' %>">
         <i class="fa-solid fa-users"></i> Utilisateurs
       </a>
-      <a href="/users?role=coach" class="nav-item <%= page === 'coaches' ? 'active' : '' %>">
-        <i class="fa-solid fa-person-running"></i> Coaches
+      <a href="/coaches" class="nav-item <%= page === 'coaches' ? 'active' : '' %>">
+        <i class="fa-solid fa-whistle"></i> Coaches
+      </a>
+      <a href="/runs" class="nav-item <%= page === 'runs' ? 'active' : '' %>">
+        <i class="fa-solid fa-route"></i> Sorties
+      </a>
+      <span class="nav-section-label" style="margin-top:8px;">Analytique</span>
+      <a href="/revenue" class="nav-item <%= page === 'revenue' ? 'active' : '' %>">
+        <i class="fa-solid fa-euro-sign"></i> Revenus
+      </a>
+      <a href="/ai" class="nav-item <%= page === 'ai' ? 'active' : '' %>">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> Activité IA
+      </a>
+      <span class="nav-section-label" style="margin-top:8px;">Outils</span>
+      <a href="/notifications" class="nav-item <%= page === 'notifications' ? 'active' : '' %>">
+        <i class="fa-solid fa-bell"></i> Notifications
       </a>
     </nav>
     <div class="sidebar-footer">

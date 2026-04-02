@@ -1,0 +1,99 @@
+<%- include('_header', { title: 'Sorties', page: 'runs' }) %>
+
+<div class="page-header">
+  <h1>Sorties</h1>
+  <p><%= total.toLocaleString('fr-FR') %> résultat<%= total > 1 ? 's' : '' %></p>
+</div>
+
+<form method="GET" action="/runs">
+  <div class="filters">
+    <div class="search-wrap">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" name="search" class="search-input" placeholder="Rechercher par utilisateur…" value="<%= search %>">
+    </div>
+    <input type="date" name="dateFrom" class="filter-select" value="<%= dateFrom %>" title="Date depuis">
+    <input type="date" name="dateTo" class="filter-select" value="<%= dateTo %>" title="Date jusqu'à">
+    <select name="analyzed" class="filter-select">
+      <option value="">Toutes</option>
+      <option value="1" <%= analyzed === '1' ? 'selected' : '' %>>Avec analyse IA</option>
+      <option value="0" <%= analyzed === '0' ? 'selected' : '' %>>Sans analyse</option>
+    </select>
+    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filtrer</button>
+    <% if (search || dateFrom || dateTo || analyzed) { %>
+      <a href="/runs" class="btn btn-secondary"><i class="fa-solid fa-xmark"></i> Réinitialiser</a>
+    <% } %>
+  </div>
+</form>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Utilisateur</th>
+          <th>Date</th>
+          <th>Distance</th>
+          <th>Durée</th>
+          <th>Allure</th>
+          <th>Feeling</th>
+          <th>Type</th>
+          <th>Analyse IA</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% runs.forEach(r => { %>
+        <tr>
+          <td>
+            <% if (r.user) { %>
+            <a href="/users/<%= r.user._id %>" class="table-link" style="display:flex;align-items:center;gap:8px;">
+              <div style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,#00a6fb,#0582ca);display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.72rem;font-weight:700;flex-shrink:0;">
+                <%= (r.user.firstName || r.user.email || '?')[0].toUpperCase() %>
+              </div>
+              <div>
+                <div style="font-size:0.82rem;font-weight:500;"><%= r.user.firstName || '' %> <%= r.user.lastName || '' %><% if (!r.user.firstName && !r.user.lastName) { %><span class="text-muted">Sans nom</span><% } %></div>
+                <div class="text-small text-muted"><%= r.user.email %></div>
+              </div>
+            </a>
+            <% } else { %><span class="text-muted">—</span><% } %>
+          </td>
+          <td class="text-small text-muted"><%= new Date(r.date).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' }) %></td>
+          <td style="font-weight:600;"><%= r.distance ? r.distance.toFixed(1) + ' km' : '—' %></td>
+          <td><% if (r.duration) { const h = Math.floor(r.duration/60); const m = Math.round(r.duration%60); %><%= h > 0 ? h+'h'+String(m).padStart(2,'0') : m+'min' %><% } else { %>—<% } %></td>
+          <td class="text-muted"><%= r.averagePace || '—' %></td>
+          <td>
+            <% if (r.feeling) { %>
+              <span style="font-weight:700;color:<%= r.feeling >= 7 ? 'var(--success)' : r.feeling >= 4 ? 'var(--warning)' : '#ef4444' %>"><%= r.feeling %>/10</span>
+            <% } else { %>—<% } %>
+          </td>
+          <td><% if (r.sessionType) { %><span class="badge badge-user" style="font-size:0.7rem;"><%= r.sessionType %></span><% } else { %><span class="text-muted">—</span><% } %></td>
+          <td>
+            <% if (r.analysis) { %>
+              <span style="color:var(--purple);font-size:0.8rem;font-weight:500;"><i class="fa-solid fa-wand-magic-sparkles"></i> Oui</span>
+            <% } else { %>
+              <span class="text-muted text-small">—</span>
+            <% } %>
+          </td>
+        </tr>
+        <% }); %>
+        <% if (!runs.length) { %>
+        <tr><td colspan="8"><div class="empty-state"><i class="fa-solid fa-route"></i><p>Aucune sortie trouvée</p></div></td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+
+  <% if (pages > 1) { %>
+  <div class="pagination">
+    <span class="pagination-info">Page <%= page %> sur <%= pages %></span>
+    <a href="/runs?search=<%= search %>&dateFrom=<%= dateFrom %>&dateTo=<%= dateTo %>&analyzed=<%= analyzed %>&page=1" class="page-btn <%= page <= 1 ? 'disabled' : '' %>"><i class="fa-solid fa-angles-left"></i></a>
+    <a href="/runs?search=<%= search %>&dateFrom=<%= dateFrom %>&dateTo=<%= dateTo %>&analyzed=<%= analyzed %>&page=<%= Math.max(1, page - 1) %>" class="page-btn <%= page <= 1 ? 'disabled' : '' %>"><i class="fa-solid fa-angle-left"></i></a>
+    <% for (let i = Math.max(1, page - 2); i <= Math.min(pages, page + 2); i++) { %>
+      <a href="/runs?search=<%= search %>&dateFrom=<%= dateFrom %>&dateTo=<%= dateTo %>&analyzed=<%= analyzed %>&page=<%= i %>" class="page-btn <%= i === page ? 'active' : '' %>"><%= i %></a>
+    <% } %>
+    <a href="/runs?search=<%= search %>&dateFrom=<%= dateFrom %>&dateTo=<%= dateTo %>&analyzed=<%= analyzed %>&page=<%= Math.min(pages, page + 1) %>" class="page-btn <%= page >= pages ? 'disabled' : '' %>"><i class="fa-solid fa-angle-right"></i></a>
+    <a href="/runs?search=<%= search %>&dateFrom=<%= dateFrom %>&dateTo=<%= dateTo %>&analyzed=<%= analyzed %>&page=<%= pages %>" class="page-btn <%= page >= pages ? 'disabled' : '' %>"><i class="fa-solid fa-angles-right"></i></a>
+  </div>
+  <% } %>
+</div>
+
+<%- include('_footer') %>
