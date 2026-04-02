@@ -99,8 +99,20 @@ export class AuthService {
     const token = localStorage.getItem(this.TOKEN_KEY);
     const userJson = localStorage.getItem(this.USER_KEY);
     if (token && userJson) {
+      // Affiche immédiatement les données cachées (UX rapide)
       this.currentUser.set(JSON.parse(userJson));
+      // Puis rafraîchit depuis la DB en arrière-plan
+      this.refreshUser().subscribe({ error: () => {} });
     }
+  }
+
+  refreshUser(): Observable<User> {
+    return this.http.get<User>(`${this.API_URL}/me`).pipe(
+      tap(user => {
+        localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+        this.currentUser.set(user);
+      })
+    );
   }
 
   register(data: RegisterData): Observable<AuthResponse> {
