@@ -150,32 +150,28 @@ const dayToJsIndex = {
   'samedi': 6
 };
 
-// Helper: Calculer les dates disponibles pour les séances
+// Helper: Calculer les dates disponibles pour les séances (depuis noms français)
 const calculateAvailableDates = (startDate, availableDays, weeks = 1) => {
   const dates = [];
   const start = new Date(startDate);
   start.setHours(0, 0, 0, 0);
 
-  // Pour chaque semaine
   for (let week = 0; week < weeks; week++) {
     for (const day of availableDays) {
       const targetDayIndex = dayToJsIndex[day.toLowerCase()];
       if (targetDayIndex === undefined) continue;
 
-      // Calculer la date du jour dans cette semaine
       const weekStart = new Date(start);
       weekStart.setDate(start.getDate() + (week * 7));
 
       const currentDayIndex = weekStart.getDay();
       let daysToAdd = targetDayIndex - currentDayIndex;
 
-      // Si le jour est déjà passé cette semaine (pour la première semaine), passer
       if (week === 0 && daysToAdd < 0) continue;
 
       const targetDate = new Date(weekStart);
       targetDate.setDate(weekStart.getDate() + daysToAdd);
 
-      // Vérifier que la date est >= à la date de début
       if (targetDate >= start) {
         dates.push(targetDate.toISOString().split('T')[0]);
       }
@@ -185,26 +181,77 @@ const calculateAvailableDates = (startDate, availableDays, weeks = 1) => {
   return dates.sort();
 };
 
+// Helper: Calculer les dates depuis dayConfig du frontend
+// dayIndex frontend: 0=Lundi, 1=Mardi, ..., 6=Dimanche
+// JS getDay():       0=Dimanche, 1=Lundi, ..., 6=Samedi
+const calculateDatesFromDayConfig = (startDate, dayConfig, weeks = 1) => {
+  const runningDates = [];
+  const strengthDates = [];
+  const start = new Date(startDate);
+  start.setHours(0, 0, 0, 0);
+
+  for (let week = 0; week < weeks; week++) {
+    for (const dc of dayConfig) {
+      const jsDayIndex = (dc.dayIndex + 1) % 7; // Lundi(0) → JS 1, Dimanche(6) → JS 0
+
+      const weekStart = new Date(start);
+      weekStart.setDate(start.getDate() + (week * 7));
+
+      const currentDayIndex = weekStart.getDay();
+      let daysToAdd = jsDayIndex - currentDayIndex;
+
+      if (week === 0 && daysToAdd < 0) continue;
+
+      const targetDate = new Date(weekStart);
+      targetDate.setDate(weekStart.getDate() + daysToAdd);
+
+      if (targetDate >= start) {
+        const dateStr = targetDate.toISOString().split('T')[0];
+        if (dc.running) runningDates.push(dateStr);
+        if (dc.strength) strengthDates.push(dateStr);
+      }
+    }
+  }
+
+  return {
+    runningDates: [...new Set(runningDates)].sort(),
+    strengthDates: [...new Set(strengthDates)].sort()
+  };
+};
+
 // Générer un plan d'entraînement via IA (preview)
 exports.generatePlan = async (req, res) => {
   try {
-    const { weeks = 1, startDate } = req.body;
+    const { weeks = 1, startDate, dayConfig } = req.body;
 
     // Récupérer le profil utilisateur
     const user = await User.findById(req.user._id);
 
-    if (!user.availableDays || user.availableDays.length === 0) {
+    // Calculer les dates selon dayConfig (frontend) ou availableDays (profil)
+    let runningDates, strengthDates, sessionDates;
+
+    if (dayConfig && dayConfig.length > 0) {
+      const result = calculateDatesFromDayConfig(
+        startDate || new Date().toISOString().split('T')[0],
+        dayConfig,
+        weeks
+      );
+      runningDates = result.runningDates;
+      strengthDates = result.strengthDates;
+      sessionDates = [...new Set([...runningDates, ...strengthDates])].sort();
+    } else if (user.availableDays && user.availableDays.length > 0) {
+      sessionDates = calculateAvailableDates(
+        startDate || new Date().toISOString().split('T')[0],
+        user.availableDays,
+        weeks
+      );
+      runningDates = sessionDates;
+      strengthDates = [];
+    } else {
       return res.status(400).json({
-        error: 'Configure tes jours disponibles dans ton profil avant de générer un plan'
+        error: 'Sélectionne au moins un jour pour générer un plan'
       });
     }
-
-    // Calculer les dates exactes des séances
-    const sessionDates = calculateAvailableDates(
-      startDate || new Date().toISOString().split('T')[0],
-      user.availableDays,
-      weeks
-    );
 
     // Récupérer l'historique récent
     const recentRuns = await Run.find({ user: req.user._id })
@@ -238,7 +285,9 @@ exports.generatePlan = async (req, res) => {
 
     // Filtrer les dates déjà planifiées
     const existingDates = existingPlanned.map(p => p.date.toISOString().split('T')[0]);
-    const availableSessionDates = sessionDates.filter(d => !existingDates.includes(d));
+    const availableRunningDates = runningDates.filter(d => !existingDates.includes(d));
+    const availableStrengthDates = strengthDates.filter(d => !existingDates.includes(d));
+    const availableSessionDates = [...new Set([...availableRunningDates, ...availableStrengthDates])].sort();
 
     // Construire le contexte pour l'IA
     const planningContext = {
@@ -252,9 +301,13 @@ exports.generatePlan = async (req, res) => {
         availableDays: user.availableDays,
         preferredTime: user.preferredTime,
         vma: user.vma || null,
-        fcmax: user.fcmax || null
+        fcmax: user.fcmax || null,
+        strengthFrequency: user.strengthFrequency || null,
+        strengthGoal: user.strengthGoal || null
       },
-      // IMPORTANT: Les dates exactes où créer des séances
+      // Dates séparées par type
+      runningDates: availableRunningDates,
+      strengthDates: availableStrengthDates,
       sessionDates: availableSessionDates,
       history: {
         recentRuns: recentRuns.map(r => ({
