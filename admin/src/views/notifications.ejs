@@ -5,84 +5,101 @@
   <p>Broadcast vers vos utilisateurs iOS &amp; Android</p>
 </div>
 
-<div class="two-cols">
+<!-- Stats -->
+<div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
+  <div class="stat-card">
+    <div class="stat-card-top">
+      <div class="stat-label">Appareils enregistrés</div>
+      <div class="stat-icon blue"><i class="fa-solid fa-mobile-screen"></i></div>
+    </div>
+    <div class="stat-value"><%= stats.withToken %></div>
+    <div class="stat-sub">sur <%= stats.total %> utilisateurs</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-top">
+      <div class="stat-label">Campagnes envoyées</div>
+      <div class="stat-icon navy"><i class="fa-solid fa-bell"></i></div>
+    </div>
+    <div class="stat-value"><%= logs.length %></div>
+    <div class="stat-sub">au total</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-top">
+      <div class="stat-label">Notifications envoyées</div>
+      <div class="stat-icon green"><i class="fa-solid fa-paper-plane"></i></div>
+    </div>
+    <div class="stat-value"><%= logs.reduce((s, l) => s + l.sent, 0).toLocaleString('fr-FR') %></div>
+    <div class="stat-sub">total cumulé</div>
+  </div>
+</div>
+
+<div class="two-cols" style="align-items:start;">
 
   <!-- Formulaire -->
   <div class="card">
     <div class="card-header">
-      <span class="card-title"><i class="fa-solid fa-paper-plane" style="color:var(--blue);margin-right:6px;"></i>Nouvelle notification</span>
+      <span class="card-title"><i class="fa-solid fa-paper-plane" style="color:var(--blue);margin-right:6px;"></i>Nouvelle campagne</span>
     </div>
     <div class="card-body">
 
       <% if (success) { %>
-        <div class="alert alert-success"><i class="fa-solid fa-circle-check"></i> <%= success %></div>
+        <div class="alert alert-success" style="margin-bottom:20px;"><i class="fa-solid fa-circle-check"></i> <%= success %></div>
       <% } %>
       <% if (error) { %>
-        <div class="alert alert-error"><i class="fa-solid fa-triangle-exclamation"></i> <%= error %></div>
+        <div class="alert alert-error" style="margin-bottom:20px;"><i class="fa-solid fa-triangle-exclamation"></i> <%= error %></div>
       <% } %>
 
       <form method="POST" action="/notifications">
-        <div class="form-group">
-          <label class="form-label">Titre</label>
-          <input type="text" name="title" class="form-input" placeholder="Ex: Nouvelle fonctionnalité !" required maxlength="100">
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label">Titre de la notification</label>
+          <input type="text" name="title" class="form-control" placeholder="Ex: Nouvelle fonctionnalité disponible 🚀" required maxlength="100">
         </div>
-        <div class="form-group">
+
+        <div class="form-group" style="margin-bottom:16px;">
           <label class="form-label">Message</label>
-          <textarea name="body" class="form-input" rows="4" placeholder="Votre message…" required maxlength="300" style="resize:vertical;"></textarea>
+          <textarea name="body" class="form-control" rows="4" placeholder="Votre message…" required maxlength="300" style="resize:vertical;"></textarea>
         </div>
-        <div class="form-group">
+
+        <div class="form-group" style="margin-bottom:24px;">
           <label class="form-label">Destinataires</label>
-          <select name="segment" class="form-input">
-            <option value="all">Tous — <strong><%= stats.withToken %></strong> appareils enregistrés</option>
-            <option value="pro">Abonnés Pro uniquement</option>
+          <select name="segment" class="form-control">
+            <option value="all">🌍 Tous les appareils (<%= stats.withToken %> tokens)</option>
+            <option value="pro">✦ Abonnés Pro uniquement</option>
             <option value="free">Utilisateurs Free uniquement</option>
           </select>
         </div>
-        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px;">
-          <i class="fa-solid fa-paper-plane"></i> Envoyer
+
+        <button type="submit" class="btn btn-save" style="width:100%;justify-content:center;display:flex;align-items:center;gap:8px;padding:12px;font-size:0.9rem;">
+          <i class="fa-solid fa-paper-plane"></i> Envoyer la notification
         </button>
       </form>
     </div>
   </div>
 
-  <!-- Stats + infos -->
-  <div style="display:flex;flex-direction:column;gap:16px;">
-    <div class="stats-grid" style="grid-template-columns:1fr 1fr;">
-      <div class="stat-card">
-        <div class="stat-card-top">
-          <div class="stat-label">Appareils actifs</div>
-          <div class="stat-icon blue"><i class="fa-solid fa-mobile-screen"></i></div>
+  <!-- Preview phone mockup -->
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 0;">
+    <div style="background:#1c1c1e;border-radius:28px;padding:24px 20px;width:260px;box-shadow:0 20px 60px rgba(0,0,0,0.25);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#00a6fb,#0582ca);display:flex;align-items:center;justify-content:center;">
+          <i class="fa-solid fa-person-running" style="color:#fff;font-size:0.9rem;"></i>
         </div>
-        <div class="stat-value"><%= stats.withToken %></div>
-        <div class="stat-sub">tokens valides</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-card-top">
-          <div class="stat-label">Envois totaux</div>
-          <div class="stat-icon navy"><i class="fa-solid fa-bell"></i></div>
+        <div>
+          <div style="font-size:0.7rem;font-weight:600;color:#fff;">Trainwise</div>
+          <div style="font-size:0.65rem;color:#8e8e93;">maintenant</div>
         </div>
-        <div class="stat-value"><%= logs.reduce((s, l) => s + l.sent, 0).toLocaleString('fr-FR') %></div>
-        <div class="stat-sub"><%= logs.length %> campagne<%= logs.length > 1 ? 's' : '' %></div>
       </div>
+      <div style="font-size:0.82rem;font-weight:600;color:#fff;margin-bottom:4px;" id="preview-title">Titre de la notification</div>
+      <div style="font-size:0.76rem;color:#ebebf599;line-height:1.4;" id="preview-body">Votre message apparaîtra ici…</div>
     </div>
-
-    <div class="card">
-      <div class="card-body">
-        <p style="font-size:0.82rem;color:var(--text-muted);margin:0 0 10px;font-weight:600;"><i class="fa-solid fa-circle-info" style="margin-right:6px;color:var(--blue);"></i>Notes</p>
-        <ul style="font-size:0.8rem;color:var(--text-muted);padding-left:16px;margin:0;line-height:2;">
-          <li>Nécessite <code>FIREBASE_SERVICE_ACCOUNT</code> en variable d'env</li>
-          <li>Tokens invalides (UNREGISTERED) sont nettoyés automatiquement</li>
-          <li>iOS et Android supportés via FCM</li>
-        </ul>
-      </div>
-    </div>
+    <p style="font-size:0.74rem;color:var(--text-muted);margin-top:14px;text-align:center;">Aperçu iOS</p>
   </div>
+
 </div>
 
 <!-- Historique -->
-<div class="card" style="margin-top:24px;">
+<div class="card">
   <div class="card-header">
-    <span class="card-title"><i class="fa-solid fa-clock-rotate-left" style="color:var(--text-muted);margin-right:6px;"></i>Historique des envois</span>
+    <span class="card-title"><i class="fa-solid fa-clock-rotate-left" style="color:var(--text-muted);margin-right:6px;"></i>Historique des campagnes</span>
   </div>
   <div class="table-wrap">
     <table>
@@ -109,12 +126,16 @@
           <td style="font-weight:700;color:var(--success);"><i class="fa-solid fa-circle-check" style="font-size:0.7rem;margin-right:4px;"></i><%= log.sent %></td>
           <td>
             <% if (log.failed > 0) { %>
-              <span style="color:#ef4444;font-weight:600;"><%= log.failed %></span>
+              <span style="color:var(--danger);font-weight:600;"><%= log.failed %></span>
             <% } else { %>
               <span class="text-muted">—</span>
             <% } %>
           </td>
-          <td class="text-muted text-small"><%= new Date(log.sentAt).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' }) %> <span style="color:#cbd5e1;margin:0 2px;">·</span> <%= new Date(log.sentAt).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }) %></td>
+          <td class="text-muted text-small">
+            <%= new Date(log.sentAt).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' }) %>
+            <span style="color:#cbd5e1;margin:0 2px;">·</span>
+            <%= new Date(log.sentAt).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }) %>
+          </td>
         </tr>
         <% }); %>
         <% if (!logs.length) { %>
@@ -131,5 +152,19 @@
     </table>
   </div>
 </div>
+
+<script>
+  const titleInput = document.querySelector('input[name="title"]');
+  const bodyInput  = document.querySelector('textarea[name="body"]');
+  const previewTitle = document.getElementById('preview-title');
+  const previewBody  = document.getElementById('preview-body');
+
+  titleInput.addEventListener('input', () => {
+    previewTitle.textContent = titleInput.value || 'Titre de la notification';
+  });
+  bodyInput.addEventListener('input', () => {
+    previewBody.textContent = bodyInput.value || 'Votre message apparaîtra ici…';
+  });
+</script>
 
 <%- include('_footer') %>
