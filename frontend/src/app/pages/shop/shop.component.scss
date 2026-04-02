@@ -39,8 +39,9 @@ $pro-color: #003554;
 }
 
 .shop-title {
-  font-family: 'GulfsDisplay', serif;
-  font-size: 1.6rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
   color: $pro-color;
   margin: 0;
   flex: 1;
@@ -70,7 +71,7 @@ $pro-color: #003554;
   display: flex;
   align-items: center;
   gap: 10px;
-  background: linear-gradient(135deg, $pro-color, #005080);
+  background: $pro-color;
   color: #fff;
   border-radius: 14px;
   padding: 12px 16px;
@@ -157,19 +158,26 @@ $pro-color: #003554;
   border-radius: 10px;
 }
 
+.card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
 .card-icon-wrap {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, $pro-color, #005080);
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: $pro-color;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 12px;
+  flex-shrink: 0;
 
   i {
     color: $coin-gold;
-    font-size: 1.3rem;
+    font-size: 1.1rem;
   }
 
   &.coins-icon {
@@ -179,10 +187,11 @@ $pro-color: #003554;
 }
 
 .card-name {
-  font-family: 'GulfsDisplay', serif;
-  font-size: 1.2rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
   color: $pro-color;
-  margin: 0 0 6px;
+  margin: 0;
 }
 
 .card-desc {
