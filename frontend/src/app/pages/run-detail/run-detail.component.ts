@@ -93,16 +93,20 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     // Create map
     this.map = L.map('map');
 
-    // Add tile layer (OpenStreetMap)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
+    // CartoDB Voyager — même style que les mini-maps
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      subdomains: 'abcd',
+      maxZoom: 19,
+      attribution: '© CartoDB'
     }).addTo(this.map);
 
     // Create polyline
     const polyline = L.polyline(coordinates, {
-      color: '#FC4C02',
-      weight: 4,
-      opacity: 0.8
+      color: '#00a6fb',
+      weight: 5,
+      opacity: 1,
+      lineJoin: 'round',
+      lineCap: 'round'
     }).addTo(this.map);
 
     // Add start marker
@@ -177,6 +181,8 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
         this.isAnalyzing.set(false);
         this.analyzeSuccess.set(true);
         setTimeout(() => this.analyzeSuccess.set(false), 3000);
+        // Fallback : resync les coins si le WebSocket n'a pas mis à jour
+        this.subscriptionService.refreshStatus();
       },
       error: (err) => {
         this.isAnalyzing.set(false);

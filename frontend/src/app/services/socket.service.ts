@@ -25,7 +25,8 @@ export class SocketService implements OnDestroy {
     'typing:stop',
     'message:read',
     'friend:request',
-    'friend:response'
+    'friend:response',
+    'traincoin:update'
   ];
 
   constructor(private authService: AuthService) {
