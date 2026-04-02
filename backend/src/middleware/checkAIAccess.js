@@ -1,4 +1,5 @@
 const User = require('../models/user.model');
+const { emitTrainCoinsUpdate } = require('../socket/index');
 
 /**
  * Middleware factory — vérifie que l'utilisateur peut utiliser une feature IA.
@@ -25,6 +26,7 @@ const checkAIAccess = (coinCost = 1) => async (req, res, next) => {
       await user.save({ validateBeforeSave: false });
       res.setHeader('X-TrainCoins-Remaining', user.trainCoins);
       req.trainCoinsRemaining = user.trainCoins;
+      emitTrainCoinsUpdate(user._id, { trainCoins: user.trainCoins });
       return next();
     }
 

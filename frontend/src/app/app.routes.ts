@@ -36,6 +36,11 @@ export const routes: Routes = [
     canActivate: [authGuard, athleteGuard]
   },
   {
+    path: 'sorties',
+    loadComponent: () => import('./pages/sorties/sorties.component').then(m => m.SortiesComponent),
+    canActivate: [authGuard, athleteGuard]
+  },
+  {
     path: 'run/:id',
     loadComponent: () => import('./pages/run-detail/run-detail.component').then(m => m.RunDetailComponent),
     canActivate: [authGuard, athleteGuard]

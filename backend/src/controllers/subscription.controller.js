@@ -1,4 +1,5 @@
 const User = require('../models/user.model');
+const { emitTrainCoinsUpdate } = require('../socket/index');
 
 // Produits RevenueCat → coins offerts
 const COIN_PRODUCTS = {
@@ -61,9 +62,11 @@ exports.revenueCatWebhook = async (req, res) => {
             ? new Date(expiration_at_ms)
             : new Date(Date.now() + PRO_PRODUCTS[product_id] * 24 * 60 * 60 * 1000);
           await user.save({ validateBeforeSave: false });
+          emitTrainCoinsUpdate(user._id, { trainCoins: user.trainCoins, subscriptionStatus: 'pro', subscriptionExpiry: user.subscriptionExpiry });
         } else if (COIN_PRODUCTS[product_id] !== undefined) {
           user.trainCoins += COIN_PRODUCTS[product_id];
           await user.save({ validateBeforeSave: false });
+          emitTrainCoinsUpdate(user._id, { trainCoins: user.trainCoins });
         }
         break;
       }
@@ -74,6 +77,7 @@ exports.revenueCatWebhook = async (req, res) => {
         if (PRO_PRODUCTS[product_id] !== undefined) {
           user.subscriptionStatus = 'free';
           await user.save({ validateBeforeSave: false });
+          emitTrainCoinsUpdate(user._id, { trainCoins: user.trainCoins, subscriptionStatus: 'free' });
         }
         break;
       }
@@ -82,6 +86,7 @@ exports.revenueCatWebhook = async (req, res) => {
         if (COIN_PRODUCTS[product_id] !== undefined) {
           user.trainCoins += COIN_PRODUCTS[product_id];
           await user.save({ validateBeforeSave: false });
+          emitTrainCoinsUpdate(user._id, { trainCoins: user.trainCoins });
         }
         break;
       }

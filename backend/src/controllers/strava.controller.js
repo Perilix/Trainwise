@@ -2,6 +2,7 @@ const axios = require('axios');
 const User = require('../models/user.model');
 const Run = require('../models/run.model');
 const StrengthSession = require('../models/strengthSession.model');
+const { emitTrainCoinsUpdate } = require('../socket/index');
 
 const STRAVA_AUTH_URL = 'https://www.strava.com/oauth/authorize';
 const STRAVA_TOKEN_URL = 'https://www.strava.com/oauth/token';
@@ -22,6 +23,7 @@ const analyzeRunInBackground = async (run, user) => {
     if (!isPro) {
       if ((freshUser.trainCoins || 0) < 0.5) return; // Pas assez de coins, on ne lance pas l'analyse
       await User.findByIdAndUpdate(user._id, { $inc: { trainCoins: -0.5 } });
+      emitTrainCoinsUpdate(user._id, { trainCoins: (freshUser.trainCoins || 0) - 0.5 });
     }
 
     // Récupérer les 5 dernières courses

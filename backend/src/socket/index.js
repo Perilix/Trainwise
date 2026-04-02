@@ -261,9 +261,16 @@ const getOnlineUsers = () => {
   return Array.from(connectedUsers.keys());
 };
 
+// Émet une mise à jour des TrainCoins à l'utilisateur connecté
+const emitTrainCoinsUpdate = (userId, data) => {
+  if (!io) return;
+  io.to(`user:${userId.toString()}`).emit('traincoin:update', data);
+};
+
 module.exports = {
   initializeSocket,
   getIO,
   isUserOnline,
-  getOnlineUsers
+  getOnlineUsers,
+  emitTrainCoinsUpdate
 };

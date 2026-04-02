@@ -1,0 +1,161 @@
+<app-navbar></app-navbar>
+
+<div class="page-scroll page-content sorties-page">
+
+  <!-- Header -->
+  <div class="sorties-header">
+    <h1 class="sorties-title">Mes sorties</h1>
+
+    <!-- Period toggle -->
+    <div class="period-toggle">
+      <button [class.active]="period() === 'month'" (click)="setPeriod('month')">Ce mois</button>
+      <button [class.active]="period() === '3months'" (click)="setPeriod('3months')">3 mois</button>
+      <button [class.active]="period() === 'all'" (click)="setPeriod('all')">Tout</button>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  @if (!loading()) {
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-icon"><i class="fa-solid fa-road"></i></div>
+        <div class="kpi-value">{{ kpis().totalKm.toFixed(1) }}</div>
+        <div class="kpi-label">km</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon"><i class="fa-solid fa-person-running"></i></div>
+        <div class="kpi-value">{{ kpis().totalRuns }}</div>
+        <div class="kpi-label">sorties</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon"><i class="fa-solid fa-gauge-high"></i></div>
+        <div class="kpi-value">{{ kpis().avgPaceStr }}</div>
+        <div class="kpi-label">min/km</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon"><i class="fa-regular fa-clock"></i></div>
+        <div class="kpi-value">{{ formatTotalDuration(kpis().totalDurationMin) }}</div>
+        <div class="kpi-label">total</div>
+      </div>
+    </div>
+
+    <!-- Trend -->
+    @if (kpis().trend !== null && kpis().totalRuns > 0) {
+      <div class="trend-bar" [class.positive]="kpis().trend! >= 0" [class.negative]="kpis().trend! < 0">
+        <i class="fa-solid" [class.fa-arrow-trend-up]="kpis().trend! >= 0" [class.fa-arrow-trend-down]="kpis().trend! < 0"></i>
+        {{ kpis().trend! >= 0 ? '+' : '' }}{{ kpis().trend }}% de km vs période précédente
+      </div>
+    }
+
+    <!-- Empty state -->
+    @if (filteredRuns().length === 0) {
+      <div class="empty-state">
+        <div class="empty-icon"><i class="fa-solid fa-person-running"></i></div>
+        <p>Aucune sortie sur cette période</p>
+        <span>Connecte Strava ou ajoute une sortie manuellement</span>
+      </div>
+    }
+
+    <!-- Run feed -->
+    <div class="run-feed">
+      @for (run of filteredRuns(); track run._id) {
+        <div class="run-card" (click)="goToRun(run)">
+
+          <!-- Card header -->
+          <div class="run-card-header">
+            <div class="run-card-meta">
+              <span class="run-date">{{ formatDate(run.date) }}</span>
+              <div class="run-type">
+                <i class="fa-solid {{ sessionIcon(run.sessionType) }}"></i>
+                {{ sessionLabel(run.sessionType) }}
+              </div>
+            </div>
+            @if (run.feeling) {
+              <div class="feeling-badge" [style.background]="feelingColor(run.feeling) + '20'" [style.color]="feelingColor(run.feeling)">
+                <i class="fa-solid fa-star" style="font-size:0.65rem;"></i> {{ run.feeling }}/10
+              </div>
+            }
+          </div>
+
+          <!-- Mini map -->
+          @if (run.polyline) {
+            <div class="run-map">
+              <svg viewBox="0 0 280 140" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+                <path [attr.d]="getSvgPath(run.polyline)" fill="none" stroke="#00a6fb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <!-- Start dot -->
+                <circle [attr.cx]="getSvgPath(run.polyline).split('M')[1]?.split(',')[0]"
+                        [attr.cy]="getSvgPath(run.polyline).split('M')[1]?.split('L')[0]?.split(',')[1]"
+                        r="4" fill="#10b981"/>
+              </svg>
+            </div>
+          } @else {
+            <div class="run-map-placeholder">
+              <i class="fa-solid {{ sessionIcon(run.sessionType) }}"></i>
+            </div>
+          }
+
+          <!-- Stats -->
+          <div class="run-stats">
+            @if (run.distance) {
+              <div class="run-stat">
+                <span class="stat-val">{{ run.distance.toFixed(1) }}</span>
+                <span class="stat-unit">km</span>
+              </div>
+            }
+            @if (run.duration) {
+              <div class="run-stat">
+                <span class="stat-val">{{ formatDuration(run.duration) }}</span>
+                <span class="stat-unit">durée</span>
+              </div>
+            }
+            @if (run.averagePace) {
+              <div class="run-stat">
+                <span class="stat-val">{{ run.averagePace }}</span>
+                <span class="stat-unit">min/km</span>
+              </div>
+            }
+            @if (run.averageHeartRate) {
+              <div class="run-stat">
+                <span class="stat-val">{{ run.averageHeartRate }}</span>
+                <span class="stat-unit">bpm</span>
+              </div>
+            }
+            @if (run.elevationGain) {
+              <div class="run-stat">
+                <i class="fa-solid fa-arrow-trend-up" style="color:#f59e0b;font-size:0.65rem;"></i>
+                <span class="stat-val">{{ run.elevationGain }}m</span>
+              </div>
+            }
+          </div>
+
+          <!-- Analyse IA -->
+          @if (run.analysis) {
+            <div class="run-analysis">
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+              {{ run.analysis }}
+            </div>
+          }
+
+          <div class="run-card-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+        </div>
+      }
+    </div>
+  } @else {
+    <!-- Skeleton loader -->
+    <div class="kpi-grid skeleton-grid">
+      @for (i of [1,2,3,4]; track i) {
+        <div class="kpi-card skeleton"></div>
+      }
+    </div>
+    <div class="run-feed">
+      @for (i of [1,2,3]; track i) {
+        <div class="run-card skeleton-card">
+          <div class="skeleton-line short"></div>
+          <div class="skeleton-map"></div>
+          <div class="skeleton-line"></div>
+        </div>
+      }
+    </div>
+  }
+
+</div>

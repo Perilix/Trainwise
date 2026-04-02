@@ -1,0 +1,335 @@
+.sorties-page {
+  background: #F6F4F0;
+  min-height: 100vh;
+}
+
+// ── Header ──────────────────────────────────────────────────
+.sorties-header {
+  padding: 1.25rem 1.25rem 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sorties-title {
+  font-family: 'GulfsDisplay', serif;
+  font-size: 1.6rem;
+  color: #003554;
+  margin: 0;
+}
+
+// ── Period toggle ────────────────────────────────────────────
+.period-toggle {
+  display: flex;
+  background: rgba(0, 53, 84, 0.08);
+  border-radius: 10px;
+  padding: 3px;
+  gap: 2px;
+
+  button {
+    padding: 5px 12px;
+    border: none;
+    background: transparent;
+    color: rgba(0, 53, 84, 0.55);
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &.active {
+      background: #003554;
+      color: #fff;
+    }
+  }
+}
+
+// ── KPI grid ─────────────────────────────────────────────────
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 0.75rem 1.25rem;
+}
+
+.kpi-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 1px 4px rgba(0, 53, 84, 0.07);
+}
+
+.kpi-icon {
+  font-size: 0.9rem;
+  color: #00a6fb;
+  margin-bottom: 2px;
+}
+
+.kpi-value {
+  font-family: 'GulfsDisplay', serif;
+  font-size: 1.2rem;
+  color: #003554;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.kpi-label {
+  font-size: 0.65rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+}
+
+// ── Trend bar ────────────────────────────────────────────────
+.trend-bar {
+  margin: 0 1.25rem 0.75rem;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  &.positive {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+  }
+
+  &.negative {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+  }
+}
+
+// ── Empty state ───────────────────────────────────────────────
+.empty-state {
+  text-align: center;
+  padding: 3rem 2rem;
+
+  .empty-icon {
+    font-size: 2.5rem;
+    color: rgba(0, 53, 84, 0.15);
+    margin-bottom: 1rem;
+  }
+
+  p {
+    font-family: 'GulfsDisplay', serif;
+    font-size: 1.1rem;
+    color: #003554;
+    margin: 0 0 6px;
+  }
+
+  span {
+    font-size: 0.8rem;
+    color: #64748b;
+  }
+}
+
+// ── Run feed ─────────────────────────────────────────────────
+.run-feed {
+  padding: 0 1.25rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+// ── Run card ─────────────────────────────────────────────────
+.run-card {
+  background: #fff;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 53, 84, 0.08);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  position: relative;
+
+  &:active {
+    transform: scale(0.99);
+    box-shadow: 0 1px 4px rgba(0, 53, 84, 0.06);
+  }
+}
+
+.run-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 16px 10px;
+}
+
+.run-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.run-date {
+  font-size: 0.72rem;
+  color: #64748b;
+  text-transform: capitalize;
+}
+
+.run-type {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #003554;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  i {
+    color: #00a6fb;
+    font-size: 0.75rem;
+  }
+}
+
+.feeling-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+// ── Mini map ─────────────────────────────────────────────────
+.run-map {
+  width: 100%;
+  background: linear-gradient(135deg, #f0f8ff 0%, #e8f4fd 100%);
+  border-top: 1px solid rgba(0, 53, 84, 0.05);
+  border-bottom: 1px solid rgba(0, 53, 84, 0.05);
+
+  svg {
+    width: 100%;
+    height: 130px;
+    display: block;
+  }
+}
+
+.run-map-placeholder {
+  height: 80px;
+  background: #F6F4F0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  color: rgba(0, 53, 84, 0.15);
+  border-top: 1px solid rgba(0, 53, 84, 0.05);
+  border-bottom: 1px solid rgba(0, 53, 84, 0.05);
+}
+
+// ── Run stats ────────────────────────────────────────────────
+.run-stats {
+  display: flex;
+  gap: 0;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(0, 53, 84, 0.05);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.run-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+}
+
+.stat-val {
+  font-family: 'GulfsDisplay', serif;
+  font-size: 1.05rem;
+  color: #003554;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.stat-unit {
+  font-size: 0.62rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+// ── Analyse IA ───────────────────────────────────────────────
+.run-analysis {
+  padding: 10px 16px 14px;
+  font-size: 0.78rem;
+  color: #475569;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+
+  i {
+    color: #8b5cf6;
+    margin-right: 5px;
+    font-size: 0.7rem;
+  }
+}
+
+.run-card-arrow {
+  position: absolute;
+  bottom: 14px;
+  right: 16px;
+  color: rgba(0, 53, 84, 0.2);
+  font-size: 0.75rem;
+}
+
+// ── Skeleton loader ───────────────────────────────────────────
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s ease infinite;
+}
+
+.skeleton-grid {
+  .kpi-card {
+    height: 80px;
+  }
+}
+
+.skeleton-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.skeleton-line {
+  height: 14px;
+  border-radius: 7px;
+  width: 100%;
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s ease infinite;
+
+  &.short { width: 40%; }
+}
+
+.skeleton-map {
+  height: 130px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s ease infinite;
+}

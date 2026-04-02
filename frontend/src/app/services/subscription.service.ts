@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Capacitor } from '@capacitor/core';
 import { AuthService } from './auth.service';
+import { SocketService } from './socket.service';
 import { environment } from '../../environments/environment';
 
 export type PaywallAction = 'analyze' | 'generate' | 'strava';
@@ -10,11 +11,23 @@ export type PaywallAction = 'analyze' | 'generate' | 'strava';
 export class SubscriptionService {
   private http = inject(HttpClient);
   private authService = inject(AuthService);
+  private socketService = inject(SocketService);
   private readonly API = `${environment.apiUrl}/api/subscription`;
 
   // Paywall modal state
   showPaywall = signal(false);
   paywallAction = signal<PaywallAction | null>(null);
+
+  constructor() {
+    this.socketService.on<{ trainCoins?: number; subscriptionStatus?: string; subscriptionExpiry?: string | null }>('traincoin:update')
+      .subscribe(data => {
+        this.authService.updateLocalUser({
+          ...(data.trainCoins !== undefined && { trainCoins: data.trainCoins }),
+          ...(data.subscriptionStatus !== undefined && { subscriptionStatus: data.subscriptionStatus as any }),
+          ...(data.subscriptionExpiry !== undefined && { subscriptionExpiry: data.subscriptionExpiry })
+        });
+      });
+  }
 
   // Computed depuis le user courant
   trainCoins = computed(() => this.authService.currentUser()?.trainCoins ?? 0);
