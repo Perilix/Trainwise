@@ -250,7 +250,9 @@ exports.generatePlan = async (req, res) => {
         weeklyFrequency: user.weeklyFrequency,
         injuries: user.injuries,
         availableDays: user.availableDays,
-        preferredTime: user.preferredTime
+        preferredTime: user.preferredTime,
+        vma: user.vma || null,
+        fcmax: user.fcmax || null
       },
       // IMPORTANT: Les dates exactes où créer des séances
       sessionDates: availableSessionDates,
