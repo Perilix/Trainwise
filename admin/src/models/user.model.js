@@ -1,7 +1,9 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+  password: { type: String, select: false },
   firstName: { type: String, trim: true },
   lastName: { type: String, trim: true },
   phone: { type: String, trim: true },
@@ -28,5 +30,9 @@ const userSchema = new mongoose.Schema({
   pushPlatform: { type: String, enum: ['ios', 'android', 'web'], default: null },
   createdAt: { type: Date, default: Date.now }
 });
+
+userSchema.methods.comparePassword = async function(candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.password);
+};
 
 module.exports = mongoose.model('User', userSchema);
