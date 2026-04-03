@@ -64,7 +64,13 @@ app.use(helmet({
 }));
 
 // Sanitize MongoDB queries (protection injection NoSQL)
-app.use(mongoSanitize());
+// Note: express-mongo-sanitize ne peut pas réassigner req.query en Express 5 (getter uniquement)
+// On sanitize body et params manuellement
+app.use((req, res, next) => {
+  if (req.body) req.body = mongoSanitize.sanitize(req.body);
+  if (req.params) req.params = mongoSanitize.sanitize(req.params);
+  next();
+});
 
 // Rate limit global — 200 req/min par IP
 app.use('/api', rateLimit({
