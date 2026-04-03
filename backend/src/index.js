@@ -55,7 +55,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 // Répondre aux preflight OPTIONS immédiatement
-app.options('*', cors(corsOptions));
+app.options(/(.*)/, cors(corsOptions));
 
 // Security headers (après CORS)
 app.use(helmet({
