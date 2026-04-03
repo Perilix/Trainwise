@@ -26,7 +26,38 @@ const app = express();
 const httpServer = http.createServer(app);
 const PORT = process.env.PORT || 3000;
 
-// Security headers
+// CORS doit être AVANT helmet pour que les preflight OPTIONS passent
+const allowedOrigins = [
+  'http://localhost:4200',
+  'http://192.168.1.31:4200',
+  'capacitor://localhost',
+  'ionic://localhost',
+  'http://localhost',
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
+const corsOptions = {
+  origin: function(origin, callback) {
+    // Allow requests with no origin (mobile apps natives, curl, etc.)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    // En dev uniquement, on autorise tout
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    return callback(new Error('CORS: origine non autorisée'));
+  },
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
+// Répondre aux preflight OPTIONS immédiatement
+app.options('*', cors(corsOptions));
+
+// Security headers (après CORS)
 app.use(helmet({
   crossOriginEmbedderPolicy: false, // nécessaire pour Capacitor/Ionic
   contentSecurityPolicy: false      // géré côté frontend Angular
@@ -44,31 +75,6 @@ app.use('/api', rateLimit({
   message: { error: 'Trop de requêtes, réessayez dans une minute.' }
 }));
 
-// Middleware
-const allowedOrigins = [
-  'http://localhost:4200',
-  'http://192.168.1.31:4200',
-  'capacitor://localhost',
-  'ionic://localhost',
-  'http://localhost',
-  process.env.FRONTEND_URL,
-].filter(Boolean);
-
-app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (mobile apps natives, curl, etc.)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    // En dev uniquement, on autorise tout
-    if (process.env.NODE_ENV !== 'production') {
-      return callback(null, true);
-    }
-    return callback(new Error('CORS: origine non autorisée'));
-  },
-  credentials: true
-}));
 app.use(express.json());
 
 // Routes
