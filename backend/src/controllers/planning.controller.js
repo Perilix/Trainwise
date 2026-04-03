@@ -293,24 +293,6 @@ exports.generatePlan = async (req, res) => {
     const availableSessionDates = [...new Set([...availableRunningDates, ...availableStrengthDates])].sort();
 
     // Pré-calculer les allures depuis VMA/FCmax
-    const paceTargets = (() => {
-      const vma = user.vma;
-      const fcmax = user.fcmax;
-      const toMMSS = (minPerKm) => {
-        const m = Math.floor(minPerKm);
-        const s = Math.round((minPerKm - m) * 60);
-        return `${m}:${String(s).padStart(2, '0')}`;
-      };
-      return {
-        endurance: vma ? toMMSS(60 / (vma * 0.72)) : null,
-        tempo: vma ? toMMSS(60 / (vma * 0.86)) : null,
-        fractionne: vma ? toMMSS(60 / (vma * 1.00)) : null,
-        fcEndurance: fcmax ? `${Math.round(fcmax * 0.65)}–${Math.round(fcmax * 0.75)} bpm` : null,
-        fcTempo: fcmax ? `${Math.round(fcmax * 0.80)}–${Math.round(fcmax * 0.87)} bpm` : null,
-      };
-    })();
-
-    // Pré-calculer les allures depuis VMA/FCmax
     const toMMSS = (minPerKm) => {
       const m = Math.floor(minPerKm);
       const s = Math.round((minPerKm - m) * 60);
@@ -343,7 +325,6 @@ exports.generatePlan = async (req, res) => {
         strengthGoal: user.strengthGoal || null,
         strengthType: user.strengthType || null
       },
-      paceTargets,
       paceTargets,
       // Dates séparées par type
       runningDates: availableRunningDates,
