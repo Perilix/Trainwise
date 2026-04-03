@@ -53,7 +53,6 @@ const initializeSocket = (httpServer) => {
     }
     connectedUsers.get(userId).add(socket.id);
 
-    console.log(`User ${socket.user.firstName} connected (${socket.id})`);
 
     // Join user's personal room for direct messages
     socket.join(`user:${userId}`);
@@ -212,7 +211,6 @@ const initializeSocket = (httpServer) => {
 
     // Handle disconnection
     socket.on('disconnect', () => {
-      console.log(`User ${socket.user.firstName} disconnected (${socket.id})`);
 
       const userSockets = connectedUsers.get(userId);
       if (userSockets) {

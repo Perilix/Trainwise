@@ -269,9 +269,6 @@ exports.syncActivities = async (req, res) => {
       params
     });
 
-    console.log('=== STRAVA ACTIVITIES ===');
-    response.data.forEach(a => console.log(`[${getActivityType(a)}] ${a.name} — ${a.start_date}`));
-    console.log('=========================');
 
     const runActivities = response.data.filter(a =>
       STRAVA_RUN_TYPES.includes(getActivityType(a))

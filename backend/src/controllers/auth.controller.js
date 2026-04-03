@@ -399,6 +399,53 @@ exports.forgotPassword = async (req, res) => {
   }
 };
 
+// Delete account (RGPD — droit à l'effacement, Article 17)
+exports.deleteAccount = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    // Supprimer l'avatar Cloudinary si présent
+    const user = await User.findById(userId);
+    if (user?.profilePicture) {
+      try {
+        const urlParts = user.profilePicture.split('/');
+        const publicId = urlParts.slice(-2).join('/').replace(/\.[^/.]+$/, '');
+        await cloudinary.uploader.destroy(publicId);
+      } catch (e) { /* ignore */ }
+    }
+
+    // Supprimer toutes les données liées à cet utilisateur
+    const Run            = require('../models/run.model');
+    const PlannedRun     = require('../models/plannedRun.model');
+    const StrengthSession = require('../models/strengthSession.model');
+    const Conversation   = require('../models/conversation.model');
+    const Message        = require('../models/message.model');
+    const Notification   = require('../models/notification.model');
+    const Friendship     = require('../models/friendship.model');
+    const CoachAthlete   = require('../models/coachAthlete.model');
+
+    await Promise.all([
+      Run.deleteMany({ user: userId }),
+      PlannedRun.deleteMany({ user: userId }),
+      StrengthSession.deleteMany({ user: userId }),
+      Notification.deleteMany({ $or: [{ user: userId }, { sender: userId }] }),
+      Friendship.deleteMany({ $or: [{ requester: userId }, { recipient: userId }] }),
+      CoachAthlete.deleteMany({ $or: [{ coach: userId }, { athlete: userId }] }),
+      Message.deleteMany({ sender: userId }),
+      Conversation.updateMany(
+        { participants: userId },
+        { $pull: { participants: userId } }
+      ),
+    ]);
+
+    await User.findByIdAndDelete(userId);
+
+    res.json({ message: 'Compte et toutes les données associées supprimés.' });
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur lors de la suppression du compte.' });
+  }
+};
+
 // Reset password
 exports.resetPassword = async (req, res) => {
   try {

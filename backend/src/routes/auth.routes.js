@@ -24,5 +24,6 @@ router.get('/me', protect, authController.getMe);
 router.patch('/profile', protect, authController.updateProfile);
 router.post('/avatar', protect, uploadAvatar.single('avatar'), authController.uploadAvatar);
 router.delete('/avatar', protect, authController.deleteAvatar);
+router.delete('/account', protect, authController.deleteAccount);
 
 module.exports = router;

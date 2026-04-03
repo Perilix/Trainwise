@@ -2,6 +2,9 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const http = require('http');
+const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const runRoutes = require('./routes/run.routes');
@@ -22,6 +25,24 @@ const { initializeSocket } = require('./socket/index');
 const app = express();
 const httpServer = http.createServer(app);
 const PORT = process.env.PORT || 3000;
+
+// Security headers
+app.use(helmet({
+  crossOriginEmbedderPolicy: false, // nécessaire pour Capacitor/Ionic
+  contentSecurityPolicy: false      // géré côté frontend Angular
+}));
+
+// Sanitize MongoDB queries (protection injection NoSQL)
+app.use(mongoSanitize());
+
+// Rate limit global — 200 req/min par IP
+app.use('/api', rateLimit({
+  windowMs: 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Trop de requêtes, réessayez dans une minute.' }
+}));
 
 // Middleware
 const allowedOrigins = [
