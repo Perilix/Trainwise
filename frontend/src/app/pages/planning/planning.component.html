@@ -236,7 +236,7 @@
         <div class="section">
           <h3>Courses effectuées</h3>
           @for (run of selectedDay()!.runs; track run._id) {
-            <div class="event-card completed clickable" (click)="openRunDetail(run)">
+            <div class="event-card completed clickable" [class.strava]="!!run.stravaActivityId" (click)="openRunDetail(run)">
               <button class="delete-btn" (click)="deleteRun(run); $event.stopPropagation()" title="Supprimer">×</button>
               @if (run.stravaActivityId) {
                 <span class="strava-badge">Strava</span>
