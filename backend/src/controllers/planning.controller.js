@@ -394,7 +394,7 @@ exports.confirmPlan = async (req, res) => {
         user: req.user._id,
         date: parseDateUTC(session.date),
         activityType: isStrength ? 'strength' : 'running',
-        sessionType: isStrength ? undefined : session.sessionType,
+        sessionType: isStrength ? 'full_body' : session.sessionType,
         targetDistance: session.targetDistance,
         targetDuration: session.targetDuration,
         targetPace: session.targetPace,
