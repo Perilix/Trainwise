@@ -243,10 +243,12 @@ export class PlanningComponent implements OnInit {
   }
 
   selectDay(day: CalendarDay) {
+    this.isAddingSession.set(false);
     this.selectedDay.set(day);
   }
 
   closeDetail() {
+    this.isAddingSession.set(false);
     this.selectedDay.set(null);
   }
 

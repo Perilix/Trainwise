@@ -274,7 +274,7 @@
         <div class="section">
           <h3>Séances planifiées</h3>
           @for (planned of selectedDay()!.plannedRuns; track planned._id) {
-            <div class="event-card" [class.done]="planned.status === 'completed'" [class.skipped]="planned.status === 'skipped'" [class.ai-generated]="planned.generatedBy === 'ai'" [class.strength]="planned.activityType === 'strength'">
+            <div class="event-card" [class.done]="planned.status === 'completed'" [class.skipped]="planned.status === 'skipped'" [class.ai-generated]="planned.generatedBy === 'ai'" [class.coach-generated]="planned.generatedBy === 'coach'" [class.strength]="planned.activityType === 'strength'">
               <button class="delete-btn" (click)="deletePlannedSession(planned)" title="Supprimer">×</button>
               <span class="event-status" [class]="planned.status">
                 @if (planned.status === 'planned') {<i class="fa-solid fa-clock"></i>}
@@ -282,7 +282,10 @@
                 @if (planned.status === 'skipped') { <i class="fa-solid fa-ban"></i> }
               </span>
               @if (planned.generatedBy === 'ai') {
-                <span class="coach-badge">Séance du coach IA</span>
+                <span class="coach-badge">✦ Coach IA</span>
+              }
+              @if (planned.generatedBy === 'coach') {
+                <span class="coach-badge">👤 Coach</span>
               }
               <div class="event-header">
                 <span class="activity-icon">{{ getActivityIcon(planned.activityType) }}</span>
