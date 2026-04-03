@@ -140,9 +140,9 @@
     <h2>Zone de danger</h2>
     <p class="danger-text">Ces actions sont irréversibles. Procédez avec précaution.</p>
 
-    <button class="btn-danger" disabled>
-      Supprimer mon compte
+    <button class="btn-danger" (click)="deleteAccount()" [disabled]="isDeleting()">
+      @if (isDeleting()) { <i class="fa-solid fa-circle-notch fa-spin"></i> Suppression... }
+      @else { Supprimer mon compte }
     </button>
-    <span class="coming-soon">Bientôt disponible</span>
   </section>
 </div>

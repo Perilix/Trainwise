@@ -17,6 +17,7 @@ export class SettingsComponent {
 
   isSaving = signal(false);
   isUploadingAvatar = signal(false);
+  isDeleting = signal(false);
   saveSuccess = signal(false);
   saveError = signal<string | null>(null);
 
@@ -125,6 +126,20 @@ export class SettingsComponent {
     const first = user.firstName?.charAt(0) || '';
     const last = user.lastName?.charAt(0) || '';
     return (first + last).toUpperCase() || '?';
+  }
+
+  async deleteAccount() {
+    const confirmed = window.confirm(
+      'Supprimer définitivement ton compte ?\n\nToutes tes données (courses, séances, planning) seront effacées. Cette action est irréversible.'
+    );
+    if (!confirmed) return;
+    this.isDeleting.set(true);
+    try {
+      await this.authService.deleteAccount();
+    } catch {
+      this.isDeleting.set(false);
+      this.saveError.set('Erreur lors de la suppression. Réessaie.');
+    }
   }
 
   goBack() {

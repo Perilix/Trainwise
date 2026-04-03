@@ -156,6 +156,14 @@ export class AuthService {
     return !!this.getToken();
   }
 
+  async deleteAccount(): Promise<void> {
+    await this.http.delete(`${this.API_URL}/account`).toPromise();
+    localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.USER_KEY);
+    this.currentUser.set(null);
+    this.router.navigate(['/login']);
+  }
+
   getUser(): User | null {
     return this.currentUser();
   }
