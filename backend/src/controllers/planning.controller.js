@@ -303,7 +303,8 @@ exports.generatePlan = async (req, res) => {
         vma: user.vma || null,
         fcmax: user.fcmax || null,
         strengthFrequency: user.strengthFrequency || null,
-        strengthGoal: user.strengthGoal || null
+        strengthGoal: user.strengthGoal || null,
+        strengthType: user.strengthType || null
       },
       // Dates séparées par type
       runningDates: availableRunningDates,
