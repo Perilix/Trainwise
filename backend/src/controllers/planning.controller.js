@@ -200,7 +200,10 @@ const calculateDatesFromDayConfig = (startDate, dayConfig, weeks = 1) => {
       const currentDayIndex = weekStart.getDay();
       let daysToAdd = jsDayIndex - currentDayIndex;
 
-      if (week === 0 && daysToAdd < 0) continue;
+      if (daysToAdd < 0) {
+        if (week === 0) daysToAdd += 7; // wrap to next occurrence (e.g. Sunday selected but start is Monday)
+        else continue;
+      }
 
       const targetDate = new Date(weekStart);
       targetDate.setDate(weekStart.getDate() + daysToAdd);
@@ -289,6 +292,40 @@ exports.generatePlan = async (req, res) => {
     const availableStrengthDates = strengthDates.filter(d => !existingDates.includes(d));
     const availableSessionDates = [...new Set([...availableRunningDates, ...availableStrengthDates])].sort();
 
+    // Pré-calculer les allures depuis VMA/FCmax
+    const paceTargets = (() => {
+      const vma = user.vma;
+      const fcmax = user.fcmax;
+      const toMMSS = (minPerKm) => {
+        const m = Math.floor(minPerKm);
+        const s = Math.round((minPerKm - m) * 60);
+        return `${m}:${String(s).padStart(2, '0')}`;
+      };
+      return {
+        endurance: vma ? toMMSS(60 / (vma * 0.72)) : null,
+        tempo: vma ? toMMSS(60 / (vma * 0.86)) : null,
+        fractionne: vma ? toMMSS(60 / (vma * 1.00)) : null,
+        fcEndurance: fcmax ? `${Math.round(fcmax * 0.65)}–${Math.round(fcmax * 0.75)} bpm` : null,
+        fcTempo: fcmax ? `${Math.round(fcmax * 0.80)}–${Math.round(fcmax * 0.87)} bpm` : null,
+      };
+    })();
+
+    // Pré-calculer les allures depuis VMA/FCmax
+    const toMMSS = (minPerKm) => {
+      const m = Math.floor(minPerKm);
+      const s = Math.round((minPerKm - m) * 60);
+      return `${m}:${String(s).padStart(2, '0')}`;
+    };
+    const vma = user.vma || null;
+    const fcmax = user.fcmax || null;
+    const paceTargets = {
+      endurance: vma ? `${toMMSS(60 / (vma * 0.72))}/km` : null,
+      tempo: vma ? `${toMMSS(60 / (vma * 0.86))}/km` : null,
+      fractionne: vma ? `${toMMSS(60 / vma)}/km` : null,
+      fcEndurance: fcmax ? `${Math.round(fcmax * 0.65)}–${Math.round(fcmax * 0.75)} bpm` : null,
+      fcTempo: fcmax ? `${Math.round(fcmax * 0.80)}–${Math.round(fcmax * 0.87)} bpm` : null,
+    };
+
     // Construire le contexte pour l'IA
     const planningContext = {
       runner: {
@@ -306,10 +343,13 @@ exports.generatePlan = async (req, res) => {
         strengthGoal: user.strengthGoal || null,
         strengthType: user.strengthType || null
       },
+      paceTargets,
+      paceTargets,
       // Dates séparées par type
       runningDates: availableRunningDates,
       strengthDates: availableStrengthDates,
       sessionDates: availableSessionDates,
+      totalExpectedSessions: availableRunningDates.length + availableStrengthDates.length,
       history: {
         recentRuns: recentRuns.map(r => ({
           date: r.date,
@@ -368,10 +408,12 @@ exports.confirmPlan = async (req, res) => {
 
     const createdSessions = [];
     for (const session of sessions) {
+      const isStrength = session.sessionType === 'strength' || session.activityType === 'strength';
       const plannedRun = new PlannedRun({
         user: req.user._id,
         date: parseDateUTC(session.date),
-        sessionType: session.sessionType,
+        activityType: isStrength ? 'strength' : 'running',
+        sessionType: isStrength ? undefined : session.sessionType,
         targetDistance: session.targetDistance,
         targetDuration: session.targetDuration,
         targetPace: session.targetPace,
