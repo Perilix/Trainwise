@@ -1,5 +1,6 @@
 const StrengthSession = require('../models/strengthSession.model');
 const PlannedRun = require('../models/plannedRun.model');
+const { autoCompletePlannedSessions } = require('../services/planningAutoComplete');
 
 // Créer une séance de muscu
 exports.createSession = async (req, res) => {
@@ -17,11 +18,11 @@ exports.createSession = async (req, res) => {
       linkedPlannedSession
     });
 
-    // Si liée à une séance planifiée, la marquer comme complétée
+    // Marquer la séance planifiée comme complétée
     if (linkedPlannedSession) {
-      await PlannedRun.findByIdAndUpdate(linkedPlannedSession, {
-        status: 'completed'
-      });
+      await PlannedRun.findByIdAndUpdate(linkedPlannedSession, { status: 'completed' });
+    } else {
+      await autoCompletePlannedSessions(req.user._id, session.date, 'strength');
     }
 
     // Populate les exercices pour la réponse

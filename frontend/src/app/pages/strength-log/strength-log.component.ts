@@ -98,7 +98,6 @@ export class StrengthLogComponent implements OnInit {
     this.planningService.getPlannedSessionById(id).subscribe({
       next: (planned) => {
         this.linkedPlannedSession.set(planned);
-        // Pre-fill the form with planned session data
         if (planned.date) {
           const date = new Date(planned.date);
           this.sessionDate.set(date.toISOString().split('T')[0]);
@@ -108,6 +107,19 @@ export class StrengthLogComponent implements OnInit {
         }
         if (planned.targetDuration) {
           this.sessionDuration.set(planned.targetDuration);
+        }
+        // Pre-populate exercises from coach's strength plan
+        if (planned.strengthPlan?.exercises?.length) {
+          const entries: ExerciseEntry[] = planned.strengthPlan.exercises.map((pe, i) => ({
+            exercise: pe.exercise,
+            order: i,
+            sets: Array.from({ length: pe.targetSets }, () => ({
+              reps: parseInt((pe.targetReps ?? '').split('-')[0]) || 10,
+              weight: pe.targetWeight ?? undefined
+            })),
+            notes: pe.notes
+          }));
+          this.exercises.set(entries);
         }
       },
       error: (err) => {
@@ -185,6 +197,16 @@ export class StrengthLogComponent implements OnInit {
 
   getExercise(entry: ExerciseEntry): Exercise {
     return entry.exercise as Exercise;
+  }
+
+  getPlanTarget(index: number): string | null {
+    const plan = this.linkedPlannedSession()?.strengthPlan;
+    if (!plan?.exercises?.[index]) return null;
+    const pe = plan.exercises[index];
+    let hint = `${pe.targetSets} × ${pe.targetReps}`;
+    if (pe.targetWeight) hint += ` @ ${pe.targetWeight}kg`;
+    if (pe.targetRest) hint += ` — repos ${pe.targetRest}s`;
+    return hint;
   }
 
   getMuscleLabel(muscle: MuscleGroup): string {

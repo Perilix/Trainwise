@@ -140,6 +140,45 @@
           </div>
         </div>
 
+        <!-- Données physiques -->
+        <div class="section-card">
+          <h2>Données physiques</h2>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="label">Taille</span>
+              <span class="value">{{ athlete()!.height ? athlete()!.height + ' cm' : 'Non défini' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Poids</span>
+              <span class="value">{{ athlete()!.weight ? athlete()!.weight + ' kg' : 'Non défini' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">VMA</span>
+              @if (!editingVma()) {
+                <span class="value vma-value">
+                  {{ athlete()!.vma ? athlete()!.vma + ' km/h' : 'Non défini' }}
+                  <button class="btn-edit-vma" (click)="startEditVma()" title="Modifier la VMA">
+                    <i class="fa-solid fa-pen"></i>
+                  </button>
+                </span>
+              } @else {
+                <div class="vma-edit">
+                  <input type="number" class="vma-input" [ngModel]="vmaInput()" (ngModelChange)="vmaInput.set($event)" min="8" max="30" step="0.5" placeholder="km/h" (keyup.enter)="saveVma()" (keyup.escape)="cancelEditVma()">
+                  <button class="btn-vma-save" (click)="saveVma()" [disabled]="vmaSaving()">
+                    @if (vmaSaving()) { <i class="fa-solid fa-circle-notch fa-spin"></i> } @else { <i class="fa-solid fa-check"></i> }
+                  </button>
+                  <button class="btn-vma-cancel" (click)="cancelEditVma()"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                @if (vmaError()) { <span class="vma-error">{{ vmaError() }}</span> }
+              }
+            </div>
+            <div class="info-item">
+              <span class="label">FCmax</span>
+              <span class="value">{{ athlete()!.fcmax ? athlete()!.fcmax + ' bpm' : 'Non défini' }}</span>
+            </div>
+          </div>
+        </div>
+
         <!-- Dernière activité -->
         <div class="section-card">
           <h2>Dernière activité <span class="section-subtitle">7 derniers jours</span></h2>

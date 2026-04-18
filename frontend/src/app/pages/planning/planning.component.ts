@@ -534,32 +534,21 @@ export class PlanningComponent implements OnInit {
   getDayIndicators(day: CalendarDay): { type: string; count: number }[] {
     const indicators: { type: string; count: number }[] = [];
 
-    if (day.runs.length > 0) {
-      indicators.push({ type: 'completed', count: day.runs.length });
+    const completedCount = day.runs.length + (day.strengthSessions?.length ?? 0);
+    if (completedCount > 0) {
+      indicators.push({ type: 'completed', count: completedCount });
     }
 
-    // Strength sessions logged
-    if (day.strengthSessions && day.strengthSessions.length > 0) {
-      indicators.push({ type: 'strength', count: day.strengthSessions.length });
-    }
-
-    // Running planned sessions
-    const runningPlanned = day.plannedRuns.filter(p => p.status === 'planned' && (!p.activityType || p.activityType === 'running'));
-    const runningDone = day.plannedRuns.filter(p => p.status === 'completed' && (!p.activityType || p.activityType === 'running'));
-
-    // Strength planned sessions
-    const strengthPlanned = day.plannedRuns.filter(p => p.status === 'planned' && p.activityType === 'strength');
-    const strengthDone = day.plannedRuns.filter(p => p.status === 'completed' && p.activityType === 'strength');
-
-    const planned = runningPlanned.length;
-    const done = runningDone.length;
+    const allPlanned = day.plannedRuns.filter(p => p.status === 'planned');
+    const plannedIA = allPlanned.filter(p => p.generatedBy === 'ai').length;
+    const plannedCoach = allPlanned.filter(p => p.generatedBy === 'coach').length;
+    const done = day.plannedRuns.filter(p => p.status === 'completed').length;
     const skipped = day.plannedRuns.filter(p => p.status === 'skipped').length;
 
-    if (planned > 0) indicators.push({ type: 'planned', count: planned });
+    if (plannedIA > 0) indicators.push({ type: 'planned-ia', count: plannedIA });
+    if (plannedCoach > 0) indicators.push({ type: 'planned-coach', count: plannedCoach });
     if (done > 0) indicators.push({ type: 'done', count: done });
     if (skipped > 0) indicators.push({ type: 'skipped', count: skipped });
-    if (strengthPlanned.length > 0) indicators.push({ type: 'strength-planned', count: strengthPlanned.length });
-    if (strengthDone.length > 0) indicators.push({ type: 'strength-done', count: strengthDone.length });
 
     return indicators;
   }

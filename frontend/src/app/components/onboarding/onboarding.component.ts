@@ -42,6 +42,8 @@ export class OnboardingComponent {
   preferredTime = signal<string>('flexible');
   age = signal<number | null>(null);
   gender = signal<string>('');
+  height = signal<number | null>(null);
+  weight = signal<number | null>(null);
   fcmax = signal<number | null>(null);
   vma = signal<number | null>(null);
 
@@ -135,6 +137,8 @@ export class OnboardingComponent {
     if (this.preferredTime()) payload['preferredTime'] = this.preferredTime();
     if (this.age()) payload['age'] = this.age();
     if (this.gender()) payload['gender'] = this.gender();
+    if (this.height()) payload['height'] = this.height();
+    if (this.weight()) payload['weight'] = this.weight();
     if (this.fcmax()) payload['fcmax'] = this.fcmax();
     if (this.vma()) payload['vma'] = this.vma();
 

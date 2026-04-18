@@ -59,7 +59,7 @@ export class HomeComponent {
       averageCadence: this.runData.averageCadence ?? undefined,
       elevationGain: this.runData.elevationGain ?? undefined,
       sessionType: this.runData.sessionType || undefined,
-      feeling: this.runData.feeling ?? undefined,
+      feeling: this.runData.feeling != null && this.runData.feeling !== ('' as any) ? Number(this.runData.feeling) : undefined,
       notes: this.runData.notes || undefined
     };
 

@@ -86,6 +86,9 @@
                   <div>
                     <h3>{{ getExercise(entry).name }}</h3>
                     <span class="muscle-tag">{{ getMuscleLabel(getExercise(entry).primaryMuscle) }}</span>
+                    @if (getPlanTarget(i)) {
+                      <span class="plan-target-hint">🎯 {{ getPlanTarget(i) }}</span>
+                    }
                   </div>
                 </div>
                 <button class="btn-icon danger" (click)="removeExercise(i)" title="Supprimer">

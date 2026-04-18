@@ -58,6 +58,10 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     if (this.feelingTimer) {
       clearTimeout(this.feelingTimer);
+      const run = this.run();
+      if (run?._id) {
+        this.runService.updateRun(run._id, { feeling: this.feelingValue() }).subscribe();
+      }
     }
   }
 

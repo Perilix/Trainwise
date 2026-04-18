@@ -143,6 +143,24 @@
             </div>
           }
 
+          <div class="profile-divider full-width"><span>Données physiques</span></div>
+          <div class="profile-item">
+            <span class="profile-label">Taille</span>
+            <span class="profile-value">{{ authService.currentUser()?.height ? authService.currentUser()!.height + ' cm' : 'Non défini' }}</span>
+          </div>
+          <div class="profile-item">
+            <span class="profile-label">Poids</span>
+            <span class="profile-value">{{ authService.currentUser()?.weight ? authService.currentUser()!.weight + ' kg' : 'Non défini' }}</span>
+          </div>
+          <div class="profile-item">
+            <span class="profile-label">VMA</span>
+            <span class="profile-value">{{ authService.currentUser()?.vma ? authService.currentUser()!.vma + ' km/h' : 'Non défini' }}</span>
+          </div>
+          <div class="profile-item">
+            <span class="profile-label">FCmax</span>
+            <span class="profile-value">{{ authService.currentUser()?.fcmax ? authService.currentUser()!.fcmax + ' bpm' : 'Non défini' }}</span>
+          </div>
+
           <div class="profile-divider full-width"><span>Musculation</span></div>
           <div class="profile-item">
             <span class="profile-label">Fréquence</span>
@@ -244,6 +262,28 @@
                   <option [value]="time.value">{{ time.label }}</option>
                 }
               </select>
+            </div>
+
+            <div class="form-section-title full-width">Données physiques</div>
+
+            <div class="form-group">
+              <label for="height">Taille (cm)</label>
+              <input type="number" id="height" [(ngModel)]="profileForm.height" name="height" min="100" max="250" placeholder="ex: 175">
+            </div>
+
+            <div class="form-group">
+              <label for="weight">Poids (kg)</label>
+              <input type="number" id="weight" [(ngModel)]="profileForm.weight" name="weight" min="30" max="300" step="0.5" placeholder="ex: 70">
+            </div>
+
+            <div class="form-group">
+              <label for="vma">VMA (km/h)</label>
+              <input type="number" id="vma" [(ngModel)]="profileForm.vma" name="vma" min="8" max="30" step="0.5" placeholder="ex: 14">
+            </div>
+
+            <div class="form-group">
+              <label for="fcmax">FCmax (bpm)</label>
+              <input type="number" id="fcmax" [(ngModel)]="profileForm.fcmax" name="fcmax" min="100" max="220" placeholder="ex: 185">
             </div>
 
             <div class="form-section-title full-width">Musculation</div>
@@ -428,10 +468,15 @@
       }
     </section>
 
-    <!-- Graphique hebdomadaire -->
+    <!-- Graphique -->
     <section class="chart-section">
       <div class="chart-header">
-        <h3>Stats hebdomadaires</h3>
+        <h3>Statistiques</h3>
+        <div class="period-filter">
+          <button class="period-btn" [class.active]="selectedPeriod() === 'semaine'" (click)="selectPeriod('semaine')">Sem.</button>
+          <button class="period-btn" [class.active]="selectedPeriod() === 'mois'" (click)="selectPeriod('mois')">Mois</button>
+          <button class="period-btn" [class.active]="selectedPeriod() === 'annee'" (click)="selectPeriod('annee')">Année</button>
+        </div>
       </div>
 
       <div class="metric-toggles">
@@ -445,6 +490,13 @@
           Temps
         </button>
       </div>
+
+      @if (selectedPeriod() === 'annee') {
+        <div class="year-legend">
+          <span class="legend-item legend-current"><span class="legend-dot"></span>{{ currentYear }}</span>
+          <span class="legend-item legend-prev"><span class="legend-dot"></span>{{ currentYear - 1 }}</span>
+        </div>
+      }
 
       <svg viewBox="0 0 300 120" class="chart-svg" xmlns="http://www.w3.org/2000/svg">
         <defs>
@@ -473,7 +525,15 @@
         <!-- Gradient fill -->
         <path [attr.d]="chartData().areaPath" fill="url(#areaGradient)"/>
 
-        <!-- Curve -->
+        <!-- Courbe année précédente (derrière) -->
+        @if (chartData().comparisonLinePath) {
+          <path [attr.d]="chartData().comparisonLinePath!" fill="none" stroke="#bbb" stroke-width="1.5" stroke-dasharray="4 3" stroke-linecap="round"/>
+          @for (pt of chartData().comparisonPoints!; track pt.label) {
+            <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="2.5" fill="#bbb" stroke="white" stroke-width="1"/>
+          }
+        }
+
+        <!-- Curve année en cours -->
         <path [attr.d]="chartData().linePath" fill="none" stroke="#0582ca" stroke-width="2" stroke-linecap="round"/>
 
         @for (pt of chartData().points; track pt.label) {
@@ -506,16 +566,32 @@
       </svg>
 
       <div class="chart-summary">
-        <div class="period-total">
-          <span class="period-total-label">Total</span>
-          <span class="period-total-value">{{ getPeriodTotalDisplay() }}</span>
-        </div>
-        @if (selectedPointData()) {
-          <div class="month-info">
-            <span class="info-date">{{ formatWeekRange(selectedPointData()!.weekStart, selectedPointData()!.weekEnd) }}</span>
-            <span class="info-sep">·</span>
-            <span class="info-value">{{ getMetricDisplay(selectedPointData()!) }}</span>
+        @if (selectedPointData(); as pt) {
+          <div class="point-detail">
+            <span class="point-detail-date">{{ formatPeriodRange(pt.periodStart, pt.periodEnd) }}</span>
+            <span class="point-detail-sep">·</span>
+            <strong class="point-detail-item">{{ getMetricDisplay(pt) }}</strong>
+            @if (selectedPeriod() === 'annee' && comparisonStats(); as comp) {
+              <span class="point-detail-prev">
+                {{ formatPeriodRange(comp[selectedWeekIndex()!].periodStart, comp[selectedWeekIndex()!].periodEnd) }}
+                · {{ getMetricDisplay(comp[selectedWeekIndex()!]) }}
+              </span>
+            }
           </div>
+        } @else {
+          <div class="period-total">
+            <span class="period-total-label">{{ selectedPeriod() === 'annee' ? currentYear : 'Total' }}</span>
+            <span class="period-total-value">{{ getPeriodTotalDisplay() }}</span>
+            @if (getComparisonDelta(); as delta) {
+              <span class="comparison-delta" [class.positive]="delta.positive" [class.negative]="!delta.positive">{{ delta.value }}</span>
+            }
+          </div>
+          @if (selectedPeriod() === 'annee' && comparisonTotals()) {
+            <div class="period-total comparison-total">
+              <span class="period-total-label">{{ currentYear - 1 }}</span>
+              <span class="period-total-value">{{ getComparisonTotalDisplay() }}</span>
+            </div>
+          }
         }
       </div>
     </section>

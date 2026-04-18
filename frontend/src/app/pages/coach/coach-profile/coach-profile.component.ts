@@ -35,6 +35,8 @@ export class CoachProfileComponent implements OnInit {
     { value: 'track', label: 'Piste / Athlétisme' },
     { value: 'cross', label: 'Cross-country' },
     { value: 'fitness', label: 'Fitness / Renforcement' },
+    { value: 'hyrox', label: 'Hyrox' },
+    { value: 'prep_physique', label: 'Prépa physique' },
     { value: 'cycling', label: 'Cyclisme' },
     { value: 'swimming', label: 'Natation' }
   ];

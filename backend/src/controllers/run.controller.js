@@ -1,6 +1,7 @@
 const axios = require('axios');
 const Run = require('../models/run.model');
 const User = require('../models/user.model');
+const { autoCompletePlannedSessions } = require('../services/planningAutoComplete');
 
 // Helper: Calculer les statistiques des courses récentes
 const calculateStats = (runs) => {
@@ -62,6 +63,17 @@ exports.createRun = async (req, res) => {
       user: req.user._id
     });
     await run.save();
+
+    // Auto-update FCmax si la séance dépasse la valeur enregistrée
+    if (run.maxHeartRate) {
+      await User.updateOne(
+        { _id: req.user._id, $or: [{ fcmax: null }, { fcmax: { $lt: run.maxHeartRate } }] },
+        { $set: { fcmax: run.maxHeartRate } }
+      );
+    }
+
+    // Compléter automatiquement les séances planifiées du même jour
+    await autoCompletePlannedSessions(req.user._id, run.date, 'running');
 
     // Appeler n8n pour l'analyse si le webhook est configuré
     if (process.env.N8N_WEBHOOK_URL) {

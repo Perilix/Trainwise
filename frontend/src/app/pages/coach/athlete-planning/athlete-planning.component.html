@@ -88,7 +88,7 @@
             <span class="day-number">{{ day.dayOfMonth }}</span>
             <div class="day-indicators">
               @for (indicator of getDayIndicators(day); track indicator.type) {
-                <span class="indicator" [class]="indicator.type"></span>
+                <div class="indicator-badge" [class]="indicator.type">{{ indicator.count }}</div>
               }
             </div>
           </div>
@@ -99,7 +99,8 @@
     <!-- Légende -->
     <div class="legend">
       <span class="legend-item"><span class="dot completed"></span> Effectuée</span>
-      <span class="legend-item"><span class="dot planned"></span> Planifiée</span>
+      <span class="legend-item"><span class="dot planned-ia"></span> Planifiée IA</span>
+      <span class="legend-item"><span class="dot planned-coach"></span> Planifiée Coach</span>
       <span class="legend-item"><span class="dot done"></span> Plan complété</span>
       <span class="legend-item"><span class="dot skipped"></span> Sautée</span>
     </div>
@@ -123,9 +124,11 @@
 
           <!-- Courses effectuées -->
           @for (run of selectedDay()!.runs; track run._id) {
-            <div class="session-card completed">
+            <div class="session-card completed clickable" (click)="goToRunDetail(run)">
               <div class="session-header">
+                <span class="activity-icon">🏃</span>
                 <span class="session-badge completed">Effectuée</span>
+                <span class="chevron">›</span>
               </div>
               <div class="session-stats">
                 @if (run.distance) {
@@ -137,21 +140,26 @@
                 @if (run.averagePace) {
                   <span>{{ run.averagePace }}/km</span>
                 }
+                @if (run.feeling) {
+                  <span>Ressenti {{ run.feeling }}/10</span>
+                }
               </div>
             </div>
           }
 
           <!-- Séances planifiées -->
           @for (planned of selectedDay()!.plannedRuns; track planned._id) {
-            <div class="session-card" [class.coach-session]="isCoachSession(planned)" [class.strength-session]="planned.activityType === 'strength'">
+            <div class="session-card" [class.ai-generated]="planned.generatedBy === 'ai'" [class.coach-generated]="planned.generatedBy === 'coach'">
               <div class="session-header">
                 <span class="activity-icon">{{ getActivityIcon(planned.activityType) }}</span>
                 <span class="session-type">{{ getSessionTypeLabel(planned.sessionType) }}</span>
                 <span class="session-badge" [class]="planned.status">
                   {{ planned.status === 'planned' ? 'Planifiée' : planned.status === 'completed' ? 'Complétée' : 'Sautée' }}
                 </span>
-                @if (isCoachSession(planned)) {
-                  <span class="coach-badge">Coach</span>
+                @if (planned.generatedBy === 'ai') {
+                  <span class="source-badge ai">Coach IA</span>
+                } @else if (planned.generatedBy === 'coach') {
+                  <span class="source-badge coach">Coach</span>
                 }
               </div>
               <div class="session-stats">
@@ -167,6 +175,11 @@
               </div>
               @if (planned.description) {
                 <p class="session-description">{{ planned.description }}</p>
+              }
+              @if (planned.activityType === 'strength') {
+                <button type="button" class="btn-secondary-sm" (click)="goToMuscuDetail(planned)">
+                  {{ planned.status === 'completed' ? 'Voir les détails' : 'Détailler les exercices' }}
+                </button>
               }
               @if (planned.status === 'planned' && isCoachSession(planned)) {
                 <button class="btn-danger-text" (click)="deleteSession(planned)">Supprimer</button>

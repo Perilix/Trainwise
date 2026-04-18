@@ -11,15 +11,16 @@ import { CoachInvitation, Coach } from '../../interfaces/coach.interfaces';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 
 type Metric = 'seances' | 'distance' | 'temps';
+type ChartPeriod = 'semaine' | 'mois' | 'annee';
 
-interface WeekStat {
+interface PeriodStat {
   label: string;
   isCurrent: boolean;
   seances: number;
   distance: number;
   temps: number;
-  weekStart: Date;
-  weekEnd: Date;
+  periodStart: Date;
+  periodEnd: Date;
 }
 
 @Component({
@@ -48,15 +49,42 @@ export class ProfileComponent implements OnInit {
   stravaMessage = signal<string | null>(null);
   stravaFeelingModal = signal<{ open: boolean; items: { run: Run; feeling: number }[] }>({ open: false, items: [] });
 
-  // Graphique hebdomadaire
+  // Graphique
   selectedMetric = signal<Metric>('seances');
+  selectedPeriod = signal<ChartPeriod>('semaine');
   selectedWeekIndex = signal<number | null>(null);
+  readonly currentYear = new Date().getFullYear();
+
+  chartStats = computed<PeriodStat[]>(() => {
+    const period = this.selectedPeriod();
+    if (period === 'mois') return this.computeMonthlyStats();
+    if (period === 'annee') return this.computeYearlyStats();
+    return this.computeWeeklyStats();
+  });
+
+  comparisonStats = computed<PeriodStat[] | null>(() => {
+    if (this.selectedPeriod() !== 'annee') return null;
+    return this.computePrevYearStats();
+  });
+
+  comparisonTotals = computed(() => {
+    const comparison = this.comparisonStats();
+    if (!comparison) return null;
+    return {
+      seances: comparison.reduce((sum, s) => sum + s.seances, 0),
+      distance: Math.round(comparison.reduce((sum, s) => sum + s.distance, 0) * 10) / 10,
+      temps: Math.round(comparison.reduce((sum, s) => sum + s.temps, 0))
+    };
+  });
 
   chartData = computed(() => {
-    const stats = this.computeWeeklyStats();
+    const stats = this.chartStats();
     const metric = this.selectedMetric();
+    const comparison = this.comparisonStats();
+
     const values = stats.map(s => s[metric]);
-    const dataMax = Math.max(...values, 0);
+    const compValues = comparison ? comparison.map(s => s[metric]) : [];
+    const dataMax = Math.max(...values, ...compValues, 0);
 
     const padL = 30, padR = 8, padT = 12, plotW = 262, plotH = 75;
     const bottomY = padT + plotH;
@@ -65,7 +93,7 @@ export class ProfileComponent implements OnInit {
     const scaleMax = niceMax;
 
     const points = stats.map((s, i) => {
-      const x = padL + (i / (stats.length - 1)) * plotW;
+      const x = stats.length === 1 ? padL + plotW / 2 : padL + (i / (stats.length - 1)) * plotW;
       const value = s[metric];
       const y = scaleMax > 0 ? padT + plotH - (value / scaleMax) * plotH : bottomY;
       return {
@@ -75,8 +103,8 @@ export class ProfileComponent implements OnInit {
         seances: s.seances,
         distance: s.distance,
         temps: s.temps,
-        weekStart: s.weekStart,
-        weekEnd: s.weekEnd
+        periodStart: s.periodStart,
+        periodEnd: s.periodEnd
       };
     });
 
@@ -89,7 +117,19 @@ export class ProfileComponent implements OnInit {
       label: this.formatTickLabel(v, metric)
     }));
 
-    return { points, linePath, areaPath, bottomY, tickLines, padL };
+    let comparisonPoints: { x: number; y: number; value: number; label: string }[] | null = null;
+    let comparisonLinePath: string | null = null;
+    if (comparison && stats.length > 0) {
+      comparisonPoints = comparison.map((s, i) => {
+        const x = stats.length === 1 ? padL + plotW / 2 : padL + (i / (stats.length - 1)) * plotW;
+        const value = s[metric];
+        const y = scaleMax > 0 ? padT + plotH - (value / scaleMax) * plotH : bottomY;
+        return { x, y, value, label: s.label };
+      });
+      comparisonLinePath = this.smoothLinePath(comparisonPoints);
+    }
+
+    return { points, linePath, areaPath, bottomY, tickLines, padL, comparisonPoints, comparisonLinePath };
   });
 
 
@@ -100,8 +140,21 @@ export class ProfileComponent implements OnInit {
     return this.chartData().points[idx] ?? null;
   });
 
+  selectedPointTooltip = computed(() => {
+    const pt = this.selectedPointData();
+    if (!pt) return null;
+    const tooltipW = 82;
+    const tooltipH = 24;
+    const padL = 30;
+    const boxX = Math.max(padL, Math.min(pt.x - tooltipW / 2, 292 - tooltipW));
+    const boxY = Math.max(4, pt.y - tooltipH - 8);
+    const label = this.formatPeriodRange(pt.periodStart, pt.periodEnd);
+    const value = this.getMetricDisplay(pt);
+    return { pt, boxX, boxY, tooltipW, tooltipH, label, value };
+  });
+
   periodTotals = computed(() => {
-    const stats = this.computeWeeklyStats();
+    const stats = this.chartStats();
     return {
       seances: stats.reduce((sum, s) => sum + s.seances, 0),
       distance: Math.round(stats.reduce((sum, s) => sum + s.distance, 0) * 10) / 10,
@@ -128,6 +181,10 @@ export class ProfileComponent implements OnInit {
     preferredTime: undefined,
     age: 0,
     gender: '',
+    height: undefined,
+    weight: undefined,
+    vma: undefined,
+    fcmax: undefined,
     strengthFrequency: undefined,
     strengthGoal: undefined,
     strengthType: undefined
@@ -372,6 +429,10 @@ export class ProfileComponent implements OnInit {
         preferredTime: user.preferredTime || undefined,
         age: user.age || 0,
         gender: user.gender || '',
+        height: user.height ?? undefined,
+        weight: user.weight ?? undefined,
+        vma: user.vma ?? undefined,
+        fcmax: user.fcmax ?? undefined,
         strengthFrequency: user.strengthFrequency ?? undefined,
         strengthGoal: user.strengthGoal || undefined,
         strengthType: user.strengthType || undefined
@@ -650,6 +711,11 @@ export class ProfileComponent implements OnInit {
     this.selectedWeekIndex.set(null);
   }
 
+  selectPeriod(period: ChartPeriod) {
+    this.selectedPeriod.set(period);
+    this.selectedWeekIndex.set(null);
+  }
+
   selectWeek(index: number) {
     this.selectedWeekIndex.set(this.selectedWeekIndex() === index ? null : index);
   }
@@ -663,24 +729,24 @@ export class ProfileComponent implements OnInit {
     return d;
   }
 
-  private computeWeeklyStats(): WeekStat[] {
-    const result: WeekStat[] = [];
+  private computeWeeklyStats(): PeriodStat[] {
+    const result: PeriodStat[] = [];
     const now = new Date();
     const monthLabels = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
 
     for (let i = 11; i >= 0; i--) {
-      const weekStart = this.getWeekStart(now, -i);
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekEnd.getDate() + 6);
-      weekEnd.setHours(23, 59, 59, 999);
+      const periodStart = this.getWeekStart(now, -i);
+      const periodEnd = new Date(periodStart);
+      periodEnd.setDate(periodEnd.getDate() + 6);
+      periodEnd.setHours(23, 59, 59, 999);
 
       const weekRuns = this.runs().filter(run => {
         const d = new Date(run.date);
-        return d >= weekStart && d <= weekEnd;
+        return d >= periodStart && d <= periodEnd;
       });
 
-      const prevMonth = result.length > 0 ? result[result.length - 1].weekStart.getMonth() : -1;
-      const label = weekStart.getMonth() !== prevMonth ? monthLabels[weekStart.getMonth()] : '';
+      const prevMonth = result.length > 0 ? result[result.length - 1].periodStart.getMonth() : -1;
+      const label = periodStart.getMonth() !== prevMonth ? monthLabels[periodStart.getMonth()] : '';
 
       result.push({
         label,
@@ -688,17 +754,86 @@ export class ProfileComponent implements OnInit {
         seances: weekRuns.length,
         distance: Math.round(weekRuns.reduce((sum, r) => sum + (r.distance || 0), 0) * 10) / 10,
         temps: Math.round(weekRuns.reduce((sum, r) => sum + (r.duration || 0), 0)),
-        weekStart: new Date(weekStart),
-        weekEnd: new Date(weekEnd)
+        periodStart: new Date(periodStart),
+        periodEnd: new Date(periodEnd)
       });
     }
     return result;
   }
 
-  formatWeekRange(weekStart: Date, weekEnd: Date): string {
+  private computeMonthlyStats(): PeriodStat[] {
+    const result: PeriodStat[] = [];
+    const now = new Date();
+    const monthLabels = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const periodStart = new Date(d.getFullYear(), d.getMonth(), 1);
+      const periodEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
+
+      const monthRuns = this.runs().filter(run => {
+        const rd = new Date(run.date);
+        return rd >= periodStart && rd <= periodEnd;
+      });
+
+      result.push({
+        label: monthLabels[d.getMonth()],
+        isCurrent: i === 0,
+        seances: monthRuns.length,
+        distance: Math.round(monthRuns.reduce((sum, r) => sum + (r.distance || 0), 0) * 10) / 10,
+        temps: Math.round(monthRuns.reduce((sum, r) => sum + (r.duration || 0), 0)),
+        periodStart,
+        periodEnd
+      });
+    }
+    return result;
+  }
+
+  private computeYearlyStats(): PeriodStat[] {
+    return this.computeYearMonthStats(new Date().getFullYear());
+  }
+
+  private computePrevYearStats(): PeriodStat[] {
+    return this.computeYearMonthStats(new Date().getFullYear() - 1);
+  }
+
+  private computeYearMonthStats(year: number): PeriodStat[] {
+    const runs = this.runs();
+    const now = new Date();
+    const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+
+    return Array.from({ length: 12 }, (_, m) => {
+      const periodStart = new Date(year, m, 1);
+      const periodEnd = new Date(year, m + 1, 0, 23, 59, 59, 999);
+      const monthRuns = runs.filter(r => {
+        const d = new Date(r.date);
+        return d.getFullYear() === year && d.getMonth() === m;
+      });
+      return {
+        label: monthNames[m],
+        isCurrent: year === now.getFullYear() && m === now.getMonth(),
+        seances: monthRuns.length,
+        distance: Math.round(monthRuns.reduce((sum, r) => sum + (r.distance || 0), 0) * 10) / 10,
+        temps: Math.round(monthRuns.reduce((sum, r) => sum + (r.duration || 0), 0)),
+        periodStart,
+        periodEnd
+      };
+    });
+  }
+
+  formatPeriodRange(periodStart: Date, periodEnd: Date): string {
+    const period = this.selectedPeriod();
     const months = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'aoû', 'sep', 'oct', 'nov', 'déc'];
-    const s = `${weekStart.getDate()} ${months[weekStart.getMonth()]}`;
-    const e = `${weekEnd.getDate()} ${months[weekEnd.getMonth()]}`;
+    if (period === 'annee') {
+      const fullMonths = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+      return `${fullMonths[periodStart.getMonth()]} ${periodStart.getFullYear()}`;
+    }
+    if (period === 'mois') {
+      const fullMonths = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+      return `${fullMonths[periodStart.getMonth()]} ${periodStart.getFullYear()}`;
+    }
+    const s = `${periodStart.getDate()} ${months[periodStart.getMonth()]}`;
+    const e = `${periodEnd.getDate()} ${months[periodEnd.getMonth()]}`;
     return `${s} → ${e}`;
   }
 
@@ -715,6 +850,27 @@ export class ProfileComponent implements OnInit {
     if (metric === 'seances') return `${t.seances} séance${t.seances > 1 ? 's' : ''}`;
     if (metric === 'distance') return `${t.distance.toFixed(1)} km`;
     return this.formatDuration(t.temps);
+  }
+
+  getComparisonTotalDisplay(): string {
+    const t = this.comparisonTotals();
+    if (!t) return '';
+    const metric = this.selectedMetric();
+    if (metric === 'seances') return `${t.seances} séance${t.seances > 1 ? 's' : ''}`;
+    if (metric === 'distance') return `${t.distance.toFixed(1)} km`;
+    return this.formatDuration(t.temps);
+  }
+
+  getComparisonDelta(): { value: string; positive: boolean } | null {
+    const current = this.periodTotals();
+    const prev = this.comparisonTotals();
+    if (!prev) return null;
+    const metric = this.selectedMetric();
+    const cur = current[metric];
+    const ref = prev[metric];
+    if (ref === 0) return null;
+    const pct = Math.round(((cur - ref) / ref) * 100);
+    return { value: `${pct > 0 ? '+' : ''}${pct}%`, positive: pct >= 0 };
   }
 
   private computeNiceTicks(max: number, metric: Metric): { ticks: number[]; niceMax: number } {

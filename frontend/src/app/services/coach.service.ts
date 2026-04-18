@@ -53,6 +53,14 @@ export class CoachService {
     );
   }
 
+  getAthletePlannedSession(athleteId: string, planId: string): Observable<PlannedSession> {
+    return this.http.get<PlannedSession>(`${this.API_URL}/athletes/${athleteId}/planning/${planId}`);
+  }
+
+  getAthleteRun(athleteId: string, runId: string): Observable<any> {
+    return this.http.get<any>(`${this.API_URL}/athletes/${athleteId}/runs/${runId}`);
+  }
+
   createAthleteSession(athleteId: string, session: Partial<PlannedSession>): Observable<PlannedSession> {
     return this.http.post<PlannedSession>(
       `${this.API_URL}/athletes/${athleteId}/planning`,
@@ -71,6 +79,10 @@ export class CoachService {
     return this.http.delete<{ message: string }>(
       `${this.API_URL}/athletes/${athleteId}/planning/${planId}`
     );
+  }
+
+  updateAthleteVma(athleteId: string, vma: number): Observable<{ vma: number }> {
+    return this.http.patch<{ vma: number }>(`${this.API_URL}/athletes/${athleteId}/vma`, { vma });
   }
 
   // Invitations
@@ -93,5 +105,9 @@ export class CoachService {
   // Recherche d'utilisateurs
   searchUsers(query: string): Observable<UserSearchResult[]> {
     return this.http.get<UserSearchResult[]>(`${this.API_URL}/users/search`, { params: { query } });
+  }
+
+  getAthleteStrengthSession(athleteId: string, plannedId: string): Observable<any> {
+    return this.http.get<any>(`${this.API_URL}/athletes/${athleteId}/strength-session/${plannedId}`);
   }
 }

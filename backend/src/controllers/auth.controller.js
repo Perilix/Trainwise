@@ -189,6 +189,8 @@ exports.updateProfile = async (req, res) => {
       'strengthFrequency',
       'strengthGoal',
       'strengthType',
+      'height',
+      'weight',
       'vma',
       'fcmax',
       'hasCompletedOnboarding'

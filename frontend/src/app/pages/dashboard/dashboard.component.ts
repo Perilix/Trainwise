@@ -206,57 +206,49 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
-    // Sort by date descending
-    const sortedRuns = [...runs].sort((a, b) =>
-      new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
+    const getWeekKey = (date: Date): string => {
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() - d.getDay()); // Sunday as week start
+      return this.formatDateStr(d);
+    };
 
-    let currentStreak = 0;
+    const weeksWithRuns = new Set(runs.map(r => getWeekKey(new Date(r.date))));
+
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const currentWeekKey = getWeekKey(today);
+    const lastWeekDate = new Date(today);
+    lastWeekDate.setDate(today.getDate() - 7);
+    const lastWeekKey = getWeekKey(lastWeekDate);
 
-    let checkDate = new Date(today);
-
-    // Check if ran today or yesterday to start streak
-    const lastRunDate = new Date(sortedRuns[0].date);
-    lastRunDate.setHours(0, 0, 0, 0);
-
-    const diffDays = Math.floor((today.getTime() - lastRunDate.getTime()) / (1000 * 60 * 60 * 24));
-
-    if (diffDays > 1) {
+    // Start from current week if it has a run, otherwise last week (current week ongoing)
+    let startWeek: Date;
+    if (weeksWithRuns.has(currentWeekKey)) {
+      startWeek = new Date(today);
+      startWeek.setDate(today.getDate() - today.getDay());
+      startWeek.setHours(0, 0, 0, 0);
+    } else if (weeksWithRuns.has(lastWeekKey)) {
+      startWeek = new Date(lastWeekDate);
+      startWeek.setDate(lastWeekDate.getDate() - lastWeekDate.getDay());
+      startWeek.setHours(0, 0, 0, 0);
+    } else {
       this.streak.set(0);
       return;
     }
 
-    // Count consecutive days with runs (looking at weeks, not strict days)
-    const runDates = new Set(sortedRuns.map(r => this.formatDateStr(new Date(r.date))));
+    let currentStreak = 0;
+    const checkWeek = new Date(startWeek);
 
-    for (let i = 0; i < 365; i++) {
-      checkDate = new Date(today);
-      checkDate.setDate(today.getDate() - i);
-
-      if (runDates.has(this.formatDateStr(checkDate))) {
+    for (let i = 0; i < 260; i++) { // up to 5 years
+      if (weeksWithRuns.has(this.formatDateStr(checkWeek))) {
         currentStreak++;
-      } else if (i > 0) {
-        // Allow one day gap for rest days
-        const prevDate = new Date(today);
-        prevDate.setDate(today.getDate() - i + 1);
-        if (!runDates.has(this.formatDateStr(prevDate))) {
-          break;
-        }
+        checkWeek.setDate(checkWeek.getDate() - 7);
+      } else {
+        break;
       }
     }
 
-    // Simplified: count weeks with at least one run
-    const weeksWithRuns = new Set<string>();
-    sortedRuns.forEach(r => {
-      const d = new Date(r.date);
-      const weekStart = new Date(d);
-      weekStart.setDate(d.getDate() - d.getDay());
-      weeksWithRuns.add(this.formatDateStr(weekStart));
-    });
-
-    this.streak.set(Math.min(currentStreak, 99)); // Cap at 99 for display
+    this.streak.set(Math.min(currentStreak, 99));
   }
 
   calculateWeekStats(runs: Run[]) {
@@ -346,7 +338,10 @@ export class DashboardComponent implements OnInit {
 
   getDayStatus(day: WeekDay): string {
     if (day.runs.length > 0) return 'completed';
-    if (day.plannedRuns.some(p => p.status === 'planned')) return 'planned';
+    const activePlanned = day.plannedRuns.filter(p => p.status === 'planned');
+    if (activePlanned.length > 0) {
+      return activePlanned.some(p => p.generatedBy === 'coach') ? 'planned-coach' : 'planned-ia';
+    }
     if (day.plannedRuns.some(p => p.status === 'completed')) return 'done';
     if (day.plannedRuns.some(p => p.status === 'skipped')) return 'skipped';
     return 'empty';

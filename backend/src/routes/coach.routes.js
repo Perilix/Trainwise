@@ -12,14 +12,18 @@ router.get('/stats', coachController.getCoachStats);
 // Gestion des athlètes
 router.get('/athletes', coachController.getAthletes);
 router.get('/athletes/:athleteId', coachController.getAthleteById);
+router.patch('/athletes/:athleteId/vma', coachController.updateAthleteVma);
 router.delete('/athletes/:athleteId', coachController.removeAthlete);
 
 // Calendrier et planning des athlètes
+router.get('/athletes/:athleteId/runs/:runId', coachController.getAthleteRun);
 router.get('/athletes/:athleteId/calendar', coachController.getAthleteCalendar);
 router.get('/athletes/:athleteId/planning', coachController.getAthletePlanning);
 router.post('/athletes/:athleteId/planning', coachController.createAthleteSession);
+router.get('/athletes/:athleteId/planning/:planId', coachController.getAthletePlannedSession);
 router.patch('/athletes/:athleteId/planning/:planId', coachController.updateAthleteSession);
 router.delete('/athletes/:athleteId/planning/:planId', coachController.deleteAthleteSession);
+router.get('/athletes/:athleteId/strength-session/:plannedId', coachController.getAthleteStrengthSession);
 
 // Invitations
 router.get('/invite/code', coachController.getInviteCode);

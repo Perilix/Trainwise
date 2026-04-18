@@ -40,6 +40,10 @@ export interface AthleteDetail extends Athlete {
   preferredTime?: string;
   age?: number;
   gender?: string;
+  height?: number;
+  weight?: number;
+  vma?: number;
+  fcmax?: number;
   strengthFrequency?: number;
   strengthGoal?: string;
   strengthType?: string;

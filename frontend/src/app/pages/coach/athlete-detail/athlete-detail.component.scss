@@ -501,4 +501,65 @@
     font-weight: 500;
     color: #051923;
   }
+
+  .vma-value {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-edit-vma {
+    background: none;
+    border: none;
+    padding: 0.15rem 0.3rem;
+    color: #0582ca;
+    cursor: pointer;
+    font-size: 0.75rem;
+    opacity: 0.6;
+    &:hover { opacity: 1; }
+  }
+
+  .vma-edit {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.25rem;
+  }
+
+  .vma-input {
+    width: 70px;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid #0582ca;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    outline: none;
+  }
+
+  .btn-vma-save {
+    background: #0582ca;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    &:disabled { opacity: 0.6; }
+  }
+
+  .btn-vma-cancel {
+    background: none;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: #666;
+  }
+
+  .vma-error {
+    display: block;
+    font-size: 0.75rem;
+    color: #dc2626;
+    margin-top: 0.2rem;
+  }
 }

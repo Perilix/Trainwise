@@ -46,25 +46,18 @@
     border: 1px solid rgba(0, 53, 84, 0.2);
     transition: all 0.3s;
 
-    &.active {
-      background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
-      border-color: transparent;
-
-      .streak-icon {
-        filter: none;
-      }
-
-      .streak-info {
-        .streak-value, .streak-label {
-          color: #fff;
-        }
-      }
-    }
-
     .streak-icon {
       font-size: 1.5rem;
+      background: linear-gradient(to top, #f7c948, #f7931e, #e63c2f);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
       filter: grayscale(100%);
       transition: filter 0.3s;
+    }
+
+    &.active .streak-icon {
+      filter: none;
     }
 
     .streak-info {
@@ -373,12 +366,16 @@
           background: #10b981;
         }
 
-        &.planned {
+        &.planned-ia {
           background: #00a6fb;
         }
 
-        &.done {
+        &.planned-coach {
           background: #8b5cf6;
+        }
+
+        &.done {
+          background: #10b981;
         }
 
         &.skipped {
@@ -428,8 +425,12 @@
           background: #10b981;
         }
 
-        &.planned {
+        &.planned-ia {
           background: #00a6fb;
+        }
+
+        &.planned-coach {
+          background: #8b5cf6;
         }
       }
     }

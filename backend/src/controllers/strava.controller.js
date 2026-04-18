@@ -3,6 +3,7 @@ const User = require('../models/user.model');
 const Run = require('../models/run.model');
 const StrengthSession = require('../models/strengthSession.model');
 const { emitTrainCoinsUpdate } = require('../socket/index');
+const { autoCompletePlannedSessions } = require('../services/planningAutoComplete');
 
 const STRAVA_AUTH_URL = 'https://www.strava.com/oauth/authorize';
 const STRAVA_TOKEN_URL = 'https://www.strava.com/oauth/token';
@@ -341,6 +342,15 @@ exports.syncActivities = async (req, res) => {
       await run.save();
       analyzeRunInBackground(run, fullUser);
 
+      if (run.maxHeartRate) {
+        await User.updateOne(
+          { _id: req.user._id, $or: [{ fcmax: null }, { fcmax: { $lt: run.maxHeartRate } }] },
+          { $set: { fcmax: run.maxHeartRate } }
+        );
+      }
+
+      await autoCompletePlannedSessions(req.user._id, run.date, 'running');
+
       imported.push({
         id: run._id,
         stravaId: activity.id,
@@ -385,6 +395,7 @@ exports.syncActivities = async (req, res) => {
       });
 
       await session.save();
+      await autoCompletePlannedSessions(req.user._id, session.date, 'strength');
 
       importedStrength.push({
         id: session._id,

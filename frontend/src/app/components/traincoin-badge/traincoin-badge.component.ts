@@ -6,12 +6,29 @@ import { SubscriptionService } from '../../services/subscription.service';
   selector: 'app-traincoin-badge',
   standalone: true,
   template: `
-    <button class="traincoin-badge" (click)="goToShop()" title="TrainCoins">
-      <i class="fa-solid fa-bolt"></i>
-      <span>{{ subscriptionService.trainCoins() }}</span>
-    </button>
+    @if (subscriptionService.isPro()) {
+      <button class="pro-badge" (click)="goToShop()">PRO</button>
+    } @else {
+      <button class="traincoin-badge" (click)="goToShop()" title="TrainCoins">
+        <i class="fa-solid fa-bolt"></i>
+        <span>{{ subscriptionService.trainCoins() }}</span>
+      </button>
+    }
   `,
   styles: [`
+    .pro-badge {
+      background: #f0fdf4;
+      color: #16a34a;
+      border: 1.5px solid rgba(22, 163, 74, 0.35);
+      font-size: 0.70rem;
+      font-weight: 800;
+      font-family: 'Poppins', sans-serif;
+      letter-spacing: 0.8px;
+      padding: 5px 10px;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+
     .traincoin-badge {
       display: flex;
       align-items: center;

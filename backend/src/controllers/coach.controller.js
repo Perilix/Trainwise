@@ -334,6 +334,75 @@ exports.createAthleteSession = async (req, res) => {
   }
 };
 
+// Récupérer une course d'un athlète par ID (pour le coach)
+exports.getAthleteRun = async (req, res) => {
+  try {
+    const { athleteId, runId } = req.params;
+
+    const relationship = await CoachAthlete.findOne({
+      coach: req.user._id,
+      athlete: athleteId,
+      status: 'accepted'
+    });
+    if (!relationship) return res.status(403).json({ error: 'Accès refusé' });
+
+    const run = await Run.findOne({ _id: runId, user: athleteId });
+    if (!run) return res.status(404).json({ error: 'Course non trouvée' });
+
+    res.json(run);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Récupérer une séance planifiée par ID (pour le coach)
+exports.getAthletePlannedSession = async (req, res) => {
+  try {
+    const { athleteId, planId } = req.params;
+
+    const relationship = await CoachAthlete.findOne({
+      coach: req.user._id,
+      athlete: athleteId,
+      status: 'accepted'
+    });
+    if (!relationship) return res.status(403).json({ error: 'Accès refusé' });
+
+    const plannedRun = await PlannedRun.findOne({ _id: planId, user: athleteId })
+      .populate('strengthPlan.exercises.exercise', 'name primaryMuscle equipment');
+
+    if (!plannedRun) return res.status(404).json({ error: 'Séance non trouvée' });
+
+    res.json(plannedRun);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Récupérer la StrengthSession liée à une séance planifiée (pour le coach)
+exports.getAthleteStrengthSession = async (req, res) => {
+  try {
+    const { athleteId, plannedId } = req.params;
+
+    const relationship = await CoachAthlete.findOne({
+      coach: req.user._id,
+      athlete: athleteId,
+      status: 'accepted'
+    });
+    if (!relationship) return res.status(403).json({ error: 'Accès refusé' });
+
+    const session = await StrengthSession.findOne({
+      user: athleteId,
+      linkedPlannedSession: plannedId
+    }).populate('exercises.exercise', 'name primaryMuscle equipment');
+
+    if (!session) return res.status(404).json({ error: 'Séance non trouvée' });
+
+    res.json(session);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Mettre à jour une séance d'un athlète
 exports.updateAthleteSession = async (req, res) => {
   try {
@@ -523,6 +592,35 @@ exports.getPendingInvitations = async (req, res) => {
     }).populate('athlete', 'firstName lastName email profilePicture');
 
     res.json(invitations);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Modifier la VMA d'un athlète
+exports.updateAthleteVma = async (req, res) => {
+  try {
+    const { athleteId } = req.params;
+    const { vma } = req.body;
+
+    const relationship = await CoachAthlete.findOne({
+      coach: req.user._id,
+      athlete: athleteId,
+      status: 'accepted'
+    });
+    if (!relationship) return res.status(403).json({ error: 'Accès refusé' });
+
+    if (!vma || vma < 8 || vma > 30) {
+      return res.status(400).json({ error: 'VMA invalide (8-30 km/h)' });
+    }
+
+    const athlete = await User.findByIdAndUpdate(
+      athleteId,
+      { vma },
+      { new: true, select: 'vma' }
+    );
+
+    res.json({ vma: athlete.vma });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

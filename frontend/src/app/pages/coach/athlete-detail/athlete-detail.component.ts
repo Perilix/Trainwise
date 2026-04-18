@@ -1,5 +1,6 @@
-import { Component, OnInit, signal, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, signal, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CoachService } from '../../../services/coach.service';
 import { ChatService } from '../../../services/chat.service';
@@ -9,7 +10,7 @@ import { NavbarComponent } from '../../../components/navbar/navbar.component';
 @Component({
   selector: 'app-athlete-detail',
   standalone: true,
-  imports: [CommonModule, NavbarComponent],
+  imports: [CommonModule, FormsModule, NavbarComponent],
   templateUrl: './athlete-detail.component.html',
   styleUrl: './athlete-detail.component.scss'
 })
@@ -20,6 +21,11 @@ export class AthleteDetailComponent implements OnInit {
   error = signal<string | null>(null);
   selectedActivity = signal<RecentActivity | null>(null);
   selectedActivityData: RecentActivity | null = null;
+
+  editingVma = signal(false);
+  vmaInput = signal<number | null>(null);
+  vmaSaving = signal(false);
+  vmaError = signal<string | null>(null);
 
   constructor(
     private route: ActivatedRoute,
@@ -205,5 +211,36 @@ export class AthleteDetailComponent implements OnInit {
       'dimanche': 'Dim'
     };
     return days.map(d => dayLabels[d] || d).join(', ');
+  }
+
+  startEditVma() {
+    this.vmaInput.set(this.athlete()?.vma ?? null);
+    this.vmaError.set(null);
+    this.editingVma.set(true);
+  }
+
+  cancelEditVma() {
+    this.editingVma.set(false);
+    this.vmaError.set(null);
+  }
+
+  saveVma() {
+    const vma = this.vmaInput();
+    if (!vma || vma < 8 || vma > 30) {
+      this.vmaError.set('VMA invalide (entre 8 et 30 km/h)');
+      return;
+    }
+    this.vmaSaving.set(true);
+    this.coachService.updateAthleteVma(this.athleteId, vma).subscribe({
+      next: (res) => {
+        this.athlete.update(a => a ? { ...a, vma: res.vma } : a);
+        this.editingVma.set(false);
+        this.vmaSaving.set(false);
+      },
+      error: () => {
+        this.vmaError.set('Erreur lors de la sauvegarde');
+        this.vmaSaving.set(false);
+      }
+    });
   }
 }

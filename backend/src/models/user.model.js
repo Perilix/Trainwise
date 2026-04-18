@@ -112,6 +112,18 @@ const userSchema = new mongoose.Schema({
     default: ''
   },
   // Données physiques running
+  height: {
+    type: Number,
+    min: 100,
+    max: 250,
+    default: null
+  },
+  weight: {
+    type: Number,
+    min: 30,
+    max: 300,
+    default: null
+  },
   vma: {
     type: Number,
     min: 8,

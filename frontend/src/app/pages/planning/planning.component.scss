@@ -394,12 +394,16 @@
       background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     }
 
-    &.planned {
-      background: linear-gradient(135deg, #006494 0%, #003554 100%);
+    &.planned-ia {
+      background: linear-gradient(135deg, #00a6fb 0%, #0582ca 100%);
+    }
+
+    &.planned-coach {
+      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
     }
 
     &.done {
-      background: linear-gradient(135deg, #0582ca 0%, #006494 100%);
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     }
 
     &.skipped {
@@ -442,8 +446,9 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 
     &.completed { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-    &.planned { background: linear-gradient(135deg, #006494 0%, #003554 100%); }
-    &.done { background: linear-gradient(135deg, #0582ca 0%, #006494 100%); }
+    &.planned-ia { background: linear-gradient(135deg, #00a6fb 0%, #0582ca 100%); }
+    &.planned-coach { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
+    &.done { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
     &.skipped { background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%); }
   }
 }
@@ -1544,13 +1549,6 @@
   &.strength-planned {
     background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
   }
-}
-
-// Strength event card — border violet complet
-.event-card.strength {
-  background: linear-gradient(145deg, rgba(139, 92, 246, 0.07) 0%, #fff 100%);
-  border: 1.5px solid rgba(139, 92, 246, 0.35);
-  box-shadow: 0 2px 12px rgba(139, 92, 246, 0.1), 0 1px 3px rgba(139, 92, 246, 0.07);
 }
 
 // Strava event card — border orange

@@ -34,6 +34,8 @@ export interface User {
   strengthFrequency?: number;
   strengthGoal?: 'force' | 'hypertrophie' | 'endurance_musculaire' | 'remise_en_forme' | 'fonctionnel';
   strengthType?: 'poids_libres' | 'machines' | 'bodyweight' | 'crossfit' | 'mixte';
+  height?: number;
+  weight?: number;
   vma?: number;
   fcmax?: number;
   hasCompletedOnboarding?: boolean;
@@ -62,6 +64,8 @@ export interface UpdateProfileData {
   strengthFrequency?: number;
   strengthGoal?: string;
   strengthType?: string;
+  height?: number;
+  weight?: number;
   vma?: number;
   fcmax?: number;
   hasCompletedOnboarding?: boolean;

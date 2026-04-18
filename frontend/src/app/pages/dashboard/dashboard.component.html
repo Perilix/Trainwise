@@ -15,10 +15,10 @@
       <p class="subtitle">{{ getMotivationalMessage() }}</p>
     </div>
     <div class="streak-badge" [class.active]="streak() > 0">
-      <span class="streak-icon">🔥</span>
+      <i class="fa-solid fa-fire streak-icon"></i>
       <div class="streak-info">
         <span class="streak-value">{{ streak() }}</span>
-        <span class="streak-label">jours</span>
+        <span class="streak-label">semaines</span>
       </div>
     </div>
   </header>
@@ -180,8 +180,10 @@
                 <div class="day-indicator">
                   @if (getDayStatus(day) === 'completed') {
                     <span class="indicator-dot completed"></span>
-                  } @else if (getDayStatus(day) === 'planned') {
-                    <span class="indicator-dot planned"></span>
+                  } @else if (getDayStatus(day) === 'planned-ia') {
+                    <span class="indicator-dot planned-ia"></span>
+                  } @else if (getDayStatus(day) === 'planned-coach') {
+                    <span class="indicator-dot planned-coach"></span>
                   } @else if (getDayStatus(day) === 'done') {
                     <span class="indicator-dot done"></span>
                   } @else if (getDayStatus(day) === 'skipped') {
@@ -193,7 +195,8 @@
           </div>
           <div class="timeline-legend">
             <span class="legend-item"><span class="dot completed"></span> Effectuée</span>
-            <span class="legend-item"><span class="dot planned"></span> Planifiée</span>
+            <span class="legend-item"><span class="dot planned-ia"></span> Planifiée IA</span>
+            <span class="legend-item"><span class="dot planned-coach"></span> Planifiée Coach</span>
           </div>
         </section>
 
@@ -241,7 +244,7 @@
         <section class="recent-runs">
           <div class="section-header">
             <h3>Deniers entraînements</h3>
-            <a routerLink="/profile" class="see-all">Tout voir →</a>
+            <a routerLink="/sorties" class="see-all">Voir tout →</a>
           </div>
 
           @if (recentRuns().length === 0) {

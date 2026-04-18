@@ -1,11 +1,14 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { CommonModule, Location } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CoachService } from '../../../services/coach.service';
 import { AthleteDetail, CalendarData } from '../../../interfaces/coach.interfaces';
 import { PlannedSession, SessionType, ActivityType, RunningSessionType } from '../../../services/planning.service';
-import { StrengthSessionType, SESSION_TYPE_LABELS as STRENGTH_SESSION_LABELS } from '../../../interfaces/strength.interfaces';
+import {
+  StrengthSessionType,
+  SESSION_TYPE_LABELS as STRENGTH_SESSION_LABELS
+} from '../../../interfaces/strength.interfaces';
 import { Run } from '../../../services/run.service';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
 
@@ -352,11 +355,14 @@ export class AthletePlanningComponent implements OnInit {
       indicators.push({ type: 'completed', count: day.runs.length });
     }
 
-    const planned = day.plannedRuns.filter(p => p.status === 'planned').length;
+    const allPlanned = day.plannedRuns.filter(p => p.status === 'planned');
+    const plannedIA = allPlanned.filter(p => p.generatedBy === 'ai').length;
+    const plannedCoach = allPlanned.filter(p => p.generatedBy === 'coach').length;
     const done = day.plannedRuns.filter(p => p.status === 'completed').length;
     const skipped = day.plannedRuns.filter(p => p.status === 'skipped').length;
 
-    if (planned > 0) indicators.push({ type: 'planned', count: planned });
+    if (plannedIA > 0) indicators.push({ type: 'planned-ia', count: plannedIA });
+    if (plannedCoach > 0) indicators.push({ type: 'planned-coach', count: plannedCoach });
     if (done > 0) indicators.push({ type: 'done', count: done });
     if (skipped > 0) indicators.push({ type: 'skipped', count: skipped });
 
@@ -388,5 +394,15 @@ export class AthletePlanningComponent implements OnInit {
 
   isCoachSession(plannedRun: PlannedSession): boolean {
     return plannedRun.generatedBy === 'coach';
+  }
+
+  goToMuscuDetail(plannedRun: PlannedSession) {
+    this.router.navigate(['/coach/athletes', this.athleteId, 'muscu-detail', plannedRun._id]);
+  }
+
+  goToRunDetail(run: any) {
+    if (run._id) {
+      this.router.navigate(['/coach/athletes', this.athleteId, 'run', run._id]);
+    }
   }
 }
