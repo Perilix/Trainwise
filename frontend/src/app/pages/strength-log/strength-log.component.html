@@ -77,14 +77,14 @@
           @for (entry of exercises(); track $index; let i = $index) {
             <div class="exercise-card">
               <div class="exercise-header">
+                @if (getExercise(entry).imageUrl) {
+                  <img [src]="getExercise(entry).imageUrl" [alt]="getExercise(entry).name" class="exercise-thumb">
+                }
                 <div class="exercise-info">
                   <div class="exercise-meta">
                     <h3>{{ getExercise(entry).name }}</h3>
                     <span class="muscle-tag">{{ getMuscleLabel(getExercise(entry).primaryMuscle) }}</span>
                   </div>
-                  @if (getPlanTarget(i)) {
-                    <span class="plan-target-hint">{{ getPlanTarget(i) }}</span>
-                  }
                 </div>
                 <button class="btn-icon danger" (click)="removeExercise(i)" title="Supprimer">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -93,6 +93,9 @@
                   </svg>
                 </button>
               </div>
+              @if (getPlanTarget(i)) {
+                <span class="plan-target-hint">Note du coach : {{ getPlanTarget(i) }}</span>
+              }
 
               <div class="sets-table">
                 <div class="sets-header">
