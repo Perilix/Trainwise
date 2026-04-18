@@ -108,6 +108,7 @@
           type="range" min="1" max="10" step="1"
           [value]="feelingValue()"
           (input)="onFeelingChange(+$any($event.target).value)"
+          (change)="saveFeelingNow()"
           class="feeling-slider"/>
         <span class="slider-hint-text">Excellent</span>
       </div>

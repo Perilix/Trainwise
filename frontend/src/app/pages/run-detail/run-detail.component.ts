@@ -58,10 +58,7 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     if (this.feelingTimer) {
       clearTimeout(this.feelingTimer);
-      const run = this.run();
-      if (run?._id) {
-        this.runService.updateRun(run._id, { feeling: this.feelingValue() }).subscribe();
-      }
+      this.feelingTimer = null;
     }
   }
 
@@ -237,19 +234,22 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onFeelingChange(value: number) {
     this.feelingValue.set(value);
+  }
+
+  saveFeelingNow() {
+    const value = this.feelingValue();
     const run = this.run();
     if (!run?._id) return;
     if (this.feelingTimer) clearTimeout(this.feelingTimer);
-    this.feelingTimer = setTimeout(() => {
-      this.runService.updateRun(run._id!, { feeling: value }).subscribe({
-        next: () => {
-          this.run.set({ ...run, feeling: value });
-          this.feelingSaved.set(true);
-          setTimeout(() => this.feelingSaved.set(false), 2000);
-        },
-        error: (err) => console.error(err)
-      });
-    }, 600);
+    this.feelingTimer = null;
+    this.runService.updateRun(run._id, { feeling: value }).subscribe({
+      next: () => {
+        this.run.set({ ...run, feeling: value });
+        this.feelingSaved.set(true);
+        setTimeout(() => this.feelingSaved.set(false), 2000);
+      },
+      error: (err) => console.error(err)
+    });
   }
 
   getFeelingLabel(value: number): string {

@@ -37,7 +37,7 @@ exports.getPlannedRunById = async (req, res) => {
     const plannedRun = await PlannedRun.findOne({
       _id: req.params.id,
       user: req.user._id
-    }).populate('linkedRun');
+    }).populate('linkedRun').populate('strengthPlan.exercises.exercise', 'name slug imageUrl primaryMuscle');
 
     if (!plannedRun) {
       return res.status(404).json({ error: 'Séance planifiée non trouvée' });

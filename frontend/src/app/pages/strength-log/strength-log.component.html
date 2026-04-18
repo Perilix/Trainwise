@@ -78,18 +78,13 @@
             <div class="exercise-card">
               <div class="exercise-header">
                 <div class="exercise-info">
-                  @if (getExercise(entry).imageUrl) {
-                    <img [src]="getExercise(entry).imageUrl" [alt]="getExercise(entry).name" class="exercise-thumb">
-                  } @else {
-                    <div class="exercise-thumb placeholder">💪</div>
-                  }
-                  <div>
+                  <div class="exercise-meta">
                     <h3>{{ getExercise(entry).name }}</h3>
                     <span class="muscle-tag">{{ getMuscleLabel(getExercise(entry).primaryMuscle) }}</span>
-                    @if (getPlanTarget(i)) {
-                      <span class="plan-target-hint">🎯 {{ getPlanTarget(i) }}</span>
-                    }
                   </div>
+                  @if (getPlanTarget(i)) {
+                    <span class="plan-target-hint">{{ getPlanTarget(i) }}</span>
+                  }
                 </div>
                 <button class="btn-icon danger" (click)="removeExercise(i)" title="Supprimer">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -173,23 +168,6 @@
       ></textarea>
     </section>
 
-    <!-- Summary -->
-    @if (exercises().length > 0) {
-      <section class="summary-section">
-        <div class="summary-item">
-          <span class="summary-value">{{ exercises().length }}</span>
-          <span class="summary-label">exercices</span>
-        </div>
-        <div class="summary-item">
-          <span class="summary-value">{{ calculateTotalSets() }}</span>
-          <span class="summary-label">séries</span>
-        </div>
-        <div class="summary-item">
-          <span class="summary-value">{{ calculateTotalVolume() | number:'1.0-0' }}</span>
-          <span class="summary-label">kg total</span>
-        </div>
-      </section>
-    }
 
     <!-- Submit -->
     <div class="form-actions">

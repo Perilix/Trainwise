@@ -357,8 +357,9 @@ export class ProfileComponent implements OnInit {
     const items = this.stravaFeelingModal().items;
     this.stravaFeelingModal.set({ open: false, items: [] });
     items.forEach(item => {
-      if (item.run._id) {
-        this.runService.updateRun(item.run._id, { feeling: item.feeling }).subscribe();
+      const runId = (item.run as any).id || item.run._id;
+      if (runId) {
+        this.runService.updateRun(runId, { feeling: item.feeling }).subscribe();
       }
     });
     this.stravaMessage.set(`${items.length} course${items.length > 1 ? 's' : ''} importée${items.length > 1 ? 's' : ''} !`);

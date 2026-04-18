@@ -401,28 +401,21 @@
   inset: 0;
   background: rgba(0,0,0,0.5);
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
   z-index: 1000;
-
-  @media (min-width: 769px) {
-    align-items: center;
-  }
+  padding: 1rem;
 }
 
 .modal {
   background: white;
-  border-radius: 20px 20px 0 0;
+  border-radius: 20px;
   width: 100%;
   max-width: 600px;
-  max-height: 80vh;
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-
-  @media (min-width: 769px) {
-    border-radius: 20px;
-  }
 
   .modal-header {
     display: flex;

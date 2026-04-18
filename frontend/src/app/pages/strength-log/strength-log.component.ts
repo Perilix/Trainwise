@@ -110,16 +110,7 @@ export class StrengthLogComponent implements OnInit {
         }
         // Pre-populate exercises from coach's strength plan
         if (planned.strengthPlan?.exercises?.length) {
-          const entries: ExerciseEntry[] = planned.strengthPlan.exercises.map((pe, i) => ({
-            exercise: pe.exercise,
-            order: i,
-            sets: Array.from({ length: pe.targetSets }, () => ({
-              reps: parseInt((pe.targetReps ?? '').split('-')[0]) || 10,
-              weight: pe.targetWeight ?? undefined
-            })),
-            notes: pe.notes
-          }));
-          this.exercises.set(entries);
+          this.buildEntriesFromPlan(planned.strengthPlan.exercises);
         }
       },
       error: (err) => {
@@ -128,11 +119,43 @@ export class StrengthLogComponent implements OnInit {
     });
   }
 
+  buildEntriesFromPlan(planExercises: any[]) {
+    const library = this.exerciseLibrary();
+    const entries: ExerciseEntry[] = planExercises.map((pe, i) => {
+      let exercise: Exercise | string = pe.exercise;
+      // If backend didn't populate (string ID), resolve from already-loaded library
+      if (typeof exercise === 'string') {
+        exercise = library.find(e => e._id === exercise) ?? exercise;
+      }
+      return {
+        exercise,
+        order: i,
+        sets: Array.from({ length: pe.targetSets ?? 3 }, () => ({
+          reps: parseInt((pe.targetReps ?? '').split('-')[0]) || 10,
+          weight: pe.targetWeight ?? undefined
+        })),
+        notes: pe.notes
+      };
+    });
+    this.exercises.set(entries);
+  }
+
   loadExerciseLibrary() {
     this.exerciseService.getExercises().subscribe({
       next: (exercises) => {
         this.exerciseLibrary.set(exercises);
         this.isLoadingExercises.set(false);
+        // Re-resolve any exercises that came as string IDs before library was ready
+        const pending = this.exercises();
+        if (pending.some(e => typeof e.exercise === 'string')) {
+          const resolved = pending.map(e => ({
+            ...e,
+            exercise: typeof e.exercise === 'string'
+              ? (exercises.find(ex => ex._id === e.exercise) ?? e.exercise)
+              : e.exercise
+          }));
+          this.exercises.set(resolved);
+        }
       },
       error: (err) => {
         console.error('Failed to load exercises:', err);

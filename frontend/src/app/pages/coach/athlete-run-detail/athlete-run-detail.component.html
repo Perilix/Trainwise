@@ -93,15 +93,18 @@
     </section>
 
     <!-- Ressenti (read-only) -->
-    @if (run()?.feeling) {
-      <section class="feeling-section">
-        <h2>Ressenti de l'athlète</h2>
-        <div class="feeling-display">
+    <section class="feeling-section">
+      <h2>Ressenti de l'athlète</h2>
+      <div class="feeling-display">
+        @if (run()?.feeling) {
           <span class="feeling-number" [style.color]="getFeelingColor(run()!.feeling)">{{ run()!.feeling }}</span>
           <span class="feeling-label" [style.color]="getFeelingColor(run()!.feeling)">{{ getFeelingLabel(run()!.feeling) }}</span>
-        </div>
-      </section>
-    }
+        } @else {
+          <span class="feeling-number" style="color: #ccc">—</span>
+          <span class="feeling-label" style="color: #ccc">Non renseigné</span>
+        }
+      </div>
+    </section>
 
     <!-- Notes -->
     @if (getRunDescription()) {
