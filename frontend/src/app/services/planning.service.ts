@@ -105,12 +105,14 @@ export class PlanningService {
   generatePlan(
     weeks: number = 1,
     startDate?: string,
-    dayConfig?: { dayIndex: number; running: boolean; strength: boolean }[]
+    dayConfig?: { dayIndex: number; running: boolean; strength: boolean }[],
+    forceOverwrite: boolean = false
   ): Observable<GeneratePlanResponse> {
     return this.http.post<GeneratePlanResponse>(`${this.apiUrl}/generate`, {
       weeks,
       startDate,
-      dayConfig
+      dayConfig,
+      forceOverwrite
     });
   }
 

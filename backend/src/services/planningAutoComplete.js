@@ -14,15 +14,13 @@ async function autoCompletePlannedSessions(userId, date, activityType = 'running
     ? [{ activityType: 'running' }, { activityType: { $exists: false } }, { activityType: null }]
     : [{ activityType }];
 
-  await PlannedRun.updateMany(
-    {
-      user: userId,
-      date: { $gte: dayStart, $lte: dayEnd },
-      $or: activityTypeConditions,
-      status: 'planned'
-    },
-    { $set: { status: 'completed' } }
-  );
+  await PlannedRun.deleteMany({
+    user: userId,
+    date: { $gte: dayStart, $lte: dayEnd },
+    $or: activityTypeConditions,
+    status: 'planned',
+    generatedBy: { $in: ['ai', 'coach'] }
+  });
 }
 
 module.exports = { autoCompletePlannedSessions };

@@ -76,6 +76,8 @@ export class PlanningComponent implements OnInit {
 
   // Generate options
   showGenerateOptions = signal(false);
+  showOverwriteConfirm = signal(false);
+  overwriteConflictCount = signal(0);
   generateStartDate = this.getNextMonday();
 
   // Day configuration for generation
@@ -281,13 +283,25 @@ export class PlanningComponent implements OnInit {
     return this.generateDays.some(d => d.running || d.strength);
   }
 
-  generatePlan(weeks: number = 1) {
-    this.isGenerating.set(true);
-    this.error.set(null);
-    this.successMessage.set(null);
-    this.showGenerateOptions.set(false);
+  private getSelectedDates(): string[] {
+    const start = new Date(this.generateStartDate + 'T12:00:00');
+    return this.generateDays
+      .filter(d => d.running || d.strength)
+      .map(d => {
+        const date = new Date(start);
+        date.setDate(start.getDate() + d.dayIndex);
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      });
+  }
 
-    // Build day config for API
+  private countConflicts(dates: string[]): number {
+    return this.calendarDays().filter(day => {
+      const dayStr = `${day.date.getFullYear()}-${String(day.date.getMonth() + 1).padStart(2, '0')}-${String(day.date.getDate()).padStart(2, '0')}`;
+      return dates.includes(dayStr) && day.plannedRuns.some(p => p.status === 'planned');
+    }).length;
+  }
+
+  generatePlan(weeks: number = 1, forceOverwrite: boolean = false) {
     const dayConfig = this.generateDays
       .filter(d => d.running || d.strength)
       .map(d => ({
@@ -296,7 +310,23 @@ export class PlanningComponent implements OnInit {
         strength: d.strength
       }));
 
-    this.planningService.generatePlan(weeks, this.generateStartDate, dayConfig).subscribe({
+    if (!forceOverwrite) {
+      const conflicts = this.countConflicts(this.getSelectedDates());
+      if (conflicts > 0) {
+        this.overwriteConflictCount.set(conflicts);
+        this.showOverwriteConfirm.set(true);
+        this.showGenerateOptions.set(false);
+        return;
+      }
+    }
+
+    this.isGenerating.set(true);
+    this.error.set(null);
+    this.successMessage.set(null);
+    this.showGenerateOptions.set(false);
+    this.showOverwriteConfirm.set(false);
+
+    this.planningService.generatePlan(weeks, this.generateStartDate, dayConfig, forceOverwrite).subscribe({
       next: (response) => {
         this.isGenerating.set(false);
         this.previewSessions.set(response.sessions);

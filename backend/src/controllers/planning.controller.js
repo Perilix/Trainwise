@@ -225,7 +225,7 @@ const calculateDatesFromDayConfig = (startDate, dayConfig, weeks = 1) => {
 // Générer un plan d'entraînement via IA (preview)
 exports.generatePlan = async (req, res) => {
   try {
-    const { weeks = 1, startDate, dayConfig } = req.body;
+    const { weeks = 1, startDate, dayConfig, forceOverwrite = false } = req.body;
 
     // Récupérer le profil utilisateur
     const user = await User.findById(req.user._id);
@@ -286,10 +286,9 @@ exports.generatePlan = async (req, res) => {
       date: { $gte: new Date() }
     });
 
-    // Filtrer les dates déjà planifiées
     const existingDates = existingPlanned.map(p => p.date.toISOString().split('T')[0]);
-    const availableRunningDates = runningDates.filter(d => !existingDates.includes(d));
-    const availableStrengthDates = strengthDates.filter(d => !existingDates.includes(d));
+    const availableRunningDates = forceOverwrite ? runningDates : runningDates.filter(d => !existingDates.includes(d));
+    const availableStrengthDates = forceOverwrite ? strengthDates : strengthDates.filter(d => !existingDates.includes(d));
     const availableSessionDates = [...new Set([...availableRunningDates, ...availableStrengthDates])].sort();
 
     // Pré-calculer les allures depuis VMA/FCmax

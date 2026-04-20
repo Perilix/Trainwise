@@ -418,6 +418,26 @@
   </div>
 }
 
+<!-- Modal confirmation écrasement -->
+@if (showOverwriteConfirm()) {
+  <div class="modal-overlay" (click)="showOverwriteConfirm.set(false)">
+    <div class="modal generate-modal" (click)="$event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <h2>Séances existantes</h2>
+        <button class="modal-close" (click)="showOverwriteConfirm.set(false)">×</button>
+      </div>
+      <div class="modal-body">
+        <p>{{ overwriteConflictCount() }} jour{{ overwriteConflictCount() > 1 ? 's ont' : ' a' }} déjà des séances planifiées. Veux-tu les écraser ?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="generatePlan(1, false); showOverwriteConfirm.set(false)">Non, garder</button>
+        <button class="btn-confirm" (click)="generatePlan(1, true)">Oui, écraser</button>
+      </div>
+    </div>
+  </div>
+}
+
 <!-- Modal options de génération -->
 @if (showGenerateOptions()) {
   <div class="modal-overlay" (click)="closeGenerateOptions()">
