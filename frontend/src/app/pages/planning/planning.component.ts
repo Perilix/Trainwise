@@ -74,6 +74,10 @@ export class PlanningComponent implements OnInit {
     open: false, session: null, value: 5
   });
 
+  // Delete confirm
+  sessionToDelete = signal<PlannedSession | null>(null);
+  runToDelete = signal<Run | null>(null);
+
   // Generate options
   showGenerateOptions = signal(false);
   showOverwriteConfirm = signal(false);
@@ -418,9 +422,15 @@ export class PlanningComponent implements OnInit {
   }
 
   deletePlannedSession(plannedRun: PlannedSession) {
-    if (!plannedRun._id) return;
+    this.sessionToDelete.set(plannedRun);
+  }
 
-    this.planningService.deletePlannedSession(plannedRun._id).subscribe({
+  confirmDeletePlannedSession() {
+    const session = this.sessionToDelete();
+    if (!session?._id) return;
+    this.sessionToDelete.set(null);
+
+    this.planningService.deletePlannedSession(session._id).subscribe({
       next: () => {
         this.loadCalendar();
         this.refreshSelectedDay();
@@ -430,7 +440,13 @@ export class PlanningComponent implements OnInit {
   }
 
   deleteRun(run: Run) {
-    if (!run._id) return;
+    this.runToDelete.set(run);
+  }
+
+  confirmDeleteRun() {
+    const run = this.runToDelete();
+    if (!run?._id) return;
+    this.runToDelete.set(null);
 
     this.runService.deleteRun(run._id).subscribe({
       next: () => {

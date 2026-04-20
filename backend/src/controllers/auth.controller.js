@@ -233,6 +233,8 @@ exports.updateProfile = async (req, res) => {
       strengthFrequency: user.strengthFrequency,
       strengthGoal: user.strengthGoal,
       strengthType: user.strengthType,
+      height: user.height,
+      weight: user.weight,
       vma: user.vma,
       fcmax: user.fcmax,
       hasCompletedOnboarding: user.hasCompletedOnboarding,

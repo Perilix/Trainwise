@@ -414,6 +414,46 @@
   </div>
 }
 
+<!-- Modal confirmation suppression course -->
+@if (runToDelete()) {
+  <div class="modal-overlay" (click)="runToDelete.set(null)">
+    <div class="modal generate-modal" (click)="$event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <h2>Supprimer la course</h2>
+        <button class="modal-close" (click)="runToDelete.set(null)">×</button>
+      </div>
+      <div class="modal-body">
+        <p>Tu veux vraiment supprimer cette course ? Cette action est irréversible.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="runToDelete.set(null)">Annuler</button>
+        <button class="btn-delete" (click)="confirmDeleteRun()">Supprimer</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal confirmation suppression séance -->
+@if (sessionToDelete()) {
+  <div class="modal-overlay" (click)="sessionToDelete.set(null)">
+    <div class="modal generate-modal" (click)="$event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <h2>Supprimer la séance</h2>
+        <button class="modal-close" (click)="sessionToDelete.set(null)">×</button>
+      </div>
+      <div class="modal-body">
+        <p>Tu veux vraiment supprimer cette séance planifiée ? Cette action est irréversible.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="sessionToDelete.set(null)">Annuler</button>
+        <button class="btn-delete" (click)="confirmDeletePlannedSession()">Supprimer</button>
+      </div>
+    </div>
+  </div>
+}
+
 <!-- Modal confirmation écrasement -->
 @if (showOverwriteConfirm()) {
   <div class="modal-overlay" (click)="showOverwriteConfirm.set(false)">

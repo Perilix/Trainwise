@@ -67,6 +67,8 @@ const analyzeRunInBackground = async (run, user) => {
         goalDetails: freshUser.goalDetails,
         weeklyFrequency: freshUser.weeklyFrequency,
         injuries: freshUser.injuries || null,
+        height: freshUser.height || null,
+        weight: freshUser.weight || null,
         vma: freshUser.vma || null,
         fcmax: freshUser.fcmax || null
       },

@@ -272,6 +272,8 @@ exports.analyzeRun = async (req, res) => {
         goalDetails: user.goalDetails,
         weeklyFrequency: user.weeklyFrequency,
         injuries: user.injuries || null,
+        height: user.height || null,
+        weight: user.weight || null,
         vma: user.vma || null,
         fcmax: user.fcmax || null,
         strengthFrequency: user.strengthFrequency || null,
