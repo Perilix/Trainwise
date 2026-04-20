@@ -89,8 +89,8 @@ export interface AuthResponse {
 })
 export class AuthService {
   private readonly API_URL = `${environment.apiUrl}/api/auth`;
-  private readonly TOKEN_KEY = 'runiq_token';
-  private readonly USER_KEY = 'runiq_user';
+  private readonly TOKEN_KEY = 'trainwise_token';
+  private readonly USER_KEY = 'trainwise_user';
 
   currentUser = signal<User | null>(null);
   private pushNotificationService = inject(PushNotificationService);

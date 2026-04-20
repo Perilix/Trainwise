@@ -12,14 +12,14 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
-    let folder = 'runiq/chat';
+    let folder = 'trainwise/chat';
     let resourceType = 'auto';
 
     if (file.mimetype.startsWith('image/')) {
-      folder = 'runiq/chat/images';
+      folder = 'trainwise/chat/images';
       resourceType = 'image';
     } else {
-      folder = 'runiq/chat/documents';
+      folder = 'trainwise/chat/documents';
       resourceType = 'raw';
     }
 
@@ -82,7 +82,7 @@ const uploadAvatarMemory = multer({
 const exerciseStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'runiq/exercises',
+    folder: 'trainwise/exercises',
     resource_type: 'image',
     allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
     transformation: [{ width: 800, height: 800, crop: 'limit', quality: 'auto' }]

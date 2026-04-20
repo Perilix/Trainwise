@@ -181,7 +181,7 @@ const exercises = [
 
 async function seedExercises() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/runiq');
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/trainwise');
     console.log('Connected to MongoDB');
 
     // Supprimer les exercices existants

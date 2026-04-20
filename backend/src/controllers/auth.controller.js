@@ -274,7 +274,7 @@ exports.uploadAvatar = async (req, res) => {
     const uploadResult = await new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
-          folder: 'runiq/avatars',
+          folder: 'trainwise/avatars',
           resource_type: 'image',
           transformation: [
             { width: 400, height: 400, crop: 'fill', gravity: 'face' },

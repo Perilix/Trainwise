@@ -20,13 +20,16 @@ const checkAIAccess = (coinCost = 1) => async (req, res, next) => {
       return next();
     }
 
-    // TrainCoins suffisants → décrémenter et continuer
-    if (user.trainCoins >= coinCost) {
-      user.trainCoins -= coinCost;
-      await user.save({ validateBeforeSave: false });
-      res.setHeader('X-TrainCoins-Remaining', user.trainCoins);
-      req.trainCoinsRemaining = user.trainCoins;
-      emitTrainCoinsUpdate(user._id, { trainCoins: user.trainCoins });
+    // TrainCoins suffisants → décrémenter atomiquement pour éviter les requêtes simultanées
+    const updated = await User.findOneAndUpdate(
+      { _id: user._id, trainCoins: { $gte: coinCost } },
+      { $inc: { trainCoins: -coinCost } },
+      { new: true }
+    );
+    if (updated) {
+      res.setHeader('X-TrainCoins-Remaining', updated.trainCoins);
+      req.trainCoinsRemaining = updated.trainCoins;
+      emitTrainCoinsUpdate(updated._id, { trainCoins: updated.trainCoins });
       return next();
     }
 

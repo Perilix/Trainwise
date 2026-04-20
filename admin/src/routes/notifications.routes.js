@@ -71,7 +71,7 @@ router.post('/', requireAuth, async (req, res) => {
           token: u.pushToken,
           notification: { title, body },
           apns: { payload: { aps: { sound: 'default', badge: 1 } } },
-          android: { notification: { sound: 'default', channelId: 'runiq_notifications' } }
+          android: { notification: { sound: 'default', channelId: 'trainwise_notifications' } }
         }
       }, { headers: { Authorization: `Bearer ${tokenData.token}`, 'Content-Type': 'application/json' } });
       successCount++;

@@ -8,7 +8,7 @@ const { createNotification } = require('./notification.controller');
 
 // Générer un code d'invitation unique
 const generateUniqueCode = () => {
-  return crypto.randomBytes(4).toString('hex').toUpperCase();
+  return crypto.randomBytes(12).toString('hex').toUpperCase();
 };
 
 // Calculer le statut d'un athlète (vert / orange / rouge)

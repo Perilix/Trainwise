@@ -72,7 +72,7 @@ async function sendPushNotification(userId, notification) {
         android: {
           notification: {
             sound: 'default',
-            channelId: 'runiq_notifications'
+            channelId: 'trainwise_notifications'
           }
         }
       }

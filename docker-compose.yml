@@ -2,19 +2,19 @@ services:
   # MongoDB
   mongodb:
     image: mongo:7
-    container_name: runiq-mongodb
+    container_name: trainwise-mongodb
     restart: unless-stopped
     ports:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
     networks:
-      - runiq-network
+      - trainwise-network
 
   # Mongo Express (Back-office)
   mongo-express:
     image: mongo-express
-    container_name: runiq-mongo-express
+    container_name: trainwise-mongo-express
     restart: unless-stopped
     ports:
       - "8081:8081"
@@ -25,73 +25,73 @@ services:
     depends_on:
       - mongodb
     networks:
-      - runiq-network
+      - trainwise-network
 
   # Backend Node.js
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: runiq-backend
+    container_name: trainwise-backend
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
       - PORT=3000
-      - MONGODB_URI=mongodb://mongodb:27017/runiq
+      - MONGODB_URI=mongodb://mongodb:27017/trainwise
       - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL:-}
       - N8N_PLANNING_WEBHOOK_URL=${N8N_PLANNING_WEBHOOK_URL:-}
-      - JWT_SECRET=${JWT_SECRET:-runiq-jwt-secret-change-in-production}
+      - JWT_SECRET=${JWT_SECRET:-change-this-secret-in-production}
       - JWT_EXPIRE=${JWT_EXPIRE:-7d}
       - STRAVA_CLIENT_ID=${STRAVA_CLIENT_ID}
       - STRAVA_CLIENT_SECRET=${STRAVA_CLIENT_SECRET}
       - BACKEND_URL=${BACKEND_URL:-http://localhost:3000}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:4200}
       - CLOUDINARY_URL=${CLOUDINARY_URL:-}
-      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@runiq.fr}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@trainwise.app}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
     depends_on:
       - mongodb
     networks:
-      - runiq-network
+      - trainwise-network
 
   # Admin Back-office
   admin:
     build:
       context: ./admin
       dockerfile: Dockerfile
-    container_name: runiq-admin
+    container_name: trainwise-admin
     restart: unless-stopped
     ports:
       - "4000:4000"
     environment:
       - PORT=4000
-      - MONGODB_URI=mongodb://mongodb:27017/runiq
+      - MONGODB_URI=mongodb://mongodb:27017/trainwise
       - SESSION_SECRET=${SESSION_SECRET:-admin-session-secret-change-me}
-      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@runiq.fr}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@trainwise.app}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
     depends_on:
       - mongodb
     networks:
-      - runiq-network
+      - trainwise-network
 
   # Frontend Angular
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: runiq-frontend
+    container_name: trainwise-frontend
     restart: unless-stopped
     ports:
       - "4200:80"
     depends_on:
       - backend
     networks:
-      - runiq-network
+      - trainwise-network
 
 volumes:
   mongodb_data:
 
 networks:
-  runiq-network:
+  trainwise-network:
     driver: bridge
