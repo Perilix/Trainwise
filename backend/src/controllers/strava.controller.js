@@ -57,15 +57,18 @@ const analyzeRunInBackground = async (run, user) => {
         averageCadence: run.averageCadence,
         elevationGain: run.elevationGain,
         sessionType: run.sessionType,
-        notes: run.notes
+        feeling: run.feeling ?? null,
+        notes: run.notes || null
       },
       runner: {
-        name: `${user.firstName} ${user.lastName}`,
-        level: user.runningLevel,
-        goal: user.goal,
-        goalDetails: user.goalDetails,
-        weeklyFrequency: user.weeklyFrequency,
-        injuries: user.injuries
+        name: `${freshUser.firstName} ${freshUser.lastName}`,
+        level: freshUser.runningLevel,
+        goal: freshUser.goal,
+        goalDetails: freshUser.goalDetails,
+        weeklyFrequency: freshUser.weeklyFrequency,
+        injuries: freshUser.injuries || null,
+        vma: freshUser.vma || null,
+        fcmax: freshUser.fcmax || null
       },
       recentRuns: recentRuns.map(r => ({
         date: r.date,
