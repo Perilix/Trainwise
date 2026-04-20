@@ -8,7 +8,6 @@
 <div class="container">
   <div class="page-header">
     <h1>Planning</h1>
-    <p class="subtitle">Planifie tes entraînements avec l'IA</p>
   </div>
 
   @if (successMessage()) {
@@ -19,22 +18,26 @@
     <div class="error-box">{{ error() }}</div>
   }
 
-  <!-- Carte Résumé du mois -->
-  <div class="sidebar-card week-summary">
-    <h3>Ce mois</h3>
-    <div class="summary-stats">
-      <div class="stat-item">
-        <span class="stat-value">{{ getMonthStats().planned }}</span>
-        <span class="stat-label">Planifiées</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-value">{{ getMonthStats().completed }}</span>
-        <span class="stat-label">Complétées</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-value">{{ getMonthStats().totalKm }}</span>
-        <span class="stat-label">km</span>
-      </div>
+  <div class="sidebar">
+    <!-- Carte Génération IA -->
+    <div class="sidebar-card generate-card" [class.is-generating]="isGenerating()">
+      <h3>Génération IA</h3>
+      <p class="card-description">Laisse l'IA créer ton programme d'entraînement personnalisé pour la semaine.</p>
+      <button
+        class="btn-generate"
+        [class.generating]="isGenerating()"
+        (click)="openGenerateOptions()"
+        [disabled]="isGenerating()">
+        @if (isGenerating()) {
+          <span class="generate-spinner"></span>
+          <span>Génération en cours...</span>
+        } @else {
+          Générer une semaine
+        }
+      </button>
+      @if (isGenerating()) {
+        <p class="generating-hint">L'IA analyse ton profil et crée ton programme, ça peut prendre quelques secondes.</p>
+      }
     </div>
   </div>
 
@@ -102,28 +105,21 @@
         </div>
       </div>
     </div>
-
-    <!-- Sidebar : Génération IA et actions -->
-    <div class="sidebar">
-      <!-- Carte Génération IA -->
-      <div class="sidebar-card generate-card" [class.is-generating]="isGenerating()">
-        <h3>Génération IA</h3>
-        <p class="card-description">Laisse l'IA créer ton programme d'entraînement personnalisé pour la semaine.</p>
-        <button
-          class="btn-generate"
-          [class.generating]="isGenerating()"
-          (click)="openGenerateOptions()"
-          [disabled]="isGenerating()">
-          @if (isGenerating()) {
-            <span class="generate-spinner"></span>
-            <span>Génération en cours...</span>
-          } @else {
-            Générer une semaine
-          }
-        </button>
-        @if (isGenerating()) {
-          <p class="generating-hint">L'IA analyse ton profil et crée ton programme, ça peut prendre quelques secondes.</p>
-        }
+    <div class="sidebar-card week-summary">
+      <h3>Ce mois</h3>
+      <div class="summary-stats">
+        <div class="stat-item">
+          <span class="stat-value">{{ getMonthStats().planned }}</span>
+          <span class="stat-label">Planifiées</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">{{ getMonthStats().completed }}</span>
+          <span class="stat-label">Complétées</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">{{ getMonthStats().totalKm }}</span>
+          <span class="stat-label">km</span>
+        </div>
       </div>
     </div>
   </div>

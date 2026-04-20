@@ -261,8 +261,8 @@ exports.analyzeRun = async (req, res) => {
         averageCadence: run.averageCadence,
         elevationGain: run.elevationGain,
         sessionType: run.sessionType,
-        feeling: run.feeling,
-        notes: run.notes
+        feeling: run.feeling ?? null,
+        notes: run.notes || null
       },
       runner: {
         name: `${user.firstName} ${user.lastName}`,
@@ -271,10 +271,12 @@ exports.analyzeRun = async (req, res) => {
         goal: user.goal,
         goalDetails: user.goalDetails,
         weeklyFrequency: user.weeklyFrequency,
-        injuries: user.injuries,
-        strengthFrequency: user.strengthFrequency,
-        strengthGoal: user.strengthGoal,
-        strengthType: user.strengthType
+        injuries: user.injuries || null,
+        vma: user.vma || null,
+        fcmax: user.fcmax || null,
+        strengthFrequency: user.strengthFrequency || null,
+        strengthGoal: user.strengthGoal || null,
+        strengthType: user.strengthType || null
       },
       recentRuns: formatRunsForContext(recentRuns),
       lastAnalysis: lastAnalyzedRun ? {
