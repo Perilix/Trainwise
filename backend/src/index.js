@@ -109,6 +109,12 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+// Pages légales publiques (requis Apple / RGPD)
+const path = require('path');
+app.get('/privacy', (req, res) => {
+  res.sendFile(path.join(__dirname, 'legal', 'privacy.html'));
+});
+
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/trainwise')
   .then(async () => {
