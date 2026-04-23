@@ -5,6 +5,8 @@ const http = require('http');
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const rateLimit = require('express-rate-limit');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
 require('dotenv').config();
 
 const runRoutes = require('./routes/run.routes');
@@ -82,6 +84,10 @@ app.use('/api', rateLimit({
 }));
 
 app.use(express.json());
+
+// Swagger API docs
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get('/api-docs.json', (req, res) => res.json(swaggerSpec));
 
 // Routes
 app.use('/api/auth', authRoutes);
