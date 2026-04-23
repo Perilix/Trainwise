@@ -41,12 +41,22 @@
     </div>
   </div>
 
-  <!-- Bouton supprimer -->
-  <form method="POST" action="/users/<%= user._id %>/delete" onsubmit="return confirm('Supprimer définitivement cet utilisateur ? Cette action est irréversible.')">
-    <button type="submit" class="btn" style="background:rgba(239,68,68,0.08);color:var(--danger);border-color:rgba(239,68,68,0.2);">
-      <i class="fa-solid fa-trash"></i> Supprimer
-    </button>
-  </form>
+  <!-- Actions -->
+  <div style="display:flex;gap:8px;">
+    <!-- Se connecter en tant que cet utilisateur -->
+    <form method="POST" action="/users/<%= user._id %>/impersonate" target="_blank" onsubmit="return confirm('Ouvrir une session en tant que <%= user.email %> dans un nouvel onglet ?');">
+      <button type="submit" class="btn" style="background:rgba(59,130,246,0.08);color:var(--blue);border-color:rgba(59,130,246,0.2);">
+        <i class="fa-solid fa-right-to-bracket"></i> Se connecter
+      </button>
+    </form>
+
+    <!-- Supprimer -->
+    <form method="POST" action="/users/<%= user._id %>/delete" onsubmit="return confirm('Supprimer définitivement cet utilisateur ? Cette action est irréversible.')">
+      <button type="submit" class="btn" style="background:rgba(239,68,68,0.08);color:var(--danger);border-color:rgba(239,68,68,0.2);">
+        <i class="fa-solid fa-trash"></i> Supprimer
+      </button>
+    </form>
+  </div>
 </div>
 
 <!-- Mini stats -->

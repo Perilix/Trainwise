@@ -129,6 +129,13 @@ export class AuthService {
       .pipe(tap(response => this.handleAuth(response)));
   }
 
+  loginWithToken(token: string): Observable<User> {
+    localStorage.setItem(this.TOKEN_KEY, token);
+    localStorage.removeItem(this.USER_KEY);
+    this.currentUser.set(null);
+    return this.refreshUser();
+  }
+
   private handleAuth(response: AuthResponse): void {
     localStorage.setItem(this.TOKEN_KEY, response.token);
     localStorage.setItem(this.USER_KEY, JSON.stringify(response.user));

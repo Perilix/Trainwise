@@ -132,6 +132,10 @@ export const routes: Routes = [
     canActivate: [guestGuard]
   },
   {
+    path: 'impersonate',
+    loadComponent: () => import('./pages/impersonate/impersonate.component').then(m => m.ImpersonateComponent)
+  },
+  {
     path: '**',
     redirectTo: ''
   }

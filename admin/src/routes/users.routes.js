@@ -1,5 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const User = require('../models/user.model');
@@ -134,6 +135,32 @@ router.post('/:id', requireAuth, async (req, res) => {
 router.post('/:id/delete', requireAuth, async (req, res) => {
   await User.findByIdAndDelete(req.params.id);
   res.redirect('/users?deleted=1');
+});
+
+// ── Impersonate user (login as) ──────────────────────────────
+router.post('/:id/impersonate', requireAuth, async (req, res) => {
+  const { JWT_SECRET, FRONTEND_URL } = process.env;
+
+  if (!JWT_SECRET) {
+    return res.status(500).send('JWT_SECRET non configuré côté admin');
+  }
+  if (!FRONTEND_URL) {
+    return res.status(500).send('FRONTEND_URL non configuré côté admin');
+  }
+
+  const user = await User.findById(req.params.id).select('_id email firstName lastName role');
+  if (!user) {
+    return res.redirect('/users');
+  }
+
+  const token = jwt.sign({ id: user._id.toString() }, JWT_SECRET, { expiresIn: '1h' });
+
+  console.log(
+    `[IMPERSONATE] admin=${req.session.adminName || req.session.adminId} → user=${user.email} (${user._id}) role=${user.role}`
+  );
+
+  const redirectUrl = `${FRONTEND_URL.replace(/\/$/, '')}/impersonate#token=${encodeURIComponent(token)}`;
+  res.redirect(redirectUrl);
 });
 
 module.exports = router;
