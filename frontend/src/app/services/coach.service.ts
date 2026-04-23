@@ -81,6 +81,13 @@ export class CoachService {
     );
   }
 
+  duplicateAthleteSession(athleteId: string, planId: string, targetDate: Date): Observable<PlannedSession> {
+    return this.http.post<PlannedSession>(
+      `${this.API_URL}/athletes/${athleteId}/planning/${planId}/duplicate`,
+      { targetDate }
+    );
+  }
+
   updateAthleteVma(athleteId: string, vma: number): Observable<{ vma: number }> {
     return this.http.patch<{ vma: number }>(`${this.API_URL}/athletes/${athleteId}/vma`, { vma });
   }

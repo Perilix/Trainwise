@@ -363,6 +363,48 @@ router.delete('/athletes/:athleteId/planning/:planId', coachController.deleteAth
 
 /**
  * @swagger
+ * /api/coach/athletes/{athleteId}/planning/{planId}/duplicate:
+ *   post:
+ *     summary: Duplicate a planned session to another date
+ *     tags: [Coach]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: athleteId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: planId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [targetDate]
+ *             properties:
+ *               targetDate:
+ *                 type: string
+ *                 format: date
+ *     responses:
+ *       201:
+ *         description: Session duplicated
+ *       400:
+ *         description: Missing targetDate
+ *       403:
+ *         description: Not authorized
+ *       404:
+ *         description: Source session not found
+ */
+router.post('/athletes/:athleteId/planning/:planId/duplicate', coachController.duplicateAthleteSession);
+
+/**
+ * @swagger
  * /api/coach/athletes/{athleteId}/strength-session/{plannedId}:
  *   get:
  *     summary: Get a planned strength session detail for an athlete

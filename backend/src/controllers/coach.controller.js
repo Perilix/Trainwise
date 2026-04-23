@@ -403,6 +403,64 @@ exports.getAthleteStrengthSession = async (req, res) => {
   }
 };
 
+// Dupliquer une séance d'un athlète à une autre date
+exports.duplicateAthleteSession = async (req, res) => {
+  try {
+    const { athleteId, planId } = req.params;
+    const { targetDate } = req.body;
+
+    if (!targetDate) {
+      return res.status(400).json({ error: 'Date cible requise' });
+    }
+
+    const relationship = await CoachAthlete.findOne({
+      coach: req.user._id,
+      athlete: athleteId,
+      status: 'accepted'
+    });
+
+    if (!relationship) {
+      return res.status(403).json({ error: 'Cet athlète ne fait pas partie de vos athlètes' });
+    }
+
+    const source = await PlannedRun.findOne({ _id: planId, user: athleteId }).lean();
+    if (!source) {
+      return res.status(404).json({ error: 'Séance source non trouvée' });
+    }
+
+    const { _id, createdAt, updatedAt, linkedRun, feeling, ...rest } = source;
+
+    const duplicate = await PlannedRun.create({
+      ...rest,
+      date: new Date(targetDate),
+      status: 'planned',
+      linkedRun: null,
+      feeling: null,
+      generatedBy: 'coach',
+      createdBy: req.user._id
+    });
+
+    const sessionDate = new Date(targetDate).toLocaleDateString('fr-FR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long'
+    });
+    await createNotification({
+      recipient: athleteId,
+      sender: req.user._id,
+      type: 'session',
+      action: 'session_created',
+      title: 'Nouvelle séance planifiée',
+      message: `${req.user.firstName} ${req.user.lastName} a planifié une séance pour le ${sessionDate}`,
+      actionUrl: '/planning'
+    });
+
+    res.status(201).json(duplicate);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 // Mettre à jour une séance d'un athlète
 exports.updateAthleteSession = async (req, res) => {
   try {

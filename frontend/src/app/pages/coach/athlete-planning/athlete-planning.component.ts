@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { CoachService } from '../../../services/coach.service';
 import { AthleteDetail, CalendarData } from '../../../interfaces/coach.interfaces';
 import { PlannedSession, SessionType, ActivityType, RunningSessionType } from '../../../services/planning.service';
@@ -79,6 +80,10 @@ export class AthletePlanningComponent implements OnInit {
     { value: 'core', label: 'Abdos / Core' },
     { value: 'hiit', label: 'HIIT' }
   ];
+
+  sessionToDuplicate = signal<PlannedSession | null>(null);
+  selectedTargetDates = signal<Set<string>>(new Set<string>());
+  isDuplicating = signal(false);
 
   constructor(
     private route: ActivatedRoute,
@@ -199,6 +204,10 @@ export class AthletePlanningComponent implements OnInit {
   }
 
   selectDay(day: CalendarDay) {
+    if (this.sessionToDuplicate()) {
+      this.toggleTargetDate(day);
+      return;
+    }
     this.selectedDay.set(day);
     this.isAddingSession.set(false);
   }
@@ -394,6 +403,91 @@ export class AthletePlanningComponent implements OnInit {
 
   isCoachSession(plannedRun: PlannedSession): boolean {
     return plannedRun.generatedBy === 'coach';
+  }
+
+  canDuplicateSession(plannedRun: PlannedSession): boolean {
+    return plannedRun.status === 'planned';
+  }
+
+  startDuplication(plannedRun: PlannedSession) {
+    this.sessionToDuplicate.set(plannedRun);
+    this.selectedTargetDates.set(new Set<string>());
+    this.selectedDay.set(null);
+    this.isAddingSession.set(false);
+  }
+
+  cancelDuplication() {
+    this.sessionToDuplicate.set(null);
+    this.selectedTargetDates.set(new Set<string>());
+  }
+
+  toggleTargetDate(day: CalendarDay) {
+    const key = this.dateKey(day.date);
+    const current = new Set(this.selectedTargetDates());
+    if (current.has(key)) {
+      current.delete(key);
+    } else {
+      current.add(key);
+    }
+    this.selectedTargetDates.set(current);
+  }
+
+  isDateSelected(day: CalendarDay): boolean {
+    return this.selectedTargetDates().has(this.dateKey(day.date));
+  }
+
+  isSourceDay(day: CalendarDay): boolean {
+    const session = this.sessionToDuplicate();
+    if (!session) return false;
+    return this.dateKey(new Date(session.date)) === this.dateKey(day.date);
+  }
+
+  getTargetDatesCount(): number {
+    return this.selectedTargetDates().size;
+  }
+
+  confirmDuplicate() {
+    const session = this.sessionToDuplicate();
+    const dateKeys = Array.from(this.selectedTargetDates());
+    if (!session || !session._id || dateKeys.length === 0) return;
+
+    this.isDuplicating.set(true);
+    const planId = session._id;
+    const calls = dateKeys.map(key => {
+      const [y, m, d] = key.split('-').map(Number);
+      const target = new Date(y, m - 1, d, 12, 0, 0, 0);
+      return this.coachService.duplicateAthleteSession(this.athleteId, planId, target);
+    });
+
+    forkJoin(calls).subscribe({
+      next: () => {
+        this.isDuplicating.set(false);
+        const count = dateKeys.length;
+        this.cancelDuplication();
+        this.successMessage.set(`${count} séance${count > 1 ? 's' : ''} dupliquée${count > 1 ? 's' : ''}`);
+        this.loadCalendar();
+        setTimeout(() => this.successMessage.set(null), 3000);
+      },
+      error: (err) => {
+        this.isDuplicating.set(false);
+        this.error.set('Erreur lors de la duplication');
+        console.error(err);
+      }
+    });
+  }
+
+  getDuplicateSessionLabel(): string {
+    const session = this.sessionToDuplicate();
+    if (!session) return '';
+    return `${this.getActivityIcon(session.activityType)} ${this.getSessionTypeLabel(session.sessionType)}`;
+  }
+
+  private dateKey(date: Date): string {
+    const d = new Date(date);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
   }
 
   goToMuscuDetail(plannedRun: PlannedSession) {

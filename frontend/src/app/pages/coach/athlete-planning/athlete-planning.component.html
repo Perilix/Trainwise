@@ -1,6 +1,6 @@
 <app-navbar></app-navbar>
 
-<div class="container">
+<div class="container" [class.with-duplication-footer]="sessionToDuplicate()">
   <div class="page-header">
     <button class="back-btn" (click)="goBack()">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -70,7 +70,7 @@
     </div>
 
     <!-- Calendrier -->
-    <div class="calendar">
+    <div class="calendar" [class.duplication-mode]="sessionToDuplicate()">
       <div class="calendar-header">
         @for (day of weekDays; track day) {
           <div class="header-cell">{{ day }}</div>
@@ -83,6 +83,8 @@
             [class.other-month]="!day.isCurrentMonth"
             [class.today]="day.isToday"
             [class.has-content]="day.runs.length > 0 || day.plannedRuns.length > 0"
+            [class.duplication-target]="isDateSelected(day)"
+            [class.duplication-source]="isSourceDay(day)"
             (click)="selectDay(day)"
           >
             <span class="day-number">{{ day.dayOfMonth }}</span>
@@ -181,9 +183,18 @@
                   {{ planned.status === 'completed' ? 'Voir les détails' : 'Détailler les exercices' }}
                 </button>
               }
-              @if (planned.status === 'planned' && isCoachSession(planned)) {
-                <button class="btn-danger-text" (click)="deleteSession(planned)">Supprimer</button>
-              }
+              <div class="session-card-actions">
+                @if (canDuplicateSession(planned)) {
+                  <button type="button" class="btn-duplicate" (click)="startDuplication(planned)">
+                    Dupliquer
+                  </button>
+                }
+                @if (planned.status === 'planned' && isCoachSession(planned)) {
+                  <button type="button" class="btn-delete" (click)="deleteSession(planned)">
+                    Supprimer
+                  </button>
+                }
+              </div>
             </div>
           }
 
@@ -271,6 +282,32 @@
           </form>
         }
       </div>
+    </div>
+  </div>
+}
+
+<!-- Footer fixe en mode duplication -->
+@if (sessionToDuplicate()) {
+  <div class="duplication-footer">
+    <div class="duplication-footer-info">
+      <div class="duplication-footer-session">
+        Dupliquer : <strong>{{ getDuplicateSessionLabel() }}</strong>
+      </div>
+      <div class="duplication-footer-count">
+        @if (getTargetDatesCount() === 0) {
+          Cliquez sur les jours cibles dans le calendrier
+        } @else {
+          {{ getTargetDatesCount() }} jour{{ getTargetDatesCount() > 1 ? 's' : '' }} sélectionné{{ getTargetDatesCount() > 1 ? 's' : '' }}
+        }
+      </div>
+    </div>
+    <div class="duplication-footer-actions">
+      <button type="button" class="btn-secondary" (click)="cancelDuplication()" [disabled]="isDuplicating()">
+        Annuler
+      </button>
+      <button type="button" class="btn-primary" (click)="confirmDuplicate()" [disabled]="isDuplicating() || getTargetDatesCount() === 0">
+        {{ isDuplicating() ? 'Duplication...' : 'Confirmer' }}
+      </button>
     </div>
   </div>
 }

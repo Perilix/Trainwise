@@ -17,6 +17,14 @@
   @media (min-width: 769px) {
     padding-bottom: 2rem;
   }
+
+  &.with-duplication-footer {
+    padding-bottom: 160px;
+
+    @media (max-width: 640px) {
+      padding-bottom: 180px;
+    }
+  }
 }
 
 .page-header {
@@ -571,17 +579,144 @@
   }
 }
 
-.btn-danger-text {
-  background: transparent;
-  color: #ef4444;
-  border: none;
-  padding: 0.5rem 0;
-  font-weight: 500;
+.session-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.btn-duplicate,
+.btn-delete {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 0.5rem 0.9rem;
   cursor: pointer;
-  margin-top: 0.5rem;
+  transition: all 0.15s;
+}
+
+.btn-duplicate {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: #fff;
+  border: 1px solid transparent;
 
   &:hover {
-    text-decoration: underline;
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(139, 92, 246, 0.25);
+  }
+}
+
+.btn-delete {
+  background: #fff;
+  color: #ef4444;
+  border: 1px solid #fecaca;
+
+  &:hover {
+    background: #fef2f2;
+    border-color: #ef4444;
+  }
+}
+
+// Mode duplication : calendrier
+.calendar.duplication-mode {
+  outline: 2px solid rgba(139, 92, 246, 0.4);
+  outline-offset: 3px;
+
+  .calendar-day {
+    &:hover {
+      background: rgba(139, 92, 246, 0.08);
+    }
+  }
+}
+
+.calendar-day.duplication-source {
+  background: rgba(139, 92, 246, 0.15) !important;
+  box-shadow: inset 0 0 0 2px rgba(139, 92, 246, 0.5);
+}
+
+.calendar-day.duplication-target {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.25) 0%, rgba(124, 58, 237, 0.2) 100%) !important;
+  box-shadow: inset 0 0 0 2px #7c3aed;
+  position: relative;
+
+  .day-number {
+    color: #5b21b6;
+    font-weight: 700;
+  }
+
+  &::after {
+    content: '✓';
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    color: #7c3aed;
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+}
+
+// Footer fixe en mode duplication
+.duplication-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-top: 2px solid rgba(139, 92, 246, 0.3);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  z-index: 9999;
+  flex-wrap: wrap;
+
+  @media (max-width: 640px) {
+    padding: 0.75rem 1rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .duplication-footer-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .duplication-footer-session {
+    font-size: 0.9rem;
+    color: #333;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    strong {
+      color: #5b21b6;
+    }
+  }
+
+  .duplication-footer-count {
+    font-size: 0.8rem;
+    color: #7c3aed;
+    font-weight: 600;
+  }
+
+  .duplication-footer-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-shrink: 0;
+
+    @media (max-width: 640px) {
+      justify-content: flex-end;
+    }
   }
 }
 
