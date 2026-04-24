@@ -1,0 +1,209 @@
+<%- include('_header', { title: 'Feedbacks bêta', page: 'feedbacks' }) %>
+
+<%
+  const TYPE_LABELS = { bug: '🐛 Bug', ui: '🎨 UX/UI', perf: '⚡ Perf', idea: '💡 Idée' };
+  const SEV_LABELS  = { low: '🟢 Mineur', med: '🟡 Modéré', high: '🟠 Important', crit: '🔴 Bloquant' };
+  const SEV_COLORS  = { low: '#16a34a', med: '#ca8a04', high: '#ea580c', crit: '#dc2626' };
+  const STATUS_LABELS = { triage: 'En triage', open: 'Ouvert', prog: 'En cours', planned: 'Planifié', fixed: 'Corrigé', closed: 'Fermé' };
+  const STATUS_COLORS = {
+    triage:  { bg: 'rgba(245,158,11,0.12)', fg: '#b45309' },
+    open:    { bg: 'rgba(239,68,68,0.1)',   fg: '#dc2626' },
+    prog:    { bg: 'rgba(245,158,11,0.1)',  fg: '#b45309' },
+    planned: { bg: 'rgba(139,92,246,0.1)',  fg: '#7c3aed' },
+    fixed:   { bg: 'rgba(16,185,129,0.1)',  fg: '#059669' },
+    closed:  { bg: 'rgba(100,116,139,0.1)', fg: '#475569' }
+  };
+  const SCREEN_LABELS = { home: 'Accueil', chat: 'Messages', planning: 'Planning', sorties: 'Mes sorties', profil: 'Mon Profil', boutique: 'Boutique', auth: 'Connexion', other: 'Autre' };
+%>
+
+<div class="page-header">
+  <h1>Feedbacks bêta</h1>
+  <p><%= total %> résultat<%= total > 1 ? 's' : '' %><% if (search || status || type || severity) { %> &mdash; filtrés<% } %> / <%= totalAll %> au total</p>
+</div>
+
+<% if (success === 'updated') { %>
+  <div class="alert alert-success"><i class="fa-solid fa-circle-check"></i> Feedback mis à jour.</div>
+<% } else if (success === 'deleted') { %>
+  <div class="alert alert-success"><i class="fa-solid fa-circle-check"></i> Feedback supprimé.</div>
+<% } %>
+
+<!-- Stats grid -->
+<div class="stats-grid" style="grid-template-columns:repeat(6,1fr);margin-bottom:24px;">
+  <% ['triage','open','prog','planned','fixed','closed'].forEach(s => { %>
+    <div class="stat-card" style="cursor:pointer;" onclick="location.href='/feedbacks?status=<%= s %>'">
+      <div class="stat-card-top">
+        <div class="stat-label"><%= STATUS_LABELS[s] %></div>
+      </div>
+      <div class="stat-value" style="color:<%= STATUS_COLORS[s].fg %>;"><%= statusCounts[s] %></div>
+    </div>
+  <% }); %>
+</div>
+
+<!-- Filtres -->
+<form method="GET" action="/feedbacks">
+  <div class="filters">
+    <div class="search-wrap">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" name="search" class="search-input" placeholder="Rechercher par ticket, description, email…" value="<%= search %>">
+    </div>
+    <select name="status" class="filter-select">
+      <option value="">Tous les statuts</option>
+      <% Object.entries(STATUS_LABELS).forEach(([k,v]) => { %>
+        <option value="<%= k %>" <%= status === k ? 'selected' : '' %>><%= v %></option>
+      <% }); %>
+    </select>
+    <select name="type" class="filter-select">
+      <option value="">Tous les types</option>
+      <% Object.entries(TYPE_LABELS).forEach(([k,v]) => { %>
+        <option value="<%= k %>" <%= type === k ? 'selected' : '' %>><%= v %></option>
+      <% }); %>
+    </select>
+    <select name="severity" class="filter-select">
+      <option value="">Toutes sévérités</option>
+      <% Object.entries(SEV_LABELS).forEach(([k,v]) => { %>
+        <option value="<%= k %>" <%= severity === k ? 'selected' : '' %>><%= v %></option>
+      <% }); %>
+    </select>
+    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filtrer</button>
+    <% if (search || status || type || severity) { %>
+      <a href="/feedbacks" class="btn btn-secondary"><i class="fa-solid fa-xmark"></i> Réinitialiser</a>
+    <% } %>
+  </div>
+</form>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Ticket</th>
+          <th>Type</th>
+          <th>Écran</th>
+          <th>Sévérité</th>
+          <th>Description</th>
+          <th>Utilisateur</th>
+          <th>Statut</th>
+          <th>Date</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% items.forEach(f => { %>
+        <tr>
+          <td style="font-family:'JetBrains Mono',monospace;font-weight:600;font-size:0.82rem;">
+            <a href="#detail-<%= f._id %>" onclick="toggleDetail('<%= f._id %>');return false;" class="table-link">
+              <%= f.ticketId %>
+            </a>
+          </td>
+          <td><span class="badge" style="background:rgba(0,53,84,0.08);color:var(--navy);"><%= TYPE_LABELS[f.type] %></span></td>
+          <td class="text-small"><%= SCREEN_LABELS[f.screen] || f.screen %></td>
+          <td><span class="badge" style="background:<%= SEV_COLORS[f.severity] %>22;color:<%= SEV_COLORS[f.severity] %>;"><%= SEV_LABELS[f.severity] %></span></td>
+          <td style="max-width:320px;">
+            <div style="font-size:0.85rem;line-height:1.4;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">
+              <%= f.description %>
+            </div>
+          </td>
+          <td class="text-small">
+            <% if (f.user) { %>
+              <div style="font-weight:500;"><%= f.user.firstName || '' %> <%= f.user.lastName || '' %></div>
+              <div class="text-muted text-small"><%= f.user.email %></div>
+            <% } else if (f.email) { %>
+              <div class="text-muted text-small"><%= f.email %></div>
+            <% } else { %>
+              <span class="text-muted">Anonyme</span>
+            <% } %>
+          </td>
+          <td>
+            <form method="POST" action="/feedbacks/<%= f._id %>/status" style="margin:0;">
+              <select name="status" onchange="this.form.submit()" class="filter-select" style="padding:4px 8px;font-size:0.78rem;background:<%= STATUS_COLORS[f.status].bg %>;color:<%= STATUS_COLORS[f.status].fg %>;border-color:<%= STATUS_COLORS[f.status].fg %>33;font-weight:700;">
+                <% Object.entries(STATUS_LABELS).forEach(([k,v]) => { %>
+                  <option value="<%= k %>" <%= f.status === k ? 'selected' : '' %>><%= v %></option>
+                <% }); %>
+              </select>
+            </form>
+          </td>
+          <td class="text-muted text-small" style="white-space:nowrap;">
+            <%= new Date(f.createdAt).toLocaleDateString('fr-FR', { day:'2-digit', month:'short' }) %>
+            <span style="color:#cbd5e1;margin:0 2px;">·</span>
+            <%= new Date(f.createdAt).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }) %>
+          </td>
+          <td>
+            <form method="POST" action="/feedbacks/<%= f._id %>/delete" onsubmit="return confirm('Supprimer ce feedback ?');" style="margin:0;">
+              <button type="submit" class="btn btn-secondary" style="padding:4px 8px;color:var(--danger);border-color:rgba(239,68,68,0.3);" title="Supprimer">
+                <i class="fa-solid fa-trash" style="font-size:0.75rem;"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        <tr id="detail-<%= f._id %>" class="detail-row" style="display:none;">
+          <td colspan="9" style="background:#fafafa;padding:20px;">
+            <div style="display:grid;grid-template-columns:1fr 320px;gap:24px;">
+              <div>
+                <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:8px;">Description complète</div>
+                <div style="font-size:0.88rem;line-height:1.6;white-space:pre-wrap;color:var(--navy);"><%= f.description %></div>
+
+                <% if (f.screenshotUrl) { %>
+                  <div style="margin-top:16px;">
+                    <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:8px;">Pièce jointe</div>
+                    <a href="<%= f.screenshotUrl %>" target="_blank"><img src="<%= f.screenshotUrl %>" style="max-width:300px;border-radius:8px;border:1px solid #e5e7eb;"/></a>
+                  </div>
+                <% } %>
+              </div>
+              <div>
+                <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:8px;">Métadonnées</div>
+                <div style="font-size:0.8rem;line-height:1.8;">
+                  <div><strong>Votes :</strong> <%= f.votes %></div>
+                  <div><strong>Contact OK :</strong> <%= f.contactMe ? 'Oui' : 'Non' %></div>
+                  <% if (f.meta?.appVersion) { %><div><strong>Version app :</strong> <%= f.meta.appVersion %></div><% } %>
+                  <% if (f.meta?.userAgent) { %><div style="word-break:break-all;"><strong>User-Agent :</strong> <span style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;"><%= f.meta.userAgent %></span></div><% } %>
+                  <% if (f.meta?.locale) { %><div><strong>Locale :</strong> <%= f.meta.locale %></div><% } %>
+                  <% if (f.meta?.timezone) { %><div><strong>Timezone :</strong> <%= f.meta.timezone %></div><% } %>
+                  <% if (f.meta?.ip) { %><div><strong>IP :</strong> <%= f.meta.ip %></div><% } %>
+                </div>
+
+                <form method="POST" action="/feedbacks/<%= f._id %>/status" style="margin-top:16px;padding-top:16px;border-top:1px solid #e5e7eb;">
+                  <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer;">
+                    <input type="checkbox" name="publicOnCommunity" value="true" <%= f.publicOnCommunity ? 'checked' : '' %> onchange="this.form.submit()"/>
+                    <span>Afficher dans la sidebar communauté</span>
+                  </label>
+                  <input type="hidden" name="status" value="<%= f.status %>"/>
+                </form>
+              </div>
+            </div>
+          </td>
+        </tr>
+        <% }); %>
+        <% if (!items.length) { %>
+        <tr>
+          <td colspan="9">
+            <div class="empty-state">
+              <i class="fa-solid fa-inbox"></i>
+              <p>Aucun feedback pour ces critères</p>
+            </div>
+          </td>
+        </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+
+  <% if (pages > 1) { %>
+  <div style="display:flex;justify-content:center;gap:8px;padding:16px;">
+    <% for (let i = 1; i <= pages; i++) { %>
+      <a href="/feedbacks?page=<%= i %><%= status ? '&status='+status : '' %><%= type ? '&type='+type : '' %><%= severity ? '&severity='+severity : '' %><%= search ? '&search='+encodeURIComponent(search) : '' %>"
+         class="btn <%= i === page ? 'btn-primary' : 'btn-secondary' %>"
+         style="padding:6px 12px;font-size:0.85rem;"><%= i %></a>
+    <% } %>
+  </div>
+  <% } %>
+</div>
+
+<script>
+function toggleDetail(id) {
+  const row = document.getElementById('detail-' + id);
+  if (!row) return;
+  row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+}
+</script>
+
+<%- include('_footer') %>

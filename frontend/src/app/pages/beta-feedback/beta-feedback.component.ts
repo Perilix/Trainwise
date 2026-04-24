@@ -119,7 +119,7 @@ export class BetaFeedbackComponent implements OnInit {
 
   communityBugs = signal<CommunityBug[]>([]);
 
-  appVersion = 'Trainwise v0.9.4 (b239)';
+  appVersion = 'Trainwise v1.0.0';
   nowString = signal(this.formatNow());
 
   userAgentShort = computed(() => this.detectDeviceLabel());

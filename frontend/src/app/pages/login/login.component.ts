@@ -2,6 +2,7 @@ import { Component, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
+import { Capacitor } from '@capacitor/core';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -38,7 +39,8 @@ export class LoginComponent implements OnInit {
     this.authService.login(this.email, this.password).subscribe({
       next: () => {
         const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
-        this.router.navigateByUrl(returnUrl || '/');
+        const fallback = Capacitor.isNativePlatform() ? '/' : '/beta/feedback';
+        this.router.navigateByUrl(returnUrl || fallback);
       },
       error: (err) => {
         this.isLoading.set(false);

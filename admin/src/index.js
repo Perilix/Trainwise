@@ -12,6 +12,7 @@ const aiRoutes = require('./routes/ai.routes');
 const runsRoutes = require('./routes/runs.routes');
 const coachesRoutes = require('./routes/coaches.routes');
 const notificationsRoutes = require('./routes/notifications.routes');
+const feedbacksRoutes = require('./routes/feedbacks.routes');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -37,6 +38,7 @@ app.use('/ai', aiRoutes);
 app.use('/runs', runsRoutes);
 app.use('/coaches', coachesRoutes);
 app.use('/notifications', notificationsRoutes);
+app.use('/feedbacks', feedbacksRoutes);
 
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/trainwise')
   .then(() => {

@@ -83,7 +83,7 @@ Une seule page (route unique, ex: `/beta/feedback`). Composée des sections suiv
 ### 2. Hero
 - **Layout** : Pleine largeur de la grille (`grid-column: 1 / -1`), padding `44px`, radius `24px`, background `navy + radial-gradients cyan/violet`
 - **Contenu** :
-  - Badge "Programme bêta · v0.9.4" avec point vert pulsé (animation `pulse 2s infinite`, opacity 1 ↔ 0.5)
+  - Badge "Programme bêta · v1.0.0" avec point vert pulsé (animation `pulse 2s infinite`, opacity 1 ↔ 0.5)
   - Titre H1 en 2 lignes, 52px italic, avec `<span class="hl">version</span>` en cyan
   - Paragraphe descriptif (16px, `#c8d7e6`, max-width 560px)
   - **Stats row** : 4 chiffres alignés en flex gap:32px (247 Bêta-testeurs, 132 Retours reçus, 89 Bugs corrigés, 72h Délai moyen). Chaque chiffre en Archivo Black italic 28px, label en uppercase 11px tracking wide.
@@ -133,7 +133,7 @@ Au clic : check cyan ✓ en top-right de la tile sélectionnée.
 
 **Step 4 — Récap** :
 - Récap grid (2 colonnes : label muted / valeur navy-ink) avec Type, Écran, Impact, Description tronquée 200 car
-- **Infos techniques auto-jointes** : chips mono 11.5px avec device (iPhone 13 · iOS 17.4), version app (Trainwise v0.9.4 b239), locale, timestamp, email user
+- **Infos techniques auto-jointes** : chips mono 11.5px avec device (iPhone 13 · iOS 17.4), version app (Trainwise v1.0.0), locale, timestamp, email user
 - Checkbox "D'accord pour être recontacté"
 
 **Actions row** (footer card) :
