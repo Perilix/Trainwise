@@ -70,6 +70,8 @@ services:
       - SESSION_SECRET=${SESSION_SECRET:-admin-session-secret-change-me}
       - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@trainwise.app}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - JWT_SECRET=${JWT_SECRET:-change-this-secret-in-production}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:4200}
     depends_on:
       - mongodb
     networks:
