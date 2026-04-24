@@ -1,0 +1,938 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Trainwise — Email d'onboarding</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    /* Trainwise palette, picked from screenshots */
+    --navy:       #0b2a47;
+    --navy-deep: #07223b;
+    --navy-ink:  #051a2e;
+    --cyan:      #1aaef5;   /* CTA blue */
+    --cyan-hi:   #3dc5ff;
+    --ivory:     #f2efe9;   /* page bg */
+    --paper:     #ffffff;
+    --line:      #e6e2d9;
+    --text:      #0b2a47;
+    --muted:     #5a6878;
+    --violet:    #7b5bd6;
+    --violet-soft:#efe9fb;
+    --orange:    #ff7a1a;
+    --green:     #1fb77a;
+    --green-soft:#e6f7ee;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:#1d2733;font-family:'Inter',system-ui,sans-serif;color:var(--text);}
+  body{min-height:100vh;overflow-x:hidden}
+
+  /* ===== Mail-client chrome =============================================== */
+  .client{
+    max-width: 1280px;
+    margin: 0 auto;
+    background:#f5f3ee;
+    min-height:100vh;
+    box-shadow: 0 0 0 1px #0000001a;
+    display:grid;
+    grid-template-columns: 260px 340px 1fr;
+  }
+  .sidebar{
+    background:#242f3d;
+    color:#c8d1dc;
+    padding:18px 14px;
+    border-right:1px solid #0000001a;
+  }
+  .sb-brand{
+    display:flex;align-items:center;gap:10px;
+    font-weight:700;color:#fff;font-size:13px;letter-spacing:.02em;
+    padding:6px 8px 18px;
+  }
+  .sb-brand .dot{width:10px;height:10px;border-radius:50%;background:var(--cyan)}
+  .sb-compose{
+    display:flex;align-items:center;gap:8px;
+    background:#fff;color:#111;border-radius:10px;
+    padding:10px 14px;font-weight:600;font-size:13px;
+    margin-bottom:16px;cursor:pointer;
+    box-shadow:0 1px 0 #0000000d;
+  }
+  .sb-compose svg{width:14px;height:14px}
+  .sb-section{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#7b8794;padding:12px 8px 6px}
+  .sb-item{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    padding:8px 10px;border-radius:8px;font-size:13px;color:#c8d1dc;cursor:pointer;
+  }
+  .sb-item.active{background:#2e3b4c;color:#fff}
+  .sb-item .count{font-size:11px;color:#7b8794}
+  .sb-item.active .count{color:#c8d1dc}
+
+  /* middle list */
+  .maillist{
+    background:#fff;border-right:1px solid #e6e2d9;
+    display:flex;flex-direction:column;
+  }
+  .ml-head{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:14px 18px;border-bottom:1px solid #eee;
+  }
+  .ml-head h3{margin:0;font-size:14px;font-weight:700}
+  .ml-head .chip{font-size:11px;color:var(--muted);background:#f3f2ed;padding:3px 8px;border-radius:999px}
+  .ml-search{
+    margin:10px 12px 6px;background:#f5f3ee;border-radius:8px;padding:8px 12px;
+    font-size:12px;color:#8a94a1;display:flex;align-items:center;gap:8px;
+  }
+  .ml-item{
+    padding:14px 18px;border-bottom:1px solid #f1ede5;cursor:pointer;
+    display:flex;flex-direction:column;gap:4px;
+  }
+  .ml-item.current{background:#eaf6fd;border-left:3px solid var(--cyan);padding-left:15px}
+  .ml-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .ml-from{font-weight:700;font-size:13px;color:#0b2a47}
+  .ml-date{font-size:11px;color:var(--muted);white-space:nowrap}
+  .ml-subj{font-size:12.5px;font-weight:600;color:#0b2a47}
+  .ml-prev{font-size:12px;color:var(--muted);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .ml-tags{display:flex;gap:6px;margin-top:4px}
+  .ml-tag{font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;letter-spacing:.03em;text-transform:uppercase}
+  .ml-tag.onb{background:#e6f3ff;color:#0b62a4}
+  .ml-tag.promo{background:#fdeedd;color:#a6530a}
+  .ml-tag.coach{background:var(--violet-soft);color:#5a3fb3}
+
+  /* reading pane */
+  .reader{
+    background:#f5f3ee;padding:28px 0;overflow-y:auto;height:100vh;
+  }
+  .reader-chrome{
+    max-width: 660px;margin: 0 auto 18px;padding: 0 28px;
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+  }
+  .r-actions{display:flex;gap:6px}
+  .r-btn{
+    width:32px;height:32px;border-radius:8px;background:#fff;border:1px solid #e6e2d9;
+    display:grid;place-items:center;color:#5a6878;cursor:pointer;
+  }
+  .r-btn:hover{background:#fbfaf6}
+  .r-crumbs{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+
+  /* ===== Email ============================================================ */
+  .email{
+    max-width:660px;margin:0 auto;background:var(--paper);
+    border-radius:14px;overflow:hidden;
+    box-shadow: 0 1px 0 #00000008, 0 12px 40px -20px #0b2a4733;
+  }
+  .email-meta{
+    padding:22px 28px 18px;border-bottom:1px solid var(--line);
+  }
+  .em-subject{
+    font-family:'Archivo Black','Inter',sans-serif;font-size:22px;line-height:1.2;
+    color:var(--navy-ink);font-style:italic;letter-spacing:-.01em;margin:0 0 14px;
+  }
+  .em-sender{
+    display:flex;gap:12px;align-items:center;
+  }
+  .em-avatar{
+    width:40px;height:40px;border-radius:50%;background:var(--navy);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:13px;
+    font-family:'Archivo Black',sans-serif;font-style:italic;
+  }
+  .em-sender-info{flex:1;min-width:0}
+  .em-from{font-weight:700;font-size:13px;color:var(--navy-ink)}
+  .em-from span{color:var(--muted);font-weight:500}
+  .em-to{font-size:12px;color:var(--muted);margin-top:2px}
+  .em-to .details{color:var(--cyan);cursor:pointer}
+  .em-when{font-size:12px;color:var(--muted);white-space:nowrap}
+
+  /* email body */
+  .eb{padding:0}
+
+  /* Variant styles */
+  [data-variant="welcome"] .eb{}
+
+  /* ===== HERO ============================================================= */
+  .hero{
+    background: linear-gradient(180deg, var(--navy) 0%, var(--navy-deep) 100%);
+    color:#fff;padding:48px 40px 52px;text-align:center;position:relative;overflow:hidden;
+  }
+  .hero::before{
+    content:"";position:absolute;inset:0;
+    background:
+      radial-gradient(600px 240px at 50% -30%, #1aaef533 0%, transparent 60%),
+      radial-gradient(400px 200px at 90% 120%, #7b5bd622 0%, transparent 60%);
+    pointer-events:none;
+  }
+  .hero .brand{
+    font-family:'Archivo Black',sans-serif;font-style:italic;font-size:32px;
+    letter-spacing:-.01em;line-height:.95;display:inline-block;
+  }
+  .hero .brand .train{color:#fff;display:block}
+  .hero .brand .wise{color:var(--cyan);display:block;margin-left:18px}
+  .hero h1{
+    font-family:'Archivo Black',sans-serif;font-style:italic;
+    font-size:44px;line-height:1.02;margin:28px 0 12px;letter-spacing:-.015em;
+    color:#fff;
+  }
+  .hero h1 .hl{color:var(--cyan)}
+  .hero p{
+    font-size:15px;line-height:1.55;color:#c8d7e6;max-width:440px;margin:0 auto;
+  }
+  .hero .badge{
+    display:inline-flex;align-items:center;gap:8px;
+    background:#ffffff15;border:1px solid #ffffff22;border-radius:999px;
+    padding:6px 14px;font-size:11px;font-weight:600;letter-spacing:.1em;
+    text-transform:uppercase;color:#c8d7e6;margin-bottom:4px;
+  }
+  .hero .badge .dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
+
+  /* ===== Greeting ========================================================= */
+  .greet{padding:36px 40px 8px}
+  .greet h2{
+    font-family:'Archivo Black',sans-serif;font-style:italic;font-size:24px;
+    margin:0 0 10px;color:var(--navy-ink);letter-spacing:-.01em;
+  }
+  .greet p{
+    font-size:15px;line-height:1.6;color:#3a4a5c;margin:0 0 12px;
+  }
+  .greet .sig-note{
+    margin-top:18px;font-size:13px;color:var(--muted);font-style:italic;
+  }
+
+  /* ===== Steps ============================================================ */
+  .steps{padding:12px 40px 8px}
+  .steps-title{
+    font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--cyan);margin:12px 0 18px;
+  }
+  .step{
+    display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--line);
+  }
+  .step:last-child{border-bottom:none}
+  .step-num{
+    width:36px;height:36px;border-radius:10px;background:#eaf6fd;color:var(--cyan);
+    display:grid;place-items:center;font-weight:800;font-size:15px;
+    font-family:'Archivo Black',sans-serif;font-style:italic;flex:0 0 36px;
+  }
+  .step-body{flex:1;min-width:0}
+  .step-body h3{
+    margin:4px 0 6px;font-size:15px;font-weight:700;color:var(--navy-ink);
+  }
+  .step-body p{
+    margin:0;font-size:13.5px;line-height:1.55;color:var(--muted);
+  }
+  .step-cta{
+    margin-top:8px;display:inline-flex;align-items:center;gap:6px;
+    color:var(--cyan);font-weight:600;font-size:13px;text-decoration:none;
+  }
+  .step-cta:hover{text-decoration:underline}
+
+  /* ===== Big CTA ========================================================== */
+  .cta-block{padding:28px 40px 8px;text-align:center}
+  .cta-btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    background:var(--cyan);color:#fff;font-weight:700;font-size:15px;
+    padding:16px 32px;border-radius:12px;text-decoration:none;
+    box-shadow: 0 1px 0 #ffffff40 inset, 0 8px 24px -8px #1aaef580;
+    transition:transform .15s;
+  }
+  .cta-btn:hover{transform:translateY(-1px)}
+  .cta-sub{
+    display:block;margin-top:12px;font-size:12px;color:var(--muted);
+  }
+
+  /* ===== Feature tiles (Pro variant) ====================================== */
+  .tiles{
+    display:grid;grid-template-columns:1fr 1fr;gap:12px;
+    padding:20px 40px 8px;
+  }
+  .tile{
+    background:var(--ivory);border:1px solid var(--line);border-radius:12px;
+    padding:16px;
+  }
+  .tile-ico{
+    width:32px;height:32px;border-radius:8px;background:#fff;
+    display:grid;place-items:center;margin-bottom:10px;
+    border:1px solid var(--line);
+  }
+  .tile h4{margin:0 0 4px;font-size:13px;font-weight:700;color:var(--navy-ink)}
+  .tile p{margin:0;font-size:12px;line-height:1.5;color:var(--muted)}
+
+  /* ===== Coach card ======================================================= */
+  .coach{
+    margin:24px 40px;padding:20px;background:var(--violet-soft);border-radius:14px;
+    display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;
+  }
+  .coach-av{
+    width:56px;height:56px;border-radius:50%;background:var(--violet);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-family:'Archivo Black',sans-serif;
+    font-style:italic;font-size:16px;
+  }
+  .coach-label{
+    font-size:10px;letter-spacing:.14em;font-weight:700;color:var(--violet);
+    text-transform:uppercase;margin-bottom:2px;
+  }
+  .coach-name{font-family:'Archivo Black',sans-serif;font-style:italic;font-size:18px;color:var(--navy-ink)}
+  .coach-desc{font-size:12.5px;color:#4a3a78;margin-top:4px;line-height:1.45}
+
+  /* ===== Quote (Editorial) ================================================ */
+  .quote-wrap{padding:32px 40px;text-align:center}
+  .quote{
+    font-family:'Archivo Black',sans-serif;font-style:italic;
+    font-size:28px;line-height:1.15;color:var(--navy-ink);letter-spacing:-.01em;
+    margin:0 0 14px;
+  }
+  .quote .stroke{
+    -webkit-text-stroke: 1.5px var(--navy-ink); color:transparent;
+  }
+  .quote-by{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+  /* ===== Stats row ======================================================== */
+  .stats{
+    display:grid;grid-template-columns:repeat(3,1fr);
+    padding:4px 40px;gap:0;
+  }
+  .stat{text-align:center;padding:14px 8px;border-right:1px solid var(--line)}
+  .stat:last-child{border-right:none}
+  .stat-num{
+    font-family:'Archivo Black',sans-serif;font-style:italic;font-size:26px;
+    color:var(--navy-ink);letter-spacing:-.01em;
+  }
+  .stat-num .u{font-size:13px;color:var(--muted);font-family:'Inter';font-style:normal;font-weight:600;margin-left:2px}
+  .stat-lbl{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:2px}
+
+  /* ===== Tips list ======================================================== */
+  .tips{padding:8px 40px 20px}
+  .tip{
+    display:flex;gap:12px;align-items:flex-start;padding:10px 0;
+    font-size:13.5px;line-height:1.5;color:#3a4a5c;
+  }
+  .tip-check{
+    width:20px;height:20px;border-radius:50%;background:var(--green-soft);color:var(--green);
+    display:grid;place-items:center;flex:0 0 20px;margin-top:1px;
+  }
+  .tip strong{color:var(--navy-ink);font-weight:700}
+
+  /* ===== Pro promo ======================================================== */
+  .pro-promo{
+    margin:16px 40px 8px;padding:20px;border-radius:14px;
+    background: linear-gradient(135deg, #fff8eb 0%, #fef1d6 100%);
+    border:1px solid #f2d9a0;
+    display:flex;gap:14px;align-items:center;
+  }
+  .pro-crown{
+    width:44px;height:44px;border-radius:12px;background:#0b2a47;color:#f7b733;
+    display:grid;place-items:center;flex:0 0 44px;
+  }
+  .pro-body{flex:1;min-width:0}
+  .pro-title{font-weight:800;font-size:14px;color:var(--navy-ink)}
+  .pro-desc{font-size:12px;color:#6b5a2a;margin-top:2px;line-height:1.45}
+  .pro-link{
+    font-size:12.5px;font-weight:700;color:var(--navy-ink);white-space:nowrap;
+    text-decoration:none;display:inline-flex;align-items:center;gap:4px;
+  }
+
+  /* ===== App preview (phone) ============================================== */
+  .phone-wrap{
+    background: linear-gradient(180deg, #f7f4ee 0%, var(--paper) 100%);
+    padding:32px 40px 8px;text-align:center;
+  }
+  .phone{
+    display:inline-block;width:220px;padding:8px;background:#0b1420;border-radius:32px;
+    box-shadow: 0 20px 60px -20px #0b2a4744;
+  }
+  .phone-screen{
+    background:var(--navy);border-radius:24px;overflow:hidden;aspect-ratio: 9/19;
+    display:flex;flex-direction:column;position:relative;
+  }
+  .phone-notch{
+    width:70px;height:18px;background:#000;border-radius:999px;
+    position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:2;
+  }
+  .phone-top{
+    padding:34px 14px 12px;color:#fff;display:flex;justify-content:space-between;align-items:center;
+  }
+  .phone-brand{
+    font-family:'Archivo Black',sans-serif;font-style:italic;font-size:12px;line-height:.95;
+  }
+  .phone-brand .w{color:var(--cyan);display:block}
+  .phone-bell{
+    width:20px;height:20px;border-radius:50%;background:#ffffff15;position:relative;
+  }
+  .phone-bell::after{content:"5";position:absolute;top:-4px;right:-4px;background:#ff4d4d;color:#fff;
+    font-size:8px;font-weight:700;border-radius:50%;width:12px;height:12px;display:grid;place-items:center;}
+  .phone-body{
+    flex:1;background:var(--ivory);padding:12px;display:flex;flex-direction:column;gap:8px;
+  }
+  .ph-hello{
+    font-family:'Archivo Black',sans-serif;font-style:italic;font-size:14px;color:var(--navy-ink);
+  }
+  .ph-sub{font-size:8px;color:var(--muted);margin-bottom:4px}
+  .ph-card{
+    background:#fff;border-radius:8px;padding:8px;font-size:8px;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .ph-card .d{color:var(--cyan);font-weight:700;font-size:8px}
+  .ph-card .t{font-weight:700;color:var(--navy-ink);font-size:9px}
+  .ph-card .k{color:var(--muted)}
+  .ph-coach{
+    background:var(--violet-soft);border-radius:8px;padding:8px;display:flex;gap:6px;align-items:center;
+  }
+  .ph-coach-av{width:18px;height:18px;border-radius:50%;background:var(--violet);color:#fff;
+    display:grid;place-items:center;font-size:7px;font-weight:800}
+  .ph-coach-label{font-size:7px;color:var(--violet);font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+  .ph-coach-name{font-size:9px;font-weight:700;color:var(--navy-ink);font-family:'Archivo Black',sans-serif;font-style:italic}
+  .phone-tabs{
+    background:var(--navy);padding:8px 12px;display:flex;justify-content:space-between;
+  }
+  .phone-tabs .t{width:14px;height:14px;border-radius:4px;background:#ffffff22}
+  .phone-tabs .t.active{background:var(--cyan)}
+  .phone-caption{
+    font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);margin-top:14px;letter-spacing:.04em;
+  }
+
+  /* ===== Footer =========================================================== */
+  .em-footer{
+    background:var(--navy-deep);color:#8aa0b8;padding:32px 40px 28px;text-align:center;
+    font-size:12px;line-height:1.6;
+  }
+  .em-footer .fbrand{
+    font-family:'Archivo Black',sans-serif;font-style:italic;font-size:18px;color:#fff;
+    margin-bottom:12px;
+  }
+  .em-footer .fbrand .w{color:var(--cyan)}
+  .em-footer .flinks{display:flex;gap:18px;justify-content:center;margin:14px 0;flex-wrap:wrap}
+  .em-footer .flinks a{color:#c8d7e6;text-decoration:none;font-size:12px}
+  .em-footer .flinks a:hover{color:var(--cyan)}
+  .em-footer .fsocial{display:flex;gap:10px;justify-content:center;margin:14px 0}
+  .em-footer .fsocial a{
+    width:32px;height:32px;border-radius:50%;background:#ffffff12;
+    display:grid;place-items:center;color:#c8d7e6;text-decoration:none;
+  }
+  .em-footer .fsocial a:hover{background:var(--cyan);color:#fff}
+  .em-footer .faddr{font-size:11px;color:#6a7e95;margin-top:14px}
+  .em-footer .funsub{font-size:11px;color:#6a7e95;margin-top:6px}
+  .em-footer .funsub a{color:#c8d7e6;text-decoration:underline}
+
+  /* ===== Variant toggles ================================================= */
+  /* Pro variant */
+  [data-variant="pro"] .hero h1{font-size:38px}
+  [data-variant="pro"] .quote-wrap{display:none}
+
+  /* Editorial variant */
+  [data-variant="editorial"] .hero{
+    background:
+      radial-gradient(900px 400px at 50% -50%, #1aaef544 0%, transparent 60%),
+      linear-gradient(180deg, #07223b 0%, #051a2e 100%);
+    padding:56px 40px 60px;
+  }
+  [data-variant="editorial"] .hero h1{font-size:58px;letter-spacing:-.02em}
+  [data-variant="editorial"] .steps{display:none}
+  [data-variant="editorial"] .tiles{display:none}
+
+  /* Welcome default: hide tiles */
+  [data-variant="welcome"] .tiles{display:none}
+  [data-variant="welcome"] .quote-wrap{display:none}
+
+  /* Pro: hide steps in favor of tiles */
+  [data-variant="pro"] .steps{display:none}
+
+  @media (max-width: 1100px){
+    .client{grid-template-columns: 1fr !important}
+    .sidebar,.maillist{display:none !important}
+  }
+  @media (max-width: 700px){
+    .hero h1{font-size:32px !important}
+    .hero,.greet,.steps,.cta-block,.tiles,.coach,.tips,.pro-promo,.phone-wrap,.em-footer,.quote-wrap{padding-left:22px;padding-right:22px}
+    .coach{margin-left:16px;margin-right:16px}
+    .pro-promo{margin-left:16px;margin-right:16px;flex-direction:column;text-align:center}
+    .tiles{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<div class="client">
+  <!-- ============ Sidebar ============ -->
+  <aside class="sidebar">
+    <div class="sb-brand"><span class="dot"></span> Boîte mail</div>
+    <div class="sb-compose">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+      Nouveau message
+    </div>
+    <div class="sb-section">Dossiers</div>
+    <div class="sb-item active"><span>📥 Réception</span><span class="count">24</span></div>
+    <div class="sb-item"><span>⭐ Important</span><span class="count">3</span></div>
+    <div class="sb-item"><span>📤 Envoyés</span></div>
+    <div class="sb-item"><span>📝 Brouillons</span><span class="count">2</span></div>
+    <div class="sb-item"><span>🗑️ Corbeille</span></div>
+    <div class="sb-section">Étiquettes</div>
+    <div class="sb-item"><span style="color:#1aaef5">● Sport</span></div>
+    <div class="sb-item"><span style="color:#7b5bd6">● Coaching</span></div>
+    <div class="sb-item"><span style="color:#ff7a1a">● Factures</span></div>
+  </aside>
+
+  <!-- ============ Mail list ============ -->
+  <div class="maillist">
+    <div class="ml-head">
+      <h3>Réception</h3>
+      <span class="chip">24 messages</span>
+    </div>
+    <div class="ml-search">🔍 Rechercher dans les messages…</div>
+
+    <div class="ml-item current">
+      <div class="ml-row">
+        <div class="ml-from">Trainwise</div>
+        <div class="ml-date">à l'instant</div>
+      </div>
+      <div class="ml-subj" id="listSubject">Bienvenue sur Trainwise, Julien 🏃‍♂️</div>
+      <div class="ml-prev" id="listPreview">Ta meilleure version t'attend. Voici comment démarrer en moins de 3 minutes.</div>
+      <div class="ml-tags"><span class="ml-tag onb">Onboarding</span></div>
+    </div>
+
+    <div class="ml-item">
+      <div class="ml-row">
+        <div class="ml-from">Hugo Bastide</div>
+        <div class="ml-date">il y a 2 h</div>
+      </div>
+      <div class="ml-subj">Ta séance de demain</div>
+      <div class="ml-prev">Salut Julien, petite séance d'endurance prévue demain — 12 km allure souple…</div>
+      <div class="ml-tags"><span class="ml-tag coach">Coach</span></div>
+    </div>
+
+    <div class="ml-item">
+      <div class="ml-row">
+        <div class="ml-from">Strava</div>
+        <div class="ml-date">hier</div>
+      </div>
+      <div class="ml-subj">Nouvelle activité synchronisée</div>
+      <div class="ml-prev">Ta sortie de 7,8 km à Bordeaux est maintenant dans Trainwise.</div>
+    </div>
+
+    <div class="ml-item">
+      <div class="ml-row">
+        <div class="ml-from">Trainwise Pro</div>
+        <div class="ml-date">22 avr.</div>
+      </div>
+      <div class="ml-subj">Débloque l'IA illimitée ✨</div>
+      <div class="ml-prev">Plans personnalisés, analyses détaillées, priorité support — offre spéciale.</div>
+      <div class="ml-tags"><span class="ml-tag promo">Promo</span></div>
+    </div>
+
+    <div class="ml-item" style="opacity:.55">
+      <div class="ml-row">
+        <div class="ml-from">L'équipe Trainwise</div>
+        <div class="ml-date">19 avr.</div>
+      </div>
+      <div class="ml-subj">Ta semaine en chiffres</div>
+      <div class="ml-prev">43,2 km parcourus, 8 sorties — tu as explosé ton record. On t'envoie le récap.</div>
+    </div>
+
+    <div class="ml-item" style="opacity:.45">
+      <div class="ml-row">
+        <div class="ml-from">Support</div>
+        <div class="ml-date">15 avr.</div>
+      </div>
+      <div class="ml-subj">Ton compte est prêt</div>
+      <div class="ml-prev">Merci d'avoir confirmé ton adresse email. Tu peux maintenant te connecter.</div>
+    </div>
+  </div>
+
+  <!-- ============ Reader ============ -->
+  <main class="reader">
+    <div class="reader-chrome">
+      <div class="r-crumbs">📥 Réception / Trainwise</div>
+      <div class="r-actions">
+        <div class="r-btn" title="Répondre"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg></div>
+        <div class="r-btn" title="Transférer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/></svg></div>
+        <div class="r-btn" title="Archiver"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg></div>
+        <div class="r-btn" title="Supprimer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14H7L5 6"/></svg></div>
+      </div>
+    </div>
+
+    <article class="email" id="email" data-variant="welcome">
+
+      <!-- Email meta -->
+      <div class="email-meta">
+        <h1 class="em-subject" id="subjectLine">Bienvenue sur Trainwise, Julien 🏃‍♂️</h1>
+        <div class="em-sender">
+          <div class="em-avatar">TW</div>
+          <div class="em-sender-info">
+            <div class="em-from">Trainwise <span>&lt;hello@trainwise.app&gt;</span></div>
+            <div class="em-to">À moi <span class="details">(Détails ▾)</span></div>
+          </div>
+          <div class="em-when">21:32 · Aujourd'hui</div>
+        </div>
+      </div>
+
+      <div class="eb">
+
+        <!-- HERO -->
+        <section class="hero">
+          <span class="badge"><span class="dot"></span> Compte activé</span>
+          <div style="margin-top:14px">
+            <div class="brand"><span class="train">Train</span><span class="wise">wise</span></div>
+          </div>
+          <h1 id="heroTitle">Ta meilleure <span class="hl">version</span><br/>t'attend, Julien.</h1>
+          <p id="heroSub">Ton espace d'entraînement intelligent est prêt. Coach, IA, Strava, planning — tout est connecté.</p>
+        </section>
+
+        <!-- Greeting -->
+        <section class="greet">
+          <h2 id="greetTitle">Salut Julien 👋</h2>
+          <p id="greetBody">
+            Bravo d'avoir rejoint <strong>Trainwise</strong>. On a conçu l'app pour une seule chose :
+            t'aider à courir plus intelligemment, sans te noyer dans les chiffres.
+            Voici comment tirer le meilleur de ton premier run avec nous.
+          </p>
+        </section>
+
+        <!-- Editorial quote (editorial variant only) -->
+        <section class="quote-wrap">
+          <div class="quote">"Tu ne cours pas <span class="stroke">contre</span> le chrono.<br/>Tu cours <em>avec</em> toi-même."</div>
+          <div class="quote-by">— Manifeste Trainwise</div>
+        </section>
+
+        <!-- Steps -->
+        <section class="steps">
+          <div class="steps-title">Démarre en 3 minutes</div>
+
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <h3>Complète ton profil sportif</h3>
+              <p>Niveau, objectif, fréquence — ces infos nourrissent notre IA pour te proposer des séances calibrées pour <em>toi</em>.</p>
+              <a class="step-cta" href="#">Remplir mon profil →</a>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <h3>Connecte Strava</h3>
+              <p>Tes sorties passées et à venir s'importent automatiquement. Tu gardes tes segments, on y ajoute l'analyse IA.</p>
+              <a class="step-cta" href="#">Lier mon compte Strava →</a>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <h3>Génère ta première semaine</h3>
+              <p>Un tap sur "Générer une semaine" et l'IA te construit un plan personnalisé. Tu peux l'ajuster, tout est modifiable.</p>
+              <a class="step-cta" href="#">Créer mon programme →</a>
+            </div>
+          </div>
+        </section>
+
+        <!-- Pro variant tiles -->
+        <section class="tiles">
+          <div class="tile">
+            <div class="tile-ico">🧠</div>
+            <h4>IA entraînement</h4>
+            <p>Plans qui s'adaptent à ta forme, ta charge et tes objectifs.</p>
+          </div>
+          <div class="tile">
+            <div class="tile-ico">📅</div>
+            <h4>Planning intelligent</h4>
+            <p>Ta semaine générée en 1 clic, ajustable à la main.</p>
+          </div>
+          <div class="tile">
+            <div class="tile-ico">🗺️</div>
+            <h4>Analyse de sortie</h4>
+            <p>Cadence, FC, allure — expliqués simplement, sans jargon.</p>
+          </div>
+          <div class="tile">
+            <div class="tile-ico">💬</div>
+            <h4>Coach dédié</h4>
+            <p>Chat direct avec ton coach, séances sur-mesure.</p>
+          </div>
+        </section>
+
+        <!-- CTA -->
+        <section class="cta-block">
+          <a href="#" class="cta-btn" id="ctaBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+            <span id="ctaLabel">Ouvrir Trainwise</span>
+          </a>
+          <span class="cta-sub" id="ctaSub">ou télécharge l'app sur iOS et Android</span>
+        </section>
+
+        <!-- App preview -->
+        <section class="phone-wrap">
+          <div class="phone">
+            <div class="phone-screen">
+              <div class="phone-notch"></div>
+              <div class="phone-top">
+                <div class="phone-brand"><span>Train</span><span class="w">wise</span></div>
+                <div class="phone-bell"></div>
+              </div>
+              <div class="phone-body">
+                <div>
+                  <div class="ph-hello">Bonsoir, Julien !</div>
+                  <div class="ph-sub">Ta meilleure version t'attend.</div>
+                </div>
+                <div class="ph-coach">
+                  <div class="ph-coach-av">HB</div>
+                  <div>
+                    <div class="ph-coach-label">Votre coach</div>
+                    <div class="ph-coach-name">Hugo Bastide</div>
+                  </div>
+                </div>
+                <div class="ph-card">
+                  <div><div class="d">24 avr.</div></div>
+                  <div class="t">Endurance</div>
+                  <div class="k">12 km</div>
+                </div>
+                <div class="ph-card">
+                  <div><div class="d">26 avr.</div></div>
+                  <div class="t">Pull (Tirage)</div>
+                  <div class="k">—</div>
+                </div>
+                <div class="ph-card">
+                  <div><div class="d">27 avr.</div></div>
+                  <div class="t">Endurance</div>
+                  <div class="k">12 km</div>
+                </div>
+              </div>
+              <div class="phone-tabs">
+                <div class="t active"></div><div class="t"></div><div class="t"></div><div class="t"></div>
+              </div>
+            </div>
+          </div>
+          <div class="phone-caption">// aperçu de ton tableau de bord</div>
+        </section>
+
+        <!-- Coach card -->
+        <section class="coach">
+          <div class="coach-av">HB</div>
+          <div>
+            <div class="coach-label">Ton coach te suit</div>
+            <div class="coach-name">Hugo Bastide</div>
+            <div class="coach-desc">Hugo va planifier tes prochaines séances. Tu peux lui écrire à tout moment depuis l'onglet messages.</div>
+          </div>
+        </section>
+
+        <!-- Stats -->
+        <section class="stats">
+          <div class="stat"><div class="stat-num">12k<span class="u">+</span></div><div class="stat-lbl">Coureurs actifs</div></div>
+          <div class="stat"><div class="stat-num">98<span class="u">%</span></div><div class="stat-lbl">Satisfaction</div></div>
+          <div class="stat"><div class="stat-num">4<span class="u">sem.</span></div><div class="stat-lbl">Progression moy.</div></div>
+        </section>
+
+        <!-- Tips -->
+        <section class="tips">
+          <div class="tip">
+            <div class="tip-check">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div><strong>Active les notifications</strong> pour ne rater aucune séance planifiée par Hugo.</div>
+          </div>
+          <div class="tip">
+            <div class="tip-check">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div><strong>Ajoute Trainwise à ton écran d'accueil</strong> — l'app se comporte comme une app native.</div>
+          </div>
+          <div class="tip">
+            <div class="tip-check">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div><strong>Teste la génération IA</strong> une fois ton profil complété pour un plan 100% personnalisé.</div>
+          </div>
+        </section>
+
+        <!-- Pro promo -->
+        <section class="pro-promo">
+          <div class="pro-crown">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M2 19l2-11 5 4 3-7 3 7 5-4 2 11H2zm0 2h20v2H2v-2z"/></svg>
+          </div>
+          <div class="pro-body">
+            <div class="pro-title">Passe en Trainwise Pro</div>
+            <div class="pro-desc">IA illimitée, plans premium, analyses détaillées — 9,99 €/mois, sans engagement.</div>
+          </div>
+          <a href="#" class="pro-link">Découvrir →</a>
+        </section>
+
+        <div style="padding:8px 40px 28px">
+          <p style="font-size:13.5px;line-height:1.6;color:#3a4a5c;margin:18px 0 0">
+            Besoin d'un coup de main ? Réponds simplement à cet email, on lit tout.<br/>
+            Bonne route, et surtout — écoute ton corps.
+          </p>
+          <p style="font-size:13.5px;color:#3a4a5c;margin:18px 0 0">
+            — L'équipe <strong>Trainwise</strong>
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <footer class="em-footer">
+          <div class="fbrand"><span>Train</span><span class="w">wise</span></div>
+          <div>L'entraînement intelligent, pour les coureurs qui visent plus loin.</div>
+          <div class="flinks">
+            <a href="#">Centre d'aide</a>
+            <a href="#">Contact</a>
+            <a href="#">Blog</a>
+            <a href="#">Confidentialité</a>
+          </div>
+          <div class="fsocial">
+            <a href="#" aria-label="Instagram"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="18" cy="6" r="1" fill="currentColor"/></svg></a>
+            <a href="#" aria-label="Strava"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M15.4 20.4l-3.4-6.7H14l1.4 2.9 1.4-2.9h2L15.4 20.4zM8.6 3.6L14 14h-3.1L8.6 9.4 6.3 14H3.2L8.6 3.6z"/></svg></a>
+            <a href="#" aria-label="Twitter"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg></a>
+          </div>
+          <div class="faddr">Trainwise SAS · 12 rue de la Course · 33000 Bordeaux, France</div>
+          <div class="funsub">
+            Tu reçois cet email parce que tu viens de créer un compte.
+            <a href="#">Préférences email</a> · <a href="#">Se désabonner</a>
+          </div>
+        </footer>
+
+      </div>
+    </article>
+
+    <div style="max-width:660px;margin:18px auto 40px;padding:0 28px;text-align:center;font-size:11px;color:#8a94a1">
+      ↓ Message sécurisé · Provenance vérifiée via DKIM
+    </div>
+  </main>
+</div>
+
+<!-- React + Babel for Tweaks -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+
+<script type="text/babel">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "variant": "welcome",
+  "userName": "Julien",
+  "showClientChrome": true,
+  "accent": "#1aaef5"
+}/*EDITMODE-END*/;
+
+const VARIANT_CONTENT = {
+  welcome: {
+    subject: "Bienvenue sur Trainwise, {name} 🏃‍♂️",
+    preview: "Ta meilleure version t'attend. Voici comment démarrer en moins de 3 minutes.",
+    heroTitle: "Ta meilleure <hl>version</hl><br/>t'attend, {name}.",
+    heroSub: "Ton espace d'entraînement intelligent est prêt. Coach, IA, Strava, planning — tout est connecté.",
+    greetTitle: "Salut {name} 👋",
+    greetBody: "Bravo d'avoir rejoint <strong>Trainwise</strong>. On a conçu l'app pour une seule chose : t'aider à courir plus intelligemment, sans te noyer dans les chiffres. Voici comment tirer le meilleur de ton premier run avec nous.",
+    ctaLabel: "Ouvrir Trainwise",
+    ctaSub: "ou télécharge l'app sur iOS et Android",
+  },
+  pro: {
+    subject: "{name}, voici tout ce que Trainwise peut faire pour toi",
+    preview: "IA entraînement, planning, analyse, coach — démarre en 3 minutes.",
+    heroTitle: "Cours plus <hl>intelligent</hl>.<br/>Pas plus longtemps.",
+    heroSub: "Quatre outils, un seul objectif : transformer chaque sortie en progression mesurable.",
+    greetTitle: "Tout est prêt, {name}.",
+    greetBody: "On a tout préparé pour que ta première semaine soit ta meilleure. Voici les quatre piliers de ton espace Trainwise — chacun a été pensé pour te faire gagner du temps <strong>et</strong> des watts.",
+    ctaLabel: "Activer mon espace",
+    ctaSub: "accès immédiat, zéro configuration",
+  },
+  editorial: {
+    subject: "{name}, tu viens de franchir la ligne de départ.",
+    preview: "Un manifeste, un coach, un plan. Bienvenue dans Trainwise.",
+    heroTitle: "La <hl>ligne</hl> de départ,<br/>c'est maintenant.",
+    heroSub: "Bienvenue dans la tribu Trainwise — 12 000 coureurs qui refusent de courir sans intention.",
+    greetTitle: "{name}, lis ceci avant ton prochain run.",
+    greetBody: "Chez Trainwise, on ne croit pas aux plans d'entraînement génériques. On croit aux coureurs qui écoutent leur corps, s'adaptent, et se font accompagner. Ton coach Hugo est déjà prévenu. Ton espace est prêt. Il ne manque plus que tes premiers kilomètres avec nous.",
+    ctaLabel: "Lacer mes chaussures",
+    ctaSub: "ton premier plan se génère en 30 secondes",
+  }
+};
+
+function App(){
+  const [tweaks, setTweaks] = window.useTweaks(TWEAK_DEFAULTS);
+  const {variant, userName, showClientChrome, accent} = tweaks;
+
+  React.useEffect(() => {
+    const content = VARIANT_CONTENT[variant] || VARIANT_CONTENT.welcome;
+    const name = userName || "là";
+    const sub = (s) => s
+      .replaceAll("{name}", name)
+      .replaceAll("<hl>", '<span class="hl">')
+      .replaceAll("</hl>", '</span>')
+      .replaceAll("<strong>", '<strong>')
+      .replaceAll("</strong>", '</strong>');
+
+    document.getElementById("email").dataset.variant = variant;
+    document.getElementById("subjectLine").textContent = sub(content.subject);
+    document.getElementById("listSubject").textContent = sub(content.subject);
+    document.getElementById("listPreview").textContent = content.preview;
+    document.getElementById("heroTitle").innerHTML = sub(content.heroTitle);
+    document.getElementById("heroSub").textContent = content.heroSub;
+    document.getElementById("greetTitle").innerHTML = sub(content.greetTitle);
+    document.getElementById("greetBody").innerHTML = sub(content.greetBody);
+    document.getElementById("ctaLabel").textContent = content.ctaLabel;
+    document.getElementById("ctaSub").textContent = content.ctaSub;
+
+    // Client chrome show/hide — gate by viewport so narrow previews don't break
+    const client = document.querySelector(".client");
+    const wideEnough = window.matchMedia("(min-width: 1100px)").matches;
+    if (showClientChrome && wideEnough){
+      client.style.gridTemplateColumns = "260px 340px 1fr";
+      document.querySelector(".sidebar").style.display = "";
+      document.querySelector(".maillist").style.display = "";
+    } else {
+      client.style.gridTemplateColumns = "1fr";
+      document.querySelector(".sidebar").style.display = "none";
+      document.querySelector(".maillist").style.display = "none";
+    }
+
+    // Accent color
+    document.documentElement.style.setProperty("--cyan", accent);
+  }, [variant, userName, showClientChrome, accent]);
+
+  const { TweaksPanel, TweakSection, TweakRadio, TweakText, TweakToggle, TweakColor } = window;
+
+  return (
+    <TweaksPanel title="Tweaks">
+      <TweakSection title="Variation">
+        <TweakRadio
+          label="Style d'email"
+          value={variant}
+          onChange={(v) => setTweaks({variant: v})}
+          options={[
+            {value:"welcome", label:"Welcome — accueil classique"},
+            {value:"pro", label:"Pro — features en grille"},
+            {value:"editorial", label:"Éditorial — manifeste + citation"},
+          ]}
+        />
+      </TweakSection>
+
+      <TweakSection title="Personnalisation">
+        <TweakText
+          label="Prénom du destinataire"
+          value={userName}
+          onChange={(v) => setTweaks({userName: v})}
+        />
+        <TweakColor
+          label="Couleur accent"
+          value={accent}
+          onChange={(v) => setTweaks({accent: v})}
+        />
+      </TweakSection>
+
+      <TweakSection title="Présentation">
+        <TweakToggle
+          label="Afficher le client mail (chrome)"
+          value={showClientChrome}
+          onChange={(v) => setTweaks({showClientChrome: v})}
+        />
+      </TweakSection>
+    </TweaksPanel>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("__tweaks_root") || (() => {
+  const d = document.createElement("div");
+  d.id = "__tweaks_root";
+  document.body.appendChild(d);
+  return d;
+})());
+root.render(<App/>);
+</script>
+
+</body>
+</html>

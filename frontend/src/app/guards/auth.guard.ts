@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { Router, CanActivateFn } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
-export const authGuard: CanActivateFn = () => {
+export const authGuard: CanActivateFn = (_route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
@@ -10,11 +10,11 @@ export const authGuard: CanActivateFn = () => {
     return true;
   }
 
-  router.navigate(['/login']);
+  router.navigate(['/login'], { queryParams: { returnUrl: state.url } });
   return false;
 };
 
-export const guestGuard: CanActivateFn = () => {
+export const guestGuard: CanActivateFn = (_route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
@@ -22,6 +22,7 @@ export const guestGuard: CanActivateFn = () => {
     return true;
   }
 
-  router.navigate(['/']);
+  const returnUrl = state.root.queryParamMap.get('returnUrl');
+  router.navigateByUrl(returnUrl || '/');
   return false;
 };

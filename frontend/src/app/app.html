@@ -2,10 +2,10 @@
   <router-outlet></router-outlet>
 </div>
 <!--<app-chat-fab></app-chat-fab>-->
-@if (authService.isAuthenticated() && !authService.isCoach() && !isOnChatDetail() && !isKeyboardOpen()) {
+@if (authService.isAuthenticated() && !authService.isCoach() && !isOnChatDetail() && !isOnBetaFeedback() && !isKeyboardOpen()) {
   <app-bottom-nav></app-bottom-nav>
 }
-@if (authService.isAuthenticated() && authService.isCoach() && !isOnChatDetail() && !isKeyboardOpen()) {
+@if (authService.isAuthenticated() && authService.isCoach() && !isOnChatDetail() && !isOnBetaFeedback() && !isKeyboardOpen()) {
   <app-coach-bottom-nav></app-coach-bottom-nav>
 }
 @if (isOnChatDetail()) {

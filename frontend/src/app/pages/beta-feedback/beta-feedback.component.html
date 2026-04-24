@@ -1,0 +1,393 @@
+<div class="beta-feedback-root">
+
+  <!-- =========== NAV =========== -->
+  <nav class="bf-nav">
+    <div class="bf-nav-left">
+      <div class="bf-brand">
+        <span>Train</span><span class="w">wise</span>
+      </div>
+      <div class="bf-nav-beta">Bêta</div>
+    </div>
+    <div class="bf-nav-right">
+      <div class="bf-nav-user-wrapper">
+        <button type="button" class="bf-nav-user" (click)="toggleUserMenu()" [class.open]="userMenuOpen()">
+          <div class="bf-nav-user-av">{{ userInitials() }}</div>
+          <div class="bf-nav-user-name">{{ userFirstName() }}</div>
+          <svg class="bf-nav-user-caret" width="10" height="10" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M5 8l5 5 5-5"/>
+          </svg>
+        </button>
+        @if (userMenuOpen()) {
+          <div class="bf-nav-user-menu">
+            <div class="bf-nav-user-menu-email">{{ userEmail() }}</div>
+            <button type="button" class="bf-nav-user-menu-item" (click)="logout()">
+              Se déconnecter
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  </nav>
+
+  <!-- =========== PAGE =========== -->
+  <div class="bf-page">
+
+    <!-- HERO -->
+    <section class="bf-hero">
+      <div class="bf-hero-badge"><span class="dot"></span> Programme bêta · v0.9.4</div>
+      <h1>Un bug ? Une idée ?<br/><span class="hl">On veut tout savoir.</span></h1>
+      <p>
+        Tu fais partie des {{ stats().testers }} coureurs bêta qui nous aident à construire Trainwise.
+        Chaque retour est lu, trié et traité par notre équipe — promis juré. Plus c'est précis, plus on va vite.
+      </p>
+      <div class="bf-hero-stats">
+        <div class="bf-hero-stat"><div class="num">{{ stats().testers }}</div><div class="lbl">Bêta-testeurs</div></div>
+        <div class="bf-hero-stat"><div class="num">{{ stats().feedbacks }}</div><div class="lbl">Retours reçus</div></div>
+        <div class="bf-hero-stat"><div class="num">{{ stats().fixed }}</div><div class="lbl">Bugs corrigés</div></div>
+        <div class="bf-hero-stat"><div class="num">{{ stats().avgResponseHours }}h</div><div class="lbl">Délai moyen</div></div>
+      </div>
+    </section>
+
+    <!-- MAIN FORM -->
+    <main>
+      <div class="bf-card" id="formCard">
+        <h2 class="bf-card-title">Décris-nous ton problème</h2>
+        <p class="bf-card-sub">Quelques minutes pour nous aider à fixer le bug plus vite.</p>
+
+        <!-- Steps -->
+        <div class="bf-steps-bar">
+          @for (s of stepStates(); track s.n; let i = $index) {
+            <div class="sbtn"
+                 [class.active]="s.active"
+                 [class.done]="s.done">
+              <div class="n">
+                @if (!s.done) { <span>{{ s.n }}</span> }
+              </div>
+              <div class="l">
+                @switch (s.n) {
+                  @case (1) { Type }
+                  @case (2) { Écran }
+                  @case (3) { Détails }
+                  @case (4) { Envoi }
+                }
+              </div>
+            </div>
+            @if (i < 3) {
+              <div class="sbtn-line" [class.done]="lineDone(i)"></div>
+            }
+          }
+        </div>
+
+        <!-- STEP 1: Type -->
+        @if (step() === 1) {
+          <div class="bf-step-pane">
+            <div class="bf-field">
+              <label class="bf-field-label">Quel type de retour ?<span class="req">*</span></label>
+              <div class="bf-type-grid">
+                @for (t of TYPES; track t.id) {
+                  <div class="bf-type-opt"
+                       [class.bug]="t.id === 'bug'"
+                       [class.ui]="t.id === 'ui'"
+                       [class.perf]="t.id === 'perf'"
+                       [class.idea]="t.id === 'idea'"
+                       [class.selected]="selectedType() === t.id"
+                       (click)="selectType(t.id)">
+                    <div class="ico">{{ t.emoji }}</div>
+                    <div class="body">
+                      <div class="t">{{ t.title }}</div>
+                      <div class="d">{{ t.desc }}</div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- STEP 2: Screen -->
+        @if (step() === 2) {
+          <div class="bf-step-pane">
+            <div class="bf-field">
+              <label class="bf-field-label">Sur quel écran ça se passe ?<span class="req">*</span></label>
+              <div class="bf-screen-grid">
+                @for (s of SCREENS; track s.id) {
+                  <div class="bf-screen-opt"
+                       [class.selected]="selectedScreen() === s.id"
+                       (click)="selectScreen(s.id)">
+                    @if (s.id === 'other') {
+                      <div class="bf-screen-thumb bf-screen-thumb--other">
+                        <div class="qmark">?</div>
+                      </div>
+                    } @else {
+                      <div class="bf-screen-thumb">
+                        <div class="st-top">
+                          <span>Train</span><span class="w">wise</span>
+                        </div>
+                        <div class="st-body">
+                          <div class="st-title">{{ s.label }}</div>
+                          <div class="st-card" [style.background]="s.color + '22'"></div>
+                          <div class="st-card" [style.background]="s.color + '33'" [style.width.%]="70"></div>
+                          <div class="st-card"></div>
+                        </div>
+                        <div class="st-tabs">
+                          <div class="dot" [class.a]="s.id === 'home'"></div>
+                          <div class="dot" [class.a]="s.id === 'chat'"></div>
+                          <div class="dot" [class.a]="s.id === 'planning'"></div>
+                          <div class="dot" [class.a]="s.id === 'sorties'"></div>
+                        </div>
+                      </div>
+                    }
+                    <div class="bf-screen-label">{{ s.label }}</div>
+                  </div>
+                }
+              </div>
+              <div class="bf-field-hint">
+                Touche "Je sais pas / autre" si ton bug touche plusieurs écrans ou que tu n'es pas sûr.
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- STEP 3: Details -->
+        @if (step() === 3) {
+          <div class="bf-step-pane">
+            <div class="bf-field">
+              <label class="bf-field-label">Que s'est-il passé ?<span class="req">*</span></label>
+              <textarea
+                class="bf-textarea"
+                [ngModel]="description()"
+                (ngModelChange)="onDescChange($event)"
+                name="description"
+                placeholder="Explique ce qui s'est passé, ce que tu attendais, et comment reproduire le bug. Par exemple : 'Quand je clique sur Générer une semaine depuis le planning, l'app freeze 5 secondes puis rien ne se passe. Ça arrive à chaque fois sur mon iPhone 13.'"
+                maxlength="1000"></textarea>
+              <div class="bf-char-count"><span>{{ charCount() }}</span> / 1000</div>
+            </div>
+
+            <div class="bf-field">
+              <label class="bf-field-label">Niveau d'impact<span class="req">*</span></label>
+              <div class="bf-sev-grid">
+                @for (s of SEVERITIES; track s.id) {
+                  <div class="bf-sev-opt"
+                       [class.low]="s.id === 'low'"
+                       [class.med]="s.id === 'med'"
+                       [class.high]="s.id === 'high'"
+                       [class.crit]="s.id === 'crit'"
+                       [class.selected]="selectedSev() === s.id"
+                       (click)="selectSeverity(s.id)">
+                    <div class="sev-ico">{{ s.emoji }}</div>
+                    <div class="sev-t">{{ s.title }}</div>
+                    <div class="sev-d">{{ s.desc }}</div>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div class="bf-field">
+              <label class="bf-field-label">
+                Capture d'écran ou vidéo
+                <span class="bf-label-muted">(optionnel, mais très utile)</span>
+              </label>
+
+              <input type="file" #fileInput hidden accept="image/png,image/jpeg,video/mp4"
+                     (change)="onFileSelected($event)"/>
+
+              @if (!attachedFile()) {
+                <div class="bf-drop"
+                     (click)="onFileClick(fileInput)"
+                     (dragover)="onDragOver($event)"
+                     (drop)="onDrop($event)">
+                  <div class="drop-ico">📎</div>
+                  <div class="drop-t">Glisse un fichier ici ou clique pour parcourir</div>
+                  <div class="drop-d">PNG, JPG, MP4 · 10 Mo max</div>
+                </div>
+              } @else {
+                <div class="bf-drop-attached">
+                  <span class="check-ico">✓</span>
+                  <span class="fname"><strong>{{ attachedFile()!.name }}</strong> · {{ attachedFileSizeKb() }} Ko</span>
+                  <a href="#" (click)="onFileRemove($event)">Retirer</a>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- STEP 4: Review -->
+        @if (step() === 4) {
+          <div class="bf-step-pane">
+            <div class="bf-field">
+              <label class="bf-field-label">Récap avant envoi</label>
+              <div class="bf-recap">
+                <div class="bf-recap-grid">
+                  <div class="k">Type</div><div class="v">{{ recapType() }}</div>
+                  <div class="k">Écran</div><div class="v">{{ recapScreen() }}</div>
+                  <div class="k">Impact</div><div class="v">{{ recapSev() }}</div>
+                  <div class="k">Description</div><div class="v desc">{{ recapDesc() }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bf-field">
+              <label class="bf-field-label">Infos techniques jointes automatiquement</label>
+              <div class="bf-meta-chips">
+                <div class="meta-chip">📱 {{ userAgentShort() }}</div>
+                <div class="meta-chip">📦 {{ appVersion }}</div>
+                <div class="meta-chip">🌍 {{ localeShort() }}</div>
+                <div class="meta-chip">🕐 {{ nowString() }}</div>
+                <div class="meta-chip">👤 {{ userEmail() }}</div>
+              </div>
+              <div class="bf-field-hint">
+                Ces infos nous aident à reproduire le bug. Tu peux les retirer dans tes <a href="#">paramètres de confidentialité</a>.
+              </div>
+            </div>
+
+            <div class="bf-field">
+              <label class="bf-check-line">
+                <input type="checkbox"
+                       [checked]="contactMe()"
+                       (change)="contactMe.set($any($event.target).checked)"/>
+                <span>D'accord pour que l'équipe me recontacte si on a besoin de précisions.</span>
+              </label>
+            </div>
+
+            @if (errorMessage()) {
+              <div class="bf-error-box">{{ errorMessage() }}</div>
+            }
+          </div>
+        }
+
+        <!-- Actions -->
+        <div class="bf-actions">
+          <button class="bf-btn bf-btn-ghost"
+                  [style.visibility]="step() === 1 ? 'hidden' : 'visible'"
+                  (click)="back()">← Précédent</button>
+          <button class="bf-btn bf-btn-primary"
+                  [disabled]="!canAdvance() || isSubmitting()"
+                  (click)="next()">
+            <span>
+              @if (isSubmitting()) { Envoi en cours… }
+              @else { {{ nextLabel() }} }
+            </span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M5 12h14M13 5l7 7-7 7"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <!-- SIDEBAR -->
+    <aside class="bf-sidebar">
+
+      <!-- Beta progress -->
+      <div class="bf-side-card bf-beta-card">
+        <div class="bf-side-title">● Programme bêta</div>
+        <h3 class="bf-side-h">Merci d'en faire partie.</h3>
+        <p>
+          @if (userRetourCount() === 0) {
+            Tu n'as pas encore remonté de retour ce mois-ci. Fais-en {{ userRetourGoal() }} pour débloquer le badge "Early Bird" 🐦
+          } @else if (userRetoursLeft() > 0) {
+            Tu as remonté <strong>{{ userRetourCount() }} retour{{ userRetourCount() > 1 ? 's' : '' }}</strong> ce mois-ci.
+            Plus que {{ userRetoursLeft() }} pour débloquer le badge "Early Bird" 🐦
+          } @else {
+            Tu as remonté <strong>{{ userRetourCount() }} retours</strong> ce mois-ci. Badge "Early Bird" débloqué 🐦
+          }
+        </p>
+        <div class="bf-beta-progress">
+          <div class="bf-beta-progress-fill" [style.width.%]="retourProgressPct()"></div>
+        </div>
+        <div class="bf-beta-progress-lbl">
+          <span>{{ userRetourCount() }} / {{ userRetourGoal() }} retours</span>
+          <span>{{ retourProgressPct() }}%</span>
+        </div>
+      </div>
+
+      <!-- Community -->
+      <div class="bf-side-card">
+        <div class="bf-side-title">🔥 Déjà remonté par la communauté</div>
+        <h3 class="bf-side-h">Vote ou commente les bugs existants.</h3>
+
+        @if (communityBugs().length === 0) {
+          <div class="bf-empty">Aucun retour pour le moment. Sois le premier !</div>
+        } @else {
+          @for (b of communityBugs(); track b.id) {
+            <div class="bf-bug-item">
+              <div class="bf-bug-vote"
+                   [class.voted]="b.voted"
+                   (click)="toggleVote(b)">
+                <div class="arr">▲</div>
+                <div class="n">{{ b.votes }}</div>
+              </div>
+              <div class="bf-bug-body">
+                <div class="bf-bug-title">{{ b.title }}</div>
+                <div class="bf-bug-meta">
+                  <span class="bf-status-pill"
+                        [class.open]="b.status === 'open'"
+                        [class.prog]="b.status === 'prog'"
+                        [class.planned]="b.status === 'planned'"
+                        [class.fixed]="b.status === 'fixed'">
+                    @switch (b.status) {
+                      @case ('open')    { Ouvert }
+                      @case ('prog')    { En cours }
+                      @case ('planned') { Planifié }
+                      @case ('fixed')   { Corrigé }
+                    }
+                  </span>
+                  <span class="bf-bug-screen">{{ b.screenLabel }}</span>
+                </div>
+              </div>
+            </div>
+          }
+
+          <div class="bf-see-all-line">{{ stats().feedbacks }} retours au total</div>
+        }
+      </div>
+
+      <!-- Tips -->
+      <div class="bf-side-card">
+        <div class="bf-side-title">💡 Conseils pour un bon retour</div>
+        <div class="bf-tip">
+          <div class="tip-ico">1</div>
+          <div><strong>Sois précis.</strong> "Ça plante" c'est vague. "Ça plante quand je clique sur X après Y" c'est utile.</div>
+        </div>
+        <div class="bf-tip">
+          <div class="tip-ico">2</div>
+          <div><strong>Joins un screenshot.</strong> Une image vaut mille mots, surtout pour les bugs visuels.</div>
+        </div>
+        <div class="bf-tip">
+          <div class="tip-ico">3</div>
+          <div><strong>Explique ce que tu attendais.</strong> Parfois ce n'est pas un bug, juste un truc pas clair.</div>
+        </div>
+        <div class="bf-tip">
+          <div class="tip-ico">4</div>
+          <div><strong>Un retour = un problème.</strong> Sépare les bugs pour qu'on puisse les traiter indépendamment.</div>
+        </div>
+      </div>
+
+    </aside>
+  </div>
+
+  <!-- =========== SUCCESS OVERLAY =========== -->
+  <div class="bf-success" [class.show]="showSuccess()">
+    <div class="bf-success-card">
+      <div class="bf-success-check">✓</div>
+      <h2>Merci {{ userFirstName() }} !</h2>
+      <p>Ton retour est bien arrivé chez nous. On le lit dans les prochaines 72h.</p>
+      <div class="bf-success-ticket">
+        <div>
+          <div class="k">Ticket</div>
+          <div class="v">{{ ticketId() }}</div>
+        </div>
+        <div class="right">
+          <div class="k">Statut</div>
+          <div class="v amber">🟡 En triage</div>
+        </div>
+      </div>
+      <p class="small">On te notifiera dès qu'il change de statut.</p>
+      <div class="bf-success-actions">
+        <button class="bf-btn bf-btn-ghost" (click)="closeSuccess()">Fermer</button>
+        <button class="bf-btn bf-btn-primary" (click)="resetForm()">Nouveau retour</button>
+      </div>
+    </div>
+  </div>
+
+</div>

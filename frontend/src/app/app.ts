@@ -41,6 +41,7 @@ export class App {
   // /chat/:id = détail d'une conversation (sans bottom-nav, fond beige)
   isOnChatList = computed(() => this.currentUrl() === '/chat' || this.currentUrl().startsWith('/chat?'));
   isOnChatDetail = computed(() => this.currentUrl().startsWith('/chat/'));
+  isOnBetaFeedback = computed(() => this.currentUrl().startsWith('/beta/feedback'));
 
   constructor() {
     this.router.events.pipe(

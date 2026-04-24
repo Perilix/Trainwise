@@ -22,6 +22,7 @@ const exerciseRoutes = require('./routes/exercise.routes');
 const strengthRoutes = require('./routes/strength.routes');
 const pushNotificationRoutes = require('./routes/pushNotification.routes');
 const subscriptionRoutes = require('./routes/subscription.routes');
+const betaFeedbackRoutes = require('./routes/betaFeedback.routes');
 const { initializeSocket } = require('./socket/index');
 
 const app = express();
@@ -103,6 +104,7 @@ app.use('/api/exercises', exerciseRoutes);
 app.use('/api/strength', strengthRoutes);
 app.use('/api/users', pushNotificationRoutes);
 app.use('/api/subscription', subscriptionRoutes);
+app.use('/api/beta', betaFeedbackRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
