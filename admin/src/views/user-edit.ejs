@@ -46,13 +46,11 @@
     <!-- Se connecter en tant que cet utilisateur -->
     <form method="POST" action="/users/<%= user._id %>/impersonate" target="_blank" style="display:flex;gap:6px;align-items:center;">
       <button type="submit" name="target" value="local" class="btn"
-              style="background:rgba(59,130,246,0.08);color:var(--blue);border-color:rgba(59,130,246,0.2);"
-              onclick="return confirm('Ouvrir une session en tant que <%= user.email %> (LOCAL) dans un nouvel onglet ?');">
+              style="background:rgba(59,130,246,0.08);color:var(--blue);border-color:rgba(59,130,246,0.2);">
         <i class="fa-solid fa-right-to-bracket"></i> Se connecter (local)
       </button>
       <button type="submit" name="target" value="prod" class="btn"
-              style="background:rgba(34,197,94,0.08);color:#16a34a;border-color:rgba(34,197,94,0.2);"
-              onclick="return confirm('Ouvrir une session en tant que <%= user.email %> (PROD) dans un nouvel onglet ?');">
+              style="background:rgba(34,197,94,0.08);color:#16a34a;border-color:rgba(34,197,94,0.2);">
         <i class="fa-solid fa-cloud"></i> Se connecter (prod)
       </button>
     </form>
