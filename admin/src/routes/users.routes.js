@@ -139,13 +139,19 @@ router.post('/:id/delete', requireAuth, async (req, res) => {
 
 // ── Impersonate user (login as) ──────────────────────────────
 router.post('/:id/impersonate', requireAuth, async (req, res) => {
-  const { JWT_SECRET, FRONTEND_URL } = process.env;
+  const { JWT_SECRET, FRONTEND_URL, FRONTEND_URL_LOCAL, FRONTEND_URL_PROD } = process.env;
 
   if (!JWT_SECRET) {
     return res.status(500).send('JWT_SECRET non configuré côté admin');
   }
-  if (!FRONTEND_URL) {
-    return res.status(500).send('FRONTEND_URL non configuré côté admin');
+
+  const target = req.body.target === 'prod' ? 'prod' : 'local';
+  const targetUrl = target === 'prod'
+    ? (FRONTEND_URL_PROD || FRONTEND_URL)
+    : (FRONTEND_URL_LOCAL || FRONTEND_URL);
+
+  if (!targetUrl) {
+    return res.status(500).send(`URL frontend ${target} non configurée (FRONTEND_URL_${target.toUpperCase()} ou FRONTEND_URL)`);
   }
 
   const user = await User.findById(req.params.id).select('_id email firstName lastName role');
@@ -156,10 +162,10 @@ router.post('/:id/impersonate', requireAuth, async (req, res) => {
   const token = jwt.sign({ id: user._id.toString() }, JWT_SECRET, { expiresIn: '1h' });
 
   console.log(
-    `[IMPERSONATE] admin=${req.session.adminName || req.session.adminId} → user=${user.email} (${user._id}) role=${user.role}`
+    `[IMPERSONATE] admin=${req.session.adminName || req.session.adminId} → user=${user.email} (${user._id}) role=${user.role} target=${target}`
   );
 
-  const redirectUrl = `${FRONTEND_URL.replace(/\/$/, '')}/impersonate#token=${encodeURIComponent(token)}`;
+  const redirectUrl = `${targetUrl.replace(/\/$/, '')}/impersonate#token=${encodeURIComponent(token)}`;
   res.redirect(redirectUrl);
 });
 
