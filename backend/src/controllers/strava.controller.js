@@ -128,7 +128,7 @@ const mapStravaType = (stravaType) => {
 const STRAVA_RUN_TYPES = ['Run', 'TrailRun', 'VirtualRun'];
 
 // Types Strava considérés comme de la muscu / strength
-const STRAVA_STRENGTH_TYPES = ['WeightTraining', 'Crossfit', 'Workout', 'Yoga', 'Pilates', 'Elliptical', 'StairStepper', 'Rowing'];
+const STRAVA_STRENGTH_TYPES = ['WeightTraining', 'Crossfit', 'Workout', 'Yoga', 'Pilates', 'Elliptical', 'StairStepper', 'Rowing', 'HighIntensityIntervalTraining', 'Hiit'];
 
 // Helper: Mapper le type Strava vers nos types de séance muscu
 const mapStravaStrengthType = (stravaType) => {
@@ -140,7 +140,9 @@ const mapStravaStrengthType = (stravaType) => {
     'Pilates': 'core',
     'Elliptical': 'other',
     'StairStepper': 'legs',
-    'Rowing': 'full_body'
+    'Rowing': 'full_body',
+    'HighIntensityIntervalTraining': 'hiit',
+    'Hiit': 'hiit'
   };
   return typeMap[stravaType] || 'other';
 };
@@ -275,6 +277,12 @@ exports.syncActivities = async (req, res) => {
       params
     });
 
+    console.log('[Strava sync] Activities received:', response.data.map(a => ({
+      id: a.id,
+      name: a.name,
+      sport_type: a.sport_type,
+      type: a.type
+    })));
 
     const runActivities = response.data.filter(a =>
       STRAVA_RUN_TYPES.includes(getActivityType(a))
@@ -282,10 +290,19 @@ exports.syncActivities = async (req, res) => {
     const strengthActivities = response.data.filter(a =>
       STRAVA_STRENGTH_TYPES.includes(getActivityType(a))
     );
+    const unrecognized = response.data
+      .filter(a =>
+        !STRAVA_RUN_TYPES.includes(getActivityType(a)) &&
+        !STRAVA_STRENGTH_TYPES.includes(getActivityType(a))
+      )
+      .map(a => ({ id: a.id, name: a.name, type: getActivityType(a) }));
+
+    console.log(`[Strava sync] Runs: ${runActivities.length}, Strength: ${strengthActivities.length}, Unrecognized: ${unrecognized.length}`);
 
     // --- Importer les courses ---
     const imported = [];
     const skipped = [];
+    const skippedStrength = [];
 
     for (const activity of runActivities) {
       const existing = await Run.findOne({
@@ -374,7 +391,10 @@ exports.syncActivities = async (req, res) => {
         stravaActivityId: activity.id
       });
 
-      if (existing) continue;
+      if (existing) {
+        skippedStrength.push(activity.id);
+        continue;
+      }
 
       let description = '';
       try {
@@ -412,11 +432,14 @@ exports.syncActivities = async (req, res) => {
     }
 
     const totalImported = imported.length + importedStrength.length;
+    const totalSkipped = skipped.length + skippedStrength.length;
     res.json({
-      message: `${imported.length} course(s) et ${importedStrength.length} séance(s) muscu importée(s), ${skipped.length} déjà présente(s). L'analyse IA est en cours...`,
+      message: `${imported.length} course(s) et ${importedStrength.length} séance(s) muscu importée(s), ${totalSkipped} déjà présente(s). L'analyse IA est en cours...`,
       imported,
       importedStrength,
-      skipped
+      skipped,
+      skippedStrength,
+      unrecognized
     });
   } catch (error) {
     console.error('Strava sync error:', error.response?.data || error.message);
