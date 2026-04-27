@@ -70,11 +70,11 @@
                 class="calendar-day"
                 [class.other-month]="!day.isCurrentMonth"
                 [class.today]="day.isToday"
-                [class.has-events]="day.runs.length > 0 || day.plannedRuns.length > 0"
+                [class.has-events]="day.runs.length > 0 || day.plannedRuns.length > 0 || (day.strengthSessions?.length ?? 0) > 0"
                 (click)="selectDay(day)">
                 <span class="day-number">{{ day.dayOfMonth }}</span>
 
-                @if (day.runs.length > 0 || day.plannedRuns.length > 0) {
+                @if (day.runs.length > 0 || day.plannedRuns.length > 0 || (day.strengthSessions?.length ?? 0) > 0) {
                   <div class="day-indicators">
                     @for (indicator of getDayIndicators(day); track indicator.type) {
                       <div class="indicator-badge" [class]="indicator.type">

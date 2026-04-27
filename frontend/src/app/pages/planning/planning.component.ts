@@ -608,8 +608,10 @@ export class PlanningComponent implements OnInit {
     // Ne compter que les jours du mois affiché
     days.filter(day => day.isCurrentMonth).forEach(day => {
       planned += day.plannedRuns.filter(p => p.status === 'planned').length;
-      // Complétées = séances planifiées complétées + courses analysées
-      completed += day.plannedRuns.filter(p => p.status === 'completed').length + day.runs.length;
+      // Complétées = séances planifiées complétées + courses analysées + séances muscu
+      completed += day.plannedRuns.filter(p => p.status === 'completed').length
+        + day.runs.length
+        + (day.strengthSessions?.length ?? 0);
       // Total km des courses analysées
       day.runs.forEach(run => {
         if (run.distance) {
