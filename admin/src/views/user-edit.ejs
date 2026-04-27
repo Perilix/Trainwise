@@ -44,14 +44,15 @@
   <!-- Actions -->
   <div style="display:flex;gap:8px;">
     <!-- Se connecter en tant que cet utilisateur -->
-    <form method="POST" action="/users/<%= user._id %>/impersonate" target="_blank" onsubmit="return confirm('Ouvrir une session en tant que <%= user.email %> (' + this.elements['target'].value + ') dans un nouvel onglet ?');" style="display:flex;gap:6px;align-items:center;">
-      <input type="hidden" name="target" value="local">
-      <button type="submit" class="btn" style="background:rgba(59,130,246,0.08);color:var(--blue);border-color:rgba(59,130,246,0.2);"
-              onclick="this.form.elements['target'].value='local';">
+    <form method="POST" action="/users/<%= user._id %>/impersonate" target="_blank" style="display:flex;gap:6px;align-items:center;">
+      <button type="submit" name="target" value="local" class="btn"
+              style="background:rgba(59,130,246,0.08);color:var(--blue);border-color:rgba(59,130,246,0.2);"
+              onclick="return confirm('Ouvrir une session en tant que <%= user.email %> (LOCAL) dans un nouvel onglet ?');">
         <i class="fa-solid fa-right-to-bracket"></i> Se connecter (local)
       </button>
-      <button type="submit" class="btn" style="background:rgba(34,197,94,0.08);color:#16a34a;border-color:rgba(34,197,94,0.2);"
-              onclick="this.form.elements['target'].value='prod';">
+      <button type="submit" name="target" value="prod" class="btn"
+              style="background:rgba(34,197,94,0.08);color:#16a34a;border-color:rgba(34,197,94,0.2);"
+              onclick="return confirm('Ouvrir une session en tant que <%= user.email %> (PROD) dans un nouvel onglet ?');">
         <i class="fa-solid fa-cloud"></i> Se connecter (prod)
       </button>
     </form>
