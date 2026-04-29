@@ -18,6 +18,7 @@ import { Subject, debounceTime, takeUntil } from 'rxjs';
 export class ConversationDetailComponent implements OnInit, OnDestroy, AfterViewChecked {
   @ViewChild('messagesContainer') messagesContainer!: ElementRef;
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('messageTextarea') messageTextarea?: ElementRef<HTMLTextAreaElement>;
 
   // State
   isLoading = signal(true);
@@ -154,6 +155,9 @@ export class ConversationDetailComponent implements OnInit, OnDestroy, AfterView
     this.messageText.set('');
     this.pendingAttachment.set(null);
     this.isSending.set(false);
+    if (this.messageTextarea?.nativeElement) {
+      this.messageTextarea.nativeElement.style.height = 'auto';
+    }
 
     // Stop typing
     this.stopTyping();
@@ -168,6 +172,13 @@ export class ConversationDetailComponent implements OnInit, OnDestroy, AfterView
 
   onInput() {
     this.typingSubject.next();
+  }
+
+  autoResize() {
+    const el = this.messageTextarea?.nativeElement;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
   }
 
   private emitTyping() {

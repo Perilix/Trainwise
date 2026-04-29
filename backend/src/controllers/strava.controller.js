@@ -201,7 +201,7 @@ exports.handleCallback = async (req, res) => {
     const { code, state } = req.query;
 
     if (!code) {
-      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:4200'}/profile?strava=error&message=no_code`);
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:4200'}/dashboard?strava=error&message=no_code`);
     }
 
     // Échanger le code contre un token
@@ -224,10 +224,10 @@ exports.handleCallback = async (req, res) => {
     });
 
     // Rediriger vers le frontend avec succès
-    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:4200'}/profile?strava=success`);
+    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:4200'}/dashboard?strava=success`);
   } catch (error) {
     console.error('Strava callback error:', error.message);
-    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:4200'}/profile?strava=error&message=${encodeURIComponent(error.message)}`);
+    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:4200'}/dashboard?strava=error&message=${encodeURIComponent(error.message)}`);
   }
 };
 

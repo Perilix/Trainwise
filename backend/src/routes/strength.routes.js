@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const strengthController = require('../controllers/strength.controller');
 const { protect } = require('../middleware/auth.middleware');
+const checkAIAccess = require('../middleware/checkAIAccess');
 
 // Toutes les routes nécessitent une authentification
 router.use(protect);
@@ -221,5 +222,6 @@ router.get('/sessions', strengthController.getSessions);
 router.get('/sessions/:id', strengthController.getSession);
 router.put('/sessions/:id', strengthController.updateSession);
 router.delete('/sessions/:id', strengthController.deleteSession);
+router.post('/sessions/:id/analyze', checkAIAccess(1), strengthController.analyzeSession);
 
 module.exports = router;

@@ -31,8 +31,9 @@ export interface User {
   experience?: number;
   diplomas?: string[];
   bio?: string;
+  strengthLevel?: 'debutant' | 'intermediaire' | 'confirme';
   strengthFrequency?: number;
-  strengthGoal?: 'force' | 'hypertrophie' | 'endurance_musculaire' | 'remise_en_forme' | 'fonctionnel';
+  strengthGoal?: 'force' | 'hypertrophie' | 'endurance_musculaire' | 'remise_en_forme' | 'fonctionnel' | 'calisthenie';
   strengthType?: 'poids_libres' | 'machines' | 'bodyweight' | 'crossfit' | 'mixte';
   height?: number;
   weight?: number;
@@ -61,6 +62,7 @@ export interface UpdateProfileData {
   experience?: number | null;
   diplomas?: string[];
   bio?: string;
+  strengthLevel?: string;
   strengthFrequency?: number;
   strengthGoal?: string;
   strengthType?: string;

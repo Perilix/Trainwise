@@ -525,8 +525,10 @@
     outline: none;
     font-family: inherit;
     resize: none;
-    max-height: 120px;
     line-height: 1.4;
+    display: block;
+    max-height: calc(0.95rem * 1.4 * 5);
+    overflow-y: auto;
 
     &::placeholder {
       color: #888;

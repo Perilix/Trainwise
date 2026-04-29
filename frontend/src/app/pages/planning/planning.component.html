@@ -262,12 +262,19 @@
       }
 
       <!-- Séances planifiées -->
-      @if (!isAddingSession() && selectedDay()!.plannedRuns.length > 0) {
+      @if (!isAddingSession() && visiblePlannedRuns().length > 0) {
         <div class="section">
           <h3>Séances planifiées</h3>
-          @for (planned of selectedDay()!.plannedRuns; track planned._id) {
-            <div class="event-card" [class.done]="planned.status === 'completed'" [class.skipped]="planned.status === 'skipped'" [class.ai-generated]="planned.generatedBy === 'ai'" [class.coach-generated]="planned.generatedBy === 'coach'" [class.strength]="planned.activityType === 'strength'">
-              <button class="delete-btn" (click)="deletePlannedSession(planned)" title="Supprimer">×</button>
+          @for (planned of visiblePlannedRuns(); track planned._id) {
+            <div class="event-card"
+                 [class.done]="planned.status === 'completed'"
+                 [class.skipped]="planned.status === 'skipped'"
+                 [class.ai-generated]="planned.generatedBy === 'ai'"
+                 [class.coach-generated]="planned.generatedBy === 'coach'"
+                 [class.strength]="planned.activityType === 'strength'"
+                 [class.clickable]="planned.status !== 'skipped'"
+                 (click)="openPlannedDetail(planned)">
+              <button class="delete-btn" (click)="deletePlannedSession(planned); $event.stopPropagation()" title="Supprimer">×</button>
               <span class="event-status" [class]="planned.status">
                 @if (planned.status === 'planned') {<i class="fa-solid fa-clock"></i>}
                 @if (planned.status === 'completed') { <i class="fa-solid fa-check"></i>}
@@ -308,14 +315,8 @@
 
               @if (planned.status === 'planned') {
                 <div class="event-actions">
-                  @if (planned.activityType === 'strength') {
-                    <button class="btn-detail" (click)="navigateToStrengthLog(planned)">Détailler</button>
-                    <button class="btn-done" (click)="markAsCompleted(planned)">Fait</button>
-                    <button class="btn-skip" (click)="markAsSkipped(planned)">Passer</button>
-                  } @else {
-                    <button class="btn-done" (click)="markAsCompleted(planned)">Marquer fait</button>
-                    <button class="btn-skip" (click)="markAsSkipped(planned)">Passer</button>
-                  }
+                  <button class="btn-detail" (click)="openPlannedDetail(planned); $event.stopPropagation()">Détailler</button>
+                  <button class="btn-skip" (click)="markAsSkipped(planned); $event.stopPropagation()">Passer</button>
                 </div>
               }
               @if (planned.status === 'completed') {
@@ -328,7 +329,7 @@
                   } @else {
                     <span class="feeling-chip feeling-empty">Ressenti non renseigné</span>
                   }
-                  <button class="feeling-edit-btn" (click)="markAsCompleted(planned)" title="Modifier le ressenti">
+                  <button class="feeling-edit-btn" (click)="markAsCompleted(planned); $event.stopPropagation()" title="Modifier le ressenti">
                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   </button>
                 </div>
@@ -343,12 +344,13 @@
         <div class="section">
           <h3>Séances muscu effectuées</h3>
           @for (session of selectedDay()!.strengthSessions; track session._id) {
-            <div class="event-card strength completed">
+            <div class="event-card strength completed clickable" [class.strava]="!!session.stravaActivityId" (click)="openStrengthDetail(session)">
               @if (session.stravaActivityId) {
                 <span class="strava-badge">Strava</span>
               }
               <div class="event-header">
                 <span class="event-type">{{ getSessionTypeLabel(session.sessionType) }}</span>
+                <span class="view-detail">Voir &rarr;</span>
               </div>
               @if (session.notes) {
                 <div class="run-notes">

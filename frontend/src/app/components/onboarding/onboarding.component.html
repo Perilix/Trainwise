@@ -1,21 +1,21 @@
 <div class="onboarding-overlay">
-  <div class="onboarding-card" [class]="'step-' + currentStep">
+  <div class="onboarding-card" [class]="'step-' + currentKind()">
 
-    <!-- Header commun (steps 1-4) -->
-    @if (currentStep >= 1 && currentStep <= 4) {
+    <!-- Header commun (toutes les étapes sauf welcome et done) -->
+    @if (showHeader()) {
       <div class="onboarding-header">
         <button class="btn-skip" (click)="skip()">Passer</button>
         <div class="progress-dots">
-          @for (i of [1, 2, 3, 4]; track i) {
-            <span class="dot" [class.active]="i === currentStep" [class.done]="i < currentStep"></span>
+          @for (i of progressDots(); track i) {
+            <span class="dot" [class.active]="i === progressIndex()" [class.done]="i < progressIndex()"></span>
           }
         </div>
         <div style="width: 64px"></div>
       </div>
     }
 
-    <!-- STEP 0 : Welcome -->
-    @if (currentStep === 0) {
+    <!-- WELCOME -->
+    @if (currentKind() === 'welcome') {
       <div class="step-content step-welcome">
         <div class="welcome-logo">
           <i class="fa-solid fa-person-running"></i>
@@ -41,10 +41,35 @@
       </div>
     }
 
-    <!-- STEP 1 : Niveau -->
-    @if (currentStep === 1) {
+    <!-- SPORT : sélection multiple -->
+    @if (currentKind() === 'sport') {
       <div class="step-content">
-        <h2 class="step-title">Quel est ton niveau ?</h2>
+        <h2 class="step-title">Quels sports pratiques-tu ?</h2>
+        <p class="step-sub">Sélectionne un ou plusieurs sports. On adaptera tes plans en conséquence.</p>
+        <div class="level-grid">
+          @for (sport of sports; track sport.value) {
+            <button
+              class="level-card"
+              [class.selected]="isDisciplineSelected(sport.value)"
+              (click)="toggleDiscipline(sport.value)">
+              <i [class]="'fa-solid ' + sport.faIcon + ' card-icon'"></i>
+              <div>
+                <span class="card-label">{{ sport.label }}</span>
+                <span class="card-desc">{{ sport.desc }}</span>
+              </div>
+            </button>
+          }
+        </div>
+      </div>
+      <div class="step-footer">
+        <button class="btn-primary" [disabled]="!canProceed()" (click)="next()">Continuer</button>
+      </div>
+    }
+
+    <!-- RUNNING : Niveau -->
+    @if (currentKind() === 'runningLevel') {
+      <div class="step-content">
+        <h2 class="step-title">Ton niveau en course à pied</h2>
         <p class="step-sub">On adapte tes plans d'entraînement en fonction de ton expérience.</p>
         <div class="level-grid">
           @for (level of levels; track level.value) {
@@ -61,17 +86,18 @@
           }
         </div>
       </div>
-      <div class="step-footer">
+      <div class="step-footer two-buttons">
+        <button class="btn-secondary" (click)="prev()">Retour</button>
         <button class="btn-primary" [disabled]="!canProceed()" (click)="next()">Continuer</button>
       </div>
     }
 
-    <!-- STEP 2 : Objectif -->
-    @if (currentStep === 2) {
+    <!-- RUNNING : Objectif -->
+    @if (currentKind() === 'runningGoal') {
       <div class="step-content">
-        <h2 class="step-title">Quel est ton objectif ?</h2>
+        <h2 class="step-title">Ton objectif running</h2>
         <p class="step-sub">Ton objectif principal guide la structure de tes entraînements.</p>
-        <div class="goal-grid">
+        <div class="goal-grid goal-grid--3col">
           @for (g of goals; track g.value) {
             <button
               class="goal-card"
@@ -89,8 +115,128 @@
       </div>
     }
 
-    <!-- STEP 3 : Planning -->
-    @if (currentStep === 3) {
+    <!-- RUNNING : Fréquence -->
+    @if (currentKind() === 'runningFrequency') {
+      <div class="step-content">
+        <h2 class="step-title">Fréquence running</h2>
+        <p class="step-sub">Combien de sorties running par semaine ?</p>
+        <div class="field-group">
+          <label class="field-label">Sorties par semaine</label>
+          <div class="counter-row">
+            <button class="counter-btn" (click)="decrementFrequency()">
+              <i class="fa-solid fa-minus"></i>
+            </button>
+            <span class="counter-value">{{ weeklyFrequency() }}</span>
+            <button class="counter-btn" (click)="incrementFrequency()">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="step-footer two-buttons">
+        <button class="btn-secondary" (click)="prev()">Retour</button>
+        <button class="btn-primary" (click)="next()">Continuer</button>
+      </div>
+    }
+
+    <!-- MUSCU : Niveau -->
+    @if (currentKind() === 'muscuLevel') {
+      <div class="step-content">
+        <h2 class="step-title">Ton niveau en muscu</h2>
+        <p class="step-sub">On calibre les charges et la complexité des programmes selon ton niveau.</p>
+        <div class="level-grid">
+          @for (level of muscuLevels; track level.value) {
+            <button
+              class="level-card"
+              [class.selected]="strengthLevel() === level.value"
+              (click)="strengthLevel.set(level.value)">
+              <i [class]="'fa-solid ' + level.faIcon + ' card-icon'"></i>
+              <div>
+                <span class="card-label">{{ level.label }}</span>
+                <span class="card-desc">{{ level.desc }}</span>
+              </div>
+            </button>
+          }
+        </div>
+      </div>
+      <div class="step-footer two-buttons">
+        <button class="btn-secondary" (click)="prev()">Retour</button>
+        <button class="btn-primary" [disabled]="!canProceed()" (click)="next()">Continuer</button>
+      </div>
+    }
+
+    <!-- MUSCU : Objectif -->
+    @if (currentKind() === 'muscuGoal') {
+      <div class="step-content">
+        <h2 class="step-title">Ton objectif muscu</h2>
+        <p class="step-sub">On structure ton programme selon ton objectif principal.</p>
+        <div class="goal-grid goal-grid--3col">
+          @for (g of muscuGoals; track g.value) {
+            <button
+              class="goal-card"
+              [class.selected]="strengthGoal() === g.value"
+              (click)="strengthGoal.set(g.value)">
+              <i [class]="'fa-solid ' + g.faIcon + ' card-icon'"></i>
+              <span class="card-label">{{ g.label }}</span>
+            </button>
+          }
+        </div>
+      </div>
+      <div class="step-footer two-buttons">
+        <button class="btn-secondary" (click)="prev()">Retour</button>
+        <button class="btn-primary" [disabled]="!canProceed()" (click)="next()">Continuer</button>
+      </div>
+    }
+
+    <!-- MUSCU : Type d'entraînement -->
+    @if (currentKind() === 'muscuType') {
+      <div class="step-content">
+        <h2 class="step-title">Comment t'entraînes-tu ?</h2>
+        <p class="step-sub">Quel type d'équipement utilises-tu en priorité ?</p>
+        <div class="goal-grid goal-grid--3col">
+          @for (t of muscuTypes; track t.value) {
+            <button
+              class="goal-card"
+              [class.selected]="strengthType() === t.value"
+              (click)="strengthType.set(t.value)">
+              <i [class]="'fa-solid ' + t.faIcon + ' card-icon'"></i>
+              <span class="card-label">{{ t.label }}</span>
+            </button>
+          }
+        </div>
+      </div>
+      <div class="step-footer two-buttons">
+        <button class="btn-secondary" (click)="prev()">Retour</button>
+        <button class="btn-primary" [disabled]="!canProceed()" (click)="next()">Continuer</button>
+      </div>
+    }
+
+    <!-- MUSCU : Fréquence -->
+    @if (currentKind() === 'muscuFrequency') {
+      <div class="step-content">
+        <h2 class="step-title">Fréquence muscu</h2>
+        <p class="step-sub">Combien de séances de muscu par semaine ?</p>
+        <div class="field-group">
+          <label class="field-label">Séances par semaine</label>
+          <div class="counter-row">
+            <button class="counter-btn" (click)="decrementStrengthFrequency()">
+              <i class="fa-solid fa-minus"></i>
+            </button>
+            <span class="counter-value">{{ strengthFrequency() }}</span>
+            <button class="counter-btn" (click)="incrementStrengthFrequency()">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="step-footer two-buttons">
+        <button class="btn-secondary" (click)="prev()">Retour</button>
+        <button class="btn-primary" (click)="next()">Continuer</button>
+      </div>
+    }
+
+    <!-- PLANNING : jours + (running) fréquence + moment préféré -->
+    @if (currentKind() === 'planning') {
       <div class="step-content">
         <h2 class="step-title">Tes disponibilités</h2>
         <p class="step-sub">Quand peux-tu t'entraîner ? (optionnel mais recommandé)</p>
@@ -106,19 +252,6 @@
                 {{ day.short }}
               </button>
             }
-          </div>
-        </div>
-
-        <div class="field-group">
-          <label class="field-label">Sorties par semaine</label>
-          <div class="counter-row">
-            <button class="counter-btn" (click)="decrementFrequency()">
-              <i class="fa-solid fa-minus"></i>
-            </button>
-            <span class="counter-value">{{ weeklyFrequency() }}</span>
-            <button class="counter-btn" (click)="incrementFrequency()">
-              <i class="fa-solid fa-plus"></i>
-            </button>
           </div>
         </div>
 
@@ -143,8 +276,8 @@
       </div>
     }
 
-    <!-- STEP 4 : Stats physiques -->
-    @if (currentStep === 4) {
+    <!-- STATS PHYSIQUES -->
+    @if (currentKind() === 'stats') {
       <div class="step-content">
         <h2 class="step-title">Tes données physiques</h2>
         <p class="step-sub">Ces infos permettent de calibrer l'intensité de tes séances. (optionnel)</p>
@@ -203,42 +336,44 @@
           </div>
         </div>
 
-        <div class="fields-row">
-          <div class="field-group half">
-            <label class="field-label">
-              <i class="fa-solid fa-heart-pulse field-icon"></i>
-              FCmax <span class="field-hint">bpm</span>
-            </label>
-            <input
-              class="field-input"
-              type="number"
-              inputmode="numeric"
-              placeholder="ex: 185"
-              min="100" max="220"
-              [ngModel]="fcmax()"
-              (ngModelChange)="fcmax.set($event)">
+        @if (hasRunning()) {
+          <div class="fields-row">
+            <div class="field-group half">
+              <label class="field-label">
+                <i class="fa-solid fa-heart-pulse field-icon"></i>
+                FCmax <span class="field-hint">bpm</span>
+              </label>
+              <input
+                class="field-input"
+                type="number"
+                inputmode="numeric"
+                placeholder="ex: 185"
+                min="100" max="220"
+                [ngModel]="fcmax()"
+                (ngModelChange)="fcmax.set($event)">
+            </div>
+            <div class="field-group half">
+              <label class="field-label">
+                <i class="fa-solid fa-gauge-high field-icon"></i>
+                VMA <span class="field-hint">km/h</span>
+              </label>
+              <input
+                class="field-input"
+                type="number"
+                inputmode="decimal"
+                placeholder="ex: 14"
+                min="8" max="30"
+                step="0.5"
+                [ngModel]="vma()"
+                (ngModelChange)="vma.set($event)">
+            </div>
           </div>
-          <div class="field-group half">
-            <label class="field-label">
-              <i class="fa-solid fa-gauge-high field-icon"></i>
-              VMA <span class="field-hint">km/h</span>
-            </label>
-            <input
-              class="field-input"
-              type="number"
-              inputmode="decimal"
-              placeholder="ex: 14"
-              min="8" max="30"
-              step="0.5"
-              [ngModel]="vma()"
-              (ngModelChange)="vma.set($event)">
-          </div>
-        </div>
 
-        <div class="fcmax-hint">
-          <i class="fa-solid fa-circle-info hint-icon"></i>
-          <span>Tu ne connais pas ta FCmax ? Estimation rapide : <strong>220 − ton âge</strong></span>
-        </div>
+          <div class="fcmax-hint">
+            <i class="fa-solid fa-circle-info hint-icon"></i>
+            <span>Tu ne connais pas ta FCmax ? Estimation rapide : <strong>220 − ton âge</strong></span>
+          </div>
+        }
       </div>
       <div class="step-footer two-buttons">
         <button class="btn-secondary" (click)="prev()">Retour</button>
@@ -252,8 +387,8 @@
       </div>
     }
 
-    <!-- STEP 5 : Done -->
-    @if (currentStep === 5) {
+    <!-- DONE -->
+    @if (currentKind() === 'done') {
       <div class="step-content step-done">
         <div class="done-animation">
           <div class="done-circle">

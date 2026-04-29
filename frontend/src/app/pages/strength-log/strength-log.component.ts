@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { StrengthService } from '../../services/strength.service';
@@ -46,10 +46,21 @@ export class StrengthLogComponent implements OnInit {
   isSaving = signal(false);
   error = signal<string | null>(null);
   successMessage = signal<string | null>(null);
+  saved = signal(false); // true après le premier save réussi
 
   // Linked planned session
   linkedPlannedId = signal<string | null>(null);
   linkedPlannedSession = signal<PlannedSession | null>(null);
+
+  // Edit existing session
+  editSessionId = signal<string | null>(null);
+  editSessionIsStrava = signal(false);
+
+  // Analyse IA
+  isAnalyzing = signal(false);
+  analysis = signal<string | null>(null);
+  analyzedAt = signal<Date | null>(null);
+  analyzeError = signal<string | null>(null);
 
   // Labels
   sessionTypeLabels = SESSION_TYPE_LABELS;
@@ -78,18 +89,71 @@ export class StrengthLogComponent implements OnInit {
     private exerciseService: ExerciseService,
     private planningService: PlanningService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private location: Location
   ) {}
+
+  goBack() {
+    this.location.back();
+  }
 
   ngOnInit() {
     this.loadExerciseLibrary();
 
-    // Check if we're logging from a planned session
+    // Check query params: edit existing session OR log from a planned session
     this.route.queryParams.subscribe(params => {
+      const sessionId = params['sessionId'];
+      if (sessionId) {
+        this.editSessionId.set(sessionId);
+        this.loadExistingSession(sessionId);
+        return;
+      }
       const plannedId = params['plannedId'];
       if (plannedId) {
         this.linkedPlannedId.set(plannedId);
         this.loadPlannedSession(plannedId);
+      }
+    });
+  }
+
+  loadExistingSession(id: string) {
+    this.strengthService.getSession(id).subscribe({
+      next: (session) => {
+        this.editSessionIsStrava.set(!!session.stravaActivityId);
+        if (session.date) {
+          const d = new Date(session.date);
+          this.sessionDate.set(d.toISOString().split('T')[0]);
+        }
+        if (session.sessionType) {
+          this.sessionType.set(session.sessionType as StrengthSessionType);
+        }
+        if (session.duration) this.sessionDuration.set(session.duration);
+        if (session.feeling) this.sessionFeeling.set(session.feeling);
+        if (session.notes) this.sessionNotes.set(session.notes);
+        if (session.exercises?.length) {
+          const library = this.exerciseLibrary();
+          const entries: ExerciseEntry[] = session.exercises.map((e, i) => {
+            let exercise: Exercise | string = e.exercise;
+            if (typeof exercise === 'string' && library.length) {
+              exercise = library.find(ex => ex._id === exercise) ?? exercise;
+            }
+            return {
+              exercise,
+              sets: e.sets?.length ? e.sets : [{ reps: 10, weight: 0 }],
+              order: i,
+              notes: e.notes
+            };
+          });
+          this.exercises.set(entries);
+        }
+        if (session.analysis) {
+          this.analysis.set(session.analysis);
+          this.analyzedAt.set(session.analyzedAt ? new Date(session.analyzedAt) : null);
+        }
+      },
+      error: (err) => {
+        console.error('Failed to load existing session:', err);
+        this.error.set('Séance non trouvée');
       }
     });
   }
@@ -260,6 +324,7 @@ export class StrengthLogComponent implements OnInit {
     this.error.set(null);
 
     const plannedId = this.linkedPlannedId();
+    const editId = this.editSessionId();
 
     const session: Partial<StrengthSession> = {
       date: new Date(this.sessionDate()),
@@ -272,19 +337,60 @@ export class StrengthLogComponent implements OnInit {
         sets: e.sets,
         order: i
       })),
-      ...(plannedId ? { linkedPlannedSession: plannedId } : {})
+      ...(plannedId && !editId ? { linkedPlannedSession: plannedId } : {})
     };
 
-    this.strengthService.createSession(session).subscribe({
-      next: () => {
-        this.successMessage.set('Séance enregistrée !');
-        setTimeout(() => {
-          this.router.navigate(['/planning']);
-        }, 1500);
+    const obs = editId
+      ? this.strengthService.updateSession(editId, session)
+      : this.strengthService.createSession(session);
+
+    obs.subscribe({
+      next: (saved) => {
+        this.isSaving.set(false);
+        this.saved.set(true);
+        this.successMessage.set(editId ? 'Séance mise à jour !' : 'Séance enregistrée !');
+        // Si c'était une création, on bascule en mode edit + on met à jour l'URL
+        // pour que la page soit "sur" la séance enregistrée (refresh-safe, sharable)
+        if (!editId && saved._id) {
+          this.editSessionId.set(saved._id);
+          this.linkedPlannedId.set(null);
+          this.router.navigate([], {
+            relativeTo: this.route,
+            queryParams: { sessionId: saved._id, plannedId: null },
+            queryParamsHandling: 'merge',
+            replaceUrl: true
+          });
+        }
+        setTimeout(() => this.successMessage.set(null), 4000);
       },
       error: (err) => {
         this.error.set(err.error?.error || 'Erreur lors de l\'enregistrement');
         this.isSaving.set(false);
+        console.error(err);
+      }
+    });
+  }
+
+  analyzeSession() {
+    const id = this.editSessionId();
+    if (!id) return;
+    this.isAnalyzing.set(true);
+    this.analyzeError.set(null);
+    this.strengthService.analyzeSession(id).subscribe({
+      next: (updated) => {
+        this.isAnalyzing.set(false);
+        if (updated.analysis) {
+          this.analysis.set(updated.analysis);
+          this.analyzedAt.set(updated.analyzedAt ? new Date(updated.analyzedAt) : new Date());
+        }
+      },
+      error: (err) => {
+        this.isAnalyzing.set(false);
+        if (err.status === 402) {
+          this.analyzeError.set('Crédits IA insuffisants');
+        } else {
+          this.analyzeError.set('Erreur lors de l\'analyse');
+        }
         console.error(err);
       }
     });

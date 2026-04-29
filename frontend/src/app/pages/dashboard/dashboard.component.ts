@@ -1,12 +1,16 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { RunService, Run } from '../../services/run.service';
 import { PlanningService, PlannedSession } from '../../services/planning.service';
+import { StrengthService } from '../../services/strength.service';
+import { StrengthSession, SESSION_TYPE_LABELS } from '../../interfaces/strength.interfaces';
 import { AuthService } from '../../services/auth.service';
 import { ChatService, Conversation } from '../../services/chat.service';
 import { AthleteService } from '../../services/athlete.service';
+import { StravaService, StravaStatus } from '../../services/strava.service';
+import { SubscriptionService } from '../../services/subscription.service';
 import { CoachInvitationModalService } from '../../services/coach-invitation-modal.service';
 import { Coach } from '../../interfaces/coach.interfaces';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
@@ -22,6 +26,21 @@ interface WeekDay {
   plannedRuns: PlannedSession[];
 }
 
+interface RecentSession {
+  type: 'run' | 'strength';
+  source: 'run' | 'strength' | 'planned';
+  _id?: string;
+  date: Date;
+  title: string;
+  isStrava: boolean;
+  distance?: number;
+  duration?: number;
+  averagePace?: string;
+  totalSets?: number;
+  totalVolume?: number;
+  raw: Run | StrengthSession | PlannedSession;
+}
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -31,7 +50,7 @@ interface WeekDay {
 })
 export class DashboardComponent implements OnInit {
   // Data
-  recentRuns = signal<Run[]>([]);
+  recentSessions = signal<RecentSession[]>([]);
   upcomingRuns = signal<PlannedSession[]>([]);
   weekDays = signal<WeekDay[]>([]);
   upcomingSession = signal<PlannedSession | null>(null);
@@ -53,6 +72,13 @@ export class DashboardComponent implements OnInit {
   // Loading states
   isLoading = signal(true);
 
+  // Strava
+  stravaStatus = signal<StravaStatus | null>(null);
+  stravaLoading = signal(false);
+  stravaSyncing = signal(false);
+  stravaMessage = signal<string | null>(null);
+  stravaFeelingModal = signal<{ open: boolean; items: { run: Run; feeling: number }[] }>({ open: false, items: [] });
+
   // Computed
   streak = signal(0);
   weekStats = signal({ runs: 0, distance: 0, duration: 0 });
@@ -60,19 +86,26 @@ export class DashboardComponent implements OnInit {
   constructor(
     private runService: RunService,
     private planningService: PlanningService,
+    private strengthService: StrengthService,
     public authService: AuthService,
     public chatService: ChatService,
     private athleteService: AthleteService,
+    private stravaService: StravaService,
+    private subscriptionService: SubscriptionService,
     public invitationModalService: CoachInvitationModalService,
+    private route: ActivatedRoute,
     private router: Router
   ) {}
 
   ngOnInit() {
     this.loadDashboardData();
+    this.loadRecentSessions();
     this.loadRecentConversations();
     this.loadCurrentCoach();
     this.loadPendingInvitations();
     this.loadPartnerCoach();
+    this.loadStravaStatus();
+    this.handleStravaCallback();
 
     // Écouter les événements d'acceptation/rejet d'invitations
     this.invitationModalService.invitationAccepted$.subscribe(() => {
@@ -117,10 +150,6 @@ export class DashboardComponent implements OnInit {
         this.calculateStreak(allRuns);
         this.calculateWeekStats(allRuns);
         this.findUpcomingSession(allPlanned);
-        const sortedRuns = [...allRuns].sort((a, b) =>
-          new Date(b.date).getTime() - new Date(a.date).getTime()
-        );
-        this.recentRuns.set(sortedRuns.slice(0, 3));
         this.isLoading.set(false);
       };
 
@@ -130,7 +159,7 @@ export class DashboardComponent implements OnInit {
       });
       prevMonthObs.subscribe({
         next: (data) => { prevData = data; tryMerge(); },
-        error: () => { prevData = { runs: [], plannedRuns: [] }; tryMerge(); }
+        error: () => { prevData = { runs: [], plannedRuns: [], strengthSessions: [] }; tryMerge(); }
       });
     } else {
       currentMonthObs.subscribe({
@@ -139,10 +168,6 @@ export class DashboardComponent implements OnInit {
           this.calculateStreak(data.runs);
           this.calculateWeekStats(data.runs);
           this.findUpcomingSession(data.plannedRuns);
-          const sortedRuns = [...data.runs].sort((a, b) =>
-            new Date(b.date).getTime() - new Date(a.date).getTime()
-          );
-          this.recentRuns.set(sortedRuns.slice(0, 3));
           this.isLoading.set(false);
         },
         error: (err) => {
@@ -277,6 +302,84 @@ export class DashboardComponent implements OnInit {
     });
   }
 
+  loadRecentSessions() {
+    let runs: Run[] | null = null;
+    let strengths: StrengthSession[] | null = null;
+    let completedPlanned: PlannedSession[] | null = null;
+
+    const tryMerge = () => {
+      if (runs === null || strengths === null || completedPlanned === null) return;
+      this.buildRecentSessions(runs, strengths, completedPlanned);
+    };
+
+    this.runService.getAllRuns().subscribe({
+      next: (data) => { runs = data; tryMerge(); },
+      error: () => { runs = []; tryMerge(); }
+    });
+
+    this.strengthService.getSessions({ limit: 20 }).subscribe({
+      next: (data) => { strengths = data.sessions; tryMerge(); },
+      error: () => { strengths = []; tryMerge(); }
+    });
+
+    this.planningService.getPlannedSessions({ status: 'completed' }).subscribe({
+      next: (data) => { completedPlanned = data; tryMerge(); },
+      error: () => { completedPlanned = []; tryMerge(); }
+    });
+  }
+
+  buildRecentSessions(runs: Run[], strengthSessions: StrengthSession[], completedPlanned: PlannedSession[]) {
+    // Filtrer les planned sessions complétées qui ne sont PAS déjà liées à un Run ou à une StrengthSession
+    const standalonePlanned = completedPlanned.filter(p => !p.linkedRun && !p.linkedStrengthSession);
+
+    const items: RecentSession[] = [
+      ...runs.map((r): RecentSession => ({
+        type: 'run',
+        source: 'run',
+        _id: r._id,
+        date: new Date(r.date),
+        title: this.getRunTitle(r.notes),
+        isStrava: !!r.stravaActivityId,
+        distance: r.distance,
+        duration: r.duration,
+        averagePace: r.averagePace,
+        raw: r
+      })),
+      ...strengthSessions.map((s): RecentSession => ({
+        type: 'strength',
+        source: 'strength',
+        _id: s._id,
+        date: new Date(s.date),
+        title: this.getStrengthTitle(s),
+        isStrava: !!s.stravaActivityId,
+        duration: s.duration,
+        totalSets: s.totalSets,
+        totalVolume: s.totalVolume,
+        raw: s
+      })),
+      ...standalonePlanned.map((p): RecentSession => ({
+        type: p.activityType === 'strength' ? 'strength' : 'run',
+        source: 'planned',
+        _id: p._id,
+        date: new Date(p.date),
+        title: this.getPlannedTitle(p),
+        isStrava: false,
+        distance: p.targetDistance,
+        duration: p.targetDuration,
+        averagePace: p.targetPace,
+        raw: p
+      }))
+    ];
+    items.sort((a, b) => b.date.getTime() - a.date.getTime());
+    this.recentSessions.set(items.slice(0, 5));
+  }
+
+  getPlannedTitle(p: PlannedSession): string {
+    if (p.description) return p.description.split('\n')[0];
+    if (p.activityType === 'strength') return SESSION_TYPE_LABELS[p.sessionType as keyof typeof SESSION_TYPE_LABELS] || 'Musculation';
+    return this.planningService.getSessionTypeLabel(p.sessionType as any) || 'Course';
+  }
+
   findUpcomingSession(plannedRuns: PlannedSession[]) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -356,6 +459,32 @@ export class DashboardComponent implements OnInit {
   getRunTitle(notes: string | undefined): string {
     if (!notes) return 'Course';
     return notes.split('\n')[0] || 'Course';
+  }
+
+  openSession(session: RecentSession) {
+    if (session.source === 'planned') {
+      if (session.type === 'strength') {
+        this.router.navigate(['/strength/log'], { queryParams: { plannedId: session._id } });
+      } else if (session._id) {
+        this.router.navigate(['/run', session._id], { queryParams: { planned: 1 } });
+      } else {
+        this.router.navigate(['/planning']);
+      }
+    } else if (session.source === 'strength' && session._id) {
+      this.router.navigate(['/strength/log'], { queryParams: { sessionId: session._id } });
+    } else if (session.source === 'run') {
+      this.openRunDetail(session.raw as Run);
+    } else {
+      this.router.navigate(['/sorties']);
+    }
+  }
+
+  getStrengthTitle(session: StrengthSession): string {
+    if (session.notes) {
+      const firstLine = session.notes.split('\n')[0];
+      if (firstLine) return firstLine;
+    }
+    return SESSION_TYPE_LABELS[session.sessionType] || 'Musculation';
   }
 
   getTips(): { icon: string; title: string; text: string }[] {
@@ -656,5 +785,178 @@ export class DashboardComponent implements OnInit {
         console.error('Error rejecting invitation:', err);
       }
     });
+  }
+
+  // Strava methods
+  handleStravaCallback() {
+    this.route.queryParams.subscribe(params => {
+      if (params['strava'] === 'success') {
+        this.stravaMessage.set('Compte Strava connecté avec succès !');
+        this.loadStravaStatus();
+        setTimeout(() => this.stravaMessage.set(null), 5000);
+      } else if (params['strava'] === 'error') {
+        this.stravaMessage.set('Erreur de connexion Strava: ' + (params['message'] || 'Erreur inconnue'));
+        setTimeout(() => this.stravaMessage.set(null), 5000);
+      }
+    });
+  }
+
+  loadStravaStatus() {
+    this.stravaLoading.set(true);
+    this.stravaService.getStatus().subscribe({
+      next: (status) => {
+        this.stravaStatus.set(status);
+        this.stravaLoading.set(false);
+      },
+      error: () => {
+        this.stravaLoading.set(false);
+      }
+    });
+  }
+
+  connectStrava() {
+    this.stravaLoading.set(true);
+    this.stravaService.getAuthUrl().subscribe({
+      next: (response) => {
+        window.location.href = response.authUrl;
+      },
+      error: () => {
+        this.stravaLoading.set(false);
+        this.stravaMessage.set('Erreur lors de la connexion à Strava');
+      }
+    });
+  }
+
+  syncStrava() {
+    if (!this.subscriptionService.isPro() && this.subscriptionService.trainCoins() < 0.5) {
+      this.subscriptionService.openPaywall('strava');
+      return;
+    }
+
+    this.stravaSyncing.set(true);
+    this.stravaMessage.set(null);
+    this.stravaService.syncActivities().subscribe({
+      next: (result) => {
+        this.stravaSyncing.set(false);
+        const hasRuns = result.imported.length > 0;
+        const hasStrength = (result.importedStrength?.length ?? 0) > 0;
+
+        if (hasRuns) {
+          this.loadDashboardData();
+          this.loadRecentSessions();
+          this.stravaFeelingModal.set({
+            open: true,
+            items: result.imported.map((run: Run) => ({ run, feeling: 5 }))
+          });
+        }
+
+        if (hasStrength) {
+          this.loadRecentSessions();
+          const s = result.importedStrength.length;
+          const msg = `${s} séance${s > 1 ? 's' : ''} muscu importée${s > 1 ? 's' : ''} !`;
+          this.stravaMessage.set(msg);
+          setTimeout(() => this.stravaMessage.set(null), 5000);
+        }
+
+        if (!hasRuns && !hasStrength) {
+          this.stravaMessage.set(result.message);
+          setTimeout(() => this.stravaMessage.set(null), 5000);
+        }
+      },
+      error: (err) => {
+        this.stravaSyncing.set(false);
+        this.stravaMessage.set('Erreur lors de la synchronisation');
+        console.error(err);
+      }
+    });
+  }
+
+  saveStravaFeelings() {
+    const items = this.stravaFeelingModal().items;
+    this.stravaFeelingModal.set({ open: false, items: [] });
+    items.forEach(item => {
+      const runId = (item.run as any).id || item.run._id;
+      if (runId) {
+        this.runService.updateRun(runId, { feeling: item.feeling }).subscribe();
+      }
+    });
+    this.stravaMessage.set(`${items.length} course${items.length > 1 ? 's' : ''} importée${items.length > 1 ? 's' : ''} !`);
+    setTimeout(() => this.stravaMessage.set(null), 4000);
+  }
+
+  skipStravaFeelings() {
+    const count = this.stravaFeelingModal().items.length;
+    this.stravaFeelingModal.set({ open: false, items: [] });
+    this.stravaMessage.set(`${count} course${count > 1 ? 's' : ''} importée${count > 1 ? 's' : ''} !`);
+    setTimeout(() => this.stravaMessage.set(null), 4000);
+  }
+
+  setStravaFeeling(index: number, value: number) {
+    const items = [...this.stravaFeelingModal().items];
+    items[index] = { ...items[index], feeling: value };
+    this.stravaFeelingModal.set({ open: true, items });
+  }
+
+  resyncStrava() {
+    this.stravaSyncing.set(true);
+    this.stravaMessage.set(null);
+    this.stravaService.resyncActivities().subscribe({
+      next: (result) => {
+        this.stravaSyncing.set(false);
+        this.stravaMessage.set(result.message);
+        if (result.updated > 0) {
+          this.loadDashboardData();
+          this.loadRecentSessions();
+        }
+        setTimeout(() => this.stravaMessage.set(null), 5000);
+      },
+      error: (err) => {
+        this.stravaSyncing.set(false);
+        this.stravaMessage.set('Erreur lors de la resynchronisation');
+        console.error(err);
+      }
+    });
+  }
+
+  disconnectStrava() {
+    if (!confirm('Déconnecter votre compte Strava ?')) return;
+
+    this.stravaLoading.set(true);
+    this.stravaService.disconnect().subscribe({
+      next: () => {
+        this.stravaStatus.set({ connected: false, athleteId: null, connectedAt: null });
+        this.stravaLoading.set(false);
+        this.stravaMessage.set('Compte Strava déconnecté');
+        setTimeout(() => this.stravaMessage.set(null), 3000);
+      },
+      error: () => {
+        this.stravaLoading.set(false);
+        this.stravaMessage.set('Erreur lors de la déconnexion');
+      }
+    });
+  }
+
+  formatRunFullDate(date: Date): string {
+    return new Date(date).toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  }
+
+  getFeelingLabel(value: number): string {
+    if (value >= 9) return 'Excellent';
+    if (value >= 7) return 'Bien';
+    if (value >= 5) return 'Correct';
+    if (value >= 3) return 'Difficile';
+    return 'Épuisant';
+  }
+
+  getFeelingColor(value: number): string {
+    if (value >= 9) return '#16a34a';
+    if (value >= 7) return '#22c55e';
+    if (value >= 5) return '#eab308';
+    if (value >= 3) return '#f97316';
+    return '#ef4444';
   }
 }

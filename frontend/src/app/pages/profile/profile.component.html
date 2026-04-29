@@ -1,55 +1,5 @@
 <app-navbar></app-navbar>
 
-<!-- Modal feeling Strava -->
-@if (stravaFeelingModal().open) {
-  <div class="feeling-overlay">
-    <div class="feeling-popup">
-      <div class="feeling-popup-header">
-        <div>
-          <h2>Courses importées</h2>
-          <p>{{ stravaFeelingModal().items.length }} course{{ stravaFeelingModal().items.length > 1 ? 's' : '' }} depuis Strava — note ton ressenti</p>
-        </div>
-        <button class="feeling-popup-close" (click)="skipStravaFeelings()">×</button>
-      </div>
-
-      <div class="feeling-popup-list">
-        @for (item of stravaFeelingModal().items; track item.run._id; let i = $index) {
-          <div class="feeling-run-card">
-            <div class="feeling-run-info">
-              <span class="feeling-run-date">{{ formatDate(item.run.date) }}</span>
-              <div class="feeling-run-stats">
-                @if (item.run.distance) { <span>{{ item.run.distance }} km</span> }
-                @if (item.run.duration) { <span>{{ formatDuration(item.run.duration) }}</span> }
-              </div>
-            </div>
-            <div class="feeling-run-slider">
-              <div class="feeling-run-val">
-                <span class="feeling-val-num" [style.color]="getFeelingColor(item.feeling || 5)">{{ item.feeling }}</span>
-                <span class="feeling-val-label" [style.color]="getFeelingColor(item.feeling || 5)">{{ getFeelingLabel(item.feeling || 5) }}</span>
-              </div>
-              <div class="feeling-slider-row">
-                <span class="slider-hint-text">Épuisant</span>
-                <input
-                  type="range"
-                  min="1" max="10" step="1"
-                  [value]="item.feeling"
-                  (input)="setStravaFeeling(i, +$any($event.target).value)"
-                  class="feeling-slider"/>
-                <span class="slider-hint-text">Excellent</span>
-              </div>
-            </div>
-          </div>
-        }
-      </div>
-
-      <div class="feeling-popup-footer">
-        <button class="btn-skip-feeling" (click)="skipStravaFeelings()">Passer</button>
-        <button class="btn-save-feeling" (click)="saveStravaFeelings()">Enregistrer</button>
-      </div>
-    </div>
-  </div>
-}
-
 <div class="container">
   <div class="page-header">
     <h1>Mon Profil</h1>
@@ -328,56 +278,36 @@
       }
     </section>
 
-    <!-- Intégration Strava -->
-    <section class="strava-section">
-      <div class="section-header">
-        <h3>
-          <svg class="strava-icon" viewBox="0 0 24 24" width="24" height="24">
-            <path fill="#FC4C02" d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
-          </svg>
-          Strava
-        </h3>
-      </div>
-
-      @if (stravaMessage()) {
-        <div class="strava-message" [class.success]="stravaMessage()?.includes('succès') || stravaMessage()?.includes('importée')">
-          {{ stravaMessage() }}
+    <!-- Section Strava (déconnexion) -->
+    @if (stravaStatus()?.connected) {
+      <section class="strava-section">
+        <div class="section-header">
+          <h3>
+            <svg class="strava-icon" viewBox="0 0 24 24" width="24" height="24">
+              <path fill="#FC4C02" d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+            </svg>
+            Strava
+          </h3>
         </div>
-      }
 
-      @if (stravaLoading()) {
-        <div class="strava-loading">Chargement...</div>
-      } @else if (stravaStatus()?.connected) {
+        @if (stravaMessage()) {
+          <div class="strava-message" [class.success]="stravaMessage()?.includes('déconnecté')">
+            {{ stravaMessage() }}
+          </div>
+        }
+
         <div class="strava-connected">
           <div class="strava-status">
             <span class="status-dot connected"></span>
             <span>Connecté depuis le {{ stravaStatus()?.connectedAt | date:'dd/MM/yyyy' }}</span>
           </div>
-          <div class="strava-actions">
-            @if (stravaSyncing()) {
-              <div class="strava-syncing">
-                <span class="strava-sync-spinner"></span>
-                <span>Synchronisation en cours...</span>
-              </div>
-            } @else {
-              <button class="btn-strava-sync" (click)="syncStrava()">Importer mes courses</button>
-              <button class="btn-strava-resync" (click)="resyncStrava()">Mettre à jour</button>
-              <button class="btn-strava-disconnect" (click)="disconnectStrava()">Déconnecter</button>
-            }
-          </div>
-        </div>
-      } @else {
-        <div class="strava-disconnected">
-          <p>Connecte ton compte Strava pour importer automatiquement tes courses.</p>
-          <button class="btn-strava-connect" (click)="connectStrava()">
-            <svg class="strava-icon-small" viewBox="0 0 24 24" width="18" height="18">
-              <path fill="white" d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
-            </svg>
-            Connecter Strava
+          <p class="strava-hint">L'import et la mise à jour de tes courses se font depuis le Dashboard.</p>
+          <button class="btn-strava-disconnect" (click)="disconnectStrava()" [disabled]="stravaLoading()">
+            Déconnecter Strava
           </button>
         </div>
-      }
-    </section>
+      </section>
+    }
 
     <!-- Section Coach -->
     <section class="coach-section">

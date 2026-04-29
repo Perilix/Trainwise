@@ -1,7 +1,9 @@
 import { Component, OnInit, inject, signal, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { RunService, Run } from '../../services/run.service';
+import { PlanningService, PlannedSession } from '../../services/planning.service';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 import { SubscriptionService } from '../../services/subscription.service';
 import * as L from 'leaflet';
@@ -17,7 +19,7 @@ L.Icon.Default.mergeOptions({
 @Component({
   selector: 'app-run-detail',
   standalone: true,
-  imports: [CommonModule, NavbarComponent],
+  imports: [CommonModule, FormsModule, NavbarComponent],
   templateUrl: './run-detail.component.html',
   styleUrl: './run-detail.component.scss'
 })
@@ -30,6 +32,20 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   feelingValue = signal<number>(5);
   feelingSaved = signal(false);
 
+  // Planned session mode
+  isPlannedMode = signal(false);
+  plannedSession = signal<PlannedSession | null>(null);
+  isSubmittingCompletion = signal(false);
+  completionForm = {
+    distance: undefined as number | undefined,
+    duration: undefined as number | undefined,
+    averagePace: '' as string,
+    averageHeartRate: undefined as number | undefined,
+    maxHeartRate: undefined as number | undefined,
+    elevationGain: undefined as number | undefined,
+    notes: '' as string
+  };
+
   private map: L.Map | null = null;
   private feelingTimer: ReturnType<typeof setTimeout> | null = null;
   private subscriptionService = inject(SubscriptionService);
@@ -38,14 +54,110 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private runService: RunService,
+    private planningService: PlanningService,
     private location: Location
   ) {}
 
   ngOnInit() {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.loadRun(id);
-    }
+    // On souscrit à paramMap seul (le query param est lu via snapshot pour éviter
+    // une double émission de combineLatest pendant une navigation qui change les deux)
+    this.route.paramMap.subscribe(params => {
+      const id = params.get('id');
+      if (!id) return;
+      // Reset state on each navigation
+      this.run.set(null);
+      this.plannedSession.set(null);
+      this.error.set(null);
+      this.isPlannedMode.set(false);
+      if (this.map) {
+        this.map.remove();
+        this.map = null;
+      }
+      const isPlanned = this.route.snapshot.queryParamMap.get('planned') === '1';
+      if (isPlanned) {
+        this.loadPlannedSession(id);
+      } else {
+        this.loadRun(id);
+      }
+    });
+  }
+
+  loadPlannedSession(id: string) {
+    this.isLoading.set(true);
+    this.isPlannedMode.set(true);
+    this.planningService.getPlannedSessionById(id).subscribe({
+      next: (planned) => {
+        this.plannedSession.set(planned);
+        // Map target* fields onto a Run-shaped object so the existing template renders them
+        const proxyRun: Run = {
+          _id: planned._id,
+          date: planned.date,
+          distance: planned.targetDistance,
+          duration: planned.targetDuration,
+          averagePace: planned.targetPace,
+          feeling: planned.feeling,
+          notes: planned.description,
+          sessionType: planned.sessionType
+        };
+        this.run.set(proxyRun);
+        this.feelingValue.set(planned.feeling ?? 5);
+        // Prefill completion form with the targets so the user can adjust
+        this.completionForm.distance = planned.targetDistance;
+        this.completionForm.duration = planned.targetDuration;
+        this.completionForm.averagePace = planned.targetPace ?? '';
+        this.completionForm.notes = planned.description ?? '';
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        this.error.set('Séance non trouvée');
+        this.isLoading.set(false);
+        console.error(err);
+      }
+    });
+  }
+
+  submitCompletion() {
+    const planned = this.plannedSession();
+    if (!planned?._id) return;
+    this.isSubmittingCompletion.set(true);
+
+    const payload: Partial<Run> = {
+      date: planned.date,
+      distance: this.completionForm.distance ?? undefined,
+      duration: this.completionForm.duration ?? undefined,
+      averagePace: this.completionForm.averagePace || undefined,
+      averageHeartRate: this.completionForm.averageHeartRate ?? undefined,
+      maxHeartRate: this.completionForm.maxHeartRate ?? undefined,
+      elevationGain: this.completionForm.elevationGain ?? undefined,
+      sessionType: planned.sessionType,
+      feeling: this.feelingValue(),
+      notes: this.completionForm.notes || undefined
+    };
+
+    this.runService.createRun(payload).subscribe({
+      next: (run) => {
+        if (!run._id) {
+          this.isSubmittingCompletion.set(false);
+          return;
+        }
+        // Supprimer la planned : le nouveau Run la remplace
+        // replaceUrl pour que la flèche retour ne tente pas de revisiter la planned supprimée
+        this.planningService.deletePlannedSession(planned._id!).subscribe({
+          next: () => {
+            this.isSubmittingCompletion.set(false);
+            this.router.navigate(['/run', run._id], { replaceUrl: true });
+          },
+          error: () => {
+            this.isSubmittingCompletion.set(false);
+            this.router.navigate(['/run', run._id], { replaceUrl: true });
+          }
+        });
+      },
+      error: (err) => {
+        this.isSubmittingCompletion.set(false);
+        console.error(err);
+      }
+    });
   }
 
   ngAfterViewInit() {
@@ -238,10 +350,25 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
 
   saveFeelingNow() {
     const value = this.feelingValue();
-    const run = this.run();
-    if (!run?._id) return;
     if (this.feelingTimer) clearTimeout(this.feelingTimer);
     this.feelingTimer = null;
+
+    if (this.isPlannedMode()) {
+      const planned = this.plannedSession();
+      if (!planned?._id) return;
+      this.planningService.updatePlannedSession(planned._id, { feeling: value }).subscribe({
+        next: () => {
+          this.plannedSession.set({ ...planned, feeling: value });
+          this.feelingSaved.set(true);
+          setTimeout(() => this.feelingSaved.set(false), 2000);
+        },
+        error: (err) => console.error(err)
+      });
+      return;
+    }
+
+    const run = this.run();
+    if (!run?._id) return;
     this.runService.updateRun(run._id, { feeling: value }).subscribe({
       next: () => {
         this.run.set({ ...run, feeling: value });

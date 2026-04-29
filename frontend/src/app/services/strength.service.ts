@@ -81,4 +81,9 @@ export class StrengthService {
   getSessionTypes(): Observable<LabelValue[]> {
     return this.http.get<LabelValue[]>(`${this.API_URL}/session-types`);
   }
+
+  // Analyser une séance avec l'IA
+  analyzeSession(id: string): Observable<StrengthSession> {
+    return this.http.post<StrengthSession>(`${this.API_URL}/sessions/${id}/analyze`, {});
+  }
 }

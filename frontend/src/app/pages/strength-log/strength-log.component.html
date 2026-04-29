@@ -3,12 +3,33 @@
 <div class="container">
   <header class="page-header">
     <div class="header-content">
-      <a routerLink="/planning" class="back-link">← Retour au planning</a>
-      <h1>Logger une séance muscu</h1>
+      <a class="back-link" (click)="goBack()">← Retour</a>
+      <h1>
+        @if (editSessionId()) {
+          Compléter ma séance muscu
+        } @else {
+          Logger une séance muscu
+        }
+      </h1>
     </div>
   </header>
 
-  @if (linkedPlannedSession()) {
+  @if (saved()) {
+    <div class="alert success">
+      <span class="planned-badge done">✓ Enregistrée</span>
+      Ta séance a bien été enregistrée. Tu peux la modifier ou lancer une analyse IA.
+    </div>
+  } @else if (editSessionId() && editSessionIsStrava()) {
+    <div class="alert info">
+      <span class="planned-badge">Strava</span>
+      Cette séance vient de Strava — détaille les exercices, séries et charges pour l'enrichir.
+    </div>
+  } @else if (editSessionId()) {
+    <div class="alert info">
+      <span class="planned-badge">À compléter</span>
+      Détaille les exercices, séries et charges pour cette séance.
+    </div>
+  } @else if (linkedPlannedSession()) {
     <div class="alert info">
       <span class="planned-badge">📅 Séance planifiée</span>
       Vous êtes en train de détailler une séance planifiée.
@@ -174,15 +195,59 @@
 
     <!-- Submit -->
     <div class="form-actions">
-      <button class="btn-secondary" routerLink="/planning">Annuler</button>
+      <button class="btn-secondary" (click)="goBack()">Annuler</button>
       <button
         class="btn-primary large"
         (click)="saveSession()"
         [disabled]="isSaving() || exercises().length === 0"
       >
-        {{ isSaving() ? 'Enregistrement...' : 'Enregistrer la séance' }}
+        @if (isSaving()) {
+          Enregistrement...
+        } @else if (editSessionId() && saved()) {
+          Mettre à jour
+        } @else if (editSessionId()) {
+          Mettre à jour la séance
+        } @else {
+          Enregistrer la séance
+        }
       </button>
     </div>
+
+    <!-- Analyse IA -->
+    @if (editSessionId()) {
+      <section class="form-section analyze-section">
+        <div class="analyze-header">
+          <h2>Analyse IA</h2>
+          @if (!analysis()) {
+            <button
+              class="btn-analyze"
+              (click)="analyzeSession()"
+              [disabled]="isAnalyzing() || exercises().length === 0">
+              @if (isAnalyzing()) {
+                Analyse en cours...
+              } @else {
+                Analyser avec l'IA
+              }
+            </button>
+          }
+        </div>
+
+        @if (analyzeError()) {
+          <div class="alert error">{{ analyzeError() }}</div>
+        }
+
+        @if (analysis()) {
+          <div class="analysis-content">
+            <p>{{ analysis() }}</p>
+            @if (analyzedAt()) {
+              <span class="analysis-date">Analysé le {{ analyzedAt() | date:'dd/MM/yyyy à HH:mm' }}</span>
+            }
+          </div>
+        } @else if (!isAnalyzing()) {
+          <p class="analyze-hint">Lance une analyse pour obtenir des conseils personnalisés sur ta séance.</p>
+        }
+      </section>
+    }
   </div>
 </div>
 

@@ -139,10 +139,11 @@
 
       <div class="text-input-wrapper">
         <textarea
+          #messageTextarea
           class="text-input"
           placeholder="Ecrire un message..."
           [value]="messageText()"
-          (input)="messageText.set($any($event.target).value); onInput()"
+          (input)="messageText.set($any($event.target).value); onInput(); autoResize()"
           (keydown)="onKeyDown($event)"
           (focus)="onTextareaFocus()"
           rows="1"

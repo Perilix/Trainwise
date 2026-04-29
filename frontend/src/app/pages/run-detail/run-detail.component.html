@@ -21,12 +21,22 @@
       </button>
       <div class="header-content">
         <h1>{{ getRunTitle() }}</h1>
-        <p class="run-date">{{ formatDate(run()!.date) }} à {{ formatTime(run()!.date) }}</p>
+        <p class="run-date">{{ formatDate(run()!.date) }}</p>
       </div>
       @if (run()?.stravaActivityId) {
         <span class="strava-badge">Strava</span>
       }
+      @if (isPlannedMode()) {
+        <span class="planned-badge">À compléter</span>
+      }
     </div>
+
+    @if (isPlannedMode()) {
+      <div class="planned-banner">
+        <p><strong>Cette séance a été marquée comme faite mais n'a pas été détaillée.</strong></p>
+        <p>Renseigne les valeurs réelles ci-dessous pour la convertir en course.</p>
+      </div>
+    }
 
     <!-- Map -->
     @if (run()?.polyline) {
@@ -119,41 +129,94 @@
       </section>
     }
 
-    <!-- AI Analysis -->
-    <section class="analysis-section">
-      <div class="analysis-header">
-        <h2>Analyse IA</h2>
-        @if (!run()?.analysis) {
-          <button
-            class="btn-analyze"
-            (click)="analyzeRun()"
-            [disabled]="isAnalyzing()">
-            @if (isAnalyzing()) {
-              Analyse en cours...
+    @if (isPlannedMode()) {
+      <!-- Formulaire de complétion -->
+      <section class="completion-section">
+        <h2>Compléter la séance</h2>
+        <form (ngSubmit)="submitCompletion()" #completionFormEl="ngForm">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="distance">Distance (km)</label>
+              <input type="number" id="distance" name="distance" step="0.01" min="0"
+                [(ngModel)]="completionForm.distance" placeholder="ex: 10.5">
+            </div>
+            <div class="form-group">
+              <label for="duration">Durée (min)</label>
+              <input type="number" id="duration" name="duration" min="0"
+                [(ngModel)]="completionForm.duration" placeholder="ex: 55">
+            </div>
+            <div class="form-group">
+              <label for="averagePace">Allure (/km)</label>
+              <input type="text" id="averagePace" name="averagePace"
+                [(ngModel)]="completionForm.averagePace" placeholder="ex: 5:30">
+            </div>
+            <div class="form-group">
+              <label for="elevationGain">Dénivelé (m)</label>
+              <input type="number" id="elevationGain" name="elevationGain" min="0"
+                [(ngModel)]="completionForm.elevationGain" placeholder="ex: 120">
+            </div>
+            <div class="form-group">
+              <label for="averageHeartRate">FC moyenne (bpm)</label>
+              <input type="number" id="averageHeartRate" name="averageHeartRate" min="0"
+                [(ngModel)]="completionForm.averageHeartRate" placeholder="ex: 145">
+            </div>
+            <div class="form-group">
+              <label for="maxHeartRate">FC max (bpm)</label>
+              <input type="number" id="maxHeartRate" name="maxHeartRate" min="0"
+                [(ngModel)]="completionForm.maxHeartRate" placeholder="ex: 175">
+            </div>
+            <div class="form-group full-width">
+              <label for="notes">Notes</label>
+              <textarea id="notes" name="notes" rows="3"
+                [(ngModel)]="completionForm.notes" placeholder="Ressenti, conditions, etc."></textarea>
+            </div>
+          </div>
+          <button type="submit" class="btn-submit-completion" [disabled]="isSubmittingCompletion()">
+            @if (isSubmittingCompletion()) {
+              Enregistrement...
             } @else {
-              Analyser avec l'IA
+              Enregistrer la séance
             }
           </button>
+        </form>
+      </section>
+    } @else {
+      <!-- AI Analysis -->
+      <section class="analysis-section">
+        <div class="analysis-header">
+          <h2>Analyse IA</h2>
+          @if (!run()?.analysis) {
+            <button
+              class="btn-analyze"
+              (click)="analyzeRun()"
+              [disabled]="isAnalyzing()">
+              @if (isAnalyzing()) {
+                Analyse en cours...
+              } @else {
+                Analyser avec l'IA
+              }
+            </button>
+          }
+        </div>
+
+        @if (analyzeSuccess()) {
+          <div class="success-message">Analyse terminée !</div>
         }
-      </div>
 
-      @if (analyzeSuccess()) {
-        <div class="success-message">Analyse terminée !</div>
-      }
-
-      @if (run()?.analysis) {
-        <div class="analysis-content">
-          <p>{{ run()!.analysis }}</p>
-          <span class="analysis-date">
-            Analysé le {{ run()!.analyzedAt | date:'dd/MM/yyyy à HH:mm' }}
-          </span>
-        </div>
-      } @else if (!isAnalyzing()) {
-        <div class="no-analysis">
-          <p>Cette course n'a pas encore été analysée.</p>
-          <p class="hint">Clique sur "Analyser avec l'IA" pour obtenir des conseils personnalisés.</p>
-        </div>
-      }
-    </section>
+        @if (run()?.analysis) {
+          <div class="analysis-content">
+            <p>{{ run()!.analysis }}</p>
+            <span class="analysis-date">
+              Analysé le {{ run()!.analyzedAt | date:'dd/MM/yyyy à HH:mm' }}
+            </span>
+          </div>
+        } @else if (!isAnalyzing()) {
+          <div class="no-analysis">
+            <p>Cette course n'a pas encore été analysée.</p>
+            <p class="hint">Clique sur "Analyser avec l'IA" pour obtenir des conseils personnalisés.</p>
+          </div>
+        }
+      </section>
+    }
   }
 </div>

@@ -36,6 +36,7 @@ export interface PlannedSession {
   status: PlannedSessionStatus;
   feeling?: number;
   linkedRun?: Run;
+  linkedStrengthSession?: StrengthSession | string;
   weekNumber?: number;
   generatedBy: 'ai' | 'manual' | 'coach';
   createdAt?: Date;

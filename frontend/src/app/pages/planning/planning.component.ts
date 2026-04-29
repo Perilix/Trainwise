@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -63,6 +63,14 @@ export class PlanningComponent implements OnInit {
   selectedDay = signal<CalendarDay | null>(null);
   isAddingSession = signal(false);
   isSaving = signal(false);
+
+  // Planned sessions à afficher : on cache celles déjà liées à un Run/StrengthSession réel
+  // pour éviter les doublons avec la section "Courses effectuées" / "Séances muscu effectuées"
+  visiblePlannedRuns = computed(() => {
+    const day = this.selectedDay();
+    if (!day) return [];
+    return day.plannedRuns.filter(p => !(p as any).linkedRun && !(p as any).linkedStrengthSession);
+  });
 
   // Preview modal
   showPreview = signal(false);
@@ -141,6 +149,41 @@ export class PlanningComponent implements OnInit {
   openRunDetail(run: Run) {
     if (run._id) {
       this.router.navigate(['/run', run._id]);
+    }
+  }
+
+  openStrengthDetail(session: { _id?: string }) {
+    if (session._id) {
+      this.router.navigate(['/strength/log'], { queryParams: { sessionId: session._id } });
+    }
+  }
+
+  openPlannedDetail(planned: PlannedSession) {
+    if (planned.status === 'skipped' || !planned._id) return;
+
+    // Si la planned a déjà été liée à un Run/StrengthSession réel, ouvrir le détail correspondant
+    const linkedRun = (planned as any).linkedRun;
+    if (linkedRun) {
+      const id = typeof linkedRun === 'string' ? linkedRun : linkedRun._id;
+      if (id) {
+        this.router.navigate(['/run', id]);
+        return;
+      }
+    }
+    const linkedStrength = (planned as any).linkedStrengthSession;
+    if (linkedStrength) {
+      const id = typeof linkedStrength === 'string' ? linkedStrength : linkedStrength._id;
+      if (id) {
+        this.router.navigate(['/strength/log'], { queryParams: { sessionId: id } });
+        return;
+      }
+    }
+
+    // Planned ou completed standalone : envoyer sur la page de complétion
+    if (planned.activityType === 'strength') {
+      this.router.navigate(['/strength/log'], { queryParams: { plannedId: planned._id } });
+    } else {
+      this.router.navigate(['/run', planned._id], { queryParams: { planned: 1 } });
     }
   }
 
@@ -588,7 +631,10 @@ export class PlanningComponent implements OnInit {
     const allPlanned = day.plannedRuns.filter(p => p.status === 'planned');
     const plannedIA = allPlanned.filter(p => p.generatedBy === 'ai').length;
     const plannedCoach = allPlanned.filter(p => p.generatedBy === 'coach').length;
-    const done = day.plannedRuns.filter(p => p.status === 'completed').length;
+    // Ne pas compter les planned déjà liées à un Run/StrengthSession : elles sont déjà comptées via completedCount
+    const done = day.plannedRuns.filter(p =>
+      p.status === 'completed' && !(p as any).linkedRun && !(p as any).linkedStrengthSession
+    ).length;
     const skipped = day.plannedRuns.filter(p => p.status === 'skipped').length;
 
     if (plannedIA > 0) indicators.push({ type: 'planned-ia', count: plannedIA });

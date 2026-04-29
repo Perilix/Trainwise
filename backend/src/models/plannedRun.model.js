@@ -81,6 +81,11 @@ const plannedRunSchema = new mongoose.Schema({
     ref: 'Run',
     default: null
   },
+  linkedStrengthSession: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'StrengthSession',
+    default: null
+  },
   weekNumber: {
     type: Number // numéro de semaine dans le plan
   },

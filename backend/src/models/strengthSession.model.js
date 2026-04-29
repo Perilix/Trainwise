@@ -73,7 +73,11 @@ const strengthSessionSchema = new mongoose.Schema({
   stravaActivityId: {
     type: Number,
     default: null
-  }
+  },
+
+  // Analyse IA
+  analysis: { type: String },
+  analyzedAt: { type: Date }
 }, {
   timestamps: true
 });

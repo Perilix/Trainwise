@@ -1,11 +1,10 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { RunService, Run } from '../../services/run.service';
 import { AuthService, UpdateProfileData } from '../../services/auth.service';
 import { StravaService, StravaStatus } from '../../services/strava.service';
-import { SubscriptionService } from '../../services/subscription.service';
 import { AthleteService } from '../../services/athlete.service';
 import { CoachInvitation, Coach } from '../../interfaces/coach.interfaces';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
@@ -42,12 +41,10 @@ export class ProfileComponent implements OnInit {
   saveError = signal<string | null>(null);
   saveSuccess = signal(false);
 
-  // Strava
+  // Strava (uniquement déconnexion)
   stravaStatus = signal<StravaStatus | null>(null);
   stravaLoading = signal(false);
-  stravaSyncing = signal(false);
   stravaMessage = signal<string | null>(null);
-  stravaFeelingModal = signal<{ open: boolean; items: { run: Run; feeling: number }[] }>({ open: false, items: [] });
 
   // Graphique
   selectedMetric = signal<Metric>('seances');
@@ -252,9 +249,7 @@ export class ProfileComponent implements OnInit {
     public authService: AuthService,
     private stravaService: StravaService,
     private athleteService: AthleteService,
-    private route: ActivatedRoute,
-    private router: Router,
-    private subscriptionService: SubscriptionService
+    private router: Router
   ) {}
 
   openRunDetail(run: Run) {
@@ -266,22 +261,8 @@ export class ProfileComponent implements OnInit {
   ngOnInit() {
     this.loadRuns();
     this.initProfileForm();
-    this.loadStravaStatus();
-    this.handleStravaCallback();
     this.loadCoachData();
-  }
-
-  handleStravaCallback() {
-    this.route.queryParams.subscribe(params => {
-      if (params['strava'] === 'success') {
-        this.stravaMessage.set('Compte Strava connecté avec succès !');
-        this.loadStravaStatus();
-        setTimeout(() => this.stravaMessage.set(null), 5000);
-      } else if (params['strava'] === 'error') {
-        this.stravaMessage.set('Erreur de connexion Strava: ' + (params['message'] || 'Erreur inconnue'));
-        setTimeout(() => this.stravaMessage.set(null), 5000);
-      }
-    });
+    this.loadStravaStatus();
   }
 
   loadStravaStatus() {
@@ -293,108 +274,6 @@ export class ProfileComponent implements OnInit {
       },
       error: () => {
         this.stravaLoading.set(false);
-      }
-    });
-  }
-
-  connectStrava() {
-    this.stravaLoading.set(true);
-    this.stravaService.getAuthUrl().subscribe({
-      next: (response) => {
-        window.location.href = response.authUrl;
-      },
-      error: () => {
-        this.stravaLoading.set(false);
-        this.stravaMessage.set('Erreur lors de la connexion à Strava');
-      }
-    });
-  }
-
-  syncStrava() {
-    // Vérifie les coins avant de lancer le sync (analyse IA = 0.5 coins/course)
-    if (!this.subscriptionService.isPro() && this.subscriptionService.trainCoins() < 0.5) {
-      this.subscriptionService.openPaywall('strava');
-      return;
-    }
-
-    this.stravaSyncing.set(true);
-    this.stravaMessage.set(null);
-    this.stravaService.syncActivities().subscribe({
-      next: (result) => {
-        this.stravaSyncing.set(false);
-        const hasRuns = result.imported.length > 0;
-        const hasStrength = (result.importedStrength?.length ?? 0) > 0;
-
-        if (hasRuns) {
-          this.loadRuns();
-          this.stravaFeelingModal.set({
-            open: true,
-            items: result.imported.map((run: Run) => ({ run, feeling: 5 }))
-          });
-        }
-
-        if (hasStrength) {
-          const s = result.importedStrength.length;
-          const msg = `${s} séance${s > 1 ? 's' : ''} muscu importée${s > 1 ? 's' : ''} !`;
-          this.stravaMessage.set(msg);
-          setTimeout(() => this.stravaMessage.set(null), 5000);
-        }
-
-        if (!hasRuns && !hasStrength) {
-          this.stravaMessage.set(result.message);
-          setTimeout(() => this.stravaMessage.set(null), 5000);
-        }
-      },
-      error: (err) => {
-        this.stravaSyncing.set(false);
-        this.stravaMessage.set('Erreur lors de la synchronisation');
-        console.error(err);
-      }
-    });
-  }
-
-  saveStravaFeelings() {
-    const items = this.stravaFeelingModal().items;
-    this.stravaFeelingModal.set({ open: false, items: [] });
-    items.forEach(item => {
-      const runId = (item.run as any).id || item.run._id;
-      if (runId) {
-        this.runService.updateRun(runId, { feeling: item.feeling }).subscribe();
-      }
-    });
-    this.stravaMessage.set(`${items.length} course${items.length > 1 ? 's' : ''} importée${items.length > 1 ? 's' : ''} !`);
-    setTimeout(() => this.stravaMessage.set(null), 4000);
-  }
-
-  skipStravaFeelings() {
-    const count = this.stravaFeelingModal().items.length;
-    this.stravaFeelingModal.set({ open: false, items: [] });
-    this.stravaMessage.set(`${count} course${count > 1 ? 's' : ''} importée${count > 1 ? 's' : ''} !`);
-    setTimeout(() => this.stravaMessage.set(null), 4000);
-  }
-
-  setStravaFeeling(index: number, value: number) {
-    const items = [...this.stravaFeelingModal().items];
-    items[index] = { ...items[index], feeling: value };
-    this.stravaFeelingModal.set({ open: true, items });
-  }
-
-  resyncStrava() {
-    this.stravaSyncing.set(true);
-    this.stravaMessage.set(null);
-    this.stravaService.resyncActivities().subscribe({
-      next: (result) => {
-        this.stravaSyncing.set(false);
-        this.stravaMessage.set(result.message);
-        if (result.updated > 0) {
-          this.loadRuns();
-        }
-        setTimeout(() => this.stravaMessage.set(null), 5000);
-      },
-      error: (err) => {
-        this.stravaSyncing.set(false);
-        this.stravaMessage.set('Erreur lors de la resynchronisation');
-        console.error(err);
       }
     });
   }
@@ -576,22 +455,6 @@ export class ProfileComponent implements OnInit {
     if (feeling >= 5) return '😐';
     if (feeling >= 3) return '😕';
     return '😫';
-  }
-
-  getFeelingLabel(value: number): string {
-    if (value >= 9) return 'Excellent';
-    if (value >= 7) return 'Bien';
-    if (value >= 5) return 'Correct';
-    if (value >= 3) return 'Difficile';
-    return 'Épuisant';
-  }
-
-  getFeelingColor(value: number): string {
-    if (value >= 9) return '#16a34a';
-    if (value >= 7) return '#22c55e';
-    if (value >= 5) return '#eab308';
-    if (value >= 3) return '#f97316';
-    return '#ef4444';
   }
 
   getLevelLabel(level: string | undefined): string {

@@ -1,5 +1,7 @@
+const axios = require('axios');
 const StrengthSession = require('../models/strengthSession.model');
 const PlannedRun = require('../models/plannedRun.model');
+const User = require('../models/user.model');
 const { autoCompletePlannedSessions } = require('../services/planningAutoComplete');
 
 // Créer une séance de muscu
@@ -18,9 +20,12 @@ exports.createSession = async (req, res) => {
       linkedPlannedSession
     });
 
-    // Marquer la séance planifiée comme complétée
+    // Supprimer la séance planifiée : la nouvelle StrengthSession la remplace
     if (linkedPlannedSession) {
-      await PlannedRun.findByIdAndUpdate(linkedPlannedSession, { status: 'completed' });
+      await PlannedRun.findOneAndDelete({
+        _id: linkedPlannedSession,
+        user: req.user._id
+      });
     } else {
       await autoCompletePlannedSessions(req.user._id, session.date, 'strength');
     }
@@ -118,6 +123,102 @@ exports.updateSession = async (req, res) => {
     res.json(session);
   } catch (error) {
     console.error('Error updating strength session:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Analyser une séance de muscu avec l'IA
+exports.analyzeSession = async (req, res) => {
+  try {
+    const session = await StrengthSession.findOne({ _id: req.params.id, user: req.user._id })
+      .populate('exercises.exercise', 'name slug primaryMuscle muscleGroups equipment');
+    if (!session) {
+      return res.status(404).json({ error: 'Séance non trouvée' });
+    }
+
+    const webhookUrl = process.env.N8N_STRENGTH_WEBHOOK_URL || process.env.N8N_WEBHOOK_URL;
+    if (!webhookUrl) {
+      return res.status(400).json({ error: 'Webhook IA non configuré' });
+    }
+
+    const user = await User.findById(req.user._id);
+
+    // 5 dernières séances muscu (hors celle-ci)
+    const recentSessions = await StrengthSession.find({
+      user: req.user._id,
+      _id: { $ne: session._id }
+    })
+      .sort({ date: -1 })
+      .limit(5)
+      .populate('exercises.exercise', 'name primaryMuscle');
+
+    // Dernière analyse muscu
+    const lastAnalyzedSession = await StrengthSession.findOne({
+      user: req.user._id,
+      analysis: { $exists: true, $ne: null },
+      _id: { $ne: session._id }
+    }).sort({ analyzedAt: -1 });
+
+    const enrichedContext = {
+      type: 'strength',
+      sessionId: session._id,
+      currentSession: {
+        date: session.date,
+        sessionType: session.sessionType,
+        duration: session.duration,
+        feeling: session.feeling ?? null,
+        notes: session.notes || null,
+        totalSets: session.totalSets,
+        totalReps: session.totalReps,
+        totalVolume: session.totalVolume,
+        exercises: session.exercises.map(e => ({
+          name: e.exercise?.name,
+          primaryMuscle: e.exercise?.primaryMuscle,
+          equipment: e.exercise?.equipment,
+          sets: e.sets,
+          notes: e.notes
+        }))
+      },
+      athlete: {
+        name: `${user.firstName} ${user.lastName}`,
+        email: user.email,
+        level: user.runningLevel,
+        goal: user.goal,
+        height: user.height || null,
+        weight: user.weight || null,
+        strengthFrequency: user.strengthFrequency || null,
+        strengthGoal: user.strengthGoal || null,
+        strengthType: user.strengthType || null,
+        injuries: user.injuries || null
+      },
+      recentSessions: recentSessions.map(s => ({
+        date: s.date,
+        sessionType: s.sessionType,
+        duration: s.duration,
+        totalSets: s.totalSets,
+        totalVolume: s.totalVolume,
+        exercises: s.exercises.map(e => ({
+          name: e.exercise?.name,
+          sets: e.sets.length
+        }))
+      })),
+      lastAnalysis: lastAnalyzedSession ? {
+        date: lastAnalyzedSession.date,
+        analysis: lastAnalyzedSession.analysis
+      } : null
+    };
+
+    const response = await axios.post(webhookUrl, enrichedContext);
+
+    if (response.data && response.data.analysis) {
+      session.analysis = response.data.analysis;
+      session.analyzedAt = new Date();
+      await session.save();
+    }
+
+    res.json(session);
+  } catch (error) {
+    console.error('Error analyzing strength session:', error.message);
     res.status(500).json({ error: error.message });
   }
 };

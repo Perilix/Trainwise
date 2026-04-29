@@ -161,6 +161,11 @@ const userSchema = new mongoose.Schema({
     default: null
   },
   // Profil muscu
+  strengthLevel: {
+    type: String,
+    enum: ['debutant', 'intermediaire', 'confirme'],
+    default: null
+  },
   strengthFrequency: {
     type: Number,
     min: 0,
@@ -169,7 +174,7 @@ const userSchema = new mongoose.Schema({
   },
   strengthGoal: {
     type: String,
-    enum: ['force', 'hypertrophie', 'endurance_musculaire', 'remise_en_forme', 'fonctionnel'],
+    enum: ['force', 'hypertrophie', 'endurance_musculaire', 'remise_en_forme', 'fonctionnel', 'calisthenie'],
     default: null
   },
   strengthType: {

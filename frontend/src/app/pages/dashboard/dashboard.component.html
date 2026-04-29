@@ -1,5 +1,55 @@
 <app-navbar></app-navbar>
 
+<!-- Modal feeling Strava -->
+@if (stravaFeelingModal().open) {
+  <div class="feeling-overlay">
+    <div class="feeling-popup">
+      <div class="feeling-popup-header">
+        <div>
+          <h2>Courses importées</h2>
+          <p>{{ stravaFeelingModal().items.length }} course{{ stravaFeelingModal().items.length > 1 ? 's' : '' }} depuis Strava — note ton ressenti</p>
+        </div>
+        <button class="feeling-popup-close" (click)="skipStravaFeelings()">×</button>
+      </div>
+
+      <div class="feeling-popup-list">
+        @for (item of stravaFeelingModal().items; track item.run._id; let i = $index) {
+          <div class="feeling-run-card">
+            <div class="feeling-run-info">
+              <span class="feeling-run-date">{{ formatRunFullDate(item.run.date) }}</span>
+              <div class="feeling-run-stats">
+                @if (item.run.distance) { <span>{{ item.run.distance }} km</span> }
+                @if (item.run.duration) { <span>{{ formatDuration(item.run.duration) }}</span> }
+              </div>
+            </div>
+            <div class="feeling-run-slider">
+              <div class="feeling-run-val">
+                <span class="feeling-val-num" [style.color]="getFeelingColor(item.feeling || 5)">{{ item.feeling }}</span>
+                <span class="feeling-val-label" [style.color]="getFeelingColor(item.feeling || 5)">{{ getFeelingLabel(item.feeling || 5) }}</span>
+              </div>
+              <div class="feeling-slider-row">
+                <span class="slider-hint-text">Épuisant</span>
+                <input
+                  type="range"
+                  min="1" max="10" step="1"
+                  [value]="item.feeling"
+                  (input)="setStravaFeeling(i, +$any($event.target).value)"
+                  class="feeling-slider"/>
+                <span class="slider-hint-text">Excellent</span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="feeling-popup-footer">
+        <button class="btn-skip-feeling" (click)="skipStravaFeelings()">Passer</button>
+        <button class="btn-save-feeling" (click)="saveStravaFeelings()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+}
+
 <app-tour-tooltip
   pageId="dashboard"
   faIcon="fa-house"
@@ -247,37 +297,136 @@
             <a routerLink="/sorties" class="see-all">Voir tout →</a>
           </div>
 
-          @if (recentRuns().length === 0) {
+          @if (recentSessions().length === 0) {
             <div class="empty-runs">
-              <p>Aucune course enregistrée.</p>
-              <a routerLink="/planning" class="btn-secondary">Enregistrer une course</a>
-            </div>
-          } @else {
-            <div class="runs-feed">
-              @for (run of recentRuns(); track run._id) {
-                <div class="run-card" (click)="openRunDetail(run);">
-                  <div class="run-date">{{ formatRunDate(run.date) }}</div>
-                  <div class="run-content">
-                    <div class="run-title-row">
-                      <span class="run-title">{{ getRunTitle(run.notes) }}</span>
-                      @if (run.stravaActivityId) {
-                        <span class="strava-badge">Strava</span>
-                      }
+              <p class="empty-runs-title">Tu n'as pas encore de séance enregistrée.</p>
+              <p class="empty-runs-subtitle">Connecte ton Strava pour importer tes séances, ou enregistre ta première séance manuellement.</p>
+
+              <!-- Section Strava -->
+              <div class="strava-section">
+                <div class="section-header">
+                  <h3>
+                    <svg class="strava-icon" viewBox="0 0 24 24" width="24" height="24">
+                      <path fill="#FC4C02" d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+                    </svg>
+                    Strava
+                  </h3>
+                </div>
+
+                @if (stravaMessage()) {
+                  <div class="strava-message" [class.success]="stravaMessage()?.includes('succès') || stravaMessage()?.includes('importée')">
+                    {{ stravaMessage() }}
+                  </div>
+                }
+
+                @if (stravaLoading()) {
+                  <div class="strava-loading">Chargement...</div>
+                } @else if (stravaStatus()?.connected) {
+                  <div class="strava-connected">
+                    <div class="strava-status">
+                      <span class="status-dot connected"></span>
+                      <span>Connecté depuis le {{ stravaStatus()?.connectedAt | date:'dd/MM/yyyy' }}</span>
                     </div>
-                    <div class="run-stats">
-                      @if (run.distance) {
-                        <span class="run-stat">{{ run.distance }} km</span>
-                      }
-                      @if (run.duration) {
-                        <span class="run-stat">{{ formatDuration(run.duration) }}</span>
-                      }
-                      @if (run.averagePace) {
-                        <span class="run-stat">{{ run.averagePace }}/km</span>
+                    <div class="strava-actions">
+                      @if (stravaSyncing()) {
+                        <div class="strava-syncing">
+                          <span class="strava-sync-spinner"></span>
+                          <span>Synchronisation en cours...</span>
+                        </div>
+                      } @else {
+                        <button class="btn-strava-sync" (click)="syncStrava()">Importer mes courses</button>
+                        <button class="btn-strava-resync" (click)="resyncStrava()">Mettre à jour</button>
                       }
                     </div>
                   </div>
+                } @else {
+                  <div class="strava-disconnected">
+                    <p>Connecte ton compte Strava pour importer automatiquement tes courses.</p>
+                    <button class="btn-strava-connect" (click)="connectStrava()">
+                      <svg class="strava-icon-small" viewBox="0 0 24 24" width="18" height="18">
+                        <path fill="white" d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+                      </svg>
+                      Connecter Strava
+                    </button>
+                  </div>
+                }
+              </div>
+
+              <div class="empty-runs-divider"><span>ou</span></div>
+
+              <a routerLink="/planning" class="btn-secondary">Enregistrer ma première séance</a>
+            </div>
+          } @else {
+            <div class="runs-feed">
+              @for (session of recentSessions(); track session._id) {
+                <div class="run-card" (click)="openSession(session);">
+                  <div class="run-date">{{ formatRunDate(session.date) }}</div>
+                  <div class="run-content">
+                    <div class="run-title-row">
+                      <span class="run-title">{{ session.title }}</span>
+                    </div>
+                    <div class="run-stats">
+                      @if (session.distance) {
+                        <span class="run-stat">{{ session.distance }} km</span>
+                      }
+                      @if (session.duration) {
+                        <span class="run-stat">{{ formatDuration(session.duration) }}</span>
+                      }
+                      @if (session.averagePace) {
+                        <span class="run-stat">{{ session.averagePace }}/km</span>
+                      }
+                      @if (session.totalSets) {
+                        <span class="run-stat">{{ session.totalSets }} séries</span>
+                      }
+                      @if (session.totalVolume) {
+                        <span class="run-stat">{{ session.totalVolume }} kg</span>
+                      }
+                    </div>
+                  </div>
+                  @if (session.isStrava) {
+                    <span class="strava-badge run-card-strava-badge">Strava</span>
+                  }
                   <span class="run-arrow">→</span>
                 </div>
+              }
+            </div>
+
+            <!-- Barre Strava compacte (toujours visible quand il y a des courses) -->
+            <div class="strava-bar">
+              @if (stravaMessage()) {
+                <div class="strava-message" [class.success]="stravaMessage()?.includes('succès') || stravaMessage()?.includes('importée')">
+                  {{ stravaMessage() }}
+                </div>
+              }
+
+              @if (stravaStatus()?.connected) {
+                <div class="strava-bar-row">
+                  <div class="strava-bar-status">
+                    <svg class="strava-icon-small" viewBox="0 0 24 24" width="16" height="16">
+                      <path fill="#FC4C02" d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+                    </svg>
+                    <span class="status-dot connected"></span>
+                    <span>Strava connecté</span>
+                  </div>
+                  @if (stravaSyncing()) {
+                    <div class="strava-syncing">
+                      <span class="strava-sync-spinner"></span>
+                      <span>Synchronisation...</span>
+                    </div>
+                  } @else {
+                    <div class="strava-bar-actions">
+                      <button class="btn-strava-sync" (click)="syncStrava()">Importer</button>
+                      <button class="btn-strava-resync" (click)="resyncStrava()">Mettre à jour</button>
+                    </div>
+                  }
+                </div>
+              } @else if (!stravaLoading()) {
+                <button class="btn-strava-connect" (click)="connectStrava()">
+                  <svg class="strava-icon-small" viewBox="0 0 24 24" width="18" height="18">
+                    <path fill="white" d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+                  </svg>
+                  Connecter Strava pour importer mes séances
+                </button>
               }
             </div>
           }
