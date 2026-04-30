@@ -94,7 +94,12 @@ export class StrengthLogComponent implements OnInit {
   ) {}
 
   goBack() {
-    this.location.back();
+    const dateStr = this.sessionDate();
+    if (dateStr) {
+      this.router.navigate(['/planning'], { queryParams: { openDay: dateStr } });
+    } else {
+      this.location.back();
+    }
   }
 
   ngOnInit() {

@@ -14,7 +14,13 @@ export class RunBlocksEditorComponent implements OnInit, OnChanges {
   @Input() blocks: RunBlock[] = [];
   @Input() readonly = false;
   @Input() title = '';
+  // Quand true : les blocs s'affichent en résumé compact, avec un crayon pour éditer chaque bloc
+  @Input() compact = false;
+  // Quand fourni : affiche un diff (valeur barrée si différente entre original et bloc courant)
+  @Input() compareTo: RunBlock[] | null = null;
   @Output() blocksChange = new EventEmitter<RunBlock[]>();
+
+  expandedKeys = signal<Set<number>>(new Set<number>());
 
   internal = signal<RunBlock[]>([]);
 
@@ -156,6 +162,25 @@ export class RunBlocksEditorComponent implements OnInit, OnChanges {
     this.emit();
   }
 
+  kmToMeters(km: number | null | undefined): string {
+    if (km == null || km === 0) return '';
+    return String(Math.round(km * 1000));
+  }
+
+  setDistanceFromMeters(block: RunBlock, value: string) {
+    if (this.readonly) return;
+    const m = parseFloat(value);
+    block.distance = isNaN(m) || m <= 0 ? null : m / 1000;
+    this.onFieldChange();
+  }
+
+  setRecoveryDistanceFromMeters(block: RunBlock, value: string) {
+    if (this.readonly) return;
+    const m = parseFloat(value);
+    block.recoveryDistance = isNaN(m) || m <= 0 ? null : m / 1000;
+    this.onFieldChange();
+  }
+
   paceToMinPerKm(pace: string | null | undefined): number | null {
     if (!pace) return null;
     const m = /^(\d+):(\d{1,2})$/.exec(pace.trim());
@@ -206,5 +231,79 @@ export class RunBlocksEditorComponent implements OnInit, OnChanges {
 
   trackByOrder(_: number, block: RunBlock) {
     return block.order;
+  }
+
+  // ---- Mode compact / pencil edit ----
+  isExpanded(block: RunBlock): boolean {
+    if (!this.compact) return true;
+    if (block.order == null) return false;
+    return this.expandedKeys().has(block.order);
+  }
+
+  toggleExpand(block: RunBlock) {
+    if (this.readonly) return;
+    if (block.order == null) return;
+    const keys = new Set(this.expandedKeys());
+    if (keys.has(block.order)) keys.delete(block.order);
+    else keys.add(block.order);
+    this.expandedKeys.set(keys);
+  }
+
+  collapseAll() {
+    this.expandedKeys.set(new Set());
+  }
+
+  // ---- Résumé compact d'un bloc ----
+  formatPace(pace?: string | null): string {
+    return pace ? `${pace}/km` : '';
+  }
+
+  blockSummary(block: RunBlock): string {
+    const parts: string[] = [];
+    const reps = Math.max(1, block.repetitions || 1);
+    const main = block.mode === 'distance'
+      ? (block.distance ? `${Math.round(block.distance * 1000)}m` : '')
+      : (block.duration ? `${block.duration} min` : '');
+    if (reps > 1 && block.role === 'main') parts.push(`${reps}× ${main}`);
+    else parts.push(main);
+    if (block.pace) parts.push(`@ ${block.pace}`);
+    if (block.role === 'main' && block.recoveryMode) {
+      const rec = block.recoveryMode === 'distance'
+        ? (block.recoveryDistance ? `${Math.round(block.recoveryDistance * 1000)}m` : '')
+        : (block.recoveryDuration ? `${block.recoveryDuration} min` : '');
+      const recPace = block.recoveryPace ? ` @ ${block.recoveryPace}` : '';
+      if (rec) parts.push(`/ ${rec} récup${recPace}`);
+    }
+    return parts.filter(p => !!p).join(' ').trim() || '—';
+  }
+
+  // ---- Diff helpers ----
+  private findOriginal(block: RunBlock): RunBlock | null {
+    if (!this.compareTo || block.order == null) return null;
+    return this.compareTo.find(b => b.order === block.order) || null;
+  }
+
+  hasDiff(block: RunBlock, field: keyof RunBlock): boolean {
+    const orig = this.findOriginal(block);
+    if (!orig) return false;
+    return orig[field] !== block[field] && !(orig[field] == null && block[field] == null);
+  }
+
+  origValue(block: RunBlock, field: keyof RunBlock): any {
+    const orig = this.findOriginal(block);
+    return orig ? orig[field] : null;
+  }
+
+  origSummary(block: RunBlock): string {
+    const orig = this.findOriginal(block);
+    return orig ? this.blockSummary(orig) : '';
+  }
+
+  hasAnyDiff(block: RunBlock): boolean {
+    const orig = this.findOriginal(block);
+    if (!orig) return false;
+    const fields: (keyof RunBlock)[] = ['mode', 'distance', 'duration', 'pace', 'repetitions', 'description',
+      'recoveryMode', 'recoveryDistance', 'recoveryDuration', 'recoveryPace', 'recoveryDescription'];
+    return fields.some(f => this.hasDiff(block, f));
   }
 }

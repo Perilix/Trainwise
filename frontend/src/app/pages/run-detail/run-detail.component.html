@@ -38,10 +38,38 @@
       </div>
     }
 
-    @if (plannedBlocks().length > 0) {
+    @if (!isPlannedMode() && plannedBlocks().length > 0) {
       <section class="coach-plan-section">
-        <h2>Ce que le coach a prévu</h2>
-        <app-run-blocks-editor [blocks]="plannedBlocks()" [readonly]="true"></app-run-blocks-editor>
+        <div class="coach-plan-header">
+          <h2>Plan du coach vs réalisé</h2>
+          @if (!isEditingBlocks()) {
+            <button class="btn-edit-blocks" (click)="startEditBlocks()">Modifier</button>
+          }
+        </div>
+        @if (blocksSavedMessage()) {
+          <div class="blocks-saved-msg">{{ blocksSavedMessage() }}</div>
+        }
+        @if (isEditingBlocks()) {
+          <app-run-blocks-editor
+            [blocks]="myBlocks()"
+            [compact]="true"
+            (blocksChange)="onMyBlocksChange($event)">
+          </app-run-blocks-editor>
+          <div class="my-blocks-actions">
+            <button class="btn-secondary" (click)="cancelEditBlocks()" [disabled]="isSavingBlocks()">Annuler</button>
+            <button class="btn-primary" (click)="saveMyBlocks()" [disabled]="isSavingBlocks()">
+              {{ isSavingBlocks() ? 'Enregistrement...' : 'Enregistrer' }}
+            </button>
+          </div>
+        } @else {
+          <p class="coach-plan-hint">Les blocs modifiés sont indiqués avec la valeur prévue ~~barrée~~ et la valeur réalisée à droite.</p>
+          <app-run-blocks-editor
+            [blocks]="myBlocks()"
+            [compareTo]="plannedBlocks()"
+            [compact]="true"
+            [readonly]="true">
+          </app-run-blocks-editor>
+        }
       </section>
     }
 
@@ -139,11 +167,13 @@
     @if (isPlannedMode()) {
       <!-- Formulaire de complétion -->
       <section class="completion-section">
-        <h2>Ce que tu as fait</h2>
+        <h2>Plan de la séance</h2>
+        <p class="completion-hint">Le plan du coach est pré-rempli. Touche le crayon ✎ pour ajuster un bloc si tu as fait différemment.</p>
 
         <div class="completion-blocks">
           <app-run-blocks-editor
             [blocks]="myBlocks()"
+            [compact]="true"
             (blocksChange)="onMyBlocksChange($event)">
           </app-run-blocks-editor>
         </div>
@@ -198,40 +228,44 @@
       </section>
     } @else {
       <!-- Blocs réalisés (édition / lecture) -->
-      <section class="my-blocks-section">
-        <div class="my-blocks-header">
-          <h2>Détail de la séance</h2>
-          @if (!isEditingBlocks() && myBlocks().length > 0) {
-            <button class="btn-edit-blocks" (click)="startEditBlocks()">Modifier</button>
+      @if (plannedBlocks().length === 0) {
+        <section class="my-blocks-section">
+          <div class="my-blocks-header">
+            <h2>Détail de la séance</h2>
+            @if (!isEditingBlocks() && myBlocks().length > 0) {
+              <button class="btn-edit-blocks" (click)="startEditBlocks()">Modifier</button>
+            }
+          </div>
+
+          @if (blocksSavedMessage()) {
+            <div class="blocks-saved-msg">{{ blocksSavedMessage() }}</div>
           }
-        </div>
 
-        @if (blocksSavedMessage()) {
-          <div class="blocks-saved-msg">{{ blocksSavedMessage() }}</div>
-        }
+          @if (isEditingBlocks()) {
+            <app-run-blocks-editor
+              [blocks]="myBlocks()"
+              [compact]="true"
+              (blocksChange)="onMyBlocksChange($event)">
+            </app-run-blocks-editor>
+            <div class="my-blocks-actions">
+              <button class="btn-secondary" (click)="cancelEditBlocks()" [disabled]="isSavingBlocks()">Annuler</button>
+              <button class="btn-primary" (click)="saveMyBlocks()" [disabled]="isSavingBlocks()">
+                {{ isSavingBlocks() ? 'Enregistrement...' : 'Enregistrer' }}
+              </button>
+            </div>
+          } @else if (myBlocks().length > 0) {
+            <app-run-blocks-editor [blocks]="myBlocks()" [readonly]="true" [compact]="true"></app-run-blocks-editor>
+          } @else {
+            <div class="no-blocks">
+              <p>Aucun détail de blocs pour cette séance.</p>
+              <button class="btn-primary" (click)="startEditBlocks()">Détailler la séance</button>
+            </div>
+          }
+        </section>
+      }
 
-        @if (isEditingBlocks()) {
-          <app-run-blocks-editor
-            [blocks]="myBlocks()"
-            (blocksChange)="onMyBlocksChange($event)">
-          </app-run-blocks-editor>
-          <div class="my-blocks-actions">
-            <button class="btn-secondary" (click)="cancelEditBlocks()" [disabled]="isSavingBlocks()">Annuler</button>
-            <button class="btn-primary" (click)="saveMyBlocks()" [disabled]="isSavingBlocks()">
-              {{ isSavingBlocks() ? 'Enregistrement...' : 'Enregistrer' }}
-            </button>
-          </div>
-        } @else if (myBlocks().length > 0) {
-          <app-run-blocks-editor [blocks]="myBlocks()" [readonly]="true"></app-run-blocks-editor>
-        } @else {
-          <div class="no-blocks">
-            <p>Aucun détail de blocs pour cette séance.</p>
-            <button class="btn-primary" (click)="startEditBlocks()">Détailler la séance</button>
-          </div>
-        }
-      </section>
-
-      <!-- AI Analysis -->
+      <!-- AI Analysis (masquée pour les séances planifiées par le coach) -->
+      @if (!run()?.plannedSnapshot?.coach) {
       <section class="analysis-section">
         <div class="analysis-header">
           <h2>Analyse IA</h2>
@@ -267,6 +301,23 @@
           </div>
         }
       </section>
+      }
     }
   }
 </div>
+
+@if (isSubmittingCompletion()) {
+  <div class="analysis-loader-overlay">
+    <div class="analysis-loader-card">
+      <div class="loader-circle">
+        <svg viewBox="0 0 50 50">
+          <circle class="loader-track" cx="25" cy="25" r="20" fill="none" stroke-width="4"></circle>
+          <circle class="loader-progress" cx="25" cy="25" r="20" fill="none" stroke-width="4" stroke-linecap="round"></circle>
+        </svg>
+        <div class="loader-pulse">✨</div>
+      </div>
+      <h3 class="loader-title">Nous analysons votre séance</h3>
+      <p class="loader-subtitle">Quelques instants, on prépare ton analyse personnalisée...</p>
+    </div>
+  </div>
+}

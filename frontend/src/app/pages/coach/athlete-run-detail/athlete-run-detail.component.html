@@ -106,19 +106,17 @@
       </div>
     </section>
 
-    <!-- Plan coach (snapshot figé) -->
-    @if (run()?.plannedSnapshot?.runBlocks?.length) {
+    <!-- Plan coach vs réalisé -->
+    @if (run()?.runBlocks?.length || run()?.plannedSnapshot?.runBlocks?.length) {
       <section class="coach-plan-section">
-        <h2>Ce que vous aviez prévu</h2>
-        <app-run-blocks-editor [blocks]="run()!.plannedSnapshot.runBlocks" [readonly]="true"></app-run-blocks-editor>
-      </section>
-    }
-
-    <!-- Détail athlète -->
-    @if (run()?.runBlocks?.length) {
-      <section class="athlete-blocks-section">
-        <h2>Ce que l'athlète a fait</h2>
-        <app-run-blocks-editor [blocks]="run()!.runBlocks" [readonly]="true"></app-run-blocks-editor>
+        <h2>Plan vs réalisé</h2>
+        <p class="coach-plan-hint">Les blocs modifiés par l'athlète sont indiqués avec la valeur prévue barrée et la valeur réalisée à droite.</p>
+        <app-run-blocks-editor
+          [blocks]="run()!.runBlocks?.length ? run()!.runBlocks : run()!.plannedSnapshot.runBlocks"
+          [compareTo]="run()!.plannedSnapshot?.runBlocks || null"
+          [compact]="true"
+          [readonly]="true">
+        </app-run-blocks-editor>
       </section>
     }
 
@@ -130,8 +128,8 @@
       </section>
     }
 
-    <!-- AI Analysis (read-only) -->
-    @if (run()?.analysis) {
+    <!-- AI Analysis (masqué pour les séances planifiées par le coach) -->
+    @if (run()?.analysis && !run()?.plannedSnapshot?.coach) {
       <section class="analysis-section">
         <h2>Analyse IA</h2>
         <div class="analysis-content">

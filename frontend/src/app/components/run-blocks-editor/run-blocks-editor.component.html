@@ -59,7 +59,7 @@
 </div>
 
 <ng-template #blockCard let-block let-index="index" let-isMain="isMain">
-  <div class="rb-card" [class.is-main]="isMain">
+  <div class="rb-card" [class.is-main]="isMain" [class.has-diff]="hasAnyDiff(block)">
     <div class="rb-card-head">
       <span class="rb-card-title">
         @if (block.role === 'warmup') { Échauffement }
@@ -67,15 +67,35 @@
         @else { Bloc {{ index + 1 }} }
       </span>
       <div class="rb-card-actions">
-        @if (!readonly && isMain) {
+        @if (!readonly && isMain && isExpanded(block)) {
           <button type="button" class="rb-icon-btn" (click)="moveMainUp(index)" [disabled]="index === 0">↑</button>
           <button type="button" class="rb-icon-btn" (click)="moveMainDown(index)" [disabled]="index === mainBlocks().length - 1">↓</button>
         }
-        @if (!readonly) {
+        @if (compact && !readonly) {
+          <button type="button" class="rb-icon-btn rb-pencil" (click)="toggleExpand(block)" [title]="isExpanded(block) ? 'Replier' : 'Modifier'">
+            @if (isExpanded(block)) { ✓ } @else { ✎ }
+          </button>
+        }
+        @if (!readonly && isExpanded(block)) {
           <button type="button" class="rb-icon-btn rb-delete" (click)="removeBlock(block)">×</button>
         }
       </div>
     </div>
+
+    @if (!isExpanded(block)) {
+      <div class="rb-summary">
+        @if (compareTo && hasAnyDiff(block)) {
+          <span class="rb-summary-old">{{ origSummary(block) }}</span>
+          <span class="rb-summary-arrow">→</span>
+          <span class="rb-summary-new">{{ blockSummary(block) }}</span>
+        } @else {
+          <span>{{ blockSummary(block) }}</span>
+        }
+        @if (block.description) {
+          <span class="rb-summary-desc">— {{ block.description }}</span>
+        }
+      </div>
+    } @else {
 
     <div class="rb-mode-toggle">
       <button type="button" class="rb-toggle-btn" [class.active]="block.mode === 'distance'" [disabled]="readonly" (click)="setMode(block, 'distance')">Distance</button>
@@ -85,8 +105,11 @@
     <div class="rb-fields">
       @if (block.mode === 'distance') {
         <label class="rb-field">
-          <span>Distance (km)</span>
-          <input type="number" step="0.1" min="0" [(ngModel)]="block.distance" [disabled]="readonly" (ngModelChange)="onFieldChange()">
+          <span>Distance (m)</span>
+          <input type="number" step="50" min="0" placeholder="ex: 400"
+            [value]="kmToMeters(block.distance)"
+            (input)="setDistanceFromMeters(block, $any($event.target).value)"
+            [disabled]="readonly">
         </label>
       } @else {
         <label class="rb-field">
@@ -129,8 +152,11 @@
           <div class="rb-fields">
             @if (block.recoveryMode === 'distance') {
               <label class="rb-field">
-                <span>Distance (km)</span>
-                <input type="number" step="0.05" min="0" [(ngModel)]="block.recoveryDistance" [disabled]="readonly" (ngModelChange)="onFieldChange()">
+                <span>Distance (m)</span>
+                <input type="number" step="50" min="0" placeholder="ex: 200"
+                  [value]="kmToMeters(block.recoveryDistance)"
+                  (input)="setRecoveryDistanceFromMeters(block, $any($event.target).value)"
+                  [disabled]="readonly">
               </label>
             } @else {
               <label class="rb-field">
@@ -154,5 +180,6 @@
     <div class="rb-block-distance" *ngIf="blockDistanceLabel(block)">
       {{ blockDistanceLabel(block) }}
     </div>
+    }
   </div>
 </ng-template>

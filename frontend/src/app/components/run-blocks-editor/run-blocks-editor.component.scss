@@ -120,7 +120,42 @@
     color: #ef4444;
     font-size: 1.2rem;
   }
+
+  &.rb-pencil {
+    color: #00a6fb;
+    font-size: 0.95rem;
+  }
 }
+
+.rb-summary {
+  font-size: 0.9rem;
+  color: #334155;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+
+  .rb-summary-old {
+    text-decoration: line-through;
+    color: #94a3b8;
+  }
+
+  .rb-summary-arrow {
+    color: #00a6fb;
+    font-weight: 600;
+  }
+
+  .rb-summary-new {
+    font-weight: 600;
+    color: #051923;
+  }
+
+  .rb-summary-desc {
+    color: #64748b;
+    font-style: italic;
+  }
+}
+
 
 .rb-mode-toggle {
   display: flex;

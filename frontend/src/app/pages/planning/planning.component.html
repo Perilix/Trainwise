@@ -179,29 +179,6 @@
             </select>
           </div>
 
-          @if (newSession.activityType === 'running') {
-            <div class="form-row">
-              <div class="form-group">
-                <label>Distance (km)</label>
-                <input type="number" [(ngModel)]="newSession.targetDistance" placeholder="Ex: 10">
-              </div>
-              <div class="form-group">
-                <label>Durée (min)</label>
-                <input type="number" [(ngModel)]="newSession.targetDuration" placeholder="Ex: 45">
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label>Allure cible</label>
-              <input type="text" [(ngModel)]="newSession.targetPace" placeholder="Ex: 5:30">
-            </div>
-          } @else {
-            <div class="form-group">
-              <label>Durée estimée (min)</label>
-              <input type="number" [(ngModel)]="newSession.targetDuration" placeholder="Ex: 60">
-            </div>
-          }
-
           <div class="form-group">
             <label>Description</label>
             <textarea [(ngModel)]="newSession.description" placeholder="Notes ou détails..."></textarea>
@@ -209,9 +186,7 @@
 
           <div class="form-actions">
             <button class="btn-cancel" (click)="cancelAddSession()">Annuler</button>
-            <button class="btn-save" (click)="saveSession()" [disabled]="isSaving()">
-              @if (isSaving()) { Enregistrement... } @else { Enregistrer }
-            </button>
+            <button class="btn-detail" (click)="goToDetailNewSession()">Détailler</button>
           </div>
         </div>
       </div>
@@ -290,8 +265,8 @@
               </div>
             }
             <div class="event-stats">
-              @if (run.distance) {
-                <span>{{ run.distance }} km</span>
+              @if (getRunDistance(run) > 0) {
+                <span>{{ getRunDistance(run) }} km</span>
               }
               @if (run.duration) {
                 <span>{{ run.duration }} min</span>
@@ -300,6 +275,9 @@
                 <span>{{ run.averagePace }}/km</span>
               }
             </div>
+            @if (run.feeling) {
+              <span class="feeling-badge-corner" [style.background]="getFeelingColor(run.feeling)">{{ run.feeling }}/10</span>
+            }
           </div>
         }
       </div>
@@ -415,6 +393,9 @@
                 <span>{{ session.totalVolume }} kg</span>
               }
             </div>
+            @if (session.feeling) {
+              <span class="feeling-badge-corner" [style.background]="getFeelingColor(session.feeling)">{{ session.feeling }}/10</span>
+            }
           </div>
         }
       </div>

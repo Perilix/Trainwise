@@ -3,6 +3,7 @@ const StrengthSession = require('../models/strengthSession.model');
 const PlannedRun = require('../models/plannedRun.model');
 const User = require('../models/user.model');
 const { autoCompletePlannedSessions } = require('../services/planningAutoComplete');
+const { createNotification } = require('./notification.controller');
 
 // Créer une séance de muscu
 exports.createSession = async (req, res) => {
@@ -20,14 +21,42 @@ exports.createSession = async (req, res) => {
       linkedPlannedSession
     });
 
-    // Supprimer la séance planifiée : la nouvelle StrengthSession la remplace
+    // Capture la séance planifiée (si présente) AVANT suppression pour notifier le coach
+    let coachPlanned = null;
     if (linkedPlannedSession) {
+      const planned = await PlannedRun.findOne({
+        _id: linkedPlannedSession,
+        user: req.user._id
+      }).lean();
+      if (planned?.generatedBy === 'coach' && planned.createdBy) {
+        coachPlanned = planned;
+      }
       await PlannedRun.findOneAndDelete({
         _id: linkedPlannedSession,
         user: req.user._id
       });
     } else {
-      await autoCompletePlannedSessions(req.user._id, session.date, 'strength');
+      const matched = await autoCompletePlannedSessions(req.user._id, session.date, 'strength');
+      coachPlanned = matched.find(p => p.generatedBy === 'coach' && p.createdBy) || null;
+    }
+
+    // Notifier le coach si la séance a été planifiée par lui
+    if (coachPlanned) {
+      try {
+        const athleteUser = await User.findById(req.user._id).select('firstName lastName').lean();
+        const athleteName = athleteUser ? `${athleteUser.firstName} ${athleteUser.lastName}` : 'Votre athlète';
+        await createNotification({
+          recipient: coachPlanned.createdBy,
+          sender: req.user._id,
+          type: 'session',
+          action: 'session_completed',
+          title: 'Séance muscu effectuée',
+          message: `${athleteName} a effectué sa séance de musculation`,
+          actionUrl: `/coach/athletes/${req.user._id}/muscu-detail/${session._id}?type=strength`
+        });
+      } catch (notifErr) {
+        console.error('Erreur notif coach (muscu):', notifErr.message);
+      }
     }
 
     // Populate les exercices pour la réponse

@@ -1,0 +1,164 @@
+<app-navbar></app-navbar>
+
+<div class="container">
+  <div class="page-header">
+    <button class="back-btn" (click)="goBack()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Retour
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="alert error">{{ error() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="alert success">{{ successMessage() }}</div>
+  }
+
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>Chargement...</p>
+    </div>
+  } @else if (hasContext()) {
+    <div class="session-info-card">
+      <div class="session-info-header">
+        <span class="activity-icon">💪</span>
+        <div>
+          <h1>{{ getSessionTypeLabel(currentSessionType()) }}</h1>
+          <p class="session-date">{{ currentDate() ? formatDate(currentDate()!) : '' }}</p>
+        </div>
+        @if (isNew()) {
+          <span class="draft-badge">Brouillon</span>
+        }
+      </div>
+    </div>
+
+    <div class="form-block">
+      <label>Description / consignes</label>
+      @if (canEdit()) {
+        <textarea [ngModel]="description()" (ngModelChange)="description.set($event)" rows="3" placeholder="Notes ou détails..."></textarea>
+      } @else {
+        <p class="description-readonly">{{ description() || 'Aucune consigne' }}</p>
+      }
+    </div>
+
+    <div class="section">
+      <div class="section-title-row">
+        <h2>Exercices planifiés</h2>
+      </div>
+
+      @if (planExercises().length === 0) {
+        <div class="empty-state">
+          @if (canEdit()) {
+            <p>Aucun exercice. Ajoute des exercices pour structurer ta séance.</p>
+            <button class="btn-add" style="margin-top: 1rem;" (click)="openExercisePicker()">+ Ajouter</button>
+          } @else {
+            <p>Aucun exercice planifié.</p>
+          }
+        </div>
+      } @else {
+        <div class="exercises-list">
+          @for (ex of planExercises(); track $index) {
+            <div class="exercise-card">
+              <div class="exercise-card-header">
+                <span class="exercise-name">{{ getExerciseName(ex) }}</span>
+                @if (canEdit()) {
+                  <button class="remove-btn" (click)="removePlanExercise($index)">×</button>
+                }
+              </div>
+              @if (canEdit()) {
+                <div class="exercise-fields">
+                  <div class="field">
+                    <label>Séries</label>
+                    <input type="number" [value]="ex.targetSets" (input)="updatePlanExercise($index, 'targetSets', +$any($event.target).value)" min="1">
+                  </div>
+                  <div class="field">
+                    <label>Reps</label>
+                    <input type="text" [value]="ex.targetReps" (input)="updatePlanExercise($index, 'targetReps', $any($event.target).value)" placeholder="8-12">
+                  </div>
+                  <div class="field">
+                    <label>Charge (kg)</label>
+                    <input type="number" [value]="ex.targetWeight ?? ''" (input)="updatePlanExercise($index, 'targetWeight', +$any($event.target).value || undefined)" min="0">
+                  </div>
+                  <div class="field">
+                    <label>Repos</label>
+                    <input type="text" [value]="ex.targetRest ?? ''" (input)="updatePlanExercise($index, 'targetRest', $any($event.target).value || undefined)" placeholder="ex: 60s, 1min30">
+                  </div>
+                </div>
+                <input type="text" class="notes-input" [value]="ex.notes ?? ''" (input)="updatePlanExercise($index, 'notes', $any($event.target).value)" placeholder="Notes pour cet exercice...">
+              } @else {
+                <div class="exercise-summary">
+                  <span>{{ ex.targetSets }} × {{ ex.targetReps }}</span>
+                  @if (ex.targetWeight) { <span>@ {{ ex.targetWeight }} kg</span> }
+                  @if (ex.targetRest) { <span>repos {{ ex.targetRest }}</span> }
+                </div>
+                @if (ex.notes) { <p class="ex-notes">{{ ex.notes }}</p> }
+              }
+            </div>
+          }
+        </div>
+      }
+      @if (planExercises().length !== 0 && canEdit()) {
+        <button class="btn-add" (click)="openExercisePicker()">+ Ajouter</button>
+      }
+
+      @if (canEdit()) {
+        @if (isNew()) {
+          <button class="btn-create" [disabled]="isSaving()" (click)="saveExercises()">
+            {{ isSaving() ? 'Création...' : 'Créer la séance' }}
+          </button>
+        } @else {
+          <button class="btn-save" [disabled]="isSaving()" (click)="saveExercises()">
+            {{ isSaving() ? 'Sauvegarde...' : 'Sauvegarder' }}
+          </button>
+        }
+        @if (!isNew()) {
+          <button class="btn-delete" [disabled]="isDeleting()" (click)="deleteSession()">
+            {{ isDeleting() ? 'Suppression...' : 'Supprimer la séance' }}
+          </button>
+        }
+      }
+    </div>
+  }
+</div>
+
+<!-- Exercise picker modal -->
+@if (showExercisePicker()) {
+  <div class="modal-overlay" (click)="closeExercisePicker()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Choisir un exercice</h2>
+        <button class="close-btn" (click)="closeExercisePicker()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="picker-filters">
+          <input type="text" class="search-input" placeholder="Rechercher..." [value]="exerciseSearch()" (input)="exerciseSearch.set($any($event.target).value)">
+          <select [value]="exerciseFilterMuscle()" (change)="exerciseFilterMuscle.set($any($event.target).value)">
+            <option value="">Tous les muscles</option>
+            @for (mg of muscleGroups; track mg) {
+              <option [value]="mg">{{ muscleGroupLabels[mg] }}</option>
+            }
+          </select>
+        </div>
+        @if (isLoadingExercises()) {
+          <p class="loading-text">Chargement...</p>
+        } @else {
+          <div class="exercise-picker-list">
+            @for (ex of filteredExercises(); track ex._id) {
+              <button type="button" class="exercise-pick-item" (click)="addPlanExercise(ex)">
+                <span class="ex-name">{{ ex.name }}</span>
+                <span class="ex-muscle">{{ muscleGroupLabels[ex.primaryMuscle] }}</span>
+              </button>
+            }
+            @if (filteredExercises().length === 0) {
+              <p class="empty-text">Aucun exercice trouvé</p>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}

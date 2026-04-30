@@ -226,6 +226,134 @@ exports.createRun = async (req, res) => {
       }
     }
 
+    // Nouveau webhook : analyse qualitative basée sur les blocs (si présents)
+    const hasBlocks = (run.runBlocks?.length || run.plannedSnapshot?.runBlocks?.length);
+    if (process.env.N8N_BLOCKS_WEBHOOK_URL && hasBlocks) {
+      try {
+        const user = await User.findById(req.user._id);
+
+        const recentRuns = await Run.find({
+          user: req.user._id,
+          _id: { $ne: run._id }
+        }).sort({ date: -1 }).limit(5);
+
+        const lastAnalyzedRun = await Run.findOne({
+          user: req.user._id,
+          analysis: { $exists: true, $ne: null },
+          _id: { $ne: run._id }
+        }).sort({ analyzedAt: -1 });
+
+        const twoWeeksAgo = new Date();
+        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+        const twoWeeksRuns = await Run.find({
+          user: req.user._id,
+          date: { $gte: twoWeeksAgo },
+          _id: { $ne: run._id }
+        }).sort({ date: -1 });
+        const stats = calculateStats(twoWeeksRuns);
+
+        const blocksContext = {
+          runId: run._id,
+          currentRun: {
+            date: run.date,
+            distance: run.distance,
+            duration: run.duration,
+            averagePace: run.averagePace,
+            averageHeartRate: run.averageHeartRate,
+            maxHeartRate: run.maxHeartRate,
+            averageCadence: run.averageCadence,
+            elevationGain: run.elevationGain,
+            sessionType: run.sessionType,
+            feeling: run.feeling,
+            notes: run.notes,
+            // Blocs réalisés par l'athlète
+            runBlocks: (run.runBlocks || []).map(b => ({
+              role: b.role,
+              mode: b.mode,
+              distance: b.distance,
+              duration: b.duration,
+              pace: b.pace,
+              repetitions: b.repetitions,
+              description: b.description,
+              recoveryMode: b.recoveryMode,
+              recoveryDistance: b.recoveryDistance,
+              recoveryDuration: b.recoveryDuration,
+              recoveryPace: b.recoveryPace,
+              recoveryDescription: b.recoveryDescription,
+              notes: b.notes,
+              order: b.order
+            }))
+          },
+          // Plan figé du coach (s'il existe)
+          coachPlan: run.plannedSnapshot && run.plannedSnapshot.coach ? {
+            sessionType: run.plannedSnapshot.sessionType,
+            targetDistance: run.plannedSnapshot.targetDistance,
+            targetDuration: run.plannedSnapshot.targetDuration,
+            targetPace: run.plannedSnapshot.targetPace,
+            description: run.plannedSnapshot.description,
+            runBlocks: (run.plannedSnapshot.runBlocks || []).map(b => ({
+              role: b.role,
+              mode: b.mode,
+              distance: b.distance,
+              duration: b.duration,
+              pace: b.pace,
+              repetitions: b.repetitions,
+              description: b.description,
+              recoveryMode: b.recoveryMode,
+              recoveryDistance: b.recoveryDistance,
+              recoveryDuration: b.recoveryDuration,
+              recoveryPace: b.recoveryPace,
+              recoveryDescription: b.recoveryDescription,
+              order: b.order
+            })),
+            coachId: run.plannedSnapshot.coach
+          } : null,
+          runner: {
+            name: `${user.firstName} ${user.lastName}`,
+            email: user.email,
+            level: user.runningLevel,
+            goal: user.goal,
+            goalDetails: user.goalDetails,
+            weeklyFrequency: user.weeklyFrequency,
+            injuries: user.injuries,
+            height: user.height || null,
+            weight: user.weight || null,
+            vma: user.vma || null,
+            fcmax: user.fcmax || null,
+            strengthFrequency: user.strengthFrequency,
+            strengthGoal: user.strengthGoal,
+            strengthType: user.strengthType
+          },
+          recentRuns: formatRunsForContext(recentRuns),
+          lastAnalysis: lastAnalyzedRun ? {
+            date: lastAnalyzedRun.date,
+            analysis: lastAnalyzedRun.analysis,
+            runSummary: {
+              distance: lastAnalyzedRun.distance,
+              duration: lastAnalyzedRun.duration,
+              sessionType: lastAnalyzedRun.sessionType
+            }
+          } : null,
+          twoWeeksStats: stats,
+          context: {
+            dayOfWeek: new Date(run.date).toLocaleDateString('fr-FR', { weekday: 'long' }),
+            isWeekend: [0, 6].includes(new Date(run.date).getDay()),
+            hasCoachPlan: !!(run.plannedSnapshot && run.plannedSnapshot.coach)
+          }
+        };
+
+        const blocksResponse = await axios.post(process.env.N8N_BLOCKS_WEBHOOK_URL, blocksContext);
+
+        if (blocksResponse.data && blocksResponse.data.analysis) {
+          run.analysis = blocksResponse.data.analysis;
+          run.analyzedAt = new Date();
+          await run.save();
+        }
+      } catch (blocksWebhookError) {
+        console.error('N8N blocks webhook error:', blocksWebhookError.message);
+      }
+    }
+
     res.status(201).json(run);
   } catch (error) {
     res.status(400).json({ error: error.message });

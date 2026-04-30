@@ -229,8 +229,8 @@
           <span class="chevron">›</span>
         </div>
         <div class="session-stats">
-          @if (run.distance) {
-            <span>{{ run.distance }} km</span>
+          @if (getRunDistance(run) > 0) {
+            <span>{{ getRunDistance(run) }} km</span>
           }
           @if (run.duration) {
             <span>{{ run.duration }} min</span>
@@ -238,10 +238,10 @@
           @if (run.averagePace) {
             <span>{{ run.averagePace }}/km</span>
           }
-          @if (run.feeling) {
-            <span class="feeling-badge">{{ run.feeling }}/10</span>
-          }
         </div>
+        @if (run.feeling) {
+          <span class="feeling-badge-corner" [style.background]="getFeelingColor(run.feeling)">{{ run.feeling }}/10</span>
+        }
       </div>
     }
 
@@ -264,10 +264,10 @@
           @if (strength.totalVolume) {
             <span>{{ strength.totalVolume }} kg</span>
           }
-          @if (strength.feeling) {
-            <span class="feeling-badge">{{ strength.feeling }}/10</span>
-          }
         </div>
+        @if (strength.feeling) {
+          <span class="feeling-badge-corner" [style.background]="getFeelingColor(strength.feeling)">{{ strength.feeling }}/10</span>
+        }
       </div>
     }
 

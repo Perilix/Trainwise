@@ -167,6 +167,16 @@ export class AthleteRunDetailComponent implements OnInit, AfterViewInit, OnDestr
   }
 
   goBack() {
-    this.router.navigate(['/coach/athletes', this.athleteId, 'planning']);
+    const date = this.run()?.date;
+    if (date) {
+      const d = new Date(date);
+      const dayKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      this.router.navigate(
+        ['/coach/athletes', this.athleteId, 'planning'],
+        { queryParams: { openDay: dayKey } }
+      );
+    } else {
+      this.router.navigate(['/coach/athletes', this.athleteId, 'planning']);
+    }
   }
 }

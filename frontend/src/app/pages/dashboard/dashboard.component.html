@@ -525,3 +525,19 @@
     </div>
   }
 </div>
+
+@if (stravaSyncing()) {
+  <div class="strava-loader-overlay">
+    <div class="strava-loader-card">
+      <div class="strava-loader-circle">
+        <svg viewBox="0 0 50 50">
+          <circle class="strava-loader-track" cx="25" cy="25" r="20" fill="none" stroke-width="4"></circle>
+          <circle class="strava-loader-progress" cx="25" cy="25" r="20" fill="none" stroke-width="4" stroke-linecap="round"></circle>
+        </svg>
+        <div class="strava-loader-icon">🏃</div>
+      </div>
+      <h3 class="strava-loader-title">Import en cours</h3>
+      <p class="strava-loader-subtitle">On récupère tes activités Strava et on les analyse...</p>
+    </div>
+  </div>
+}

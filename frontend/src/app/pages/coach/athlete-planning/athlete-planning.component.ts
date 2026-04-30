@@ -598,6 +598,14 @@ export class AthletePlanningComponent implements OnInit {
     return `${firstName[0]}${lastName[0]}`.toUpperCase();
   }
 
+  getFeelingColor(value: number): string {
+    if (value >= 9) return '#16a34a';
+    if (value >= 7) return '#22c55e';
+    if (value >= 5) return '#eab308';
+    if (value >= 3) return '#f97316';
+    return '#ef4444';
+  }
+
   isTrainingDay(date: Date): boolean {
     const dayNames = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
     const days = this.athlete()?.availableDays;
@@ -741,6 +749,14 @@ export class AthletePlanningComponent implements OnInit {
 
   getPlannedExerciseCount(planned: PlannedSession): number {
     return planned.strengthPlan?.exercises?.length ?? 0;
+  }
+
+  getRunDistance(run: Run): number {
+    if (run.distance && run.distance > 0) return Math.round(run.distance * 100) / 100;
+    const blocks = (run as any).runBlocks as RunBlock[] | undefined;
+    if (!blocks?.length) return 0;
+    const total = blocks.reduce((acc, b) => acc + this.blockDistanceKm(b), 0);
+    return Math.round(total * 100) / 100;
   }
 
   getPlannedTotalDistance(planned: PlannedSession): number {

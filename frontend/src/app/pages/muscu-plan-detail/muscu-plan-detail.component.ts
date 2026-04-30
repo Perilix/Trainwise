@@ -2,14 +2,13 @@ import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CoachService } from '../../../services/coach.service';
-import { ExerciseService } from '../../../services/exercise.service';
-import { PlannedSession } from '../../../services/planning.service';
+import { PlanningService, PlannedSession } from '../../services/planning.service';
+import { ExerciseService } from '../../services/exercise.service';
 import {
   Exercise, StrengthPlanExercise, MuscleGroup, StrengthSessionType,
   MUSCLE_GROUP_LABELS, SESSION_TYPE_LABELS as STRENGTH_SESSION_LABELS
-} from '../../../interfaces/strength.interfaces';
-import { NavbarComponent } from '../../../components/navbar/navbar.component';
+} from '../../interfaces/strength.interfaces';
+import { NavbarComponent } from '../../components/navbar/navbar.component';
 
 interface DraftMuscuSession {
   date: string;
@@ -17,26 +16,23 @@ interface DraftMuscuSession {
   description: string;
 }
 
-const MUSCU_DRAFT_KEY = 'muscuDetail.draftSession';
+const MUSCU_DRAFT_KEY = 'muscuPlanDetail.draftSession';
 
 @Component({
-  selector: 'app-muscu-detail',
+  selector: 'app-muscu-plan-detail',
   standalone: true,
   imports: [CommonModule, FormsModule, NavbarComponent],
-  templateUrl: './muscu-detail.component.html',
-  styleUrl: './muscu-detail.component.scss'
+  templateUrl: './muscu-plan-detail.component.html',
+  styleUrl: './muscu-plan-detail.component.scss'
 })
-export class MuscuDetailComponent implements OnInit {
-  athleteId = '';
+export class MuscuPlanDetailComponent implements OnInit {
   sessionId = '';
 
   session = signal<PlannedSession | null>(null);
   draft = signal<DraftMuscuSession | null>(null);
-  completedSession = signal<any | null>(null);
-  isStandalone = signal(false);
   isLoading = signal(true);
-  isLoadingCompleted = signal(false);
   isSaving = signal(false);
+  isDeleting = signal(false);
   error = signal<string | null>(null);
   successMessage = signal<string | null>(null);
   draftSessionType = signal<StrengthSessionType>('full_body');
@@ -89,23 +85,19 @@ export class MuscuDetailComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private coachService: CoachService,
+    private planningService: PlanningService,
     private exerciseService: ExerciseService
   ) {}
 
   ngOnInit() {
-    this.athleteId = this.route.snapshot.paramMap.get('athleteId') || '';
     this.sessionId = this.route.snapshot.paramMap.get('sessionId') || '';
-    const type = this.route.snapshot.queryParamMap.get('type');
-    if (!this.athleteId || !this.sessionId) {
+    if (!this.sessionId) {
       this.error.set('Paramètres manquants');
       this.isLoading.set(false);
       return;
     }
     if (this.sessionId === 'new') {
       this.initDraft();
-    } else if (type === 'strength') {
-      this.loadStandaloneStrengthSession();
     } else {
       this.loadSession();
     }
@@ -123,7 +115,7 @@ export class MuscuDetailComponent implements OnInit {
       try { sessionStorage.setItem(MUSCU_DRAFT_KEY, JSON.stringify(draft)); } catch {}
     }
     if (!draft) {
-      this.router.navigate(['/coach/athletes', this.athleteId, 'planning']);
+      this.router.navigate(['/planning']);
       return;
     }
     this.draft.set(draft);
@@ -136,52 +128,17 @@ export class MuscuDetailComponent implements OnInit {
 
   loadSession() {
     this.isLoading.set(true);
-    this.coachService.getAthletePlannedSession(this.athleteId, this.sessionId).subscribe({
+    this.planningService.getPlannedSessionById(this.sessionId).subscribe({
       next: (session) => {
         this.session.set(session);
         this.description.set(session.description || '');
         const exercises = session.strengthPlan?.exercises ?? [];
         this.planExercises.set(exercises as StrengthPlanExercise[]);
         this.isLoading.set(false);
-        if (session.status === 'completed') {
-          this.loadCompletedSession();
-        }
-      },
-      error: (err) => {
-        if (err?.status === 404) {
-          this.loadStandaloneStrengthSession();
-        } else {
-          this.error.set('Impossible de charger la séance');
-          this.isLoading.set(false);
-        }
-      }
-    });
-  }
-
-  loadStandaloneStrengthSession() {
-    this.isLoading.set(true);
-    this.coachService.getAthleteStrengthSessionById(this.athleteId, this.sessionId).subscribe({
-      next: (session) => {
-        this.completedSession.set(session);
-        this.isStandalone.set(true);
-        this.isLoading.set(false);
       },
       error: () => {
         this.error.set('Impossible de charger la séance');
         this.isLoading.set(false);
-      }
-    });
-  }
-
-  loadCompletedSession() {
-    this.isLoadingCompleted.set(true);
-    this.coachService.getAthleteStrengthSession(this.athleteId, this.sessionId).subscribe({
-      next: (session) => {
-        this.completedSession.set(session);
-        this.isLoadingCompleted.set(false);
-      },
-      error: () => {
-        this.isLoadingCompleted.set(false);
       }
     });
   }
@@ -216,11 +173,11 @@ export class MuscuDetailComponent implements OnInit {
       estimatedDuration: session.targetDuration
     };
     const updates: any = { strengthPlan, description: this.description() || undefined };
-    this.coachService.updateAthleteSession(this.athleteId, session._id, updates).subscribe({
+    this.planningService.updatePlannedSession(session._id, updates).subscribe({
       next: (updated) => {
         this.isSaving.set(false);
         this.session.set(updated);
-        this.successMessage.set('Exercices sauvegardés');
+        this.successMessage.set('Séance enregistrée');
         window.scrollTo({ top: 0, behavior: 'smooth' });
         setTimeout(() => this.successMessage.set(null), 3000);
       },
@@ -241,22 +198,37 @@ export class MuscuDetailComponent implements OnInit {
       sessionType: this.draftSessionType(),
       description: this.description() || undefined,
       strengthPlan: this.buildStrengthPlan(),
+      generatedBy: 'manual',
       status: 'planned'
     };
-    this.coachService.createAthleteSession(this.athleteId, payload).subscribe({
+    this.planningService.createPlannedSession(payload).subscribe({
       next: () => {
         this.isSaving.set(false);
         try { sessionStorage.removeItem(MUSCU_DRAFT_KEY); } catch {}
         const d = new Date(draft.date);
         const dayKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        this.router.navigate(
-          ['/coach/athletes', this.athleteId, 'planning'],
-          { queryParams: { openDay: dayKey } }
-        );
+        this.router.navigate(['/planning'], { queryParams: { openDay: dayKey } });
       },
       error: () => {
         this.isSaving.set(false);
         this.error.set('Erreur lors de la création');
+      }
+    });
+  }
+
+  deleteSession() {
+    const session = this.session();
+    if (!session?._id) return;
+    if (!confirm('Supprimer cette séance ?')) return;
+    this.isDeleting.set(true);
+    this.planningService.deletePlannedSession(session._id).subscribe({
+      next: () => {
+        this.isDeleting.set(false);
+        this.goBack();
+      },
+      error: () => {
+        this.isDeleting.set(false);
+        this.error.set('Erreur lors de la suppression');
       }
     });
   }
@@ -326,12 +298,9 @@ export class MuscuDetailComponent implements OnInit {
     const date = session ? new Date(session.date) : this.draftDate();
     if (date) {
       const dayKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-      this.router.navigate(
-        ['/coach/athletes', this.athleteId, 'planning'],
-        { queryParams: { openDay: dayKey } }
-      );
+      this.router.navigate(['/planning'], { queryParams: { openDay: dayKey } });
     } else {
-      this.router.navigate(['/coach/athletes', this.athleteId, 'planning']);
+      this.router.navigate(['/planning']);
     }
   }
 }

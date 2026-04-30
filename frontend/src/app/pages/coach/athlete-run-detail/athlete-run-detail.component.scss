@@ -292,9 +292,8 @@
   }
 }
 
-// Coach plan & athlete blocks sections
-.coach-plan-section,
-.athlete-blocks-section {
+// Coach plan vs athlete diff
+.coach-plan-section {
   background: #F6F4F0;
   border-radius: 16px;
   padding: 1.5rem;
@@ -303,12 +302,19 @@
   margin-bottom: 1.5rem;
 
   h2 {
-    margin: 0 0 1rem;
+    margin: 0 0 0.5rem;
     font-size: 1rem;
     color: #003554;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+  }
+
+  .coach-plan-hint {
+    font-size: 0.82rem;
+    color: #64748b;
+    margin: 0 0 1rem;
+    font-style: italic;
   }
 }
 

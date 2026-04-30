@@ -31,6 +31,16 @@ export const routes: Routes = [
     canActivate: [authGuard, athleteGuard]
   },
   {
+    path: 'planning/running-detail/:sessionId',
+    loadComponent: () => import('./pages/running-plan-detail/running-plan-detail.component').then(m => m.RunningPlanDetailComponent),
+    canActivate: [authGuard, athleteGuard]
+  },
+  {
+    path: 'planning/muscu-detail/:sessionId',
+    loadComponent: () => import('./pages/muscu-plan-detail/muscu-plan-detail.component').then(m => m.MuscuPlanDetailComponent),
+    canActivate: [authGuard, athleteGuard]
+  },
+  {
     path: 'strength/log',
     loadComponent: () => import('./pages/strength-log/strength-log.component').then(m => m.StrengthLogComponent),
     canActivate: [authGuard, athleteGuard]

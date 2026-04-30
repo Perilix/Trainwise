@@ -452,6 +452,13 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   goBack() {
-    this.location.back();
+    const date = this.run()?.date || this.plannedSession()?.date;
+    if (date) {
+      const d = new Date(date);
+      const dayKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      this.router.navigate(['/planning'], { queryParams: { openDay: dayKey } });
+    } else {
+      this.location.back();
+    }
   }
 }
