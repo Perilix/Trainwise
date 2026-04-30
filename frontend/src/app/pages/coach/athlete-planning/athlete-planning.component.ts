@@ -11,7 +11,7 @@ import {
   StrengthSessionType,
   SESSION_TYPE_LABELS as STRENGTH_SESSION_LABELS
 } from '../../../interfaces/strength.interfaces';
-import { Run } from '../../../services/run.service';
+import { Run, RunBlock } from '../../../services/run.service';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
 
 interface CalendarDay {
@@ -141,10 +141,21 @@ export class AthletePlanningComponent implements OnInit {
 
   ngOnInit() {
     this.athleteId = this.route.snapshot.paramMap.get('id') || '';
+    const openDay = this.route.snapshot.queryParamMap.get('openDay');
+    if (openDay) {
+      const [y, m] = openDay.split('-').map(Number);
+      if (y && m) {
+        this.currentMonth.set(m);
+        this.currentYear.set(y);
+      }
+      this.pendingOpenDay = openDay;
+    }
     if (this.athleteId) {
       this.loadData();
     }
   }
+
+  private pendingOpenDay: string | null = null;
 
   loadData() {
     this.isLoading.set(true);
@@ -160,6 +171,12 @@ export class AthletePlanningComponent implements OnInit {
         this.buildCalendar(calendar);
       }
       this.isLoading.set(false);
+      if (this.pendingOpenDay) {
+        const target = this.pendingOpenDay;
+        this.pendingOpenDay = null;
+        const day = this.calendarDays().find(d => this.dateKey(d.date) === target);
+        if (day) this.selectDay(day);
+      }
     }).catch(err => {
       this.error.set('Erreur lors du chargement');
       this.isLoading.set(false);
@@ -689,6 +706,68 @@ export class AthletePlanningComponent implements OnInit {
 
   goToRunningDetail(plannedRun: PlannedSession) {
     this.router.navigate(['/coach/athletes', this.athleteId, 'running-detail', plannedRun._id]);
+  }
+
+  private paceToMinPerKm(pace?: string | null): number | null {
+    if (!pace) return null;
+    const m = /^(\d+):(\d{1,2})$/.exec(pace.trim());
+    if (!m) return null;
+    const min = parseInt(m[1], 10);
+    const sec = parseInt(m[2], 10);
+    if (isNaN(min) || isNaN(sec) || sec >= 60) return null;
+    return min + sec / 60;
+  }
+
+  private blockDistanceKm(block: RunBlock): number {
+    const reps = Math.max(1, block.repetitions || 1);
+    let main = 0;
+    if (block.mode === 'distance') {
+      main = (block.distance || 0) * reps;
+    } else if (block.mode === 'duration' && block.pace) {
+      const pace = this.paceToMinPerKm(block.pace);
+      if (pace && pace > 0) main = ((block.duration || 0) / pace) * reps;
+    }
+    let recovery = 0;
+    if (block.role === 'main' && block.recoveryMode) {
+      if (block.recoveryMode === 'distance') {
+        recovery = (block.recoveryDistance || 0) * reps;
+      } else if (block.recoveryMode === 'duration' && block.recoveryPace) {
+        const rp = this.paceToMinPerKm(block.recoveryPace);
+        if (rp && rp > 0) recovery = ((block.recoveryDuration || 0) / rp) * reps;
+      }
+    }
+    return main + recovery;
+  }
+
+  getPlannedExerciseCount(planned: PlannedSession): number {
+    return planned.strengthPlan?.exercises?.length ?? 0;
+  }
+
+  getPlannedTotalDistance(planned: PlannedSession): number {
+    const blocks = planned.runBlocks || [];
+    if (blocks.length === 0) return 0;
+    const total = blocks.reduce((acc, b) => acc + this.blockDistanceKm(b as RunBlock), 0);
+    return Math.round(total * 100) / 100;
+  }
+
+  goToDetailNewSession() {
+    const day = this.selectedDay();
+    if (!day) return;
+    const isRunning = this.newSession.activityType === 'running';
+    const detailRoute = isRunning ? 'running-detail' : 'muscu-detail';
+    this.router.navigate(
+      ['/coach/athletes', this.athleteId, detailRoute, 'new'],
+      {
+        state: {
+          draftSession: {
+            date: day.date.toISOString(),
+            sessionType: this.newSession.sessionType,
+            description: this.newSession.description,
+            activityType: this.newSession.activityType
+          }
+        }
+      }
+    );
   }
 
   goToStrengthSessionDetail(strength: StrengthSession) {

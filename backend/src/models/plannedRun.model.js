@@ -65,7 +65,7 @@ const plannedRunSchema = new mongoose.Schema({
       targetSets: Number,
       targetReps: String, // "8-12" format
       targetWeight: Number, // kg (optionnel)
-      targetRest: Number,  // secondes de repos entre séries
+      targetRest: String,  // texte libre (ex: "60s", "1min30", "2 min")
       notes: String
     }],
     estimatedDuration: Number // minutes

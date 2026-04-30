@@ -292,7 +292,7 @@ export class StrengthLogComponent implements OnInit {
     const pe = plan.exercises[index];
     let hint = `${pe.targetSets} × ${pe.targetReps}`;
     if (pe.targetWeight) hint += ` @ ${pe.targetWeight}kg`;
-    if (pe.targetRest) hint += ` — repos ${pe.targetRest}s`;
+    if (pe.targetRest) hint += ` — repos ${pe.targetRest}`;
     return hint;
   }
 

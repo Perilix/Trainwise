@@ -106,7 +106,7 @@ export interface StrengthPlanExercise {
   targetSets: number;
   targetReps: string; // "8-12" format
   targetWeight?: number;
-  targetRest?: number; // secondes
+  targetRest?: string;
   notes?: string;
 }
 

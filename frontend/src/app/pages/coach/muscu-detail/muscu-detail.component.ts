@@ -6,10 +6,18 @@ import { CoachService } from '../../../services/coach.service';
 import { ExerciseService } from '../../../services/exercise.service';
 import { PlannedSession } from '../../../services/planning.service';
 import {
-  Exercise, StrengthPlanExercise, MuscleGroup,
+  Exercise, StrengthPlanExercise, MuscleGroup, StrengthSessionType,
   MUSCLE_GROUP_LABELS, SESSION_TYPE_LABELS as STRENGTH_SESSION_LABELS
 } from '../../../interfaces/strength.interfaces';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
+
+interface DraftMuscuSession {
+  date: string;
+  sessionType: StrengthSessionType;
+  description: string;
+}
+
+const MUSCU_DRAFT_KEY = 'muscuDetail.draftSession';
 
 @Component({
   selector: 'app-muscu-detail',
@@ -23,6 +31,7 @@ export class MuscuDetailComponent implements OnInit {
   sessionId = '';
 
   session = signal<PlannedSession | null>(null);
+  draft = signal<DraftMuscuSession | null>(null);
   completedSession = signal<any | null>(null);
   isStandalone = signal(false);
   isLoading = signal(true);
@@ -30,6 +39,31 @@ export class MuscuDetailComponent implements OnInit {
   isSaving = signal(false);
   error = signal<string | null>(null);
   successMessage = signal<string | null>(null);
+  draftSessionType = signal<StrengthSessionType>('full_body');
+  draftDate = signal<Date | null>(null);
+  description = signal('');
+
+  isNew = computed(() => this.sessionId === 'new');
+
+  currentSessionType = computed<string>(() => {
+    if (this.isNew()) return this.draftSessionType();
+    return this.session()?.sessionType || '';
+  });
+
+  currentDate = computed<Date | null>(() => {
+    if (this.isNew()) return this.draftDate();
+    const s = this.session();
+    return s ? new Date(s.date) : null;
+  });
+
+  canEdit = computed<boolean>(() => {
+    if (this.isNew()) return true;
+    return this.session()?.status === 'planned';
+  });
+
+  hasContext = computed<boolean>(() => {
+    return !!this.session() || (this.isNew() && !!this.draft());
+  });
 
   planExercises = signal<StrengthPlanExercise[]>([]);
   showExercisePicker = signal(false);
@@ -63,13 +97,41 @@ export class MuscuDetailComponent implements OnInit {
     this.athleteId = this.route.snapshot.paramMap.get('athleteId') || '';
     this.sessionId = this.route.snapshot.paramMap.get('sessionId') || '';
     const type = this.route.snapshot.queryParamMap.get('type');
-    if (this.athleteId && this.sessionId) {
-      if (type === 'strength') {
-        this.loadStandaloneStrengthSession();
-      } else {
-        this.loadSession();
-      }
+    if (!this.athleteId || !this.sessionId) {
+      this.error.set('Paramètres manquants');
+      this.isLoading.set(false);
+      return;
     }
+    if (this.sessionId === 'new') {
+      this.initDraft();
+    } else if (type === 'strength') {
+      this.loadStandaloneStrengthSession();
+    } else {
+      this.loadSession();
+    }
+  }
+
+  private initDraft() {
+    const navState = (this.router.getCurrentNavigation()?.extras?.state || history.state) as any;
+    let draft: DraftMuscuSession | null = navState?.draftSession || null;
+    if (!draft) {
+      try {
+        const stored = sessionStorage.getItem(MUSCU_DRAFT_KEY);
+        if (stored) draft = JSON.parse(stored);
+      } catch {}
+    } else {
+      try { sessionStorage.setItem(MUSCU_DRAFT_KEY, JSON.stringify(draft)); } catch {}
+    }
+    if (!draft) {
+      this.router.navigate(['/coach/athletes', this.athleteId, 'planning']);
+      return;
+    }
+    this.draft.set(draft);
+    this.draftDate.set(new Date(draft.date));
+    this.draftSessionType.set(draft.sessionType);
+    this.description.set(draft.description || '');
+    this.planExercises.set([]);
+    this.isLoading.set(false);
   }
 
   loadSession() {
@@ -77,6 +139,7 @@ export class MuscuDetailComponent implements OnInit {
     this.coachService.getAthletePlannedSession(this.athleteId, this.sessionId).subscribe({
       next: (session) => {
         this.session.set(session);
+        this.description.set(session.description || '');
         const exercises = session.strengthPlan?.exercises ?? [];
         this.planExercises.set(exercises as StrengthPlanExercise[]);
         this.isLoading.set(false);
@@ -124,11 +187,15 @@ export class MuscuDetailComponent implements OnInit {
   }
 
   saveExercises() {
-    const session = this.session();
-    if (!session?._id) return;
+    if (this.isNew()) {
+      this.createSession();
+    } else {
+      this.updateSession();
+    }
+  }
 
-    this.isSaving.set(true);
-    const strengthPlan = {
+  private buildStrengthPlan() {
+    return {
       exercises: this.planExercises().map(e => ({
         exercise: typeof e.exercise === 'string' ? e.exercise : (e.exercise as Exercise)._id,
         targetSets: e.targetSets,
@@ -136,19 +203,64 @@ export class MuscuDetailComponent implements OnInit {
         targetWeight: e.targetWeight,
         targetRest: e.targetRest,
         notes: e.notes
-      })),
+      }))
+    };
+  }
+
+  private updateSession() {
+    const session = this.session();
+    if (!session?._id) return;
+    this.isSaving.set(true);
+    const strengthPlan = {
+      ...this.buildStrengthPlan(),
       estimatedDuration: session.targetDuration
     };
-
-    this.coachService.updateAthleteSession(this.athleteId, session._id, { strengthPlan } as any).subscribe({
-      next: () => {
+    const updates: any = { strengthPlan, description: this.description() || undefined };
+    this.coachService.updateAthleteSession(this.athleteId, session._id, updates).subscribe({
+      next: (updated) => {
         this.isSaving.set(false);
+        this.session.set(updated);
         this.successMessage.set('Exercices sauvegardés');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         setTimeout(() => this.successMessage.set(null), 3000);
       },
       error: () => {
         this.error.set('Erreur lors de la sauvegarde');
         this.isSaving.set(false);
+      }
+    });
+  }
+
+  private createSession() {
+    const draft = this.draft();
+    if (!draft) return;
+    this.isSaving.set(true);
+    const payload: any = {
+      date: new Date(draft.date),
+      activityType: 'strength',
+      sessionType: this.draftSessionType(),
+      description: this.description() || undefined,
+      strengthPlan: this.buildStrengthPlan(),
+      status: 'planned'
+    };
+    this.coachService.createAthleteSession(this.athleteId, payload).subscribe({
+      next: (created) => {
+        this.isSaving.set(false);
+        try { sessionStorage.removeItem(MUSCU_DRAFT_KEY); } catch {}
+        this.draft.set(null);
+        this.sessionId = created._id || '';
+        this.router.navigate(
+          ['/coach/athletes', this.athleteId, 'muscu-detail', created._id],
+          { replaceUrl: true }
+        );
+        this.session.set(created);
+        this.successMessage.set('Séance créée avec succès');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(() => this.successMessage.set(null), 4000);
+      },
+      error: () => {
+        this.isSaving.set(false);
+        this.error.set('Erreur lors de la création');
       }
     });
   }
@@ -177,8 +289,7 @@ export class MuscuDetailComponent implements OnInit {
     const entry: StrengthPlanExercise = {
       exercise,
       targetSets: 3,
-      targetReps: '10',
-      targetRest: 60
+      targetReps: '10'
     };
     this.planExercises.update(list => [...list, entry]);
     this.closeExercisePicker();
@@ -215,6 +326,16 @@ export class MuscuDetailComponent implements OnInit {
   }
 
   goBack() {
-    this.router.navigate(['/coach/athletes', this.athleteId, 'planning']);
+    const session = this.session();
+    const date = session ? new Date(session.date) : this.draftDate();
+    if (date) {
+      const dayKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      this.router.navigate(
+        ['/coach/athletes', this.athleteId, 'planning'],
+        { queryParams: { openDay: dayKey } }
+      );
+    } else {
+      this.router.navigate(['/coach/athletes', this.athleteId, 'planning']);
+    }
   }
 }

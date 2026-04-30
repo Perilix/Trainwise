@@ -22,13 +22,16 @@
       <div class="loading-spinner"></div>
       <p>Chargement...</p>
     </div>
-  } @else if (session()) {
+  } @else if (session() || draft()) {
     <div class="session-summary">
       <div class="summary-icon">🏃</div>
       <div class="summary-info">
-        <h1>{{ getSessionTypeLabel(session()!.sessionType) }}</h1>
-        <p class="summary-date">{{ formatDate(session()!.date) }}</p>
+        <h1>{{ getSessionTypeLabel(sessionType()) }}</h1>
+        <p class="summary-date">{{ formatDate(date()) }}</p>
       </div>
+      @if (isNew()) {
+        <span class="draft-badge">Brouillon</span>
+      }
     </div>
 
     <div class="form-block">
@@ -43,9 +46,15 @@
     </app-run-blocks-editor>
 
     <div class="form-actions">
-      <button type="button" class="btn-primary" [disabled]="isSaving()" (click)="saveSession()">
-        {{ isSaving() ? 'Enregistrement...' : 'Enregistrer la séance' }}
-      </button>
+      @if (isNew()) {
+        <button type="button" class="btn-create" [disabled]="isSaving()" (click)="saveSession()">
+          {{ isSaving() ? 'Création...' : 'Créer la séance' }}
+        </button>
+      } @else {
+        <button type="button" class="btn-primary" [disabled]="isSaving()" (click)="saveSession()">
+          {{ isSaving() ? 'Enregistrement...' : 'Enregistrer la séance' }}
+        </button>
+      }
     </div>
   }
 </div>

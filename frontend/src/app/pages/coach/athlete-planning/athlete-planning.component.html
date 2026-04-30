@@ -151,29 +151,6 @@
               </select>
             </div>
 
-            @if (newSession.activityType === 'running') {
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Distance (km)</label>
-                  <input type="number" [(ngModel)]="newSession.targetDistance" name="targetDistance" step="0.1" min="0">
-                </div>
-                <div class="form-group">
-                  <label>Durée (min)</label>
-                  <input type="number" [(ngModel)]="newSession.targetDuration" name="targetDuration" min="0">
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label>Allure cible</label>
-                <input type="text" [(ngModel)]="newSession.targetPace" name="targetPace" placeholder="ex: 5:30">
-              </div>
-            } @else {
-              <div class="form-group">
-                <label>Durée estimée (min)</label>
-                <input type="number" [(ngModel)]="newSession.targetDuration" name="targetDuration" min="0">
-              </div>
-            }
-
             <div class="form-group">
               <label>Description / Consignes</label>
               <textarea [(ngModel)]="newSession.description" name="description" rows="3" placeholder="Instructions pour l'athlète..."></textarea>
@@ -181,8 +158,8 @@
 
             <div class="form-actions">
               <button type="button" class="btn-secondary" (click)="cancelAddSession()">Annuler</button>
-              <button type="submit" class="btn-primary" [disabled]="isSaving()">
-                {{ isSaving() ? 'Enregistrement...' : 'Enregistrer' }}
+              <button type="button" class="btn-detail" (click)="goToDetailNewSession()">
+                Détailler
               </button>
             </div>
           </form>
@@ -310,7 +287,17 @@
           }
         </div>
         <div class="session-stats">
-          @if (planned.targetDistance) {
+          @if (planned.activityType === 'running') {
+            @if (getPlannedTotalDistance(planned) > 0) {
+              <span>{{ getPlannedTotalDistance(planned) }} km</span>
+            } @else if (planned.targetDistance) {
+              <span>{{ planned.targetDistance }} km</span>
+            }
+          } @else if (planned.activityType === 'strength') {
+            @if (getPlannedExerciseCount(planned) > 0) {
+              <span>{{ getPlannedExerciseCount(planned) }} exercice{{ getPlannedExerciseCount(planned) > 1 ? 's' : '' }}</span>
+            }
+          } @else if (planned.targetDistance) {
             <span>{{ planned.targetDistance }} km</span>
           }
           @if (planned.targetDuration) {
@@ -325,11 +312,11 @@
         }
         @if (planned.activityType === 'strength') {
           <button type="button" class="btn-secondary-sm" (click)="goToMuscuDetail(planned)">
-            {{ planned.status === 'completed' ? 'Voir les détails' : 'Détailler les exercices' }}
+            {{ planned.status === 'completed' ? 'Voir les détails' : 'Modifier la séance' }}
           </button>
         } @else {
           <button type="button" class="btn-secondary-sm" (click)="goToRunningDetail(planned)">
-            Détailler la séance
+            Modifier la séance
           </button>
         }
         <div class="session-card-actions">
@@ -338,7 +325,7 @@
               Dupliquer
             </button>
           }
-          @if (planned.status === 'planned' && isCoachSession(planned)) {
+          @if (planned.status === 'planned') {
             <button type="button" class="btn-delete" (click)="deleteSession(planned)">
               Supprimer
             </button>

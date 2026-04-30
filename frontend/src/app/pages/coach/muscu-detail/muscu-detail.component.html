@@ -22,42 +22,51 @@
       <div class="loading-spinner"></div>
       <p>Chargement...</p>
     </div>
-  } @else if (session()) {
+  } @else if (hasContext()) {
     <!-- Session info card -->
     <div class="session-info-card">
       <div class="session-info-header">
         <span class="activity-icon">💪</span>
         <div>
-          <h1>{{ getSessionTypeLabel(session()!.sessionType) }}</h1>
-          <p class="session-date">{{ formatDate(session()!.date) }}</p>
+          <h1>{{ getSessionTypeLabel(currentSessionType()) }}</h1>
+          <p class="session-date">{{ currentDate() ? formatDate(currentDate()!) : '' }}</p>
         </div>
-        <span class="status-badge" [class]="session()!.status">
-          {{ session()!.status === 'planned' ? 'Planifiée' : session()!.status === 'completed' ? 'Réalisée' : 'Sautée' }}
-        </span>
+        @if (isNew()) {
+          <span class="draft-badge">Brouillon</span>
+        } @else if (session()) {
+          <span class="status-badge" [class]="session()!.status">
+            {{ session()!.status === 'planned' ? 'Planifiée' : session()!.status === 'completed' ? 'Réalisée' : 'Sautée' }}
+          </span>
+        }
       </div>
       <div class="session-meta">
-        @if (session()!.targetDuration) {
+        @if (!isNew() && session()?.targetDuration) {
           <span>{{ session()!.targetDuration }} min estimées</span>
-        }
-        @if (session()!.description) {
-          <p class="description">{{ session()!.description }}</p>
         }
       </div>
     </div>
 
-    <!-- Plan exercises section (editable when planned) -->
+    <!-- Description / consignes globales -->
+    <div class="form-block">
+      <label>Consignes globales</label>
+      @if (canEdit()) {
+        <textarea [ngModel]="description()" (ngModelChange)="description.set($event)" rows="3" placeholder="Instructions pour l'athlète..."></textarea>
+      } @else {
+        <p class="description-readonly">{{ description() || 'Aucune consigne' }}</p>
+      }
+    </div>
+
+    <!-- Plan exercises section -->
     <div class="section">
       <div class="section-title-row">
         <h2>Exercices planifiés</h2>
-        @if (session()!.status === 'planned') {
-          <button class="btn-add" (click)="openExercisePicker()">+ Ajouter</button>
-        }
       </div>
 
       @if (planExercises().length === 0) {
         <div class="empty-state">
-          @if (session()!.status === 'planned') {
+          @if (canEdit()) {
             <p>Aucun exercice planifié. Ajoutez des exercices pour guider l'athlète.</p>
+            <button class="btn-add" style="margin-top: 1rem;" (click)="openExercisePicker()">+ Ajouter</button>
           } @else {
             <p>Aucun exercice n'avait été planifié.</p>
           }
@@ -68,11 +77,11 @@
             <div class="exercise-card">
               <div class="exercise-card-header">
                 <span class="exercise-name">{{ getExerciseName(ex) }}</span>
-                @if (session()!.status === 'planned') {
+                @if (canEdit()) {
                   <button class="remove-btn" (click)="removePlanExercise($index)">×</button>
                 }
               </div>
-              @if (session()!.status === 'planned') {
+              @if (canEdit()) {
                 <div class="exercise-fields">
                   <div class="field">
                     <label>Séries</label>
@@ -87,8 +96,8 @@
                     <input type="number" [value]="ex.targetWeight ?? ''" (input)="updatePlanExercise($index, 'targetWeight', +$any($event.target).value || undefined)" min="0">
                   </div>
                   <div class="field">
-                    <label>Repos (s)</label>
-                    <input type="number" [value]="ex.targetRest ?? ''" (input)="updatePlanExercise($index, 'targetRest', +$any($event.target).value || undefined)" min="0">
+                    <label>Repos</label>
+                    <input type="text" [value]="ex.targetRest ?? ''" (input)="updatePlanExercise($index, 'targetRest', $any($event.target).value || undefined)" placeholder="ex: 60s, 1min30">
                   </div>
                 </div>
                 <input type="text" class="notes-input" [value]="ex.notes ?? ''" (input)="updatePlanExercise($index, 'notes', $any($event.target).value)" placeholder="Notes pour cet exercice...">
@@ -96,7 +105,7 @@
                 <div class="exercise-summary">
                   <span>{{ ex.targetSets }} × {{ ex.targetReps }}</span>
                   @if (ex.targetWeight) { <span>@ {{ ex.targetWeight }} kg</span> }
-                  @if (ex.targetRest) { <span>repos {{ ex.targetRest }}s</span> }
+                  @if (ex.targetRest) { <span>repos {{ ex.targetRest }}</span> }
                 </div>
                 @if (ex.notes) { <p class="ex-notes">{{ ex.notes }}</p> }
               }
@@ -104,16 +113,25 @@
           }
         </div>
       }
+      @if (planExercises().length !== 0 && canEdit()) {
+        <button class="btn-add" (click)="openExercisePicker()">+ Ajouter</button>
+      }
 
-      @if (session()!.status === 'planned') {
-        <button class="btn-save" [disabled]="isSaving()" (click)="saveExercises()">
-          {{ isSaving() ? 'Sauvegarde...' : 'Sauvegarder les exercices' }}
-        </button>
+      @if (canEdit()) {
+        @if (isNew()) {
+          <button class="btn-create" [disabled]="isSaving()" (click)="saveExercises()">
+            {{ isSaving() ? 'Création...' : 'Créer la séance' }}
+          </button>
+        } @else {
+          <button class="btn-save" [disabled]="isSaving()" (click)="saveExercises()">
+            {{ isSaving() ? 'Sauvegarde...' : 'Sauvegarder les exercices' }}
+          </button>
+        }
       }
     </div>
 
     <!-- Completed session section -->
-    @if (session()!.status === 'completed') {
+    @if (!isNew() && session()?.status === 'completed') {
       <div class="section">
         <h2>Séance réalisée par l'athlète</h2>
 

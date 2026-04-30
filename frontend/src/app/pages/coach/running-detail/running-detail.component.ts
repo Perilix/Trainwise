@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -7,6 +7,14 @@ import { PlannedSession, RUNNING_SESSION_LABELS, RunningSessionType } from '../.
 import { RunBlock } from '../../../services/run.service';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
 import { RunBlocksEditorComponent } from '../../../components/run-blocks-editor/run-blocks-editor.component';
+
+interface DraftSession {
+  date: string;
+  sessionType: RunningSessionType;
+  description: string;
+}
+
+const DRAFT_STORAGE_KEY = 'runningDetail.draftSession';
 
 @Component({
   selector: 'app-running-detail',
@@ -20,12 +28,17 @@ export class RunningDetailComponent implements OnInit {
   sessionId = '';
 
   session = signal<PlannedSession | null>(null);
+  draft = signal<DraftSession | null>(null);
   blocks = signal<RunBlock[]>([]);
   description = signal('');
+  sessionType = signal<RunningSessionType>('endurance');
+  date = signal<Date | null>(null);
   isLoading = signal(true);
   isSaving = signal(false);
   error = signal<string | null>(null);
   successMessage = signal<string | null>(null);
+
+  isNew = computed(() => this.sessionId === 'new');
 
   constructor(
     private route: ActivatedRoute,
@@ -36,9 +49,46 @@ export class RunningDetailComponent implements OnInit {
   ngOnInit() {
     this.athleteId = this.route.snapshot.paramMap.get('athleteId') || '';
     this.sessionId = this.route.snapshot.paramMap.get('sessionId') || '';
-    if (this.athleteId && this.sessionId) {
+
+    if (!this.athleteId || !this.sessionId) {
+      this.error.set('Paramètres manquants');
+      this.isLoading.set(false);
+      return;
+    }
+
+    if (this.sessionId === 'new') {
+      this.initDraft();
+    } else {
       this.loadSession();
     }
+  }
+
+  private initDraft() {
+    // Récupère le draft depuis le router state ou sessionStorage (pour survivre au refresh)
+    const navState = (this.router.getCurrentNavigation()?.extras?.state || history.state) as any;
+    let draft: DraftSession | null = navState?.draftSession || null;
+
+    if (!draft) {
+      try {
+        const stored = sessionStorage.getItem(DRAFT_STORAGE_KEY);
+        if (stored) draft = JSON.parse(stored);
+      } catch {}
+    } else {
+      try { sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft)); } catch {}
+    }
+
+    if (!draft) {
+      // Pas de draft → retour au planning
+      this.router.navigate(['/coach/athletes', this.athleteId, 'planning']);
+      return;
+    }
+
+    this.draft.set(draft);
+    this.date.set(new Date(draft.date));
+    this.sessionType.set(draft.sessionType);
+    this.description.set(draft.description || '');
+    this.blocks.set([]);
+    this.isLoading.set(false);
   }
 
   loadSession() {
@@ -48,6 +98,8 @@ export class RunningDetailComponent implements OnInit {
         this.session.set(session);
         this.blocks.set([...(session.runBlocks || [])]);
         this.description.set(session.description || '');
+        this.sessionType.set(session.sessionType as RunningSessionType);
+        this.date.set(new Date(session.date));
         this.isLoading.set(false);
       },
       error: () => {
@@ -62,6 +114,49 @@ export class RunningDetailComponent implements OnInit {
   }
 
   saveSession() {
+    if (this.isNew()) {
+      this.createSession();
+    } else {
+      this.updateSession();
+    }
+  }
+
+  private createSession() {
+    const draft = this.draft();
+    if (!draft) return;
+    this.isSaving.set(true);
+    const payload: Partial<PlannedSession> = {
+      date: new Date(draft.date),
+      activityType: 'running',
+      sessionType: this.sessionType(),
+      description: this.description() || undefined,
+      runBlocks: this.blocks(),
+      status: 'planned'
+    };
+    this.coachService.createAthleteSession(this.athleteId, payload).subscribe({
+      next: (created) => {
+        this.isSaving.set(false);
+        try { sessionStorage.removeItem(DRAFT_STORAGE_KEY); } catch {}
+        this.draft.set(null);
+        this.sessionId = created._id || '';
+        // Remplace l'URL par celle de la séance créée (plus de "new") sans recharger le composant
+        this.router.navigate(
+          ['/coach/athletes', this.athleteId, 'running-detail', created._id],
+          { replaceUrl: true }
+        );
+        this.session.set(created);
+        this.successMessage.set('Séance créée avec succès');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(() => this.successMessage.set(null), 4000);
+      },
+      error: () => {
+        this.isSaving.set(false);
+        this.error.set('Erreur lors de la création');
+      }
+    });
+  }
+
+  private updateSession() {
     const session = this.session();
     if (!session?._id) return;
     this.isSaving.set(true);
@@ -70,9 +165,11 @@ export class RunningDetailComponent implements OnInit {
       description: this.description() || undefined
     };
     this.coachService.updateAthleteSession(this.athleteId, session._id, updates).subscribe({
-      next: () => {
+      next: (updated) => {
         this.isSaving.set(false);
+        this.session.set(updated);
         this.successMessage.set('Séance enregistrée');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         setTimeout(() => this.successMessage.set(null), 3000);
       },
       error: () => {
@@ -86,7 +183,8 @@ export class RunningDetailComponent implements OnInit {
     return RUNNING_SESSION_LABELS[type as RunningSessionType] || type;
   }
 
-  formatDate(date: Date): string {
+  formatDate(date: Date | null): string {
+    if (!date) return '';
     return new Date(date).toLocaleDateString('fr-FR', {
       weekday: 'long',
       day: 'numeric',
@@ -96,6 +194,15 @@ export class RunningDetailComponent implements OnInit {
   }
 
   goBack() {
-    this.router.navigate(['/coach/athletes', this.athleteId, 'planning']);
+    const d = this.date();
+    if (d) {
+      const dayKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      this.router.navigate(
+        ['/coach/athletes', this.athleteId, 'planning'],
+        { queryParams: { openDay: dayKey } }
+      );
+    } else {
+      this.router.navigate(['/coach/athletes', this.athleteId, 'planning']);
+    }
   }
 }

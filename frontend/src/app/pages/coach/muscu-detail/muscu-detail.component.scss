@@ -175,12 +175,13 @@
 }
 
 .btn-add {
-  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-  color: white;
-  border: none;
+  color: #999;
+  border: 1px solid #8b5cf6;
   border-radius: 8px;
+  background: transparent;
   padding: 0.4rem 0.9rem;
   font-size: 0.82rem;
+  width: 100%;
   font-weight: 600;
   cursor: pointer;
   font-family: 'Poppins', sans-serif;
@@ -274,6 +275,7 @@
         font-size: 0.85rem;
         font-family: 'Poppins', sans-serif;
         background: white;
+        width: 100%;
 
         &:focus {
           outline: none;
@@ -330,6 +332,78 @@
 
   &:hover:not(:disabled) { opacity: 0.9; }
   &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
+.btn-create {
+  width: 100%;
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 1rem;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  margin-top: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(139, 92, 246, 0.4);
+  }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
+.draft-badge {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+}
+
+.form-block {
+  background: white;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+
+  label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #4a5568;
+  }
+
+  textarea {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.6rem;
+    font-family: inherit;
+    font-size: 0.9rem;
+    resize: vertical;
+
+    &:focus {
+      outline: none;
+      border-color: #8b5cf6;
+    }
+  }
+
+  .description-readonly {
+    margin: 0;
+    color: #444;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
 }
 
 // Completed session
