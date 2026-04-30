@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -64,13 +64,55 @@ export class PlanningComponent implements OnInit {
   isAddingSession = signal(false);
   isSaving = signal(false);
 
-  // Planned sessions à afficher : on cache celles déjà liées à un Run/StrengthSession réel
-  // pour éviter les doublons avec la section "Courses effectuées" / "Séances muscu effectuées"
-  visiblePlannedRuns = computed(() => {
+  @ViewChild('dayPagesViewport') dayPagesViewport?: ElementRef<HTMLElement>;
+  isDragging = signal(false);
+  isResetting = signal(false);
+  dragOffsetPx = signal(0);
+  showSwipeHints = signal(false);
+  private touchStartX = 0;
+  private touchStartY = 0;
+  private touchTrackingActive = false;
+  private dragLocked = false;
+  private wasSwipe = false;
+  private viewportWidth = 0;
+  private commitTimeout?: any;
+  private swipeHintsTimeout?: any;
+
+  previousDay = computed<CalendarDay | null>(() => {
     const day = this.selectedDay();
-    if (!day) return [];
-    return day.plannedRuns.filter(p => !(p as any).linkedRun && !(p as any).linkedStrengthSession);
+    if (!day) return null;
+    const target = new Date(day.date);
+    target.setDate(target.getDate() - 1);
+    return this.findOrPlaceholder(target);
   });
+
+  nextDay = computed<CalendarDay | null>(() => {
+    const day = this.selectedDay();
+    if (!day) return null;
+    const target = new Date(day.date);
+    target.setDate(target.getDate() + 1);
+    return this.findOrPlaceholder(target);
+  });
+
+  private findOrPlaceholder(date: Date): CalendarDay {
+    const key = this.dateKey(date);
+    const found = this.calendarDays().find(d => this.dateKey(d.date) === key);
+    if (found) return found;
+    const todayKey = this.dateKey(new Date());
+    return {
+      date,
+      dayOfMonth: date.getDate(),
+      isCurrentMonth: false,
+      isToday: key === todayKey,
+      runs: [],
+      plannedRuns: [],
+      strengthSessions: []
+    };
+  }
+
+  getVisiblePlannedRuns(day: CalendarDay): PlannedSession[] {
+    return day.plannedRuns.filter(p => !(p as any).linkedRun && !(p as any).linkedStrengthSession);
+  }
 
   // Preview modal
   showPreview = signal(false);
@@ -293,12 +335,155 @@ export class PlanningComponent implements OnInit {
 
   selectDay(day: CalendarDay) {
     this.isAddingSession.set(false);
+    const wasOpen = !!this.selectedDay();
     this.selectedDay.set(day);
+    // Affiche les chevrons hint uniquement à l'ouverture initiale,
+    // pas quand on navigue de jour en jour via swipe.
+    if (!wasOpen) {
+      this.flashSwipeHints();
+    }
   }
 
   closeDetail() {
     this.isAddingSession.set(false);
     this.selectedDay.set(null);
+    if (this.swipeHintsTimeout) {
+      clearTimeout(this.swipeHintsTimeout);
+      this.swipeHintsTimeout = undefined;
+    }
+    this.showSwipeHints.set(false);
+  }
+
+  private flashSwipeHints() {
+    if (this.swipeHintsTimeout) clearTimeout(this.swipeHintsTimeout);
+    this.showSwipeHints.set(true);
+    this.swipeHintsTimeout = setTimeout(() => this.showSwipeHints.set(false), 2500);
+  }
+
+  onOverlayTouchStart(event: TouchEvent) {
+    if (this.isAddingSession()) return;
+    if (this.commitTimeout) {
+      clearTimeout(this.commitTimeout);
+      this.commitTimeout = undefined;
+    }
+    const touch = event.touches[0];
+    this.touchStartX = touch.clientX;
+    this.touchStartY = touch.clientY;
+    this.touchTrackingActive = true;
+    this.dragLocked = false;
+    this.wasSwipe = false;
+    this.viewportWidth = this.dayPagesViewport?.nativeElement.offsetWidth ?? window.innerWidth;
+  }
+
+  onOverlayTouchMove(event: TouchEvent) {
+    if (!this.touchTrackingActive) return;
+
+    const touch = event.touches[0];
+    const deltaX = touch.clientX - this.touchStartX;
+    const deltaY = touch.clientY - this.touchStartY;
+
+    if (!this.dragLocked) {
+      if (Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10) return;
+      if (Math.abs(deltaY) > Math.abs(deltaX)) {
+        this.touchTrackingActive = false;
+        return;
+      }
+      this.dragLocked = true;
+      this.isDragging.set(true);
+    }
+
+    this.dragOffsetPx.set(deltaX);
+  }
+
+  onOverlayTouchEnd(event: TouchEvent) {
+    if (!this.touchTrackingActive) return;
+    this.touchTrackingActive = false;
+
+    if (!this.dragLocked) return;
+
+    this.wasSwipe = true;
+
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - this.touchStartX;
+    const threshold = Math.max(60, this.viewportWidth * 0.25);
+
+    if (Math.abs(deltaX) > threshold) {
+      this.commitSlide(deltaX < 0 ? 1 : -1);
+    } else {
+      this.snapBack();
+    }
+  }
+
+  onOverlayClick() {
+    if (this.wasSwipe) {
+      this.wasSwipe = false;
+      return;
+    }
+    this.closeDetail();
+  }
+
+  private snapBack() {
+    this.isDragging.set(false);
+    this.dragOffsetPx.set(0);
+  }
+
+  private commitSlide(direction: 1 | -1) {
+    this.isDragging.set(false);
+    this.dragOffsetPx.set(direction === 1 ? -this.viewportWidth : this.viewportWidth);
+
+    this.commitTimeout = setTimeout(() => {
+      this.isResetting.set(true);
+      this.dragOffsetPx.set(0);
+      this.navigateDay(direction);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => this.isResetting.set(false));
+      });
+    }, 280);
+  }
+
+  private navigateDay(offset: number) {
+    const current = this.selectedDay();
+    if (!current) return;
+
+    const newDate = new Date(current.date);
+    newDate.setDate(newDate.getDate() + offset);
+    newDate.setHours(12, 0, 0, 0);
+    const newDateStr = this.dateKey(newDate);
+
+    const found = this.calendarDays().find(d => this.dateKey(d.date) === newDateStr);
+    if (found) {
+      this.selectedDay.set(found);
+      return;
+    }
+
+    this.selectedDay.set(this.findOrPlaceholder(newDate));
+
+    const targetMonth = newDate.getMonth() + 1;
+    const targetYear = newDate.getFullYear();
+    this.currentMonth.set(targetMonth);
+    this.currentYear.set(targetYear);
+
+    this.isLoading.set(true);
+    this.error.set(null);
+    this.planningService.getCalendarData(targetMonth, targetYear).subscribe({
+      next: (data) => {
+        this.buildCalendar(data);
+        this.isLoading.set(false);
+        const refreshed = this.calendarDays().find(d => this.dateKey(d.date) === newDateStr);
+        if (refreshed) {
+          this.selectedDay.set(refreshed);
+        }
+      },
+      error: (err) => {
+        this.error.set('Erreur lors du chargement du calendrier');
+        this.isLoading.set(false);
+        console.error(err);
+      }
+    });
+  }
+
+  private dateKey(date: Date): string {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   }
 
   getNextMonday(): string {

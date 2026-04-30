@@ -127,22 +127,22 @@
 
 <!-- Modal détail du jour -->
 @if (selectedDay()) {
-  <div class="modal-overlay" (click)="closeDetail()">
-    <div class="modal" (click)="$event.stopPropagation()">
-    <div class="modal-handle"></div>
-    <div class="modal-header">
-      <h2>{{ formatDate(selectedDay()!.date) }}</h2>
-      <div class="modal-header-actions">
-        @if (!isAddingSession()) {
-          <button class="btn-add" (click)="openAddSession()" title="Ajouter une séance">+</button>
-        }
-        <button class="modal-close" (click)="closeDetail()">×</button>
+  <div class="modal-overlay"
+    (click)="onOverlayClick()"
+    (touchstart)="onOverlayTouchStart($event)"
+    (touchmove)="onOverlayTouchMove($event)"
+    (touchend)="onOverlayTouchEnd($event)"
+    (touchcancel)="onOverlayTouchEnd($event)">
+    @if (isAddingSession()) {
+    <div class="modal day-detail-modal" (click)="$event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <h2>{{ formatDate(selectedDay()!.date) }}</h2>
+        <div class="modal-header-actions">
+          <button class="modal-close" (click)="closeDetail()">×</button>
+        </div>
       </div>
-    </div>
-
-    <div class="modal-body">
-      <!-- Formulaire d'ajout de séance -->
-      @if (isAddingSession()) {
+      <div class="modal-body">
         <div class="add-session-form">
           <h3>Nouvelle séance</h3>
 
@@ -214,171 +214,213 @@
             </button>
           </div>
         </div>
-      }
-
-      @if (!isAddingSession() && selectedDay()!.runs.length === 0 && selectedDay()!.plannedRuns.length === 0) {
-        <div class="empty-day">
-          <p>Aucune activité ce jour</p>
-          <button class="btn-add-empty" (click)="openAddSession()">+ Ajouter une séance</button>
+      </div>
+    </div>
+    } @else {
+    <div class="day-modals-viewport" #dayPagesViewport>
+      <div class="swipe-hint left" [class.show]="showSwipeHints()" aria-hidden="true">
+        <i class="fa-solid fa-chevron-left"></i>
+      </div>
+      <div class="swipe-hint right" [class.show]="showSwipeHints()" aria-hidden="true">
+        <i class="fa-solid fa-chevron-right"></i>
+      </div>
+      <div class="day-modals"
+        [class.no-transition]="isDragging() || isResetting()"
+        [style.transform]="'translate3d(calc(-33.3333% + ' + dragOffsetPx() + 'px), 0, 0)'">
+        <div class="day-modal-slot">
+          <ng-container *ngTemplateOutlet="dayModalTpl; context: { $implicit: previousDay() }"></ng-container>
         </div>
-      }
-
-      <!-- Courses effectuées -->
-      @if (!isAddingSession() && selectedDay()!.runs.length > 0) {
-        <div class="section">
-          <h3>Courses effectuées</h3>
-          @for (run of selectedDay()!.runs; track run._id) {
-            <div class="event-card completed clickable" [class.strava]="!!run.stravaActivityId" (click)="openRunDetail(run)">
-              <button class="delete-btn" (click)="deleteRun(run); $event.stopPropagation()" title="Supprimer">×</button>
-              @if (run.stravaActivityId) {
-                <span class="strava-badge">Strava</span>
-              }
-              <div class="event-header">
-                <span class="event-type">{{ run.sessionType || 'Course' }}</span>
-                <span class="view-detail">Voir &rarr;</span>
-              </div>
-              @if (run.notes) {
-                <div class="run-notes">
-                  <span class="run-title">{{ getRunTitle(run.notes) }}</span>
-                  @if (getRunDescription(run.notes)) {
-                    <p class="run-description">{{ getRunDescription(run.notes) }}</p>
-                  }
-                </div>
-              }
-              <div class="event-stats">
-                @if (run.distance) {
-                  <span>{{ run.distance }} km</span>
-                }
-                @if (run.duration) {
-                  <span>{{ run.duration }} min</span>
-                }
-                @if (run.averagePace) {
-                  <span>{{ run.averagePace }}/km</span>
-                }
-              </div>
-            </div>
-          }
+        <div class="day-modal-slot active">
+          <ng-container *ngTemplateOutlet="dayModalTpl; context: { $implicit: selectedDay()! }"></ng-container>
         </div>
-      }
-
-      <!-- Séances planifiées -->
-      @if (!isAddingSession() && visiblePlannedRuns().length > 0) {
-        <div class="section">
-          <h3>Séances planifiées</h3>
-          @for (planned of visiblePlannedRuns(); track planned._id) {
-            <div class="event-card"
-                 [class.done]="planned.status === 'completed'"
-                 [class.skipped]="planned.status === 'skipped'"
-                 [class.ai-generated]="planned.generatedBy === 'ai'"
-                 [class.coach-generated]="planned.generatedBy === 'coach'"
-                 [class.strength]="planned.activityType === 'strength'"
-                 [class.clickable]="planned.status !== 'skipped'"
-                 (click)="openPlannedDetail(planned)">
-              <button class="delete-btn" (click)="deletePlannedSession(planned); $event.stopPropagation()" title="Supprimer">×</button>
-              <span class="event-status" [class]="planned.status">
-                @if (planned.status === 'planned') {<i class="fa-solid fa-clock"></i>}
-                @if (planned.status === 'completed') { <i class="fa-solid fa-check"></i>}
-                @if (planned.status === 'skipped') { <i class="fa-solid fa-ban"></i> }
-              </span>
-              @if (planned.generatedBy === 'ai') {
-                <span class="coach-badge">✦ Coach IA</span>
-              }
-              @if (planned.generatedBy === 'coach') {
-                <span class="coach-badge">👤 Coach</span>
-              }
-              <div class="event-header">
-                <span class="activity-icon">{{ getActivityIcon(planned.activityType) }}</span>
-                <span class="event-type">{{ getSessionTypeLabel(planned.sessionType) }}</span>
-              </div>
-
-              <div class="event-stats">
-                @if (planned.targetDistance) {
-                  <span>{{ planned.targetDistance }} km</span>
-                }
-                @if (planned.targetDuration) {
-                  <span>{{ planned.targetDuration }} min</span>
-                }
-                @if (planned.targetPace) {
-                  <span>{{ planned.targetPace }}/km</span>
-                }
-              </div>
-
-              @if (planned.description) {
-                <p class="event-description">{{ planned.description }}</p>
-              }
-
-              @if (planned.mainWorkout) {
-                <div class="workout-detail">
-                  <strong>Séance :</strong> {{ planned.mainWorkout }}
-                </div>
-              }
-
-              @if (planned.status === 'planned') {
-                <div class="event-actions">
-                  <button class="btn-detail" (click)="openPlannedDetail(planned); $event.stopPropagation()">Détailler</button>
-                  <button class="btn-skip" (click)="markAsSkipped(planned); $event.stopPropagation()">Passer</button>
-                </div>
-              }
-              @if (planned.status === 'completed') {
-                <div class="feeling-row">
-                  @if (planned.feeling != null) {
-                    <span class="feeling-chip" [style.color]="getFeelingColor(planned.feeling)" [style.background]="getFeelingColor(planned.feeling) + '1a'">
-                      <span class="feeling-chip-num">{{ planned.feeling }}/10</span>
-                      <span class="feeling-chip-label">{{ getFeelingLabel(planned.feeling) }}</span>
-                    </span>
-                  } @else {
-                    <span class="feeling-chip feeling-empty">Ressenti non renseigné</span>
-                  }
-                  <button class="feeling-edit-btn" (click)="markAsCompleted(planned); $event.stopPropagation()" title="Modifier le ressenti">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                  </button>
-                </div>
-              }
-            </div>
-          }
+        <div class="day-modal-slot">
+          <ng-container *ngTemplateOutlet="dayModalTpl; context: { $implicit: nextDay() }"></ng-container>
         </div>
-      }
+      </div>
+    </div>
+    }
+  </div>
+}
 
-      <!-- Séances muscu effectuées -->
-      @if (!isAddingSession() && selectedDay()!.strengthSessions && selectedDay()!.strengthSessions.length > 0) {
-        <div class="section">
-          <h3>Séances muscu effectuées</h3>
-          @for (session of selectedDay()!.strengthSessions; track session._id) {
-            <div class="event-card strength completed clickable" [class.strava]="!!session.stravaActivityId" (click)="openStrengthDetail(session)">
-              @if (session.stravaActivityId) {
-                <span class="strava-badge">Strava</span>
-              }
-              <div class="event-header">
-                <span class="event-type">{{ getSessionTypeLabel(session.sessionType) }}</span>
-                <span class="view-detail">Voir &rarr;</span>
-              </div>
-              @if (session.notes) {
-                <div class="run-notes">
-                  <span class="run-title">{{ getRunTitle(session.notes) }}</span>
-                  @if (getRunDescription(session.notes)) {
-                    <p class="run-description">{{ getRunDescription(session.notes) }}</p>
-                  }
-                </div>
-              }
-              <div class="event-stats">
-                @if (session.duration) {
-                  <span>{{ session.duration }} min</span>
-                }
-                @if (session.totalSets) {
-                  <span>{{ session.totalSets }} séries</span>
-                }
-                @if (session.totalVolume) {
-                  <span>{{ session.totalVolume }} kg</span>
-                }
-              </div>
-            </div>
-          }
-        </div>
-      }
+<ng-template #dayModalTpl let-day>
+  <div class="modal day-detail-modal" (click)="$event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <h2>{{ formatDate(day.date) }}</h2>
+      <div class="modal-header-actions">
+        <button class="btn-add" (click)="openAddSession()" title="Ajouter une séance">+</button>
+        <button class="modal-close" (click)="closeDetail()">×</button>
+      </div>
+    </div>
+    <div class="day-page-body">
+      <ng-container *ngTemplateOutlet="dayContentTpl; context: { $implicit: day }"></ng-container>
     </div>
   </div>
-</div>
-}
+</ng-template>
+
+<ng-template #dayContentTpl let-day>
+  @if (day) {
+    @if (day.runs.length === 0 && day.plannedRuns.length === 0 && (!day.strengthSessions || day.strengthSessions.length === 0)) {
+      <div class="empty-day">
+        <p>Aucune activité ce jour</p>
+        <button class="btn-add-empty" (click)="openAddSession()">+ Ajouter une séance</button>
+      </div>
+    }
+
+    <!-- Courses effectuées -->
+    @if (day.runs.length > 0) {
+      <div class="section">
+        <h3>Courses effectuées</h3>
+        @for (run of day.runs; track run._id) {
+          <div class="event-card completed clickable" [class.strava]="!!run.stravaActivityId" (click)="openRunDetail(run)">
+            <button class="delete-btn" (click)="deleteRun(run); $event.stopPropagation()" title="Supprimer">×</button>
+            @if (run.stravaActivityId) {
+              <span class="strava-badge">Strava</span>
+            }
+            <div class="event-header">
+              <span class="event-type">{{ run.sessionType || 'Course' }}</span>
+              <span class="view-detail">Voir &rarr;</span>
+            </div>
+            @if (run.notes) {
+              <div class="run-notes">
+                <span class="run-title">{{ getRunTitle(run.notes) }}</span>
+                @if (getRunDescription(run.notes)) {
+                  <p class="run-description">{{ getRunDescription(run.notes) }}</p>
+                }
+              </div>
+            }
+            <div class="event-stats">
+              @if (run.distance) {
+                <span>{{ run.distance }} km</span>
+              }
+              @if (run.duration) {
+                <span>{{ run.duration }} min</span>
+              }
+              @if (run.averagePace) {
+                <span>{{ run.averagePace }}/km</span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Séances planifiées -->
+    @if (getVisiblePlannedRuns(day).length > 0) {
+      <div class="section">
+        <h3>Séances planifiées</h3>
+        @for (planned of getVisiblePlannedRuns(day); track planned._id) {
+          <div class="event-card"
+               [class.done]="planned.status === 'completed'"
+               [class.skipped]="planned.status === 'skipped'"
+               [class.ai-generated]="planned.generatedBy === 'ai'"
+               [class.coach-generated]="planned.generatedBy === 'coach'"
+               [class.strength]="planned.activityType === 'strength'"
+               [class.clickable]="planned.status !== 'skipped'"
+               (click)="openPlannedDetail(planned)">
+            <button class="delete-btn" (click)="deletePlannedSession(planned); $event.stopPropagation()" title="Supprimer">×</button>
+            <span class="event-status" [class]="planned.status">
+              @if (planned.status === 'planned') {<i class="fa-solid fa-clock"></i>}
+              @if (planned.status === 'completed') { <i class="fa-solid fa-check"></i>}
+              @if (planned.status === 'skipped') { <i class="fa-solid fa-ban"></i> }
+            </span>
+            @if (planned.generatedBy === 'ai') {
+              <span class="coach-badge">✦ Coach IA</span>
+            }
+            @if (planned.generatedBy === 'coach') {
+              <span class="coach-badge">👤 Coach</span>
+            }
+            <div class="event-header">
+              <span class="activity-icon">{{ getActivityIcon(planned.activityType) }}</span>
+              <span class="event-type">{{ getSessionTypeLabel(planned.sessionType) }}</span>
+            </div>
+
+            <div class="event-stats">
+              @if (planned.targetDistance) {
+                <span>{{ planned.targetDistance }} km</span>
+              }
+              @if (planned.targetDuration) {
+                <span>{{ planned.targetDuration }} min</span>
+              }
+              @if (planned.targetPace) {
+                <span>{{ planned.targetPace }}/km</span>
+              }
+            </div>
+
+            @if (planned.description) {
+              <p class="event-description">{{ planned.description }}</p>
+            }
+
+            @if (planned.mainWorkout) {
+              <div class="workout-detail">
+                <strong>Séance :</strong> {{ planned.mainWorkout }}
+              </div>
+            }
+
+            @if (planned.status === 'planned') {
+              <div class="event-actions">
+                <button class="btn-detail" (click)="openPlannedDetail(planned); $event.stopPropagation()">Détailler</button>
+                <button class="btn-skip" (click)="markAsSkipped(planned); $event.stopPropagation()">Passer</button>
+              </div>
+            }
+            @if (planned.status === 'completed') {
+              <div class="feeling-row">
+                @if (planned.feeling != null) {
+                  <span class="feeling-chip" [style.color]="getFeelingColor(planned.feeling)" [style.background]="getFeelingColor(planned.feeling) + '1a'">
+                    <span class="feeling-chip-num">{{ planned.feeling }}/10</span>
+                    <span class="feeling-chip-label">{{ getFeelingLabel(planned.feeling) }}</span>
+                  </span>
+                } @else {
+                  <span class="feeling-chip feeling-empty">Ressenti non renseigné</span>
+                }
+                <button class="feeling-edit-btn" (click)="markAsCompleted(planned); $event.stopPropagation()" title="Modifier le ressenti">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Séances muscu effectuées -->
+    @if (day.strengthSessions && day.strengthSessions.length > 0) {
+      <div class="section">
+        <h3>Séances muscu effectuées</h3>
+        @for (session of day.strengthSessions; track session._id) {
+          <div class="event-card strength completed clickable" [class.strava]="!!session.stravaActivityId" (click)="openStrengthDetail(session)">
+            @if (session.stravaActivityId) {
+              <span class="strava-badge">Strava</span>
+            }
+            <div class="event-header">
+              <span class="event-type">{{ getSessionTypeLabel(session.sessionType) }}</span>
+              <span class="view-detail">Voir &rarr;</span>
+            </div>
+            @if (session.notes) {
+              <div class="run-notes">
+                <span class="run-title">{{ getRunTitle(session.notes) }}</span>
+                @if (getRunDescription(session.notes)) {
+                  <p class="run-description">{{ getRunDescription(session.notes) }}</p>
+                }
+              </div>
+            }
+            <div class="event-stats">
+              @if (session.duration) {
+                <span>{{ session.duration }} min</span>
+              }
+              @if (session.totalSets) {
+                <span>{{ session.totalSets }} séries</span>
+              }
+              @if (session.totalVolume) {
+                <span>{{ session.totalVolume }} kg</span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+</ng-template>
 
 <!-- Modal feeling -->
 @if (feelingModal().open) {
