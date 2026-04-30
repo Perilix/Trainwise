@@ -62,8 +62,13 @@ export class MuscuDetailComponent implements OnInit {
   ngOnInit() {
     this.athleteId = this.route.snapshot.paramMap.get('athleteId') || '';
     this.sessionId = this.route.snapshot.paramMap.get('sessionId') || '';
+    const type = this.route.snapshot.queryParamMap.get('type');
     if (this.athleteId && this.sessionId) {
-      this.loadSession();
+      if (type === 'strength') {
+        this.loadStandaloneStrengthSession();
+      } else {
+        this.loadSession();
+      }
     }
   }
 
@@ -91,6 +96,7 @@ export class MuscuDetailComponent implements OnInit {
   }
 
   loadStandaloneStrengthSession() {
+    this.isLoading.set(true);
     this.coachService.getAthleteStrengthSessionById(this.athleteId, this.sessionId).subscribe({
       next: (session) => {
         this.completedSession.set(session);
