@@ -2,9 +2,10 @@ import { Component, OnInit, inject, signal, AfterViewInit, OnDestroy } from '@an
 import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { RunService, Run } from '../../services/run.service';
+import { RunService, Run, RunBlock } from '../../services/run.service';
 import { PlanningService, PlannedSession } from '../../services/planning.service';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
+import { RunBlocksEditorComponent } from '../../components/run-blocks-editor/run-blocks-editor.component';
 import { SubscriptionService } from '../../services/subscription.service';
 import * as L from 'leaflet';
 
@@ -19,7 +20,7 @@ L.Icon.Default.mergeOptions({
 @Component({
   selector: 'app-run-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavbarComponent],
+  imports: [CommonModule, FormsModule, NavbarComponent, RunBlocksEditorComponent],
   templateUrl: './run-detail.component.html',
   styleUrl: './run-detail.component.scss'
 })
@@ -45,6 +46,13 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     elevationGain: undefined as number | undefined,
     notes: '' as string
   };
+
+  // Blocs (séance détaillée par le coach et/ou par l'athlète)
+  plannedBlocks = signal<RunBlock[]>([]);
+  myBlocks = signal<RunBlock[]>([]);
+  isEditingBlocks = signal(false);
+  isSavingBlocks = signal(false);
+  blocksSavedMessage = signal<string | null>(null);
 
   private map: L.Map | null = null;
   private feelingTimer: ReturnType<typeof setTimeout> | null = null;
@@ -106,6 +114,10 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
         this.completionForm.duration = planned.targetDuration;
         this.completionForm.averagePace = planned.targetPace ?? '';
         this.completionForm.notes = planned.description ?? '';
+        // Blocs : copie du plan coach pour affichage read-only + pré-remplir le formulaire athlète
+        const coachBlocks = planned.runBlocks || [];
+        this.plannedBlocks.set(coachBlocks.map(b => ({ ...b })));
+        this.myBlocks.set(coachBlocks.map(b => ({ ...b })));
         this.isLoading.set(false);
       },
       error: (err) => {
@@ -121,6 +133,7 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!planned?._id) return;
     this.isSubmittingCompletion.set(true);
 
+    const blocks = this.myBlocks();
     const payload: Partial<Run> = {
       date: planned.date,
       distance: this.completionForm.distance ?? undefined,
@@ -131,7 +144,8 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
       elevationGain: this.completionForm.elevationGain ?? undefined,
       sessionType: planned.sessionType,
       feeling: this.feelingValue(),
-      notes: this.completionForm.notes || undefined
+      notes: this.completionForm.notes || undefined,
+      runBlocks: blocks.length > 0 ? blocks : undefined
     };
 
     this.runService.createRun(payload).subscribe({
@@ -180,6 +194,9 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
       next: (run) => {
         this.run.set(run);
         this.feelingValue.set(run.feeling ?? 5);
+        this.plannedBlocks.set((run.plannedSnapshot?.runBlocks || []).map(b => ({ ...b })));
+        this.myBlocks.set((run.runBlocks || []).map(b => ({ ...b })));
+        this.isEditingBlocks.set(false);
         this.isLoading.set(false);
         // Initialize map after a small delay to ensure DOM is ready
         setTimeout(() => this.initMap(), 100);
@@ -187,6 +204,45 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
       error: (err) => {
         this.error.set('Course non trouvée');
         this.isLoading.set(false);
+        console.error(err);
+      }
+    });
+  }
+
+  startEditBlocks() {
+    if (this.myBlocks().length === 0) {
+      // Si pas de blocs réalisés, partir du snapshot coach s'il existe
+      const seed = this.plannedBlocks();
+      this.myBlocks.set(seed.map(b => ({ ...b })));
+    }
+    this.isEditingBlocks.set(true);
+  }
+
+  cancelEditBlocks() {
+    const run = this.run();
+    this.myBlocks.set((run?.runBlocks || []).map(b => ({ ...b })));
+    this.isEditingBlocks.set(false);
+  }
+
+  onMyBlocksChange(blocks: RunBlock[]) {
+    this.myBlocks.set(blocks);
+  }
+
+  saveMyBlocks() {
+    const run = this.run();
+    if (!run?._id) return;
+    this.isSavingBlocks.set(true);
+    this.runService.updateRun(run._id, { runBlocks: this.myBlocks() } as any).subscribe({
+      next: (updated) => {
+        this.run.set(updated);
+        this.myBlocks.set((updated.runBlocks || []).map(b => ({ ...b })));
+        this.isSavingBlocks.set(false);
+        this.isEditingBlocks.set(false);
+        this.blocksSavedMessage.set('Blocs enregistrés');
+        setTimeout(() => this.blocksSavedMessage.set(null), 3000);
+      },
+      error: (err) => {
+        this.isSavingBlocks.set(false);
         console.error(err);
       }
     });

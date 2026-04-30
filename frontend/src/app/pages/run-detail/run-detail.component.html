@@ -38,6 +38,13 @@
       </div>
     }
 
+    @if (plannedBlocks().length > 0) {
+      <section class="coach-plan-section">
+        <h2>Ce que le coach a prévu</h2>
+        <app-run-blocks-editor [blocks]="plannedBlocks()" [readonly]="true"></app-run-blocks-editor>
+      </section>
+    }
+
     <!-- Map -->
     @if (run()?.polyline) {
       <section class="map-section">
@@ -132,8 +139,17 @@
     @if (isPlannedMode()) {
       <!-- Formulaire de complétion -->
       <section class="completion-section">
-        <h2>Compléter la séance</h2>
+        <h2>Ce que tu as fait</h2>
+
+        <div class="completion-blocks">
+          <app-run-blocks-editor
+            [blocks]="myBlocks()"
+            (blocksChange)="onMyBlocksChange($event)">
+          </app-run-blocks-editor>
+        </div>
+
         <form (ngSubmit)="submitCompletion()" #completionFormEl="ngForm">
+          <h3 class="completion-subtitle">Récap général</h3>
           <div class="form-grid">
             <div class="form-group">
               <label for="distance">Distance (km)</label>
@@ -181,6 +197,40 @@
         </form>
       </section>
     } @else {
+      <!-- Blocs réalisés (édition / lecture) -->
+      <section class="my-blocks-section">
+        <div class="my-blocks-header">
+          <h2>Détail de la séance</h2>
+          @if (!isEditingBlocks() && myBlocks().length > 0) {
+            <button class="btn-edit-blocks" (click)="startEditBlocks()">Modifier</button>
+          }
+        </div>
+
+        @if (blocksSavedMessage()) {
+          <div class="blocks-saved-msg">{{ blocksSavedMessage() }}</div>
+        }
+
+        @if (isEditingBlocks()) {
+          <app-run-blocks-editor
+            [blocks]="myBlocks()"
+            (blocksChange)="onMyBlocksChange($event)">
+          </app-run-blocks-editor>
+          <div class="my-blocks-actions">
+            <button class="btn-secondary" (click)="cancelEditBlocks()" [disabled]="isSavingBlocks()">Annuler</button>
+            <button class="btn-primary" (click)="saveMyBlocks()" [disabled]="isSavingBlocks()">
+              {{ isSavingBlocks() ? 'Enregistrement...' : 'Enregistrer' }}
+            </button>
+          </div>
+        } @else if (myBlocks().length > 0) {
+          <app-run-blocks-editor [blocks]="myBlocks()" [readonly]="true"></app-run-blocks-editor>
+        } @else {
+          <div class="no-blocks">
+            <p>Aucun détail de blocs pour cette séance.</p>
+            <button class="btn-primary" (click)="startEditBlocks()">Détailler la séance</button>
+          </div>
+        }
+      </section>
+
       <!-- AI Analysis -->
       <section class="analysis-section">
         <div class="analysis-header">

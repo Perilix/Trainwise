@@ -1,7 +1,9 @@
 const axios = require('axios');
 const Run = require('../models/run.model');
 const User = require('../models/user.model');
+const CoachAthlete = require('../models/coachAthlete.model');
 const { autoCompletePlannedSessions } = require('../services/planningAutoComplete');
+const { createNotification } = require('./notification.controller');
 
 // Helper: Calculer les statistiques des courses récentes
 const calculateStats = (runs) => {
@@ -73,7 +75,54 @@ exports.createRun = async (req, res) => {
     }
 
     // Compléter automatiquement les séances planifiées du même jour
-    await autoCompletePlannedSessions(req.user._id, run.date, 'running');
+    // Récupère les séances effacées pour : (1) figer un snapshot dans le Run, (2) notifier le coach
+    const matchedPlanned = await autoCompletePlannedSessions(req.user._id, run.date, 'running');
+    const coachPlanned = matchedPlanned.find(p => p.generatedBy === 'coach' && p.createdBy);
+
+    if (coachPlanned) {
+      // Snapshot figé de ce que le coach avait prévu
+      run.plannedSnapshot = {
+        sessionType: coachPlanned.sessionType,
+        targetDistance: coachPlanned.targetDistance,
+        targetDuration: coachPlanned.targetDuration,
+        targetPace: coachPlanned.targetPace,
+        description: coachPlanned.description,
+        runBlocks: (coachPlanned.runBlocks || []).map(b => ({
+          role: b.role,
+          mode: b.mode,
+          distance: b.distance,
+          duration: b.duration,
+          pace: b.pace,
+          repetitions: b.repetitions,
+          description: b.description,
+          recoveryMode: b.recoveryMode,
+          recoveryDistance: b.recoveryDistance,
+          recoveryDuration: b.recoveryDuration,
+          recoveryPace: b.recoveryPace,
+          recoveryDescription: b.recoveryDescription,
+          order: b.order
+        })),
+        coach: coachPlanned.createdBy
+      };
+      await run.save();
+
+      // Notifier le coach
+      try {
+        const athleteUser = await User.findById(req.user._id).select('firstName lastName').lean();
+        const athleteName = athleteUser ? `${athleteUser.firstName} ${athleteUser.lastName}` : 'Votre athlète';
+        await createNotification({
+          recipient: coachPlanned.createdBy,
+          sender: req.user._id,
+          type: 'session',
+          action: 'session_completed',
+          title: 'Séance effectuée',
+          message: `${athleteName} a effectué sa séance`,
+          actionUrl: `/coach/athletes/${req.user._id}/run/${run._id}`
+        });
+      } catch (notifErr) {
+        console.error('Erreur notif coach:', notifErr.message);
+      }
+    }
 
     // Appeler n8n pour l'analyse si le webhook est configuré
     if (process.env.N8N_WEBHOOK_URL) {
@@ -334,10 +383,10 @@ exports.updateAnalysis = async (req, res) => {
   }
 };
 
-// Mettre à jour une course (feeling, notes, etc.)
+// Mettre à jour une course (feeling, notes, blocs, etc.)
 exports.updateRun = async (req, res) => {
   try {
-    const allowed = ['feeling', 'notes', 'sessionType'];
+    const allowed = ['feeling', 'notes', 'sessionType', 'runBlocks'];
     const updates = {};
     allowed.forEach(field => {
       if (req.body[field] !== undefined) updates[field] = req.body[field];
@@ -350,6 +399,32 @@ exports.updateRun = async (req, res) => {
     );
 
     if (!run) return res.status(404).json({ error: 'Course non trouvée' });
+
+    // Si l'athlète a édité ses blocs et a un coach, notifier le coach
+    if (req.body.runBlocks !== undefined) {
+      try {
+        const relationship = await CoachAthlete.findOne({
+          athlete: req.user._id,
+          status: 'accepted'
+        }).select('coach').lean();
+        if (relationship?.coach) {
+          const athleteUser = await User.findById(req.user._id).select('firstName lastName').lean();
+          const athleteName = athleteUser ? `${athleteUser.firstName} ${athleteUser.lastName}` : 'Votre athlète';
+          await createNotification({
+            recipient: relationship.coach,
+            sender: req.user._id,
+            type: 'session',
+            action: 'session_completed',
+            title: 'Séance détaillée',
+            message: `${athleteName} a détaillé sa séance`,
+            actionUrl: `/coach/athletes/${req.user._id}/run/${run._id}`
+          });
+        }
+      } catch (notifErr) {
+        console.error('Erreur notif coach (blocs):', notifErr.message);
+      }
+    }
+
     res.json(run);
   } catch (error) {
     res.status(500).json({ error: error.message });

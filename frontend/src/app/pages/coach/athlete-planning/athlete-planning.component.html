@@ -179,23 +179,6 @@
               <textarea [(ngModel)]="newSession.description" name="description" rows="3" placeholder="Instructions pour l'athlète..."></textarea>
             </div>
 
-            @if (newSession.activityType === 'running') {
-              <div class="form-group">
-                <label>Échauffement</label>
-                <textarea [(ngModel)]="newSession.warmup" name="warmup" rows="2" placeholder="Ex: 15 min footing progressif"></textarea>
-              </div>
-
-              <div class="form-group">
-                <label>Corps de séance</label>
-                <textarea [(ngModel)]="newSession.mainWorkout" name="mainWorkout" rows="3" placeholder="Ex: 6 x 1000m avec 2min récup"></textarea>
-              </div>
-
-              <div class="form-group">
-                <label>Retour au calme</label>
-                <textarea [(ngModel)]="newSession.cooldown" name="cooldown" rows="2" placeholder="Ex: 10 min footing + étirements"></textarea>
-              </div>
-            }
-
             <div class="form-actions">
               <button type="button" class="btn-secondary" (click)="cancelAddSession()">Annuler</button>
               <button type="submit" class="btn-primary" [disabled]="isSaving()">
@@ -343,6 +326,10 @@
         @if (planned.activityType === 'strength') {
           <button type="button" class="btn-secondary-sm" (click)="goToMuscuDetail(planned)">
             {{ planned.status === 'completed' ? 'Voir les détails' : 'Détailler les exercices' }}
+          </button>
+        } @else {
+          <button type="button" class="btn-secondary-sm" (click)="goToRunningDetail(planned)">
+            Détailler la séance
           </button>
         }
         <div class="session-card-actions">

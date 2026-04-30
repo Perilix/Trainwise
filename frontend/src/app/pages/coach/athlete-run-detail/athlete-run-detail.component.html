@@ -106,6 +106,22 @@
       </div>
     </section>
 
+    <!-- Plan coach (snapshot figé) -->
+    @if (run()?.plannedSnapshot?.runBlocks?.length) {
+      <section class="coach-plan-section">
+        <h2>Ce que vous aviez prévu</h2>
+        <app-run-blocks-editor [blocks]="run()!.plannedSnapshot.runBlocks" [readonly]="true"></app-run-blocks-editor>
+      </section>
+    }
+
+    <!-- Détail athlète -->
+    @if (run()?.runBlocks?.length) {
+      <section class="athlete-blocks-section">
+        <h2>Ce que l'athlète a fait</h2>
+        <app-run-blocks-editor [blocks]="run()!.runBlocks" [readonly]="true"></app-run-blocks-editor>
+      </section>
+    }
+
     <!-- Notes -->
     @if (getRunDescription()) {
       <section class="description-section">

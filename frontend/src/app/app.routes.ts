@@ -97,6 +97,11 @@ export const routes: Routes = [
     canActivate: [authGuard, coachGuard]
   },
   {
+    path: 'coach/athletes/:athleteId/running-detail/:sessionId',
+    loadComponent: () => import('./pages/coach/running-detail/running-detail.component').then(m => m.RunningDetailComponent),
+    canActivate: [authGuard, coachGuard]
+  },
+  {
     path: 'coach/athletes/:athleteId/run/:runId',
     loadComponent: () => import('./pages/coach/athlete-run-detail/athlete-run-detail.component').then(m => m.AthleteRunDetailComponent),
     canActivate: [authGuard, coachGuard]

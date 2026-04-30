@@ -1,0 +1,51 @@
+<app-navbar></app-navbar>
+
+<div class="container">
+  <div class="page-header">
+    <button class="back-btn" (click)="goBack()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Retour
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="alert error">{{ error() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="alert success">{{ successMessage() }}</div>
+  }
+
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>Chargement...</p>
+    </div>
+  } @else if (session()) {
+    <div class="session-summary">
+      <div class="summary-icon">🏃</div>
+      <div class="summary-info">
+        <h1>{{ getSessionTypeLabel(session()!.sessionType) }}</h1>
+        <p class="summary-date">{{ formatDate(session()!.date) }}</p>
+      </div>
+    </div>
+
+    <div class="form-block">
+      <label>Consignes globales</label>
+      <textarea [ngModel]="description()" (ngModelChange)="description.set($event)" rows="3" placeholder="Instructions pour l'athlète..."></textarea>
+    </div>
+
+    <app-run-blocks-editor
+      [blocks]="blocks()"
+      title="Plan de la séance"
+      (blocksChange)="onBlocksChange($event)">
+    </app-run-blocks-editor>
+
+    <div class="form-actions">
+      <button type="button" class="btn-primary" [disabled]="isSaving()" (click)="saveSession()">
+        {{ isSaving() ? 'Enregistrement...' : 'Enregistrer la séance' }}
+      </button>
+    </div>
+  }
+</div>

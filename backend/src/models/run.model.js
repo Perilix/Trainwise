@@ -57,6 +57,50 @@ const runSchema = new mongoose.Schema({
   endLatLng: {
     type: [Number],
     default: null
+  },
+
+  // Blocs réalisés par l'athlète (saisis lors du retour ou a posteriori)
+  // Mêmes champs que la séance planifiée mais reflétant ce qui a été fait
+  runBlocks: [{
+    role: { type: String, enum: ['warmup', 'main', 'cooldown'], default: 'main' },
+    mode: { type: String, enum: ['distance', 'duration'], default: 'distance' },
+    distance: { type: Number, default: null },
+    duration: { type: Number, default: null },
+    pace: { type: String, default: null },
+    repetitions: { type: Number, default: 1, min: 1 },
+    description: { type: String, default: '' },
+    recoveryMode: { type: String, enum: ['distance', 'duration', null], default: null },
+    recoveryDistance: { type: Number, default: null },
+    recoveryDuration: { type: Number, default: null },
+    recoveryPace: { type: String, default: null },
+    recoveryDescription: { type: String, default: '' },
+    notes: { type: String, default: '' },
+    order: { type: Number, default: 0 }
+  }],
+
+  // Snapshot figé de ce que le coach avait prévu (copié à la complétion d'une séance planifiée)
+  plannedSnapshot: {
+    sessionType: { type: String, default: null },
+    targetDistance: { type: Number, default: null },
+    targetDuration: { type: Number, default: null },
+    targetPace: { type: String, default: null },
+    description: { type: String, default: null },
+    runBlocks: [{
+      role: String,
+      mode: String,
+      distance: Number,
+      duration: Number,
+      pace: String,
+      repetitions: Number,
+      description: String,
+      recoveryMode: String,
+      recoveryDistance: Number,
+      recoveryDuration: Number,
+      recoveryPace: String,
+      recoveryDescription: String,
+      order: Number
+    }],
+    coach: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }
   }
 }, {
   timestamps: true

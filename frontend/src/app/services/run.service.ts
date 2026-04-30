@@ -3,6 +3,37 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
+export type RunBlockRole = 'warmup' | 'main' | 'cooldown';
+export type RunBlockMode = 'distance' | 'duration';
+
+export interface RunBlock {
+  _id?: string;
+  role: RunBlockRole;
+  mode: RunBlockMode;
+  distance?: number | null;
+  duration?: number | null;
+  pace?: string | null;
+  repetitions?: number;
+  description?: string;
+  recoveryMode?: RunBlockMode | null;
+  recoveryDistance?: number | null;
+  recoveryDuration?: number | null;
+  recoveryPace?: string | null;
+  recoveryDescription?: string;
+  notes?: string;
+  order?: number;
+}
+
+export interface PlannedSnapshot {
+  sessionType?: string | null;
+  targetDistance?: number | null;
+  targetDuration?: number | null;
+  targetPace?: string | null;
+  description?: string | null;
+  runBlocks?: RunBlock[];
+  coach?: string | null;
+}
+
 export interface Run {
   _id?: string;
   date: Date;
@@ -22,6 +53,8 @@ export interface Run {
   polyline?: string;
   startLatLng?: number[];
   endLatLng?: number[];
+  runBlocks?: RunBlock[];
+  plannedSnapshot?: PlannedSnapshot;
 }
 
 @Injectable({

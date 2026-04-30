@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CoachService } from '../../../services/coach.service';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
+import { RunBlocksEditorComponent } from '../../../components/run-blocks-editor/run-blocks-editor.component';
 import * as L from 'leaflet';
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -15,7 +16,7 @@ L.Icon.Default.mergeOptions({
 @Component({
   selector: 'app-athlete-run-detail',
   standalone: true,
-  imports: [CommonModule, NavbarComponent],
+  imports: [CommonModule, NavbarComponent, RunBlocksEditorComponent],
   templateUrl: './athlete-run-detail.component.html',
   styleUrl: './athlete-run-detail.component.scss'
 })

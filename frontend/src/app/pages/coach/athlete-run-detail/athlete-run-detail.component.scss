@@ -292,6 +292,30 @@
   }
 }
 
+// Coach plan & athlete blocks sections
+.coach-plan-section,
+.athlete-blocks-section {
+  background: #F6F4F0;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 0 10px 4px rgba(0, 53, 84, 0.15);
+  border: 1px solid rgba(0, 53, 84, 0.2);
+  margin-bottom: 1.5rem;
+
+  h2 {
+    margin: 0 0 1rem;
+    font-size: 1rem;
+    color: #003554;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+}
+
+.coach-plan-section {
+  border-left: 4px solid #00a6fb;
+}
+
 // Description Section
 .description-section {
   background: #F6F4F0;

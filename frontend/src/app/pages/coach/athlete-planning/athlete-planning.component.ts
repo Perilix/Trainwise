@@ -687,6 +687,10 @@ export class AthletePlanningComponent implements OnInit {
     this.router.navigate(['/coach/athletes', this.athleteId, 'muscu-detail', plannedRun._id]);
   }
 
+  goToRunningDetail(plannedRun: PlannedSession) {
+    this.router.navigate(['/coach/athletes', this.athleteId, 'running-detail', plannedRun._id]);
+  }
+
   goToStrengthSessionDetail(strength: StrengthSession) {
     if (!strength._id) return;
     this.router.navigate(

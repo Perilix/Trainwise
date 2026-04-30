@@ -71,6 +71,24 @@ const plannedRunSchema = new mongoose.Schema({
     estimatedDuration: Number // minutes
   },
 
+  // Blocs running structurés (échauffement, corps de séance répétés, retour au calme)
+  runBlocks: [{
+    role: { type: String, enum: ['warmup', 'main', 'cooldown'], default: 'main' },
+    mode: { type: String, enum: ['distance', 'duration'], default: 'distance' },
+    distance: { type: Number, default: null }, // km, si mode='distance'
+    duration: { type: Number, default: null }, // minutes, si mode='duration'
+    pace: { type: String, default: null }, // "mm:ss" /km
+    repetitions: { type: Number, default: 1, min: 1 },
+    description: { type: String, default: '' },
+    // Récup associée au bloc principal (uniquement pour role='main')
+    recoveryMode: { type: String, enum: ['distance', 'duration', null], default: null },
+    recoveryDistance: { type: Number, default: null }, // km
+    recoveryDuration: { type: Number, default: null }, // minutes
+    recoveryPace: { type: String, default: null }, // "mm:ss" /km, optionnel
+    recoveryDescription: { type: String, default: '' },
+    order: { type: Number, default: 0 }
+  }],
+
   status: {
     type: String,
     enum: ['planned', 'completed', 'skipped'],

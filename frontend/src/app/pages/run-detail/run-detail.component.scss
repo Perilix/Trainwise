@@ -552,6 +552,126 @@
     grid-template-columns: 1fr;
   }
 
+  .my-blocks-actions { flex-direction: column; }
+}
+
+.coach-plan-section {
+  background: #F6F4F0;
+  border-radius: 16px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid #00a6fb;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+
+  h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #051923;
+  }
+}
+
+.my-blocks-section {
+  background: #F6F4F0;
+  border-radius: 16px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+
+  h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #051923;
+  }
+}
+
+.my-blocks-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.btn-edit-blocks {
+  background: white;
+  border: 1px solid #00a6fb;
+  color: #00a6fb;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-weight: 500;
+
+  &:hover { background: #e6f7ff; }
+}
+
+.my-blocks-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+
+  .btn-primary {
+    background: #00a6fb;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    &:disabled { opacity: 0.6; cursor: not-allowed; }
+  }
+  .btn-secondary {
+    background: white;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+}
+
+.no-blocks {
+  text-align: center;
+  padding: 1rem 0;
+  color: #64748b;
+
+  p { margin: 0 0 0.75rem; }
+
+  .btn-primary {
+    background: #00a6fb;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.4rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+}
+
+.blocks-saved-msg {
+  background: #d1fae5;
+  color: #059669;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.completion-blocks {
+  margin-bottom: 1.25rem;
+}
+
+.completion-subtitle {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #051923;
+  margin: 0 0 0.75rem;
+}
+
+@media (max-width: 600px) {
   .map-section .map-container {
     height: 250px;
   }

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Run } from './run.service';
+import { Run, RunBlock } from './run.service';
 import { environment } from '../../environments/environment';
 import { StrengthSession, StrengthPlan, StrengthSessionType } from '../interfaces/strength.interfaces';
 
@@ -30,6 +30,7 @@ export interface PlannedSession {
   warmup?: string;
   mainWorkout?: string;
   cooldown?: string;
+  runBlocks?: RunBlock[];
   // Champs strength
   strengthPlan?: StrengthPlan;
   // Common
