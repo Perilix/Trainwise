@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -7,6 +7,7 @@ import { CoachService } from '../../../services/coach.service';
 import { AthleteDetail, CalendarData } from '../../../interfaces/coach.interfaces';
 import { PlannedSession, SessionType, ActivityType, RunningSessionType } from '../../../services/planning.service';
 import {
+  StrengthSession,
   StrengthSessionType,
   SESSION_TYPE_LABELS as STRENGTH_SESSION_LABELS
 } from '../../../interfaces/strength.interfaces';
@@ -20,6 +21,7 @@ interface CalendarDay {
   isToday: boolean;
   runs: Run[];
   plannedRuns: PlannedSession[];
+  strengthSessions: StrengthSession[];
 }
 
 @Component({
@@ -45,6 +47,52 @@ export class AthletePlanningComponent implements OnInit {
   selectedDay = signal<CalendarDay | null>(null);
   isAddingSession = signal(false);
   isSaving = signal(false);
+
+  @ViewChild('dayPagesViewport') dayPagesViewport?: ElementRef<HTMLElement>;
+  isDragging = signal(false);
+  isResetting = signal(false);
+  dragOffsetPx = signal(0);
+  showSwipeHints = signal(false);
+  private touchStartX = 0;
+  private touchStartY = 0;
+  private touchTrackingActive = false;
+  private dragLocked = false;
+  private wasSwipe = false;
+  private viewportWidth = 0;
+  private commitTimeout?: any;
+  private swipeHintsTimeout?: any;
+
+  previousDay = computed<CalendarDay | null>(() => {
+    const day = this.selectedDay();
+    if (!day) return null;
+    const target = new Date(day.date);
+    target.setDate(target.getDate() - 1);
+    return this.findOrPlaceholder(target);
+  });
+
+  nextDay = computed<CalendarDay | null>(() => {
+    const day = this.selectedDay();
+    if (!day) return null;
+    const target = new Date(day.date);
+    target.setDate(target.getDate() + 1);
+    return this.findOrPlaceholder(target);
+  });
+
+  private findOrPlaceholder(date: Date): CalendarDay {
+    const key = this.dateKey(date);
+    const found = this.calendarDays().find(d => this.dateKey(d.date) === key);
+    if (found) return found;
+    const todayKey = this.dateKey(new Date());
+    return {
+      date,
+      dayOfMonth: date.getDate(),
+      isCurrentMonth: false,
+      isToday: key === todayKey,
+      runs: [],
+      plannedRuns: [],
+      strengthSessions: []
+    };
+  }
 
   weekDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
@@ -165,13 +213,20 @@ export class AthletePlanningComponent implements OnInit {
         return plannedDateStr === dateStr;
       });
 
+      const dayStrength = (data.strengthSessions || []).filter(s => {
+        const d = new Date(s.date);
+        const strengthDateStr = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+        return strengthDateStr === dateStr;
+      });
+
       days.push({
         date,
         dayOfMonth: date.getDate(),
         isCurrentMonth: date.getMonth() === month,
         isToday: dateStr === todayStr,
         runs: dayRuns,
-        plannedRuns: dayPlanned
+        plannedRuns: dayPlanned,
+        strengthSessions: dayStrength
       });
     }
 
@@ -208,13 +263,137 @@ export class AthletePlanningComponent implements OnInit {
       this.toggleTargetDate(day);
       return;
     }
+    const wasOpen = !!this.selectedDay();
     this.selectedDay.set(day);
     this.isAddingSession.set(false);
+    if (!wasOpen) {
+      this.flashSwipeHints();
+    }
   }
 
   closeDetail() {
     this.selectedDay.set(null);
     this.isAddingSession.set(false);
+    if (this.swipeHintsTimeout) {
+      clearTimeout(this.swipeHintsTimeout);
+      this.swipeHintsTimeout = undefined;
+    }
+    this.showSwipeHints.set(false);
+  }
+
+  private flashSwipeHints() {
+    if (this.swipeHintsTimeout) clearTimeout(this.swipeHintsTimeout);
+    this.showSwipeHints.set(true);
+    this.swipeHintsTimeout = setTimeout(() => this.showSwipeHints.set(false), 2500);
+  }
+
+  onOverlayTouchStart(event: TouchEvent) {
+    if (this.isAddingSession()) return;
+    if (this.commitTimeout) {
+      clearTimeout(this.commitTimeout);
+      this.commitTimeout = undefined;
+    }
+    const touch = event.touches[0];
+    this.touchStartX = touch.clientX;
+    this.touchStartY = touch.clientY;
+    this.touchTrackingActive = true;
+    this.dragLocked = false;
+    this.wasSwipe = false;
+    this.viewportWidth = this.dayPagesViewport?.nativeElement.offsetWidth ?? window.innerWidth;
+  }
+
+  onOverlayTouchMove(event: TouchEvent) {
+    if (!this.touchTrackingActive) return;
+    const touch = event.touches[0];
+    const deltaX = touch.clientX - this.touchStartX;
+    const deltaY = touch.clientY - this.touchStartY;
+    if (!this.dragLocked) {
+      if (Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10) return;
+      if (Math.abs(deltaY) > Math.abs(deltaX)) {
+        this.touchTrackingActive = false;
+        return;
+      }
+      this.dragLocked = true;
+      this.isDragging.set(true);
+    }
+    this.dragOffsetPx.set(deltaX);
+  }
+
+  onOverlayTouchEnd(event: TouchEvent) {
+    if (!this.touchTrackingActive) return;
+    this.touchTrackingActive = false;
+    if (!this.dragLocked) return;
+    this.wasSwipe = true;
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - this.touchStartX;
+    const threshold = Math.max(60, this.viewportWidth * 0.25);
+    if (Math.abs(deltaX) > threshold) {
+      this.commitSlide(deltaX < 0 ? 1 : -1);
+    } else {
+      this.snapBack();
+    }
+  }
+
+  onOverlayClick() {
+    if (this.wasSwipe) {
+      this.wasSwipe = false;
+      return;
+    }
+    this.closeDetail();
+  }
+
+  private snapBack() {
+    this.isDragging.set(false);
+    this.dragOffsetPx.set(0);
+  }
+
+  private commitSlide(direction: 1 | -1) {
+    this.isDragging.set(false);
+    this.dragOffsetPx.set(direction === 1 ? -this.viewportWidth : this.viewportWidth);
+    this.commitTimeout = setTimeout(() => {
+      this.isResetting.set(true);
+      this.dragOffsetPx.set(0);
+      this.navigateDay(direction);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => this.isResetting.set(false));
+      });
+    }, 280);
+  }
+
+  private navigateDay(offset: number) {
+    const current = this.selectedDay();
+    if (!current) return;
+    const newDate = new Date(current.date);
+    newDate.setDate(newDate.getDate() + offset);
+    newDate.setHours(12, 0, 0, 0);
+    const newDateStr = this.dateKey(newDate);
+
+    const found = this.calendarDays().find(d => this.dateKey(d.date) === newDateStr);
+    if (found) {
+      this.selectedDay.set(found);
+      return;
+    }
+
+    this.selectedDay.set(this.findOrPlaceholder(newDate));
+
+    const targetMonth = newDate.getMonth() + 1;
+    const targetYear = newDate.getFullYear();
+    this.currentMonth.set(targetMonth);
+    this.currentYear.set(targetYear);
+
+    this.coachService.getAthleteCalendar(this.athleteId, targetMonth, targetYear).subscribe({
+      next: (data) => {
+        this.buildCalendar(data);
+        const refreshed = this.calendarDays().find(d => this.dateKey(d.date) === newDateStr);
+        if (refreshed) {
+          this.selectedDay.set(refreshed);
+        }
+      },
+      error: (err) => {
+        this.error.set('Erreur lors du chargement du calendrier');
+        console.error(err);
+      }
+    });
   }
 
   goBack() {
@@ -360,8 +539,9 @@ export class AthletePlanningComponent implements OnInit {
   getDayIndicators(day: CalendarDay): { type: string; count: number }[] {
     const indicators: { type: string; count: number }[] = [];
 
-    if (day.runs.length > 0) {
-      indicators.push({ type: 'completed', count: day.runs.length });
+    const completedTotal = day.runs.length + day.strengthSessions.length;
+    if (completedTotal > 0) {
+      indicators.push({ type: 'completed', count: completedTotal });
     }
 
     const allPlanned = day.plannedRuns.filter(p => p.status === 'planned');
@@ -386,7 +566,7 @@ export class AthletePlanningComponent implements OnInit {
 
     days.filter(day => day.isCurrentMonth).forEach(day => {
       planned += day.plannedRuns.filter(p => p.status === 'planned').length;
-      completed += day.plannedRuns.filter(p => p.status === 'completed').length + day.runs.length;
+      completed += day.plannedRuns.filter(p => p.status === 'completed').length + day.runs.length + day.strengthSessions.length;
       day.runs.forEach(run => {
         if (run.distance) {
           totalKm += run.distance;
@@ -399,6 +579,19 @@ export class AthletePlanningComponent implements OnInit {
 
   getInitials(firstName: string, lastName: string): string {
     return `${firstName[0]}${lastName[0]}`.toUpperCase();
+  }
+
+  isTrainingDay(date: Date): boolean {
+    const dayNames = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+    const days = this.athlete()?.availableDays;
+    if (!days || days.length === 0) return false;
+    return days.includes(dayNames[date.getDay()]);
+  }
+
+  shouldWarnNonTrainingDay(date: Date): boolean {
+    const days = this.athlete()?.availableDays;
+    if (!days || days.length === 0) return false;
+    return !this.isTrainingDay(date);
   }
 
   isCoachSession(plannedRun: PlannedSession): boolean {
@@ -492,6 +685,11 @@ export class AthletePlanningComponent implements OnInit {
 
   goToMuscuDetail(plannedRun: PlannedSession) {
     this.router.navigate(['/coach/athletes', this.athleteId, 'muscu-detail', plannedRun._id]);
+  }
+
+  goToStrengthSessionDetail(strength: StrengthSession) {
+    if (!strength.linkedPlannedSession) return;
+    this.router.navigate(['/coach/athletes', this.athleteId, 'muscu-detail', strength.linkedPlannedSession]);
   }
 
   goToRunDetail(run: any) {

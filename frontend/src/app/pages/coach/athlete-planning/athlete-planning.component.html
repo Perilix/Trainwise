@@ -83,6 +83,7 @@
             [class.other-month]="!day.isCurrentMonth"
             [class.today]="day.isToday"
             [class.has-content]="day.runs.length > 0 || day.plannedRuns.length > 0"
+            [class.non-training-day]="day.isCurrentMonth && !isTrainingDay(day.date) && (athlete()?.availableDays?.length ?? 0) > 0"
             [class.duplication-target]="isDateSelected(day)"
             [class.duplication-source]="isSourceDay(day)"
             (click)="selectDay(day)"
@@ -111,98 +112,20 @@
 
 <!-- Modal détail du jour -->
 @if (selectedDay()) {
-  <div class="modal-overlay" (click)="closeDetail()">
-    <div class="modal" (click)="$event.stopPropagation()">
+  <div class="modal-overlay"
+    (click)="onOverlayClick()"
+    (touchstart)="onOverlayTouchStart($event)"
+    (touchmove)="onOverlayTouchMove($event)"
+    (touchend)="onOverlayTouchEnd($event)"
+    (touchcancel)="onOverlayTouchEnd($event)">
+    @if (isAddingSession()) {
+    <div class="modal day-detail-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>{{ formatDate(selectedDay()!.date) }}</h2>
         <button class="close-btn" (click)="closeDetail()">&times;</button>
       </div>
       <div class="modal-body">
-        @if (!isAddingSession()) {
-          <!-- Liste des séances -->
-          @if (selectedDay()!.plannedRuns.length === 0 && selectedDay()!.runs.length === 0) {
-            <p class="empty-day">Aucune séance ce jour</p>
-          }
-
-          <!-- Courses effectuées -->
-          @for (run of selectedDay()!.runs; track run._id) {
-            <div class="session-card completed clickable" (click)="goToRunDetail(run)">
-              <div class="session-header">
-                <span class="activity-icon">🏃</span>
-                <span class="session-badge completed">Effectuée</span>
-                <span class="chevron">›</span>
-              </div>
-              <div class="session-stats">
-                @if (run.distance) {
-                  <span>{{ run.distance }} km</span>
-                }
-                @if (run.duration) {
-                  <span>{{ run.duration }} min</span>
-                }
-                @if (run.averagePace) {
-                  <span>{{ run.averagePace }}/km</span>
-                }
-                @if (run.feeling) {
-                  <span class="feeling-badge">{{ run.feeling }}/10</span>
-                }
-              </div>
-            </div>
-          }
-
-          <!-- Séances planifiées -->
-          @for (planned of selectedDay()!.plannedRuns; track planned._id) {
-            <div class="session-card" [class.ai-generated]="planned.generatedBy === 'ai'" [class.coach-generated]="planned.generatedBy === 'coach'">
-              <div class="session-header">
-                <span class="activity-icon">{{ getActivityIcon(planned.activityType) }}</span>
-                <span class="session-type">{{ getSessionTypeLabel(planned.sessionType) }}</span>
-                <span class="session-badge" [class]="planned.status">
-                  {{ planned.status === 'planned' ? 'Planifiée' : planned.status === 'completed' ? 'Complétée' : 'Sautée' }}
-                </span>
-                @if (planned.generatedBy === 'ai') {
-                  <span class="source-badge ai">Coach IA</span>
-                } @else if (planned.generatedBy === 'coach') {
-                  <span class="source-badge coach">Coach</span>
-                }
-              </div>
-              <div class="session-stats">
-                @if (planned.targetDistance) {
-                  <span>{{ planned.targetDistance }} km</span>
-                }
-                @if (planned.targetDuration) {
-                  <span>{{ planned.targetDuration }} min</span>
-                }
-                @if (planned.targetPace) {
-                  <span>{{ planned.targetPace }}/km</span>
-                }
-              </div>
-              @if (planned.description) {
-                <p class="session-description">{{ planned.description }}</p>
-              }
-              @if (planned.activityType === 'strength') {
-                <button type="button" class="btn-secondary-sm" (click)="goToMuscuDetail(planned)">
-                  {{ planned.status === 'completed' ? 'Voir les détails' : 'Détailler les exercices' }}
-                </button>
-              }
-              <div class="session-card-actions">
-                @if (canDuplicateSession(planned)) {
-                  <button type="button" class="btn-duplicate" (click)="startDuplication(planned)">
-                    Dupliquer
-                  </button>
-                }
-                @if (planned.status === 'planned' && isCoachSession(planned)) {
-                  <button type="button" class="btn-delete" (click)="deleteSession(planned)">
-                    Supprimer
-                  </button>
-                }
-              </div>
-            </div>
-          }
-
-          <button class="btn-primary full-width" (click)="openAddSession()">
-            + Ajouter une séance
-          </button>
-        } @else {
-          <!-- Formulaire d'ajout -->
+        <!-- Formulaire d'ajout -->
           <form (ngSubmit)="saveSession()">
             <div class="activity-type-selector">
               <button type="button" class="activity-btn" [class.active]="newSession.activityType === 'running'" (click)="onActivityTypeChange('running')">
@@ -280,11 +203,173 @@
               </button>
             </div>
           </form>
-        }
       </div>
     </div>
+    } @else {
+    <div class="day-modals-viewport" #dayPagesViewport>
+      <div class="swipe-hint left" [class.show]="showSwipeHints()" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </div>
+      <div class="swipe-hint right" [class.show]="showSwipeHints()" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+      </div>
+      <div class="day-modals"
+        [class.no-transition]="isDragging() || isResetting()"
+        [style.transform]="'translate3d(calc(-33.3333% + ' + dragOffsetPx() + 'px), 0, 0)'">
+        <div class="day-modal-slot">
+          <ng-container *ngTemplateOutlet="dayModalTpl; context: { $implicit: previousDay() }"></ng-container>
+        </div>
+        <div class="day-modal-slot active">
+          <ng-container *ngTemplateOutlet="dayModalTpl; context: { $implicit: selectedDay()! }"></ng-container>
+        </div>
+        <div class="day-modal-slot">
+          <ng-container *ngTemplateOutlet="dayModalTpl; context: { $implicit: nextDay() }"></ng-container>
+        </div>
+      </div>
+    </div>
+    }
   </div>
 }
+
+<ng-template #dayModalTpl let-day>
+  <div class="modal day-detail-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ formatDate(day.date) }}</h2>
+      <button class="close-btn" (click)="closeDetail()">&times;</button>
+    </div>
+    <div class="day-page-body">
+      <ng-container *ngTemplateOutlet="dayContentTpl; context: { $implicit: day }"></ng-container>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #dayContentTpl let-day>
+  @if (day) {
+    @if (shouldWarnNonTrainingDay(day.date)) {
+      <div class="non-training-warning">
+        <span class="warning-icon" aria-hidden="true">⚠️</span>
+        <span>Attention, votre athlète n'a pas indiqué s'entraîner ce jour. Parlez-en avec lui avant de planifier une séance.</span>
+      </div>
+    }
+    @if (day.plannedRuns.length === 0 && day.runs.length === 0 && day.strengthSessions.length === 0) {
+      <div class="day-empty-state">
+        <p class="empty-day">Aucune séance ce jour</p>
+        <button class="btn-primary" (click)="openAddSession()">
+          + Ajouter une séance
+        </button>
+      </div>
+    } @else {
+
+    <!-- Courses effectuées -->
+    @for (run of day.runs; track run._id) {
+      <div class="session-card completed clickable" (click)="goToRunDetail(run)">
+        <div class="session-header">
+          <span class="activity-icon">🏃</span>
+          <span class="session-badge completed">Effectuée</span>
+          <span class="chevron">›</span>
+        </div>
+        <div class="session-stats">
+          @if (run.distance) {
+            <span>{{ run.distance }} km</span>
+          }
+          @if (run.duration) {
+            <span>{{ run.duration }} min</span>
+          }
+          @if (run.averagePace) {
+            <span>{{ run.averagePace }}/km</span>
+          }
+          @if (run.feeling) {
+            <span class="feeling-badge">{{ run.feeling }}/10</span>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Séances muscu effectuées -->
+    @for (strength of day.strengthSessions; track strength._id) {
+      <div class="session-card completed"
+           [class.clickable]="!!strength.linkedPlannedSession"
+           (click)="strength.linkedPlannedSession && goToStrengthSessionDetail(strength)">
+        <div class="session-header">
+          <span class="activity-icon">💪</span>
+          <span class="session-type">{{ getSessionTypeLabel(strength.sessionType) }}</span>
+          <span class="session-badge completed">Effectuée</span>
+          @if (strength.linkedPlannedSession) {
+            <span class="chevron">›</span>
+          }
+        </div>
+        <div class="session-stats">
+          @if (strength.duration) {
+            <span>{{ strength.duration }} min</span>
+          }
+          @if (strength.totalSets) {
+            <span>{{ strength.totalSets }} séries</span>
+          }
+          @if (strength.totalVolume) {
+            <span>{{ strength.totalVolume }} kg</span>
+          }
+          @if (strength.feeling) {
+            <span class="feeling-badge">{{ strength.feeling }}/10</span>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Séances planifiées -->
+    @for (planned of day.plannedRuns; track planned._id) {
+      <div class="session-card" [class.ai-generated]="planned.generatedBy === 'ai'" [class.coach-generated]="planned.generatedBy === 'coach'">
+        <div class="session-header">
+          <span class="activity-icon">{{ getActivityIcon(planned.activityType) }}</span>
+          <span class="session-type">{{ getSessionTypeLabel(planned.sessionType) }}</span>
+          <span class="session-badge" [class]="planned.status">
+            {{ planned.status === 'planned' ? 'Planifiée' : planned.status === 'completed' ? 'Complétée' : 'Sautée' }}
+          </span>
+          @if (planned.generatedBy === 'ai') {
+            <span class="source-badge ai">Coach IA</span>
+          } @else if (planned.generatedBy === 'coach') {
+            <span class="source-badge coach">Coach</span>
+          }
+        </div>
+        <div class="session-stats">
+          @if (planned.targetDistance) {
+            <span>{{ planned.targetDistance }} km</span>
+          }
+          @if (planned.targetDuration) {
+            <span>{{ planned.targetDuration }} min</span>
+          }
+          @if (planned.targetPace) {
+            <span>{{ planned.targetPace }}/km</span>
+          }
+        </div>
+        @if (planned.description) {
+          <p class="session-description">{{ planned.description }}</p>
+        }
+        @if (planned.activityType === 'strength') {
+          <button type="button" class="btn-secondary-sm" (click)="goToMuscuDetail(planned)">
+            {{ planned.status === 'completed' ? 'Voir les détails' : 'Détailler les exercices' }}
+          </button>
+        }
+        <div class="session-card-actions">
+          @if (canDuplicateSession(planned)) {
+            <button type="button" class="btn-duplicate" (click)="startDuplication(planned)">
+              Dupliquer
+            </button>
+          }
+          @if (planned.status === 'planned' && isCoachSession(planned)) {
+            <button type="button" class="btn-delete" (click)="deleteSession(planned)">
+              Supprimer
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    <button class="btn-primary full-width" (click)="openAddSession()">
+      + Ajouter une séance
+    </button>
+    }
+  }
+</ng-template>
 
 <!-- Footer fixe en mode duplication -->
 @if (sessionToDuplicate()) {

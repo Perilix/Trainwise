@@ -229,7 +229,7 @@ exports.getAthleteCalendar = async (req, res) => {
     const startDate = new Date(y, m - 1, 1);
     const endDate = new Date(y, m, 0, 23, 59, 59);
 
-    const [runs, plannedRuns] = await Promise.all([
+    const [runs, plannedRuns, strengthSessions] = await Promise.all([
       Run.find({
         user: athleteId,
         date: { $gte: startDate, $lte: endDate }
@@ -237,12 +237,21 @@ exports.getAthleteCalendar = async (req, res) => {
       PlannedRun.find({
         user: athleteId,
         date: { $gte: startDate, $lte: endDate }
-      }).sort({ date: 1 })
+      })
+        .populate('strengthPlan.exercises.exercise', 'name slug imageUrl')
+        .sort({ date: 1 }),
+      StrengthSession.find({
+        user: athleteId,
+        date: { $gte: startDate, $lte: endDate }
+      })
+        .populate('exercises.exercise', 'name slug imageUrl primaryMuscle')
+        .sort({ date: 1 })
     ]);
 
     res.json({
       runs,
       plannedRuns,
+      strengthSessions,
       month: m,
       year: y
     });

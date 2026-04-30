@@ -1,4 +1,5 @@
 import { PlannedSession } from '../services/planning.service';
+import { StrengthSession } from './strength.interfaces';
 import { PackageType } from './package.interface';
 
 export interface Athlete {
@@ -118,6 +119,7 @@ export interface PendingInvitation {
 export interface CalendarData {
   runs: any[];
   plannedRuns: PlannedSession[];
+  strengthSessions: StrengthSession[];
   month: number;
   year: number;
 }
