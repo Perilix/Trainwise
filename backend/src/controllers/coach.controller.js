@@ -413,6 +413,30 @@ exports.getAthleteStrengthSession = async (req, res) => {
   }
 };
 
+exports.getAthleteStrengthSessionById = async (req, res) => {
+  try {
+    const { athleteId, sessionId } = req.params;
+
+    const relationship = await CoachAthlete.findOne({
+      coach: req.user._id,
+      athlete: athleteId,
+      status: 'accepted'
+    });
+    if (!relationship) return res.status(403).json({ error: 'Accès refusé' });
+
+    const session = await StrengthSession.findOne({
+      _id: sessionId,
+      user: athleteId
+    }).populate('exercises.exercise', 'name primaryMuscle equipment');
+
+    if (!session) return res.status(404).json({ error: 'Séance non trouvée' });
+
+    res.json(session);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Dupliquer une séance d'un athlète à une autre date
 exports.duplicateAthleteSession = async (req, res) => {
   try {

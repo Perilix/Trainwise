@@ -287,16 +287,12 @@
 
     <!-- Séances muscu effectuées -->
     @for (strength of day.strengthSessions; track strength._id) {
-      <div class="session-card completed"
-           [class.clickable]="!!strength.linkedPlannedSession"
-           (click)="strength.linkedPlannedSession && goToStrengthSessionDetail(strength)">
+      <div class="session-card completed clickable" (click)="goToStrengthSessionDetail(strength)">
         <div class="session-header">
           <span class="activity-icon">💪</span>
           <span class="session-type">{{ getSessionTypeLabel(strength.sessionType) }}</span>
           <span class="session-badge completed">Effectuée</span>
-          @if (strength.linkedPlannedSession) {
-            <span class="chevron">›</span>
-          }
+          <span class="chevron">›</span>
         </div>
         <div class="session-stats">
           @if (strength.duration) {

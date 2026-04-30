@@ -688,8 +688,9 @@ export class AthletePlanningComponent implements OnInit {
   }
 
   goToStrengthSessionDetail(strength: StrengthSession) {
-    if (!strength.linkedPlannedSession) return;
-    this.router.navigate(['/coach/athletes', this.athleteId, 'muscu-detail', strength.linkedPlannedSession]);
+    const id = strength.linkedPlannedSession || strength._id;
+    if (!id) return;
+    this.router.navigate(['/coach/athletes', this.athleteId, 'muscu-detail', id]);
   }
 
   goToRunDetail(run: any) {

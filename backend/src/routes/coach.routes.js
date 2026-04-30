@@ -432,6 +432,8 @@ router.post('/athletes/:athleteId/planning/:planId/duplicate', coachController.d
  */
 router.get('/athletes/:athleteId/strength-session/:plannedId', coachController.getAthleteStrengthSession);
 
+router.get('/athletes/:athleteId/strength-session-by-id/:sessionId', coachController.getAthleteStrengthSessionById);
+
 /**
  * @swagger
  * /api/coach/invite/code:

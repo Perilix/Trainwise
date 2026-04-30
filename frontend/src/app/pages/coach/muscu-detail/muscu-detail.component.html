@@ -169,6 +169,72 @@
         }
       </div>
     }
+  } @else if (isStandalone() && completedSession()) {
+    <!-- Séance muscu standalone (Strava ou ad-hoc, sans plan associé) -->
+    <div class="session-info-card">
+      <div class="session-info-header">
+        <span class="activity-icon">💪</span>
+        <div>
+          <h1>{{ getSessionTypeLabel(completedSession().sessionType) }}</h1>
+          <p class="session-date">{{ formatDate(completedSession().date) }}</p>
+        </div>
+        <span class="status-badge completed">Réalisée</span>
+      </div>
+      <div class="session-meta">
+        @if (completedSession().stravaActivityId) {
+          <span class="meta-chip">Strava</span>
+        }
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Séance réalisée par l'athlète</h2>
+      <div class="completed-meta">
+        @if (completedSession().duration) {
+          <span class="meta-chip">{{ completedSession().duration }} min</span>
+        }
+        @if (completedSession().feeling) {
+          <span class="meta-chip">Ressenti {{ completedSession().feeling }}/10</span>
+        }
+        @if (completedSession().totalVolume) {
+          <span class="meta-chip">Volume {{ completedSession().totalVolume }} kg</span>
+        }
+      </div>
+      @if (completedSession().notes) {
+        <p class="completed-notes">{{ completedSession().notes }}</p>
+      }
+      @if (completedSession().exercises && completedSession().exercises.length > 0) {
+        <div class="completed-exercises">
+          @for (entry of completedSession().exercises; track $index) {
+            <div class="exercise-card completed">
+              <div class="exercise-card-header">
+                <span class="exercise-name">{{ entry.exercise?.name ?? 'Exercice' }}</span>
+              </div>
+              <div class="sets-table">
+                <div class="sets-head">
+                  <span>Série</span><span>Reps</span><span>Charge</span><span>RPE</span>
+                </div>
+                @for (set of entry.sets; track $index) {
+                  <div class="sets-row">
+                    <span>{{ $index + 1 }}</span>
+                    <span>{{ set.reps }}</span>
+                    <span>{{ set.weight ? set.weight + ' kg' : '—' }}</span>
+                    <span>{{ set.rpe ?? '—' }}</span>
+                  </div>
+                }
+              </div>
+              @if (entry.notes) {
+                <p class="ex-notes">{{ entry.notes }}</p>
+              }
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-state">
+          <p>L'athlète n'a pas détaillé d'exercice pour cette séance.</p>
+        </div>
+      }
+    </div>
   }
 </div>
 

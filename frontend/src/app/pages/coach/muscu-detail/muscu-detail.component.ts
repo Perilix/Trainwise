@@ -24,6 +24,7 @@ export class MuscuDetailComponent implements OnInit {
 
   session = signal<PlannedSession | null>(null);
   completedSession = signal<any | null>(null);
+  isStandalone = signal(false);
   isLoading = signal(true);
   isLoadingCompleted = signal(false);
   isSaving = signal(false);
@@ -77,6 +78,24 @@ export class MuscuDetailComponent implements OnInit {
         if (session.status === 'completed') {
           this.loadCompletedSession();
         }
+      },
+      error: (err) => {
+        if (err?.status === 404) {
+          this.loadStandaloneStrengthSession();
+        } else {
+          this.error.set('Impossible de charger la séance');
+          this.isLoading.set(false);
+        }
+      }
+    });
+  }
+
+  loadStandaloneStrengthSession() {
+    this.coachService.getAthleteStrengthSessionById(this.athleteId, this.sessionId).subscribe({
+      next: (session) => {
+        this.completedSession.set(session);
+        this.isStandalone.set(true);
+        this.isLoading.set(false);
       },
       error: () => {
         this.error.set('Impossible de charger la séance');

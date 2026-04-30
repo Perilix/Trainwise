@@ -117,4 +117,8 @@ export class CoachService {
   getAthleteStrengthSession(athleteId: string, plannedId: string): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/athletes/${athleteId}/strength-session/${plannedId}`);
   }
+
+  getAthleteStrengthSessionById(athleteId: string, sessionId: string): Observable<any> {
+    return this.http.get<any>(`${this.API_URL}/athletes/${athleteId}/strength-session-by-id/${sessionId}`);
+  }
 }
