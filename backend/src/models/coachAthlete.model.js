@@ -31,7 +31,7 @@ const coachAthleteSchema = new mongoose.Schema({
   },
   packageType: {
     type: String,
-    enum: ['bronze', 'silver', 'gold'],
+    enum: ['invited', 'bronze', 'silver', 'gold'],
     default: 'silver'
   }
 }, {

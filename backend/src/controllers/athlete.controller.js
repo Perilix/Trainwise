@@ -167,6 +167,7 @@ exports.joinViaCode = async (req, res) => {
       existingRelation.status = 'accepted';
       existingRelation.respondedAt = new Date();
       existingRelation.inviteMethod = 'code';
+      existingRelation.packageType = 'invited';
       await existingRelation.save();
       relationship = existingRelation;
     } else {
@@ -176,7 +177,8 @@ exports.joinViaCode = async (req, res) => {
         athlete: req.user._id,
         status: 'accepted',
         respondedAt: new Date(),
-        inviteMethod: 'code'
+        inviteMethod: 'code',
+        packageType: 'invited'
       });
     }
 

@@ -35,7 +35,18 @@
               <%= r.status === 'accepted' ? '✓ Accepté' : r.status === 'pending' ? '⏳ En attente' : '✗ Refusé' %>
             </span>
           </td>
-          <td><span class="badge badge-user" style="text-transform:capitalize;"><%= r.packageType || '—' %></span></td>
+          <td>
+            <% const pkgColors = { invited: '#7c3aed', bronze: '#b8722d', silver: '#737373', gold: '#b88a00' }; %>
+            <% const pkgBg     = { invited: 'rgba(124,58,237,0.10)', bronze: 'rgba(205,127,50,0.12)', silver: 'rgba(168,168,168,0.18)', gold: 'rgba(255,215,0,0.18)' }; %>
+            <% const currentPkg = r.packageType || 'silver'; %>
+            <form method="POST" action="/coaches/<%= coach._id %>/relations/<%= r._id %>/package" style="margin:0;">
+              <select name="packageType" onchange="this.form.submit()" style="text-transform:capitalize;font-weight:600;font-size:0.78rem;padding:0.25rem 0.5rem;border-radius:8px;border:1px solid rgba(0,0,0,0.08);cursor:pointer;background:<%= pkgBg[currentPkg] %>;color:<%= pkgColors[currentPkg] %>;">
+                <% ['invited','bronze','silver','gold'].forEach(p => { %>
+                  <option value="<%= p %>" <%= currentPkg === p ? 'selected' : '' %>><%= p.charAt(0).toUpperCase() + p.slice(1) %></option>
+                <% }); %>
+              </select>
+            </form>
+          </td>
           <td class="text-muted text-small"><%= new Date(r.invitedAt || r.createdAt).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' }) %></td>
         </tr>
         <% }); %>

@@ -469,6 +469,38 @@
         color: #051923;
         font-size: 0.9rem;
       }
+
+      .package-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #fff;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+
+        i {
+          font-size: 0.7rem;
+        }
+
+        &[data-package="invited"] {
+          background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+        }
+        &[data-package="bronze"] {
+          background: linear-gradient(135deg, #cd7f32 0%, #b8722d 100%);
+        }
+        &[data-package="silver"] {
+          background: linear-gradient(135deg, #d4d4d4 0%, #a8a8a8 100%);
+          color: #3a3a3a;
+        }
+        &[data-package="gold"] {
+          background: linear-gradient(135deg, #ffd700 0%, #ffb700 100%);
+          color: #5a4500;
+        }
+      }
     }
   }
 

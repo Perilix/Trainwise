@@ -130,6 +130,13 @@
               </div>
               <div class="athlete-details">
                 <div class="detail-row">
+                  <span class="label">Abonnement</span>
+                  <span class="package-pill" [attr.data-package]="getPackageDetails(athlete).type">
+                    <i [class]="getPackageDetails(athlete).icon"></i>
+                    {{ getPackageDetails(athlete).name }}
+                  </span>
+                </div>
+                <div class="detail-row">
                   <span class="label">Niveau</span>
                   <span class="value">{{ getLevelLabel(athlete.runningLevel) }}</span>
                 </div>

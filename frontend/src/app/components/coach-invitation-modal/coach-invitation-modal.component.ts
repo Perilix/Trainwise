@@ -27,7 +27,7 @@ export class CoachInvitationModalComponent implements OnInit, OnDestroy {
   get packageDetails(): CoachPackage {
     const packageType = this.invitation?.packageType || 'bronze';
     // Vérifier que le type est valide, sinon utiliser bronze par défaut
-    const validTypes: string[] = ['bronze', 'silver', 'gold'];
+    const validTypes: string[] = ['invited', 'bronze', 'silver', 'gold'];
     const type = validTypes.includes(packageType) ? packageType : 'bronze';
     return COACH_PACKAGES[type as keyof typeof COACH_PACKAGES];
   }

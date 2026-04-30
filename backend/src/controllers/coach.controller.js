@@ -88,6 +88,7 @@ exports.getAthletes = async (req, res) => {
         runningLevel: rel.athlete.runningLevel,
         goal: rel.athlete.goal,
         joinedAt: rel.respondedAt,
+        packageType: rel.packageType,
         ...statusData
       };
     }));

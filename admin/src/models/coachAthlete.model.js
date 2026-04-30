@@ -5,6 +5,6 @@ const coachAthleteSchema = new mongoose.Schema({
   status: { type: String, enum: ['pending', 'accepted', 'rejected'], default: 'pending' },
   invitedAt: { type: Date, default: Date.now },
   respondedAt: { type: Date, default: null },
-  packageType: { type: String, enum: ['bronze', 'silver', 'gold'], default: 'silver' }
+  packageType: { type: String, enum: ['invited', 'bronze', 'silver', 'gold'], default: 'silver' }
 }, { timestamps: true });
 module.exports = mongoose.model('CoachAthlete', coachAthleteSchema);

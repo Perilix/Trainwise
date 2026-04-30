@@ -1,4 +1,5 @@
 import { PlannedSession } from '../services/planning.service';
+import { PackageType } from './package.interface';
 
 export interface Athlete {
   _id: string;
@@ -9,6 +10,7 @@ export interface Athlete {
   runningLevel?: string;
   goal?: string;
   joinedAt: Date;
+  packageType?: PackageType;
   // Statut calculé côté backend
   status?: 'green' | 'orange' | 'red';
   lastActivityDate?: Date | null;

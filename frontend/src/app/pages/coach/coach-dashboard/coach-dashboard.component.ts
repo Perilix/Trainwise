@@ -196,6 +196,11 @@ export class CoachDashboardComponent implements OnInit {
     return athlete.status ?? 'red';
   }
 
+  getPackageDetails(athlete: Athlete) {
+    const type: PackageType = athlete.packageType ?? 'silver';
+    return COACH_PACKAGES[type];
+  }
+
   getActivityBadgeLabel(athlete: Athlete): string {
     const s = athlete.status ?? 'red';
     if (s === 'green') return 'Top';

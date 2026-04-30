@@ -50,4 +50,21 @@ router.get('/:id', requireAuth, async (req, res) => {
   res.render('coach-detail', { coach, relations });
 });
 
+const ALLOWED_PACKAGES = ['invited', 'bronze', 'silver', 'gold'];
+router.post('/:id/relations/:relationId/package', requireAuth, async (req, res) => {
+  const { id, relationId } = req.params;
+  const { packageType } = req.body;
+
+  if (!ALLOWED_PACKAGES.includes(packageType)) {
+    return res.redirect(`/coaches/${id}`);
+  }
+
+  await CoachAthlete.findOneAndUpdate(
+    { _id: relationId, coach: id },
+    { packageType }
+  );
+
+  res.redirect(`/coaches/${id}`);
+});
+
 module.exports = router;

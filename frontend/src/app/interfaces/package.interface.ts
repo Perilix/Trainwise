@@ -1,4 +1,4 @@
-export type PackageType = 'bronze' | 'silver' | 'gold';
+export type PackageType = 'invited' | 'bronze' | 'silver' | 'gold';
 
 export interface CoachPackage {
   type: PackageType;
@@ -13,6 +13,19 @@ export interface CoachPackage {
 }
 
 export const COACH_PACKAGES: Record<PackageType, CoachPackage> = {
+  invited: {
+    type: 'invited',
+    name: 'Invité',
+    price: 0,
+    color: '#a855f7',
+    gradient: 'linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)',
+    icon: 'fa-solid fa-user-check',
+    revenueCatId: '',
+    features: [
+      'Athlète ayant rejoint via un code d\'invitation',
+      'Aucun abonnement payant associé'
+    ]
+  },
   bronze: {
     type: 'bronze',
     name: 'Bronze',
