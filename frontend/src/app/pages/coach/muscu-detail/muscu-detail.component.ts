@@ -6,10 +6,20 @@ import { CoachService } from '../../../services/coach.service';
 import { ExerciseService } from '../../../services/exercise.service';
 import { PlannedSession } from '../../../services/planning.service';
 import {
-  Exercise, StrengthPlanExercise, MuscleGroup, StrengthSessionType,
+  Exercise, StrengthPlanExercise, CircuitBlock, SupersetBlock, SupersetPair,
+  MuscleGroup, StrengthSessionType,
   MUSCLE_GROUP_LABELS, SESSION_TYPE_LABELS as STRENGTH_SESSION_LABELS
 } from '../../../interfaces/strength.interfaces';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
+
+type WorkoutMode = 'single' | 'circuit' | 'superset';
+type PickerTarget =
+  | { kind: 'single' }
+  | { kind: 'circuit' }
+  | { kind: 'superset'; pairIndex: number; slot: 'a' | 'b' };
+
+const DEFAULT_CIRCUIT: CircuitBlock = { name: 'Nouveau circuit', rounds: 3, restBetweenRounds: 60, exercises: [] };
+const DEFAULT_SUPERSET: SupersetBlock = { name: 'Nouveau super-set', sets: 4, restBetweenSets: 90, pairs: [] };
 
 interface DraftMuscuSession {
   date: string;
@@ -66,7 +76,16 @@ export class MuscuDetailComponent implements OnInit {
   });
 
   planExercises = signal<StrengthPlanExercise[]>([]);
+  circuit = signal<CircuitBlock>({ ...DEFAULT_CIRCUIT, exercises: [] });
+  superset = signal<SupersetBlock>({ ...DEFAULT_SUPERSET, pairs: [] });
+  activeMode = signal<WorkoutMode>('single');
+  editingCircuitName = signal(false);
+  editingSupersetName = signal(false);
+
   showExercisePicker = signal(false);
+  pickerTarget = signal<PickerTarget>({ kind: 'single' });
+  circuitDragIndex = signal<number | null>(null);
+  circuitDragOverIndex = signal<number | null>(null);
   exerciseSearch = signal('');
   exerciseFilterMuscle = signal<MuscleGroup | ''>('');
   exerciseLibrary = signal<Exercise[]>([]);
@@ -142,6 +161,24 @@ export class MuscuDetailComponent implements OnInit {
         this.description.set(session.description || '');
         const exercises = session.strengthPlan?.exercises ?? [];
         this.planExercises.set(exercises as StrengthPlanExercise[]);
+        const c = session.strengthPlan?.circuit;
+        if (c && c.exercises?.length) {
+          this.circuit.set({
+            name: c.name || DEFAULT_CIRCUIT.name,
+            rounds: c.rounds ?? DEFAULT_CIRCUIT.rounds,
+            restBetweenRounds: c.restBetweenRounds ?? DEFAULT_CIRCUIT.restBetweenRounds,
+            exercises: c.exercises as StrengthPlanExercise[]
+          });
+        }
+        const s = session.strengthPlan?.superset;
+        if (s && s.pairs?.length) {
+          this.superset.set({
+            name: s.name || DEFAULT_SUPERSET.name,
+            sets: s.sets ?? DEFAULT_SUPERSET.sets,
+            restBetweenSets: s.restBetweenSets ?? DEFAULT_SUPERSET.restBetweenSets,
+            pairs: s.pairs as SupersetPair[]
+          });
+        }
         this.isLoading.set(false);
         if (session.status === 'completed') {
           this.loadCompletedSession();
@@ -194,17 +231,51 @@ export class MuscuDetailComponent implements OnInit {
     }
   }
 
-  private buildStrengthPlan() {
+  private serializeExercise(e: StrengthPlanExercise) {
     return {
-      exercises: this.planExercises().map(e => ({
-        exercise: typeof e.exercise === 'string' ? e.exercise : (e.exercise as Exercise)._id,
-        targetSets: e.targetSets,
-        targetReps: e.targetReps,
-        targetWeight: e.targetWeight,
-        targetRest: e.targetRest,
-        notes: e.notes
-      }))
+      exercise: typeof e.exercise === 'string' ? e.exercise : (e.exercise as Exercise)._id,
+      targetSets: e.targetSets,
+      targetReps: e.targetReps,
+      targetWeight: e.targetWeight,
+      targetRest: e.targetRest,
+      notes: e.notes
     };
+  }
+
+  private buildStrengthPlan(): any {
+    const plan: any = {
+      exercises: this.planExercises().map(e => this.serializeExercise(e))
+    };
+
+    const c = this.circuit();
+    if (c.exercises.length > 0) {
+      plan.circuit = {
+        name: c.name,
+        rounds: c.rounds,
+        restBetweenRounds: c.restBetweenRounds,
+        exercises: c.exercises.map(e => this.serializeExercise(e))
+      };
+    } else {
+      plan.circuit = null;
+    }
+
+    const s = this.superset();
+    const filledPairs = s.pairs.filter(p => p.a || p.b);
+    if (filledPairs.length > 0) {
+      plan.superset = {
+        name: s.name,
+        sets: s.sets,
+        restBetweenSets: s.restBetweenSets,
+        pairs: filledPairs.map(p => ({
+          a: p.a ? this.serializeExercise(p.a) : undefined,
+          b: p.b ? this.serializeExercise(p.b) : undefined
+        }))
+      };
+    } else {
+      plan.superset = null;
+    }
+
+    return plan;
   }
 
   private updateSession() {
@@ -261,7 +332,8 @@ export class MuscuDetailComponent implements OnInit {
     });
   }
 
-  openExercisePicker() {
+  openExercisePicker(target: PickerTarget = { kind: 'single' }) {
+    this.pickerTarget.set(target);
     this.exerciseSearch.set('');
     this.exerciseFilterMuscle.set('');
     this.showExercisePicker.set(true);
@@ -281,13 +353,21 @@ export class MuscuDetailComponent implements OnInit {
     this.showExercisePicker.set(false);
   }
 
-  addPlanExercise(exercise: Exercise) {
-    const entry: StrengthPlanExercise = {
-      exercise,
-      targetSets: 3,
-      targetReps: '10'
-    };
-    this.planExercises.update(list => [...list, entry]);
+  pickExercise(exercise: Exercise) {
+    const target = this.pickerTarget();
+    const entry: StrengthPlanExercise = { exercise, targetSets: 3, targetReps: '10' };
+    if (target.kind === 'single') {
+      this.planExercises.update(list => [...list, entry]);
+    } else if (target.kind === 'circuit') {
+      this.circuit.update(c => ({ ...c, exercises: [...c.exercises, entry] }));
+    } else {
+      this.superset.update(s => {
+        const pairs = s.pairs.map((p, i) =>
+          i === target.pairIndex ? { ...p, [target.slot]: entry } : p
+        );
+        return { ...s, pairs };
+      });
+    }
     this.closeExercisePicker();
   }
 
@@ -303,9 +383,137 @@ export class MuscuDetailComponent implements OnInit {
     });
   }
 
+  // ---------- Circuit helpers ----------
+  setCircuitName(name: string) {
+    this.circuit.update(c => ({ ...c, name }));
+  }
+  setCircuitRounds(delta: number) {
+    this.circuit.update(c => ({
+      ...c,
+      rounds: Math.min(20, Math.max(1, c.rounds + delta))
+    }));
+  }
+  setCircuitRest(delta: number) {
+    this.circuit.update(c => ({
+      ...c,
+      restBetweenRounds: Math.min(600, Math.max(0, (c.restBetweenRounds ?? 0) + delta))
+    }));
+  }
+  removeCircuitExercise(index: number) {
+    this.circuit.update(c => ({ ...c, exercises: c.exercises.filter((_, i) => i !== index) }));
+  }
+  moveCircuitExercise(from: number, to: number) {
+    if (from === to) return;
+    this.circuit.update(c => {
+      if (from < 0 || from >= c.exercises.length || to < 0 || to >= c.exercises.length) return c;
+      const exercises = [...c.exercises];
+      const [moved] = exercises.splice(from, 1);
+      exercises.splice(to, 0, moved);
+      return { ...c, exercises };
+    });
+  }
+  // Drag-and-drop handlers (circuit reorder)
+  onCircuitDragStart(index: number, ev: DragEvent) {
+    this.circuitDragIndex.set(index);
+    if (ev.dataTransfer) {
+      ev.dataTransfer.effectAllowed = 'move';
+      ev.dataTransfer.setData('text/plain', String(index));
+      const node = (ev.target as HTMLElement)?.closest?.('.flow-node') as HTMLElement | null;
+      if (node) ev.dataTransfer.setDragImage(node, 20, 20);
+    }
+  }
+  onCircuitDragOver(index: number, ev: DragEvent) {
+    ev.preventDefault();
+    if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move';
+    this.circuitDragOverIndex.set(index);
+  }
+  onCircuitDrop(index: number, ev: DragEvent) {
+    ev.preventDefault();
+    const from = this.circuitDragIndex();
+    if (from !== null) this.moveCircuitExercise(from, index);
+    this.circuitDragIndex.set(null);
+    this.circuitDragOverIndex.set(null);
+  }
+  onCircuitDragEnd() {
+    this.circuitDragIndex.set(null);
+    this.circuitDragOverIndex.set(null);
+  }
+  updateCircuitExercise(index: number, field: keyof StrengthPlanExercise, value: any) {
+    this.circuit.update(c => {
+      const exercises = [...c.exercises];
+      (exercises[index] as any)[field] = value;
+      return { ...c, exercises };
+    });
+  }
+  resetCircuit() {
+    this.circuit.set({ ...DEFAULT_CIRCUIT, exercises: [] });
+  }
+
+  // ---------- Super-set helpers ----------
+  setSupersetName(name: string) {
+    this.superset.update(s => ({ ...s, name }));
+  }
+  setSupersetSets(delta: number) {
+    this.superset.update(s => ({
+      ...s,
+      sets: Math.min(20, Math.max(1, s.sets + delta))
+    }));
+  }
+  setSupersetRest(delta: number) {
+    this.superset.update(s => ({
+      ...s,
+      restBetweenSets: Math.min(600, Math.max(0, (s.restBetweenSets ?? 0) + delta))
+    }));
+  }
+  addSupersetPair() {
+    this.superset.update(s => ({ ...s, pairs: [...s.pairs, {}] }));
+  }
+  removeSupersetPair(index: number) {
+    this.superset.update(s => ({ ...s, pairs: s.pairs.filter((_, i) => i !== index) }));
+  }
+  moveSupersetPair(index: number, dir: -1 | 1) {
+    this.superset.update(s => {
+      const target = index + dir;
+      if (target < 0 || target >= s.pairs.length) return s;
+      const pairs = [...s.pairs];
+      [pairs[index], pairs[target]] = [pairs[target], pairs[index]];
+      return { ...s, pairs };
+    });
+  }
+  removeSupersetSlot(pairIndex: number, slot: 'a' | 'b') {
+    this.superset.update(s => {
+      const pairs = s.pairs.map((p, i) => {
+        if (i !== pairIndex) return p;
+        const np = { ...p };
+        delete np[slot];
+        return np;
+      });
+      return { ...s, pairs };
+    });
+  }
+  updateSupersetSlot(pairIndex: number, slot: 'a' | 'b', field: keyof StrengthPlanExercise, value: any) {
+    this.superset.update(s => {
+      const pairs = s.pairs.map((p, i) => {
+        if (i !== pairIndex) return p;
+        const current = p[slot];
+        if (!current) return p;
+        return { ...p, [slot]: { ...current, [field]: value } };
+      });
+      return { ...s, pairs };
+    });
+  }
+
   getExerciseName(entry: StrengthPlanExercise): string {
     if (typeof entry.exercise === 'string') return entry.exercise;
     return (entry.exercise as Exercise).name;
+  }
+
+  formatRest(seconds: number | undefined): string {
+    if (!seconds) return '0s';
+    if (seconds < 60) return `${seconds}s`;
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return s ? `${m}m${s.toString().padStart(2, '0')}` : `${m}min`;
   }
 
   getSessionTypeLabel(type: string): string {

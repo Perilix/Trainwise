@@ -239,6 +239,9 @@ exports.getAthleteCalendar = async (req, res) => {
         date: { $gte: startDate, $lte: endDate }
       })
         .populate('strengthPlan.exercises.exercise', 'name slug imageUrl')
+        .populate('strengthPlan.circuit.exercises.exercise', 'name slug imageUrl')
+        .populate('strengthPlan.superset.pairs.a.exercise', 'name slug imageUrl')
+        .populate('strengthPlan.superset.pairs.b.exercise', 'name slug imageUrl')
         .sort({ date: 1 }),
       StrengthSession.find({
         user: athleteId,
@@ -378,7 +381,10 @@ exports.getAthletePlannedSession = async (req, res) => {
     if (!relationship) return res.status(403).json({ error: 'Accès refusé' });
 
     const plannedRun = await PlannedRun.findOne({ _id: planId, user: athleteId })
-      .populate('strengthPlan.exercises.exercise', 'name primaryMuscle equipment');
+      .populate('strengthPlan.exercises.exercise', 'name primaryMuscle equipment')
+      .populate('strengthPlan.circuit.exercises.exercise', 'name primaryMuscle equipment')
+      .populate('strengthPlan.superset.pairs.a.exercise', 'name primaryMuscle equipment')
+      .populate('strengthPlan.superset.pairs.b.exercise', 'name primaryMuscle equipment');
 
     if (!plannedRun) return res.status(404).json({ error: 'Séance non trouvée' });
 

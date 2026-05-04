@@ -68,6 +68,44 @@ const plannedRunSchema = new mongoose.Schema({
       targetRest: String,  // texte libre (ex: "60s", "1min30", "2 min")
       notes: String
     }],
+    // Bloc Circuit — exos répétés en boucle (HIIT, condition physique)
+    circuit: {
+      name: String,
+      rounds: { type: Number, default: 3 },
+      restBetweenRounds: { type: Number, default: 60 }, // secondes
+      exercises: [{
+        exercise: { type: mongoose.Schema.Types.ObjectId, ref: 'Exercise' },
+        targetSets: Number,
+        targetReps: String,
+        targetWeight: Number,
+        targetRest: String,
+        notes: String
+      }]
+    },
+    // Bloc Super-set — paires d'exos enchaînés sans repos
+    superset: {
+      name: String,
+      sets: { type: Number, default: 4 },
+      restBetweenSets: { type: Number, default: 90 }, // secondes
+      pairs: [{
+        a: {
+          exercise: { type: mongoose.Schema.Types.ObjectId, ref: 'Exercise' },
+          targetSets: Number,
+          targetReps: String,
+          targetWeight: Number,
+          targetRest: String,
+          notes: String
+        },
+        b: {
+          exercise: { type: mongoose.Schema.Types.ObjectId, ref: 'Exercise' },
+          targetSets: Number,
+          targetReps: String,
+          targetWeight: Number,
+          targetRest: String,
+          notes: String
+        }
+      }]
+    },
     estimatedDuration: Number // minutes
   },
 

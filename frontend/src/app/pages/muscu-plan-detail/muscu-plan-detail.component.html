@@ -50,59 +50,348 @@
         <h2>Exercices planifiés</h2>
       </div>
 
-      @if (planExercises().length === 0) {
-        <div class="empty-state">
-          @if (canEdit()) {
-            <p>Aucun exercice. Ajoute des exercices pour structurer ta séance.</p>
-            <button class="btn-add" style="margin-top: 1rem;" (click)="openExercisePicker()">+ Ajouter</button>
-          } @else {
-            <p>Aucun exercice planifié.</p>
-          }
-        </div>
-      } @else {
-        <div class="exercises-list">
-          @for (ex of planExercises(); track $index) {
-            <div class="exercise-card">
-              <div class="exercise-card-header">
-                <span class="exercise-name">{{ getExerciseName(ex) }}</span>
-                @if (canEdit()) {
-                  <button class="remove-btn" (click)="removePlanExercise($index)">×</button>
-                }
-              </div>
+      <!-- Mode tabs -->
+      <div class="mode-tabs" role="tablist">
+        <button type="button" role="tab" class="mode-tab" [class.active]="activeMode() === 'single'" (click)="activeMode.set('single')">Exercices</button>
+        <button type="button" role="tab" class="mode-tab" [class.active]="activeMode() === 'circuit'" (click)="activeMode.set('circuit')">Circuit</button>
+        <button type="button" role="tab" class="mode-tab" [class.active]="activeMode() === 'superset'" (click)="activeMode.set('superset')">Super-set</button>
+      </div>
+
+      @switch (activeMode()) {
+
+        @case ('single') {
+          @if (planExercises().length === 0) {
+            <div class="empty-state">
               @if (canEdit()) {
-                <div class="exercise-fields">
-                  <div class="field">
-                    <label>Séries</label>
-                    <input type="number" [value]="ex.targetSets" (input)="updatePlanExercise($index, 'targetSets', +$any($event.target).value)" min="1">
-                  </div>
-                  <div class="field">
-                    <label>Reps</label>
-                    <input type="text" [value]="ex.targetReps" (input)="updatePlanExercise($index, 'targetReps', $any($event.target).value)" placeholder="8-12">
-                  </div>
-                  <div class="field">
-                    <label>Charge (kg)</label>
-                    <input type="number" [value]="ex.targetWeight ?? ''" (input)="updatePlanExercise($index, 'targetWeight', +$any($event.target).value || undefined)" min="0">
-                  </div>
-                  <div class="field">
-                    <label>Repos</label>
-                    <input type="text" [value]="ex.targetRest ?? ''" (input)="updatePlanExercise($index, 'targetRest', $any($event.target).value || undefined)" placeholder="ex: 60s, 1min30">
-                  </div>
-                </div>
-                <input type="text" class="notes-input" [value]="ex.notes ?? ''" (input)="updatePlanExercise($index, 'notes', $any($event.target).value)" placeholder="Notes pour cet exercice...">
+                <p>Aucun exercice. Ajoute des exercices pour structurer ta séance.</p>
+                <button class="btn-add" style="margin-top: 1rem;" (click)="openExercisePicker({ kind: 'single' })">+ Ajouter</button>
               } @else {
-                <div class="exercise-summary">
-                  <span>{{ ex.targetSets }} × {{ ex.targetReps }}</span>
-                  @if (ex.targetWeight) { <span>@ {{ ex.targetWeight }} kg</span> }
-                  @if (ex.targetRest) { <span>repos {{ ex.targetRest }}</span> }
+                <p>Aucun exercice planifié.</p>
+              }
+            </div>
+          } @else {
+            <div class="exercises-list">
+              @for (ex of planExercises(); track $index) {
+                <div class="exercise-card">
+                  <div class="exercise-card-header">
+                    <span class="exercise-name">{{ getExerciseName(ex) }}</span>
+                    @if (canEdit()) {
+                      <button class="remove-btn" (click)="removePlanExercise($index)">×</button>
+                    }
+                  </div>
+                  @if (canEdit()) {
+                    <div class="exercise-fields">
+                      <div class="field">
+                        <label>Séries</label>
+                        <input type="number" [value]="ex.targetSets" (input)="updatePlanExercise($index, 'targetSets', +$any($event.target).value)" min="1">
+                      </div>
+                      <div class="field">
+                        <label>Reps</label>
+                        <input type="text" [value]="ex.targetReps" (input)="updatePlanExercise($index, 'targetReps', $any($event.target).value)" placeholder="8-12">
+                      </div>
+                      <div class="field">
+                        <label>Charge (kg)</label>
+                        <input type="number" [value]="ex.targetWeight ?? ''" (input)="updatePlanExercise($index, 'targetWeight', +$any($event.target).value || undefined)" min="0">
+                      </div>
+                      <div class="field">
+                        <label>Repos</label>
+                        <input type="text" [value]="ex.targetRest ?? ''" (input)="updatePlanExercise($index, 'targetRest', $any($event.target).value || undefined)" placeholder="ex: 60s, 1min30">
+                      </div>
+                    </div>
+                    <input type="text" class="notes-input" [value]="ex.notes ?? ''" (input)="updatePlanExercise($index, 'notes', $any($event.target).value)" placeholder="Notes pour cet exercice...">
+                  } @else {
+                    <div class="exercise-summary">
+                      <span>{{ ex.targetSets }} × {{ ex.targetReps }}</span>
+                      @if (ex.targetWeight) { <span>@ {{ ex.targetWeight }} kg</span> }
+                      @if (ex.targetRest) { <span>repos {{ ex.targetRest }}</span> }
+                    </div>
+                    @if (ex.notes) { <p class="ex-notes">{{ ex.notes }}</p> }
+                  }
                 </div>
-                @if (ex.notes) { <p class="ex-notes">{{ ex.notes }}</p> }
               }
             </div>
           }
-        </div>
-      }
-      @if (planExercises().length !== 0 && canEdit()) {
-        <button class="btn-add" (click)="openExercisePicker()">+ Ajouter</button>
+          @if (planExercises().length !== 0 && canEdit()) {
+            <button class="btn-add" (click)="openExercisePicker({ kind: 'single' })">+ Ajouter</button>
+          }
+        }
+
+        @case ('circuit') {
+          @if (circuit().exercises.length === 0 && canEdit()) {
+            <div class="block-intro">
+              <h3 class="block-intro-title">Compose ton circuit</h3>
+              <p class="block-intro-sub">Ajoute des exercices, ils seront répétés en boucle. Idéal pour HIIT et cardio.</p>
+            </div>
+          }
+          @if (circuit().exercises.length === 0 && !canEdit()) {
+            <div class="empty-state"><p>Aucun circuit n'avait été planifié.</p></div>
+          } @else {
+            <div class="block-banner banner-circuit">
+              <div class="banner-left">
+                <div class="banner-label">Circuit · en boucle</div>
+                @if (canEdit() && editingCircuitName()) {
+                  <input class="banner-name banner-name-input"
+                         [value]="circuit().name"
+                         (input)="setCircuitName($any($event.target).value)"
+                         (blur)="editingCircuitName.set(false)"
+                         (keydown.enter)="editingCircuitName.set(false)"
+                         autofocus>
+                } @else {
+                  <div class="banner-name" (click)="canEdit() && editingCircuitName.set(true)">{{ circuit().name }}</div>
+                }
+              </div>
+              <div class="banner-rounds">
+                <span class="banner-rounds-num">{{ circuit().rounds }}×</span>
+                <span class="banner-rounds-suffix">tours</span>
+              </div>
+            </div>
+
+            <div class="flow flow-circuit">
+              @for (ex of circuit().exercises; track $index; let last = $last) {
+                <div class="flow-node filled"
+                     [class.dragging]="circuitDragIndex() === $index"
+                     [class.drag-over]="circuitDragOverIndex() === $index && circuitDragIndex() !== $index"
+                     (dragover)="onCircuitDragOver($index, $event)"
+                     (drop)="onCircuitDrop($index, $event)">
+                  <div class="flow-num">{{ $index + 1 }}</div>
+                  <div class="flow-body">
+                    <div class="flow-name">{{ getExerciseName(ex) }}</div>
+                    @if (canEdit()) {
+                      <div class="flow-fields">
+                        <div class="field">
+                          <label>Reps / durée</label>
+                          <input type="text" [value]="ex.targetReps" (input)="updateCircuitExercise($index, 'targetReps', $any($event.target).value)" placeholder="12 reps ou 30s">
+                        </div>
+                        <div class="field">
+                          <label>Charge (kg)</label>
+                          <input type="number" [value]="ex.targetWeight ?? ''" (input)="updateCircuitExercise($index, 'targetWeight', +$any($event.target).value || undefined)" min="0">
+                        </div>
+                      </div>
+                    } @else {
+                      <div class="flow-meta"><b>{{ ex.targetReps }}</b>@if (ex.targetWeight) { <span> · {{ ex.targetWeight }} kg</span> }</div>
+                    }
+                  </div>
+                  @if (canEdit()) {
+                    <div class="flow-actions">
+                      <button type="button" class="remove-btn" (click)="removeCircuitExercise($index)" aria-label="Supprimer l'exercice">×</button>
+                      <span class="flow-grip"
+                            [attr.draggable]="true"
+                            (dragstart)="onCircuitDragStart($index, $event)"
+                            (dragend)="onCircuitDragEnd()"
+                            aria-label="Glisser pour réordonner"
+                            title="Glisser pour réordonner">⋮⋮</span>
+                    </div>
+                  }
+                </div>
+                @if (!last) {
+                  <div class="flow-arrow" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                  </div>
+                }
+              }
+              @if (canEdit()) {
+                @let emptyCount = circuit().exercises.length >= 3 ? 0 : 3 - circuit().exercises.length;
+                @if (circuit().exercises.length > 0 && emptyCount > 0) {
+                  <div class="flow-arrow" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                  </div>
+                }
+                @for (i of [].constructor(emptyCount); track $index) {
+                  @let position = circuit().exercises.length + $index + 1;
+                  <div class="flow-node empty" tabindex="0" (click)="openExercisePicker({ kind: 'circuit' })" [attr.aria-label]="'Ajouter le ' + position + 'e exercice du circuit'">
+                    <span class="pluscircle">+</span>
+                    <span>Ajouter {{ position === 1 ? 'le 1ᵉʳ exercice' : position === 2 ? 'le 2ᵉ exercice' : position === 3 ? 'le 3ᵉ exercice' : 'un exercice' }}</span>
+                  </div>
+                  @if ($index < emptyCount - 1) {
+                    <div class="flow-arrow" aria-hidden="true">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
+                  }
+                }
+              }
+            </div>
+
+            @if (canEdit()) {
+              <button type="button" class="extend-btn extend-circuit" (click)="openExercisePicker({ kind: 'circuit' })">
+                <span class="pluscircle pluscircle-cyan">+</span>
+                Étendre le circuit
+              </button>
+
+              <div class="settings-grid">
+                <div class="setting-card">
+                  <span class="setting-label">Tours</span>
+                  <div class="stepper">
+                    <button type="button" (click)="setCircuitRounds(-1)" aria-label="Diminuer le nombre de tours">−</button>
+                    <span class="stepper-value">{{ circuit().rounds }}</span>
+                    <button type="button" (click)="setCircuitRounds(1)" aria-label="Augmenter le nombre de tours">+</button>
+                  </div>
+                </div>
+                <div class="setting-card">
+                  <span class="setting-label">Récup / tour</span>
+                  <div class="stepper">
+                    <button type="button" (click)="setCircuitRest(-15)" aria-label="Diminuer le repos">−</button>
+                    <span class="stepper-value">{{ formatRest(circuit().restBetweenRounds) }}</span>
+                    <button type="button" (click)="setCircuitRest(15)" aria-label="Augmenter le repos">+</button>
+                  </div>
+                </div>
+              </div>
+            } @else {
+              <div class="block-summary">
+                <span>{{ circuit().rounds }} tours</span>
+                <span>Récup {{ formatRest(circuit().restBetweenRounds) }}</span>
+              </div>
+            }
+          }
+        }
+
+        @case ('superset') {
+          @if (superset().pairs.length === 0 && canEdit()) {
+            <div class="block-intro">
+              <h3 class="block-intro-title">Compose ton super-set</h3>
+              <p class="block-intro-sub">Enchaîne 2 exercices sans repos entre les deux. Récup uniquement à la fin de chaque paire.</p>
+            </div>
+          }
+          @if (superset().pairs.length === 0 && !canEdit()) {
+            <div class="empty-state"><p>Aucun super-set n'avait été planifié.</p></div>
+          } @else {
+            <div class="block-banner banner-superset">
+              <div class="banner-left">
+                <div class="banner-label">Super-set</div>
+                @if (canEdit() && editingSupersetName()) {
+                  <input class="banner-name banner-name-input"
+                         [value]="superset().name"
+                         (input)="setSupersetName($any($event.target).value)"
+                         (blur)="editingSupersetName.set(false)"
+                         (keydown.enter)="editingSupersetName.set(false)"
+                         autofocus>
+                } @else {
+                  <div class="banner-name" (click)="canEdit() && editingSupersetName.set(true)">{{ superset().name }}</div>
+                }
+              </div>
+              <div class="banner-rounds">
+                <span class="banner-rounds-num">{{ superset().sets }}</span>
+                <span class="banner-rounds-suffix">séries</span>
+              </div>
+            </div>
+
+            @for (pair of superset().pairs; track $index; let pairFirst = $first; let pairLast = $last) {
+              <div class="pair-container" [class.pair-empty]="!pair.a && !pair.b">
+                <div class="pair-badge" [class.pair-badge-empty]="!pair.a && !pair.b">Paire {{ $index + 1 }}</div>
+                @if (canEdit()) {
+                  <div class="pair-actions">
+                    <button type="button" class="pair-action" (click)="moveSupersetPair($index, -1)" [disabled]="pairFirst" aria-label="Monter la paire" title="Monter">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+                    </button>
+                    <button type="button" class="pair-action" (click)="moveSupersetPair($index, 1)" [disabled]="pairLast" aria-label="Descendre la paire" title="Descendre">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <button type="button" class="pair-action pair-action-danger" (click)="removeSupersetPair($index)" aria-label="Supprimer la paire" title="Supprimer">×</button>
+                  </div>
+                }
+
+                @if (pair.a) {
+                  <div class="flow-node filled flow-node-violet">
+                    <div class="flow-num flow-num-violet">A</div>
+                    <div class="flow-body">
+                      <div class="flow-name">{{ getExerciseName(pair.a) }}</div>
+                      @if (canEdit()) {
+                        <div class="flow-fields">
+                          <div class="field"><label>Reps</label><input type="text" [value]="pair.a.targetReps" (input)="updateSupersetSlot($index, 'a', 'targetReps', $any($event.target).value)" placeholder="10"></div>
+                          <div class="field"><label>Charge (kg)</label><input type="number" [value]="pair.a.targetWeight ?? ''" (input)="updateSupersetSlot($index, 'a', 'targetWeight', +$any($event.target).value || undefined)" min="0"></div>
+                        </div>
+                      } @else {
+                        <div class="flow-meta"><b>{{ pair.a.targetReps }}</b>@if (pair.a.targetWeight) { <span> · {{ pair.a.targetWeight }} kg</span> }</div>
+                      }
+                    </div>
+                    @if (canEdit()) { <button type="button" class="remove-btn" (click)="removeSupersetSlot($index, 'a')">×</button> }
+                  </div>
+                } @else {
+                  <div class="flow-node empty empty-violet" tabindex="0" (click)="canEdit() && openExercisePicker({ kind: 'superset', pairIndex: $index, slot: 'a' })">
+                    <span class="pluscircle">+</span>
+                    <span>Exercice A</span>
+                  </div>
+                }
+
+                <div class="pair-connector" [class.pair-connector-empty]="!pair.a && !pair.b">
+                  <div class="pair-connector-line"></div>
+                  <div class="pair-connector-pill">sans repos</div>
+                </div>
+
+                @if (pair.b) {
+                  <div class="flow-node filled flow-node-violet">
+                    <div class="flow-num flow-num-violet">B</div>
+                    <div class="flow-body">
+                      <div class="flow-name">{{ getExerciseName(pair.b) }}</div>
+                      @if (canEdit()) {
+                        <div class="flow-fields">
+                          <div class="field"><label>Reps</label><input type="text" [value]="pair.b.targetReps" (input)="updateSupersetSlot($index, 'b', 'targetReps', $any($event.target).value)" placeholder="12"></div>
+                          <div class="field"><label>Charge (kg)</label><input type="number" [value]="pair.b.targetWeight ?? ''" (input)="updateSupersetSlot($index, 'b', 'targetWeight', +$any($event.target).value || undefined)" min="0"></div>
+                        </div>
+                      } @else {
+                        <div class="flow-meta"><b>{{ pair.b.targetReps }}</b>@if (pair.b.targetWeight) { <span> · {{ pair.b.targetWeight }} kg</span> }</div>
+                      }
+                    </div>
+                    @if (canEdit()) { <button type="button" class="remove-btn" (click)="removeSupersetSlot($index, 'b')">×</button> }
+                  </div>
+                } @else {
+                  <div class="flow-node empty empty-violet" tabindex="0" (click)="canEdit() && openExercisePicker({ kind: 'superset', pairIndex: $index, slot: 'b' })">
+                    <span class="pluscircle">+</span>
+                    <span>Exercice B</span>
+                  </div>
+                }
+              </div>
+            }
+
+            @if (canEdit()) {
+              @if (superset().pairs.length === 0) {
+                <div class="pair-container pair-empty">
+                  <div class="pair-badge pair-badge-empty">Paire 1</div>
+                  <div class="flow-node empty empty-violet" tabindex="0" (click)="addSupersetPair(); openExercisePicker({ kind: 'superset', pairIndex: 0, slot: 'a' })">
+                    <span class="pluscircle">+</span>
+                    <span>Exercice A</span>
+                  </div>
+                  <div class="pair-connector pair-connector-empty">
+                    <div class="pair-connector-line"></div>
+                    <div class="pair-connector-pill">sans repos</div>
+                  </div>
+                  <div class="flow-node empty empty-violet" tabindex="0" (click)="addSupersetPair(); openExercisePicker({ kind: 'superset', pairIndex: 0, slot: 'b' })">
+                    <span class="pluscircle">+</span>
+                    <span>Exercice B</span>
+                  </div>
+                </div>
+              }
+
+              <button type="button" class="extend-btn extend-superset" (click)="addSupersetPair()">
+                <span class="pluscircle pluscircle-violet">+</span>
+                Ajouter une paire
+              </button>
+
+              <div class="settings-grid">
+                <div class="setting-card">
+                  <span class="setting-label">Séries</span>
+                  <div class="stepper">
+                    <button type="button" (click)="setSupersetSets(-1)" aria-label="Diminuer le nombre de séries">−</button>
+                    <span class="stepper-value">{{ superset().sets }}</span>
+                    <button type="button" (click)="setSupersetSets(1)" aria-label="Augmenter le nombre de séries">+</button>
+                  </div>
+                </div>
+                <div class="setting-card">
+                  <span class="setting-label">Récup / série</span>
+                  <div class="stepper">
+                    <button type="button" (click)="setSupersetRest(-15)" aria-label="Diminuer le repos">−</button>
+                    <span class="stepper-value">{{ formatRest(superset().restBetweenSets) }}</span>
+                    <button type="button" (click)="setSupersetRest(15)" aria-label="Augmenter le repos">+</button>
+                  </div>
+                </div>
+              </div>
+            } @else {
+              <div class="block-summary">
+                <span>{{ superset().sets }} séries</span>
+                <span>Récup {{ formatRest(superset().restBetweenSets) }}</span>
+              </div>
+            }
+          }
+        }
       }
 
       @if (canEdit()) {
@@ -148,7 +437,7 @@
         } @else {
           <div class="exercise-picker-list">
             @for (ex of filteredExercises(); track ex._id) {
-              <button type="button" class="exercise-pick-item" (click)="addPlanExercise(ex)">
+              <button type="button" class="exercise-pick-item" (click)="pickExercise(ex)">
                 <span class="ex-name">{{ ex.name }}</span>
                 <span class="ex-muscle">{{ muscleGroupLabels[ex.primaryMuscle] }}</span>
               </button>

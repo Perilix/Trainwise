@@ -37,7 +37,11 @@ exports.getPlannedRunById = async (req, res) => {
     const plannedRun = await PlannedRun.findOne({
       _id: req.params.id,
       user: req.user._id
-    }).populate('linkedRun').populate('strengthPlan.exercises.exercise', 'name slug imageUrl primaryMuscle');
+    }).populate('linkedRun')
+      .populate('strengthPlan.exercises.exercise', 'name slug imageUrl primaryMuscle')
+      .populate('strengthPlan.circuit.exercises.exercise', 'name slug imageUrl primaryMuscle')
+      .populate('strengthPlan.superset.pairs.a.exercise', 'name slug imageUrl primaryMuscle')
+      .populate('strengthPlan.superset.pairs.b.exercise', 'name slug imageUrl primaryMuscle');
 
     if (!plannedRun) {
       return res.status(404).json({ error: 'Séance planifiée non trouvée' });
@@ -439,6 +443,9 @@ exports.getCalendarData = async (req, res) => {
       date: { $gte: startDate, $lte: endDate }
     })
       .populate('strengthPlan.exercises.exercise', 'name slug imageUrl')
+      .populate('strengthPlan.circuit.exercises.exercise', 'name slug imageUrl')
+      .populate('strengthPlan.superset.pairs.a.exercise', 'name slug imageUrl')
+      .populate('strengthPlan.superset.pairs.b.exercise', 'name slug imageUrl')
       .sort({ date: 1 });
 
     // Récupérer les séances de muscu effectuées

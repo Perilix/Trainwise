@@ -110,8 +110,32 @@ export interface StrengthPlanExercise {
   notes?: string;
 }
 
+// Bloc Circuit — exos répétés en boucle (HIIT, condition physique)
+export interface CircuitBlock {
+  name?: string;
+  rounds: number;
+  restBetweenRounds?: number; // secondes
+  exercises: StrengthPlanExercise[];
+}
+
+// Paire d'un super-set (A enchaîné sur B sans repos)
+export interface SupersetPair {
+  a?: StrengthPlanExercise;
+  b?: StrengthPlanExercise;
+}
+
+// Bloc Super-set — paires d'exos enchaînés sans repos
+export interface SupersetBlock {
+  name?: string;
+  sets: number;
+  restBetweenSets?: number; // secondes
+  pairs: SupersetPair[];
+}
+
 export interface StrengthPlan {
   exercises: StrengthPlanExercise[];
+  circuit?: CircuitBlock;
+  superset?: SupersetBlock;
   estimatedDuration?: number;
 }
 
