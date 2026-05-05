@@ -19,12 +19,12 @@
       <span class="planned-badge done">✓ Enregistrée</span>
       Ta séance a bien été enregistrée. Tu peux la modifier ou lancer une analyse IA.
     </div>
-  } @else if (editSessionId() && editSessionIsStrava()) {
+  } @else if (editSessionId() && editSessionIsStrava() && exercises().length === 0) {
     <div class="alert info">
       <span class="planned-badge">Strava</span>
       Cette séance vient de Strava — détaille les exercices, séries et charges pour l'enrichir.
     </div>
-  } @else if (editSessionId()) {
+  } @else if (editSessionId() && exercises().length === 0) {
     <div class="alert info">
       <span class="planned-badge">À compléter</span>
       Détaille les exercices, séries et charges pour cette séance.

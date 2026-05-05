@@ -222,12 +222,24 @@
 
     <!-- Courses effectuées -->
     @for (run of day.runs; track run._id) {
-      <div class="session-card completed clickable" (click)="goToRunDetail(run)">
+      <div class="session-card completed clickable" [class.strava]="!!run.stravaActivityId" (click)="goToRunDetail(run)">
+        @if (run.stravaActivityId) {
+          <span class="strava-badge">Strava</span>
+        }
         <div class="session-header">
           <span class="activity-icon">🏃</span>
+          <span class="session-type">{{ getSessionTypeLabel(run.sessionType || '') || 'Course' }}</span>
           <span class="session-badge completed">Effectuée</span>
           <span class="chevron">›</span>
         </div>
+        @if (run.notes) {
+          <div class="run-notes">
+            <span class="run-title">{{ getRunTitle(run.notes) }}</span>
+            @if (getRunDescription(run.notes)) {
+              <p class="run-description">{{ getRunDescription(run.notes) }}</p>
+            }
+          </div>
+        }
         <div class="session-stats">
           @if (getRunDistance(run) > 0) {
             <span>{{ getRunDistance(run) }} km</span>

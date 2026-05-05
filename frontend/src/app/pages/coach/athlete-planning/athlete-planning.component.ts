@@ -545,6 +545,16 @@ export class AthletePlanningComponent implements OnInit {
     return activityType === 'strength' ? '💪' : '🏃';
   }
 
+  getRunTitle(notes?: string): string {
+    if (!notes) return '';
+    return notes.split('\n')[0] || '';
+  }
+
+  getRunDescription(notes?: string): string {
+    if (!notes) return '';
+    return notes.split('\n').slice(2).join('\n').trim();
+  }
+
   formatDate(date: Date): string {
     return new Date(date).toLocaleDateString('fr-FR', {
       weekday: 'long',
