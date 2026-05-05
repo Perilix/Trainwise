@@ -120,9 +120,12 @@
     (touchcancel)="onOverlayTouchEnd($event)">
     @if (isAddingSession()) {
     <div class="modal day-detail-modal" (click)="$event.stopPropagation()">
+      <div class="modal-handle"></div>
       <div class="modal-header">
         <h2>{{ formatDate(selectedDay()!.date) }}</h2>
-        <button class="close-btn" (click)="closeDetail()">&times;</button>
+        <div class="modal-header-actions">
+          <button class="modal-close" (click)="closeDetail()">×</button>
+        </div>
       </div>
       <div class="modal-body">
         <div class="add-mode-tabs">
@@ -262,9 +265,13 @@
 
 <ng-template #dayModalTpl let-day>
   <div class="modal day-detail-modal" (click)="$event.stopPropagation()">
+    <div class="modal-handle"></div>
     <div class="modal-header">
       <h2>{{ formatDate(day.date) }}</h2>
-      <button class="close-btn" (click)="closeDetail()">&times;</button>
+      <div class="modal-header-actions">
+        <button class="btn-add" (click)="openAddSession()" title="Ajouter une séance">+</button>
+        <button class="modal-close" (click)="closeDetail()">×</button>
+      </div>
     </div>
     <div class="day-page-body">
       <ng-container *ngTemplateOutlet="dayContentTpl; context: { $implicit: day }"></ng-container>
