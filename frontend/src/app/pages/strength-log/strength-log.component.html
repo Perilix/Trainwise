@@ -412,3 +412,19 @@
     </div>
   </div>
 }
+
+@if (isAnalyzing()) {
+  <div class="analysis-loader-overlay">
+    <div class="analysis-loader-card">
+      <div class="loader-circle">
+        <svg viewBox="0 0 50 50">
+          <circle class="loader-track" cx="25" cy="25" r="20" fill="none" stroke-width="4"></circle>
+          <circle class="loader-progress" cx="25" cy="25" r="20" fill="none" stroke-width="4" stroke-linecap="round"></circle>
+        </svg>
+        <div class="loader-pulse"><i class="fa-solid fa-wand-magic-sparkles analysisFa"></i></div>
+      </div>
+      <h3 class="loader-title">Nous analysons votre séance</h3>
+      <p class="loader-subtitle">Quelques instants, on prépare ton analyse personnalisée...</p>
+    </div>
+  </div>
+}

@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { PlanningService, PlannedSession, CalendarData, SessionType, ActivityType, RunningSessionType } from '../../services/planning.service';
 import { RunService, Run, RunBlock } from '../../services/run.service';
 import { StrengthSession, StrengthSessionType, SESSION_TYPE_LABELS as STRENGTH_SESSION_LABELS } from '../../interfaces/strength.interfaces';
+import { StrengthService } from '../../services/strength.service';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 import { TourTooltipComponent, TourStep } from '../../components/tour-tooltip/tour-tooltip.component';
 import { SubscriptionService } from '../../services/subscription.service';
@@ -127,6 +128,7 @@ export class PlanningComponent implements OnInit {
   // Delete confirm
   sessionToDelete = signal<PlannedSession | null>(null);
   runToDelete = signal<Run | null>(null);
+  strengthSessionToDelete = signal<StrengthSession | null>(null);
 
   // Generate options
   showGenerateOptions = signal(false);
@@ -185,6 +187,7 @@ export class PlanningComponent implements OnInit {
   constructor(
     private planningService: PlanningService,
     private runService: RunService,
+    private strengthService: StrengthService,
     private router: Router,
     private route: ActivatedRoute
   ) {}
@@ -453,10 +456,18 @@ export class PlanningComponent implements OnInit {
       this.isResetting.set(true);
       this.dragOffsetPx.set(0);
       this.navigateDay(direction);
+      this.scrollActiveDayToTop();
       requestAnimationFrame(() => {
         requestAnimationFrame(() => this.isResetting.set(false));
       });
     }, 280);
+  }
+
+  private scrollActiveDayToTop() {
+    const viewport = this.dayPagesViewport?.nativeElement;
+    if (!viewport) return;
+    const body = viewport.querySelector('.day-modal-slot.active .day-page-body') as HTMLElement | null;
+    if (body) body.scrollTop = 0;
   }
 
   private navigateDay(offset: number) {
@@ -695,6 +706,24 @@ export class PlanningComponent implements OnInit {
     this.runToDelete.set(null);
 
     this.runService.deleteRun(run._id).subscribe({
+      next: () => {
+        this.loadCalendar();
+        this.refreshSelectedDay();
+      },
+      error: (err) => console.error(err)
+    });
+  }
+
+  deleteStrengthSession(session: StrengthSession) {
+    this.strengthSessionToDelete.set(session);
+  }
+
+  confirmDeleteStrengthSession() {
+    const session = this.strengthSessionToDelete();
+    if (!session?._id) return;
+    this.strengthSessionToDelete.set(null);
+
+    this.strengthService.deleteSession(session._id).subscribe({
       next: () => {
         this.loadCalendar();
         this.refreshSelectedDay();

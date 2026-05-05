@@ -638,6 +638,12 @@
   50% { transform: scale(1.15); opacity: 0.7; }
 }
 
+.analysisFa {
+  color: #00a6fb;
+  font-size: 2rem;
+  line-height: 1;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }

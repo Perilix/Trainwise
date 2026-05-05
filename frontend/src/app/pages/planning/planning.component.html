@@ -367,6 +367,7 @@
         <h3>Séances muscu effectuées</h3>
         @for (session of day.strengthSessions; track session._id) {
           <div class="event-card strength completed clickable" [class.strava]="!!session.stravaActivityId" (click)="openStrengthDetail(session)">
+            <button class="delete-btn" (click)="deleteStrengthSession(session); $event.stopPropagation()" title="Supprimer">×</button>
             @if (session.stravaActivityId) {
               <span class="strava-badge">Strava</span>
             }
@@ -474,6 +475,26 @@
       <div class="modal-footer">
         <button class="btn-cancel" (click)="sessionToDelete.set(null)">Annuler</button>
         <button class="btn-delete" (click)="confirmDeletePlannedSession()">Supprimer</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal confirmation suppression séance muscu -->
+@if (strengthSessionToDelete()) {
+  <div class="modal-overlay" (click)="strengthSessionToDelete.set(null)">
+    <div class="modal generate-modal" (click)="$event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <h2>Supprimer la séance muscu</h2>
+        <button class="modal-close" (click)="strengthSessionToDelete.set(null)">×</button>
+      </div>
+      <div class="modal-body">
+        <p>Tu veux vraiment supprimer cette séance muscu effectuée ? Cette action est irréversible.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="strengthSessionToDelete.set(null)">Annuler</button>
+        <button class="btn-delete" (click)="confirmDeleteStrengthSession()">Supprimer</button>
       </div>
     </div>
   </div>
@@ -600,6 +621,22 @@
           }
         </button>
       </div>
+    </div>
+  </div>
+}
+
+@if (isGenerating()) {
+  <div class="gen-loader-overlay">
+    <div class="gen-loader-card">
+      <div class="gen-loader-circle">
+        <svg viewBox="0 0 50 50">
+          <circle class="gen-loader-track" cx="25" cy="25" r="20" fill="none" stroke-width="4"></circle>
+          <circle class="gen-loader-progress" cx="25" cy="25" r="20" fill="none" stroke-width="4" stroke-linecap="round"></circle>
+        </svg>
+        <div class="gen-loader-icon"><i class="fa-solid fa-wand-magic-sparkles genFa"></i></div>
+      </div>
+      <h3 class="gen-loader-title">Génération en cours</h3>
+      <p class="gen-loader-subtitle">L'IA analyse ton profil et crée ton programme personnalisé, ça peut prendre quelques secondes...</p>
     </div>
   </div>
 }

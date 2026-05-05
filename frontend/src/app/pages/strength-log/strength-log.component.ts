@@ -628,6 +628,8 @@ export class StrengthLogComponent implements OnInit {
             queryParamsHandling: 'merge',
             replaceUrl: true
           });
+          // Auto-déclenchement de l'analyse IA après la 1re sauvegarde
+          this.analyzeSession();
         }
         setTimeout(() => this.successMessage.set(null), 4000);
       },
