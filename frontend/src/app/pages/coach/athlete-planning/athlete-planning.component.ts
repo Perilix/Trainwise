@@ -664,11 +664,13 @@ export class AthletePlanningComponent implements OnInit {
 
     const allPlanned = day.plannedRuns.filter(p => p.status === 'planned');
     const plannedIA = allPlanned.filter(p => p.generatedBy === 'ai').length;
+    const plannedAthlete = allPlanned.filter(p => p.generatedBy === 'manual').length;
     const plannedCoach = allPlanned.filter(p => p.generatedBy === 'coach').length;
     const done = day.plannedRuns.filter(p => p.status === 'completed').length;
     const skipped = day.plannedRuns.filter(p => p.status === 'skipped').length;
 
     if (plannedIA > 0) indicators.push({ type: 'planned-ia', count: plannedIA });
+    if (plannedAthlete > 0) indicators.push({ type: 'planned-athlete', count: plannedAthlete });
     if (plannedCoach > 0) indicators.push({ type: 'planned-coach', count: plannedCoach });
     if (done > 0) indicators.push({ type: 'done', count: done });
     if (skipped > 0) indicators.push({ type: 'skipped', count: skipped });

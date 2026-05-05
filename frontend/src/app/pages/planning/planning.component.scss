@@ -398,6 +398,10 @@
       background: linear-gradient(135deg, #00a6fb 0%, #0582ca 100%);
     }
 
+    &.planned-athlete {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+
     &.planned-coach {
       background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
     }
@@ -447,6 +451,7 @@
 
     &.completed { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
     &.planned-ia { background: linear-gradient(135deg, #00a6fb 0%, #0582ca 100%); }
+    &.planned-athlete { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
     &.planned-coach { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
     &.done { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
     &.skipped { background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%); }

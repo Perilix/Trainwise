@@ -5,6 +5,7 @@ import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { StrengthService } from '../../services/strength.service';
 import { ExerciseService } from '../../services/exercise.service';
 import { PlanningService, PlannedSession } from '../../services/planning.service';
+import { AthleteService } from '../../services/athlete.service';
 import {
   Exercise,
   StrengthSession,
@@ -174,6 +175,7 @@ export class StrengthLogComponent implements OnInit {
   analysis = signal<string | null>(null);
   analyzedAt = signal<Date | null>(null);
   analyzeError = signal<string | null>(null);
+  hasCoach = signal(false);
 
   // Labels
   sessionTypeLabels = SESSION_TYPE_LABELS;
@@ -201,6 +203,7 @@ export class StrengthLogComponent implements OnInit {
     private strengthService: StrengthService,
     private exerciseService: ExerciseService,
     private planningService: PlanningService,
+    private athleteService: AthleteService,
     private router: Router,
     private route: ActivatedRoute,
     private location: Location
@@ -217,6 +220,10 @@ export class StrengthLogComponent implements OnInit {
 
   ngOnInit() {
     this.loadExerciseLibrary();
+    this.athleteService.getCurrentCoach().subscribe({
+      next: (coach) => this.hasCoach.set(!!coach),
+      error: () => this.hasCoach.set(false)
+    });
 
     // Check query params: edit existing session OR log from a planned session
     this.route.queryParams.subscribe(params => {
@@ -629,7 +636,10 @@ export class StrengthLogComponent implements OnInit {
             replaceUrl: true
           });
           // Auto-déclenchement de l'analyse IA après la 1re sauvegarde
-          this.analyzeSession();
+          // (sauf si l'athlète a un coach : c'est le coach qui assure le suivi)
+          if (!this.hasCoach()) {
+            this.analyzeSession();
+          }
         }
         setTimeout(() => this.successMessage.set(null), 4000);
       },

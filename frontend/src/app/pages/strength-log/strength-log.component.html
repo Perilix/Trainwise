@@ -320,8 +320,8 @@
       </button>
     </div>
 
-    <!-- Analyse IA -->
-    @if (editSessionId()) {
+    <!-- Analyse IA — masquée si l'athlète a un coach -->
+    @if (editSessionId() && !hasCoach()) {
       <section class="form-section analyze-section">
         <div class="analyze-header">
           <h2>Analyse IA</h2>

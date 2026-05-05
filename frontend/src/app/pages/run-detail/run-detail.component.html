@@ -244,8 +244,8 @@
         </section>
       }
 
-      <!-- AI Analysis (masquée pour les séances planifiées par le coach) -->
-      @if (!run()?.plannedSnapshot?.coach) {
+      <!-- AI Analysis (masquée si l'athlète a un coach ou si la séance vient du coach) -->
+      @if (!run()?.plannedSnapshot?.coach && !hasCoach()) {
       <section class="analysis-section">
         <div class="analysis-header">
           <h2>Analyse IA</h2>

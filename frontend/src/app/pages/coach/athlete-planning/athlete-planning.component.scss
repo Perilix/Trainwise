@@ -301,6 +301,7 @@
 
     &.completed { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
     &.planned-ia { background: linear-gradient(135deg, #00a6fb 0%, #0582ca 100%); }
+    &.planned-athlete { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
     &.planned-coach { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
     &.done { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
     &.skipped { background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%); }
@@ -340,6 +341,7 @@
 
       &.completed { background: #10b981; }
       &.planned-ia { background: #00a6fb; }
+      &.planned-athlete { background: #3b82f6; }
       &.planned-coach { background: #8b5cf6; }
       &.done { background: #10b981; }
       &.skipped { background: #f59e0b; }

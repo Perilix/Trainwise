@@ -6,6 +6,7 @@ import { PlanningService, PlannedSession, CalendarData, SessionType, ActivityTyp
 import { RunService, Run, RunBlock } from '../../services/run.service';
 import { StrengthSession, StrengthSessionType, SESSION_TYPE_LABELS as STRENGTH_SESSION_LABELS } from '../../interfaces/strength.interfaces';
 import { StrengthService } from '../../services/strength.service';
+import { AthleteService } from '../../services/athlete.service';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 import { TourTooltipComponent, TourStep } from '../../components/tour-tooltip/tour-tooltip.component';
 import { SubscriptionService } from '../../services/subscription.service';
@@ -60,6 +61,7 @@ export class PlanningComponent implements OnInit {
   isGenerating = signal(false);
   error = signal<string | null>(null);
   successMessage = signal<string | null>(null);
+  hasCoach = signal(false);
 
   selectedDay = signal<CalendarDay | null>(null);
   isAddingSession = signal(false);
@@ -188,6 +190,7 @@ export class PlanningComponent implements OnInit {
     private planningService: PlanningService,
     private runService: RunService,
     private strengthService: StrengthService,
+    private athleteService: AthleteService,
     private router: Router,
     private route: ActivatedRoute
   ) {}
@@ -246,6 +249,10 @@ export class PlanningComponent implements OnInit {
       this.pendingOpenDay = openDay;
     }
     this.loadCalendar();
+    this.athleteService.getCurrentCoach().subscribe({
+      next: (coach) => this.hasCoach.set(!!coach),
+      error: () => this.hasCoach.set(false)
+    });
   }
 
   loadCalendar() {
@@ -882,6 +889,7 @@ export class PlanningComponent implements OnInit {
 
     const allPlanned = day.plannedRuns.filter(p => p.status === 'planned');
     const plannedIA = allPlanned.filter(p => p.generatedBy === 'ai').length;
+    const plannedAthlete = allPlanned.filter(p => p.generatedBy === 'manual').length;
     const plannedCoach = allPlanned.filter(p => p.generatedBy === 'coach').length;
     // Ne pas compter les planned déjà liées à un Run/StrengthSession : elles sont déjà comptées via completedCount
     const done = day.plannedRuns.filter(p =>
@@ -890,6 +898,7 @@ export class PlanningComponent implements OnInit {
     const skipped = day.plannedRuns.filter(p => p.status === 'skipped').length;
 
     if (plannedIA > 0) indicators.push({ type: 'planned-ia', count: plannedIA });
+    if (plannedAthlete > 0) indicators.push({ type: 'planned-athlete', count: plannedAthlete });
     if (plannedCoach > 0) indicators.push({ type: 'planned-coach', count: plannedCoach });
     if (done > 0) indicators.push({ type: 'done', count: done });
     if (skipped > 0) indicators.push({ type: 'skipped', count: skipped });

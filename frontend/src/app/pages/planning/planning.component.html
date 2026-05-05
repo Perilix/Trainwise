@@ -8,6 +8,7 @@
 <div class="container">
   <div class="page-header">
     <h1>Planning</h1>
+    <p class="subtitle">Visualise tes séances du mois, planifie ta semaine et marque tes entraînements comme effectués.</p>
   </div>
 
   @if (successMessage()) {
@@ -19,26 +20,28 @@
   }
 
   <div class="sidebar">
-    <!-- Carte Génération IA -->
-    <div class="sidebar-card generate-card" [class.is-generating]="isGenerating()">
-      <h3>Génération IA</h3>
-      <p class="card-description">Laisse l'IA créer ton programme d'entraînement personnalisé pour la semaine.</p>
-      <button
-        class="btn-generate"
-        [class.generating]="isGenerating()"
-        (click)="openGenerateOptions()"
-        [disabled]="isGenerating()">
+    <!-- Carte Génération IA — masquée si l'athlète a un coach -->
+    @if (!hasCoach()) {
+      <div class="sidebar-card generate-card" [class.is-generating]="isGenerating()">
+        <h3>Génération IA</h3>
+        <p class="card-description">Laisse l'IA créer ton programme d'entraînement personnalisé pour la semaine.</p>
+        <button
+          class="btn-generate"
+          [class.generating]="isGenerating()"
+          (click)="openGenerateOptions()"
+          [disabled]="isGenerating()">
+          @if (isGenerating()) {
+            <span class="generate-spinner"></span>
+            <span>Génération en cours...</span>
+          } @else {
+            Générer une semaine
+          }
+        </button>
         @if (isGenerating()) {
-          <span class="generate-spinner"></span>
-          <span>Génération en cours...</span>
-        } @else {
-          Générer une semaine
+          <p class="generating-hint">L'IA analyse ton profil et crée ton programme, ça peut prendre quelques secondes.</p>
         }
-      </button>
-      @if (isGenerating()) {
-        <p class="generating-hint">L'IA analyse ton profil et crée ton programme, ça peut prendre quelques secondes.</p>
-      }
-    </div>
+      </div>
+    }
   </div>
 
   <div class="main-layout">
@@ -96,30 +99,38 @@
           <span>Effectuée</span>
         </div>
         <div class="legend-item">
-          <span class="legend-dot planned-ia"></span>
-          <span>Planifiée IA</span>
+          <span class="legend-dot planned-athlete"></span>
+          <span>Planifiée athlète</span>
         </div>
-        <div class="legend-item">
-          <span class="legend-dot planned-coach"></span>
-          <span>Planifiée Coach</span>
-        </div>
+        @if (hasCoach()) {
+          <div class="legend-item">
+            <span class="legend-dot planned-coach"></span>
+            <span>Planifiée coach</span>
+          </div>
+        } @else {
+          <div class="legend-item">
+            <span class="legend-dot planned-ia"></span>
+            <span>Planifiée IA</span>
+          </div>
+        }
       </div>
     </div>
-    <div class="sidebar-card week-summary">
-      <h3>Ce mois</h3>
-      <div class="summary-stats">
-        <div class="stat-item">
-          <span class="stat-value">{{ getMonthStats().planned }}</span>
-          <span class="stat-label">Planifiées</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-value">{{ getMonthStats().completed }}</span>
-          <span class="stat-label">Complétées</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-value">{{ getMonthStats().totalKm }}</span>
-          <span class="stat-label">km</span>
-        </div>
+  </div>
+
+  <div class="sidebar-card week-summary">
+    <h3>Ce mois</h3>
+    <div class="summary-stats">
+      <div class="stat-item">
+        <span class="stat-value">{{ getMonthStats().planned }}</span>
+        <span class="stat-label">Planifiées</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-value">{{ getMonthStats().completed }}</span>
+        <span class="stat-label">Complétées</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-value">{{ getMonthStats().totalKm }}</span>
+        <span class="stat-label">km</span>
       </div>
     </div>
   </div>

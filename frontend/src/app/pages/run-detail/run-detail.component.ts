@@ -7,6 +7,7 @@ import { PlanningService, PlannedSession } from '../../services/planning.service
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 import { RunBlocksEditorComponent } from '../../components/run-blocks-editor/run-blocks-editor.component';
 import { SubscriptionService } from '../../services/subscription.service';
+import { AthleteService } from '../../services/athlete.service';
 import * as L from 'leaflet';
 
 // Fix Leaflet default icon issue
@@ -30,6 +31,7 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   error = signal<string | null>(null);
   isAnalyzing = signal(false);
   analyzeSuccess = signal(false);
+  hasCoach = signal(false);
   feelingValue = signal<number>(5);
   feelingSaved = signal(false);
 
@@ -63,10 +65,15 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     private router: Router,
     private runService: RunService,
     private planningService: PlanningService,
+    private athleteService: AthleteService,
     private location: Location
   ) {}
 
   ngOnInit() {
+    this.athleteService.getCurrentCoach().subscribe({
+      next: (coach) => this.hasCoach.set(!!coach),
+      error: () => this.hasCoach.set(false)
+    });
     // On souscrit à paramMap seul (le query param est lu via snapshot pour éviter
     // une double émission de combineLatest pendant une navigation qui change les deux)
     this.route.paramMap.subscribe(params => {
