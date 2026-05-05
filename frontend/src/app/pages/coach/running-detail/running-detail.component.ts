@@ -38,6 +38,7 @@ export class RunningDetailComponent implements OnInit {
   isSaving = signal(false);
   error = signal<string | null>(null);
   successMessage = signal<string | null>(null);
+  athleteVma = signal<number | null>(null);
 
   isNew = computed(() => this.sessionId === 'new');
 
@@ -85,6 +86,12 @@ export class RunningDetailComponent implements OnInit {
       this.isLoading.set(false);
       return;
     }
+
+    // Charger la VMA de l'athlète pour résoudre les allures par zone
+    this.coachService.getAthlete(this.athleteId).subscribe({
+      next: (a) => this.athleteVma.set(a?.vma ?? null),
+      error: () => {}
+    });
 
     if (this.sessionId === 'new') {
       this.initDraft();

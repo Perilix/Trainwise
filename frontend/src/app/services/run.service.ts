@@ -6,6 +6,14 @@ import { environment } from '../../environments/environment';
 export type RunBlockRole = 'warmup' | 'main' | 'cooldown';
 export type RunBlockMode = 'distance' | 'duration';
 
+export interface RunBlockPaceSource {
+  mode?: 'absolute' | 'vmaPercent' | 'zone' | null;
+  zone?: string | null;
+  vmaPercent?: number | null;
+  resolvedFromVma?: number | null;
+  overridden?: boolean;
+}
+
 export interface RunBlock {
   _id?: string;
   role: RunBlockRole;
@@ -22,6 +30,8 @@ export interface RunBlock {
   recoveryDescription?: string;
   notes?: string;
   order?: number;
+  paceSource?: RunBlockPaceSource;
+  recoveryPaceSource?: RunBlockPaceSource;
 }
 
 export interface PlannedSnapshot {

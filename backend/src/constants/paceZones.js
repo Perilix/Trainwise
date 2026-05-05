@@ -2,9 +2,9 @@ const PACE_ZONES = {
   recovery: {
     key: 'recovery',
     label: 'Récupération active',
-    defaultPercent: 60,
-    minPercent: 50,
-    maxPercent: 65
+    defaultPercent: 50,
+    minPercent: 45,
+    maxPercent: 55
   },
   endurance: {
     key: 'endurance',

@@ -292,3 +292,95 @@
 .rb-total-value {
   font-size: 1.1rem;
 }
+
+// ============================================================
+// Pace block (mode VMA / allure fixe)
+// ============================================================
+.rb-pace-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.6rem 0.7rem;
+  background: #fafafa;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+
+  > span:first-child {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #4b5563;
+  }
+}
+
+.rb-pace-mode-toggle {
+  display: flex;
+  gap: 0.25rem;
+
+  .rb-pace-mode-btn {
+    flex: 1;
+    padding: 0.4rem 0.65rem;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+
+    &:hover { background: #f3f4f6; }
+    &.active {
+      background: #9159f1;
+      color: white;
+      border-color: #9159f1;
+    }
+  }
+}
+
+.rb-pace-zone-select,
+.rb-pace-absolute {
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: white;
+  font-family: inherit;
+
+  &:focus { outline: none; border-color: #9159f1; }
+}
+
+.rb-pace-slider-row {
+  background: white;
+  padding: 0.5rem 0.7rem;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+
+  .rb-pace-slider-label {
+    font-size: 0.78rem;
+    color: #4b5563;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+
+    strong { color: #9159f1; font-size: 0.88rem; }
+    small { color: #9ca3af; font-weight: 400; font-size: 0.7rem; }
+  }
+
+  input[type="range"] {
+    width: 100%;
+    accent-color: #9159f1;
+  }
+}
+
+.rb-pace-resolved {
+  font-size: 0.78rem;
+  color: #4b5563;
+
+  strong { color: #9159f1; }
+  em { color: #9ca3af; font-style: italic; }
+}

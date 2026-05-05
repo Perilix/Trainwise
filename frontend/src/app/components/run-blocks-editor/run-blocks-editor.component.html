@@ -117,10 +117,49 @@
           <input type="number" step="1" min="0" [(ngModel)]="block.duration" [disabled]="readonly" (ngModelChange)="onFieldChange()">
         </label>
       }
-      <label class="rb-field">
-        <span>Allure (mm:ss)</span>
-        <input type="text" placeholder="5:30" [(ngModel)]="block.pace" [disabled]="readonly" (ngModelChange)="onFieldChange()">
-      </label>
+      @if (enableVmaPaces && !readonly) {
+        <div class="rb-field rb-field-full rb-pace-block">
+          <span>Allure</span>
+          <div class="rb-pace-mode-toggle">
+            <button type="button" class="rb-pace-mode-btn" [class.active]="paceMode(block) === 'zone'" (click)="setPaceMode(block, 'zone')">Zone VMA</button>
+            <button type="button" class="rb-pace-mode-btn" [class.active]="paceMode(block) === 'absolute'" (click)="setPaceMode(block, 'absolute')">Allure fixe</button>
+          </div>
+          @if (paceMode(block) === 'zone') {
+            <select class="rb-pace-zone-select" [ngModel]="block.paceSource?.zone" (ngModelChange)="setBlockZone(block, $event, 'pace')">
+              @for (z of zones(); track z.key) {
+                <option [value]="z.key">{{ z.label }} ({{ z.defaultPercent }}%)</option>
+              }
+            </select>
+            @if (zoneFor(block, 'pace'); as zone) {
+              <div class="rb-pace-slider-row">
+                <div class="rb-pace-slider-label">
+                  <span>% VMA : <strong>{{ blockPercent(block, 'pace') }}%</strong></span>
+                  <small>plage {{ zone.minPercent }}–{{ zone.maxPercent }}%</small>
+                </div>
+                <input type="range" [min]="zone.minPercent" [max]="zone.maxPercent" step="1"
+                  [ngModel]="blockPercent(block, 'pace')"
+                  (ngModelChange)="setBlockPercent(block, $event, 'pace')">
+              </div>
+            }
+            @if (block.pace) {
+              <div class="rb-pace-resolved">
+                @if (athleteVma) {
+                  Allure athlète (VMA {{ athleteVma }}) : <strong>{{ block.pace }}/km</strong>
+                } @else {
+                  <em>VMA athlète manquante — l'allure sera calculée à l'assignation</em>
+                }
+              </div>
+            }
+          } @else {
+            <input type="text" class="rb-pace-absolute" placeholder="5:30" [(ngModel)]="block.pace" (ngModelChange)="onFieldChange()">
+          }
+        </div>
+      } @else {
+        <label class="rb-field">
+          <span>Allure (mm:ss)</span>
+          <input type="text" placeholder="5:30" [(ngModel)]="block.pace" [disabled]="readonly" (ngModelChange)="onFieldChange()">
+        </label>
+      }
       @if (isMain) {
         <label class="rb-field rb-field-narrow">
           <span>Répétitions</span>
@@ -164,10 +203,47 @@
                 <input type="number" step="0.5" min="0" [(ngModel)]="block.recoveryDuration" [disabled]="readonly" (ngModelChange)="onFieldChange()">
               </label>
             }
-            <label class="rb-field">
-              <span>Allure récup</span>
-              <input type="text" placeholder="6:30" [(ngModel)]="block.recoveryPace" [disabled]="readonly" (ngModelChange)="onFieldChange()">
-            </label>
+            @if (enableVmaPaces && !readonly) {
+              <div class="rb-field rb-field-full rb-pace-block">
+                <span>Allure récup</span>
+                <div class="rb-pace-mode-toggle">
+                  <button type="button" class="rb-pace-mode-btn" [class.active]="recoveryPaceMode(block) === 'zone'" (click)="setRecoveryPaceMode(block, 'zone')">Zone VMA</button>
+                  <button type="button" class="rb-pace-mode-btn" [class.active]="recoveryPaceMode(block) === 'absolute'" (click)="setRecoveryPaceMode(block, 'absolute')">Allure fixe</button>
+                </div>
+                @if (recoveryPaceMode(block) === 'zone') {
+                  <select class="rb-pace-zone-select" [ngModel]="block.recoveryPaceSource?.zone" (ngModelChange)="setBlockZone(block, $event, 'recoveryPace')">
+                    @for (z of zones(); track z.key) {
+                      <option [value]="z.key">{{ z.label }} ({{ z.defaultPercent }}%)</option>
+                    }
+                  </select>
+                  @if (zoneFor(block, 'recoveryPace'); as zone) {
+                    <div class="rb-pace-slider-row">
+                      <div class="rb-pace-slider-label">
+                        <span>% VMA : <strong>{{ blockPercent(block, 'recoveryPace') }}%</strong></span>
+                        <small>plage {{ zone.minPercent }}–{{ zone.maxPercent }}%</small>
+                      </div>
+                      <input type="range" [min]="zone.minPercent" [max]="zone.maxPercent" step="1"
+                        [ngModel]="blockPercent(block, 'recoveryPace')"
+                        (ngModelChange)="setBlockPercent(block, $event, 'recoveryPace')">
+                    </div>
+                  }
+                  @if (block.recoveryPace) {
+                    <div class="rb-pace-resolved">
+                      @if (athleteVma) {
+                        Allure récup : <strong>{{ block.recoveryPace }}/km</strong>
+                      }
+                    </div>
+                  }
+                } @else {
+                  <input type="text" class="rb-pace-absolute" placeholder="6:30" [(ngModel)]="block.recoveryPace" (ngModelChange)="onFieldChange()">
+                }
+              </div>
+            } @else {
+              <label class="rb-field">
+                <span>Allure récup</span>
+                <input type="text" placeholder="6:30" [(ngModel)]="block.recoveryPace" [disabled]="readonly" (ngModelChange)="onFieldChange()">
+              </label>
+            }
           </div>
           <label class="rb-field rb-field-full">
             <span>Description récup</span>

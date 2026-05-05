@@ -42,6 +42,8 @@
     <app-run-blocks-editor
       [blocks]="blocks()"
       title="Plan de la séance"
+      [enableVmaPaces]="true"
+      [athleteVma]="athleteVma()"
       (blocksChange)="onBlocksChange($event)">
     </app-run-blocks-editor>
 

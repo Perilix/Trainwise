@@ -2,6 +2,8 @@ import { Component, Input, Output, EventEmitter, computed, signal, OnInit, OnCha
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RunBlock, RunBlockMode } from '../../services/run.service';
+import { SessionTemplateService } from '../../services/session-template.service';
+import { PaceZone, PaceZoneKey } from '../../interfaces/session-template.interfaces';
 
 @Component({
   selector: 'app-run-blocks-editor',
@@ -18,7 +20,15 @@ export class RunBlocksEditorComponent implements OnInit, OnChanges {
   @Input() compact = false;
   // Quand fourni : affiche un diff (valeur barrée si différente entre original et bloc courant)
   @Input() compareTo: RunBlock[] | null = null;
+  // Active le mode zone VMA (toggle Zone / Allure fixe + slider)
+  @Input() enableVmaPaces = false;
+  // VMA de l'athlète pour résoudre les % en allures concrètes
+  @Input() athleteVma: number | null = null;
   @Output() blocksChange = new EventEmitter<RunBlock[]>();
+
+  zones = signal<PaceZone[]>([]);
+
+  constructor(private templateService: SessionTemplateService) {}
 
   expandedKeys = signal<Set<number>>(new Set<number>());
 
@@ -30,12 +40,139 @@ export class RunBlocksEditorComponent implements OnInit, OnChanges {
 
   ngOnInit() {
     this.internal.set(this.normalize(this.blocks || []));
+    if (this.enableVmaPaces && this.zones().length === 0) {
+      this.templateService.getPaceZones().subscribe({
+        next: (z) => this.zones.set(z),
+        error: () => {}
+      });
+    }
   }
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['blocks']) {
       this.internal.set(this.normalize(this.blocks || []));
     }
+    // Recalcule les allures résolues quand la VMA change
+    if (changes['athleteVma'] && !changes['athleteVma'].firstChange) {
+      this.recomputeResolvedPaces();
+    }
+  }
+
+  // ============= Pace mode helpers (zone / absolute) =============
+
+  paceMode(block: RunBlock): 'absolute' | 'zone' {
+    return block.paceSource?.mode === 'zone' || block.paceSource?.mode === 'vmaPercent' ? 'zone' : 'absolute';
+  }
+
+  recoveryPaceMode(block: RunBlock): 'absolute' | 'zone' {
+    return block.recoveryPaceSource?.mode === 'zone' || block.recoveryPaceSource?.mode === 'vmaPercent' ? 'zone' : 'absolute';
+  }
+
+  setPaceMode(block: RunBlock, mode: 'absolute' | 'zone') {
+    if (this.readonly) return;
+    if (mode === 'absolute') {
+      block.paceSource = { mode: 'absolute' };
+    } else {
+      const firstZone = this.zones()[0];
+      block.paceSource = {
+        mode: 'zone',
+        zone: firstZone?.key || 'endurance',
+        vmaPercent: firstZone?.defaultPercent ?? 70,
+        resolvedFromVma: this.athleteVma ?? null
+      };
+      block.pace = this.computePaceString(block.paceSource.vmaPercent!);
+    }
+    this.emit();
+  }
+
+  setRecoveryPaceMode(block: RunBlock, mode: 'absolute' | 'zone') {
+    if (this.readonly) return;
+    if (mode === 'absolute') {
+      block.recoveryPaceSource = { mode: 'absolute' };
+    } else {
+      const recovery = this.zones().find(z => z.key === 'recovery') || this.zones()[0];
+      block.recoveryPaceSource = {
+        mode: 'zone',
+        zone: recovery?.key || 'recovery',
+        vmaPercent: recovery?.defaultPercent ?? 60,
+        resolvedFromVma: this.athleteVma ?? null
+      };
+      block.recoveryPace = this.computePaceString(block.recoveryPaceSource.vmaPercent!);
+    }
+    this.emit();
+  }
+
+  setBlockZone(block: RunBlock, zoneKey: PaceZoneKey, target: 'pace' | 'recoveryPace') {
+    if (this.readonly) return;
+    const zone = this.zones().find(z => z.key === zoneKey);
+    if (!zone) return;
+    const sourceField = target === 'pace' ? 'paceSource' : 'recoveryPaceSource';
+    block[sourceField] = {
+      mode: 'zone',
+      zone: zoneKey,
+      vmaPercent: zone.defaultPercent,
+      resolvedFromVma: this.athleteVma ?? null
+    };
+    block[target] = this.computePaceString(zone.defaultPercent);
+    this.emit();
+  }
+
+  setBlockPercent(block: RunBlock, percent: number, target: 'pace' | 'recoveryPace') {
+    if (this.readonly) return;
+    const sourceField = target === 'pace' ? 'paceSource' : 'recoveryPaceSource';
+    const current = block[sourceField] || {};
+    block[sourceField] = {
+      ...current,
+      mode: current.mode || 'zone',
+      vmaPercent: percent,
+      resolvedFromVma: this.athleteVma ?? null
+    };
+    block[target] = this.computePaceString(percent);
+    this.emit();
+  }
+
+  zoneFor(block: RunBlock, target: 'pace' | 'recoveryPace'): PaceZone | null {
+    const sourceField = target === 'pace' ? 'paceSource' : 'recoveryPaceSource';
+    const key = block[sourceField]?.zone;
+    if (!key) return null;
+    return this.zones().find(z => z.key === key) || null;
+  }
+
+  blockPercent(block: RunBlock, target: 'pace' | 'recoveryPace'): number {
+    const sourceField = target === 'pace' ? 'paceSource' : 'recoveryPaceSource';
+    return block[sourceField]?.vmaPercent ?? this.zoneFor(block, target)?.defaultPercent ?? 70;
+  }
+
+  computePaceString(percent: number): string | null {
+    if (!this.athleteVma || !percent) return null;
+    const speed = this.athleteVma * (percent / 100);
+    if (speed <= 0) return null;
+    const secPerKm = 3600 / speed;
+    const m = Math.floor(secPerKm / 60);
+    const s = Math.round(secPerKm % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  // Recalcule les allures résolues pour tous les blocs en mode zone (appelé quand VMA change)
+  private recomputeResolvedPaces() {
+    this.commit(list => list.map(b => {
+      const updated = { ...b };
+      if (b.paceSource?.mode === 'zone' || b.paceSource?.mode === 'vmaPercent') {
+        const pct = b.paceSource.vmaPercent || this.zones().find(z => z.key === b.paceSource?.zone)?.defaultPercent;
+        if (pct) {
+          updated.pace = this.computePaceString(pct);
+          updated.paceSource = { ...b.paceSource, resolvedFromVma: this.athleteVma ?? null };
+        }
+      }
+      if (b.recoveryPaceSource?.mode === 'zone' || b.recoveryPaceSource?.mode === 'vmaPercent') {
+        const pct = b.recoveryPaceSource.vmaPercent || this.zones().find(z => z.key === b.recoveryPaceSource?.zone)?.defaultPercent;
+        if (pct) {
+          updated.recoveryPace = this.computePaceString(pct);
+          updated.recoveryPaceSource = { ...b.recoveryPaceSource, resolvedFromVma: this.athleteVma ?? null };
+        }
+      }
+      return updated;
+    }));
   }
 
   private normalize(list: RunBlock[]): RunBlock[] {
