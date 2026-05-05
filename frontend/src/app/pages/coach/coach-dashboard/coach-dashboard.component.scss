@@ -662,26 +662,42 @@
 
 .code-box {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 0.75rem;
   background: #fafbfc;
   border: 1px solid rgba(5, 25, 35, 0.08);
   border-radius: 12px;
   padding: 1.1rem;
+  min-width: 0;
+
+  .code-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+  }
 
   .code {
     font-family: 'Courier New', monospace;
-    font-size: 1.3rem;
+    font-size: 1.15rem;
     font-weight: 700;
     color: #8b5cf6;
-    letter-spacing: 3px;
+    letter-spacing: 2px;
     flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-all;
   }
 
   .no-code {
     color: #999;
     font-style: italic;
     flex: 1;
+    min-width: 0;
+  }
+
+  .generation-btn {
+    align-self: stretch;
   }
 }
 
