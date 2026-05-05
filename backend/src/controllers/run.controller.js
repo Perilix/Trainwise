@@ -4,6 +4,7 @@ const User = require('../models/user.model');
 const CoachAthlete = require('../models/coachAthlete.model');
 const { autoCompletePlannedSessions } = require('../services/planningAutoComplete');
 const { createNotification } = require('./notification.controller');
+const { athleteHasCoach } = require('../services/coachRelation.service');
 
 // Helper: Calculer les statistiques des courses récentes
 const calculateStats = (runs) => {
@@ -124,8 +125,11 @@ exports.createRun = async (req, res) => {
       }
     }
 
+    // Athlète coaché : skip toutes les analyses IA, le coach prend le relais
+    const skipAI = await athleteHasCoach(req.user._id);
+
     // Appeler n8n pour l'analyse si le webhook est configuré
-    if (process.env.N8N_WEBHOOK_URL) {
+    if (!skipAI && process.env.N8N_WEBHOOK_URL) {
       try {
         // Récupérer les données utilisateur complètes
         const user = await User.findById(req.user._id);
@@ -228,7 +232,7 @@ exports.createRun = async (req, res) => {
 
     // Nouveau webhook : analyse qualitative basée sur les blocs (si présents)
     const hasBlocks = (run.runBlocks?.length || run.plannedSnapshot?.runBlocks?.length);
-    if (process.env.N8N_BLOCKS_WEBHOOK_URL && hasBlocks) {
+    if (!skipAI && process.env.N8N_BLOCKS_WEBHOOK_URL && hasBlocks) {
       try {
         const user = await User.findById(req.user._id);
 
@@ -389,6 +393,11 @@ exports.analyzeRun = async (req, res) => {
     const run = await Run.findOne({ _id: req.params.id, user: req.user._id });
     if (!run) {
       return res.status(404).json({ error: 'Course non trouvée' });
+    }
+
+    // Athlète coaché : pas d'analyse IA, c'est le coach qui assure le suivi
+    if (await athleteHasCoach(req.user._id)) {
+      return res.json(run);
     }
 
     if (!process.env.N8N_WEBHOOK_URL) {

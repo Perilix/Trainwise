@@ -4,6 +4,7 @@ const PlannedRun = require('../models/plannedRun.model');
 const User = require('../models/user.model');
 const { autoCompletePlannedSessions } = require('../services/planningAutoComplete');
 const { createNotification } = require('./notification.controller');
+const { athleteHasCoach } = require('../services/coachRelation.service');
 
 // Créer une séance de muscu
 exports.createSession = async (req, res) => {
@@ -165,6 +166,11 @@ exports.analyzeSession = async (req, res) => {
       .populate('exercises.exercise', 'name slug primaryMuscle muscleGroups equipment');
     if (!session) {
       return res.status(404).json({ error: 'Séance non trouvée' });
+    }
+
+    // Athlète coaché : pas d'analyse IA, c'est le coach qui assure le suivi
+    if (await athleteHasCoach(req.user._id)) {
+      return res.json(session);
     }
 
     const webhookUrl = process.env.N8N_STRENGTH_WEBHOOK_URL || process.env.N8N_WEBHOOK_URL;

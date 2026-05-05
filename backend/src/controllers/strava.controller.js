@@ -4,6 +4,7 @@ const Run = require('../models/run.model');
 const StrengthSession = require('../models/strengthSession.model');
 const { emitTrainCoinsUpdate } = require('../socket/index');
 const { autoCompletePlannedSessions } = require('../services/planningAutoComplete');
+const { athleteHasCoach } = require('../services/coachRelation.service');
 
 const STRAVA_AUTH_URL = 'https://www.strava.com/oauth/authorize';
 const STRAVA_TOKEN_URL = 'https://www.strava.com/oauth/token';
@@ -12,6 +13,9 @@ const STRAVA_API_URL = 'https://www.strava.com/api/v3';
 // Helper: Analyser une course en arrière-plan
 const analyzeRunInBackground = async (run, user) => {
   if (!process.env.N8N_WEBHOOK_URL) return;
+
+  // Athlète coaché : pas d'analyse IA, c'est le coach qui assure le suivi
+  if (await athleteHasCoach(user._id)) return;
 
   try {
     // Vérifier et déduire les TrainCoins (0.5 par analyse auto)
