@@ -12,10 +12,18 @@ import {
   ExerciseSet,
   StrengthSessionType,
   MuscleGroup,
+  StrengthPlanExercise,
+  CircuitBlock,
+  SupersetBlock,
   MUSCLE_GROUP_LABELS,
   SESSION_TYPE_LABELS
 } from '../../interfaces/strength.interfaces';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
+
+type EntryOrigin =
+  | { kind: 'single'; index: number }
+  | { kind: 'circuit'; index: number }
+  | { kind: 'superset'; pairIndex: number; slot: 'a' | 'b' };
 
 @Component({
   selector: 'app-strength-log',
@@ -51,6 +59,111 @@ export class StrengthLogComponent implements OnInit {
   // Linked planned session
   linkedPlannedId = signal<string | null>(null);
   linkedPlannedSession = signal<PlannedSession | null>(null);
+
+  // Origin of each entry, so we can render hints ("Circuit", "Super-set A/B")
+  // and let the coach plan inform the athlete's logging UI.
+  entryOrigins = signal<EntryOrigin[]>([]);
+
+  // Méta du bloc Circuit / Super-set, soit copiée du plan coach, soit du save précédent
+  // (en mode edit). Les exos sous-jacents sont reconstruits à partir des entries.
+  sessionCircuit = signal<{ name?: string; rounds?: number; restBetweenRounds?: number } | null>(null);
+  sessionSuperset = signal<{ name?: string; sets?: number; restBetweenSets?: number } | null>(null);
+
+  plannedCircuit = computed<CircuitBlock | null>(() => {
+    const c = this.linkedPlannedSession()?.strengthPlan?.circuit;
+    if (c && c.exercises?.length) return c as CircuitBlock;
+    // Pas de plan coach : reconstruit depuis les entries marquées 'circuit'
+    return this.buildCircuitFromEntries();
+  });
+  plannedSuperset = computed<SupersetBlock | null>(() => {
+    const s = this.linkedPlannedSession()?.strengthPlan?.superset;
+    if (s && s.pairs?.length) return s as SupersetBlock;
+    return this.buildSupersetFromEntries();
+  });
+  hasPlannedStructure = computed(() => !!this.plannedCircuit() || !!this.plannedSuperset());
+
+  private buildCircuitFromEntries(): CircuitBlock | null {
+    const meta = this.sessionCircuit();
+    const origins = this.entryOrigins();
+    const entries = this.exercises();
+    const items: StrengthPlanExercise[] = [];
+    origins.forEach((o, i) => {
+      if (o?.kind === 'circuit') {
+        const e = entries[i];
+        if (!e) return;
+        items.push({
+          exercise: e.exercise,
+          targetSets: e.target?.sets ?? meta?.rounds ?? e.sets.length,
+          targetReps: e.target?.reps ?? String(e.sets[0]?.reps ?? ''),
+          targetWeight: e.target?.weight ?? e.sets[0]?.weight,
+          targetRest: e.target?.rest,
+          notes: e.notes
+        });
+      }
+    });
+    if (!items.length) return null;
+    return {
+      name: meta?.name,
+      rounds: meta?.rounds ?? items[0]?.targetSets ?? 3,
+      restBetweenRounds: meta?.restBetweenRounds,
+      exercises: items
+    };
+  }
+
+  private buildSupersetFromEntries(): SupersetBlock | null {
+    const meta = this.sessionSuperset();
+    const origins = this.entryOrigins();
+    const entries = this.exercises();
+    const pairsMap = new Map<number, { a?: StrengthPlanExercise; b?: StrengthPlanExercise }>();
+    origins.forEach((o, i) => {
+      if (o?.kind !== 'superset') return;
+      const e = entries[i];
+      if (!e) return;
+      const item: StrengthPlanExercise = {
+        exercise: e.exercise,
+        targetSets: e.target?.sets ?? meta?.sets ?? e.sets.length,
+        targetReps: e.target?.reps ?? String(e.sets[0]?.reps ?? ''),
+        targetWeight: e.target?.weight ?? e.sets[0]?.weight,
+        targetRest: e.target?.rest,
+        notes: e.notes
+      };
+      const cur = pairsMap.get(o.pairIndex) ?? {};
+      cur[o.slot] = item;
+      pairsMap.set(o.pairIndex, cur);
+    });
+    if (!pairsMap.size) return null;
+    const pairs = Array.from(pairsMap.entries())
+      .sort(([a], [b]) => a - b)
+      .map(([, p]) => p);
+    return {
+      name: meta?.name,
+      sets: meta?.sets ?? 4,
+      restBetweenSets: meta?.restBetweenSets,
+      pairs
+    };
+  }
+
+  serializeCircuitMeta() {
+    const hasCircuit = this.entryOrigins().some(o => o?.kind === 'circuit');
+    if (!hasCircuit) return null;
+    const fromPlan = this.linkedPlannedSession()?.strengthPlan?.circuit;
+    return this.sessionCircuit() ?? (fromPlan ? {
+      name: fromPlan.name,
+      rounds: fromPlan.rounds,
+      restBetweenRounds: fromPlan.restBetweenRounds
+    } : { rounds: 3 });
+  }
+
+  serializeSupersetMeta() {
+    const hasSuperset = this.entryOrigins().some(o => o?.kind === 'superset');
+    if (!hasSuperset) return null;
+    const fromPlan = this.linkedPlannedSession()?.strengthPlan?.superset;
+    return this.sessionSuperset() ?? (fromPlan ? {
+      name: fromPlan.name,
+      sets: fromPlan.sets,
+      restBetweenSets: fromPlan.restBetweenSets
+    } : { sets: 4 });
+  }
 
   // Edit existing session
   editSessionId = signal<string | null>(null);
@@ -135,21 +248,38 @@ export class StrengthLogComponent implements OnInit {
         if (session.duration) this.sessionDuration.set(session.duration);
         if (session.feeling) this.sessionFeeling.set(session.feeling);
         if (session.notes) this.sessionNotes.set(session.notes);
+        if (session.circuit) this.sessionCircuit.set(session.circuit);
+        if (session.superset) this.sessionSuperset.set(session.superset);
         if (session.exercises?.length) {
           const library = this.exerciseLibrary();
+          const origins: EntryOrigin[] = [];
           const entries: ExerciseEntry[] = session.exercises.map((e, i) => {
             let exercise: Exercise | string = e.exercise;
             if (typeof exercise === 'string' && library.length) {
               exercise = library.find(ex => ex._id === exercise) ?? exercise;
             }
+            const block = (e as any).block;
+            if (block?.kind === 'circuit') {
+              origins.push({ kind: 'circuit', index: origins.filter(o => o?.kind === 'circuit').length });
+            } else if (block?.kind === 'superset') {
+              origins.push({
+                kind: 'superset',
+                pairIndex: block.pairIndex ?? 0,
+                slot: (block.slot ?? 'a') as 'a' | 'b'
+              });
+            } else {
+              origins.push({ kind: 'single', index: i });
+            }
             return {
               exercise,
               sets: e.sets?.length ? e.sets : [{ reps: 10, weight: 0 }],
               order: i,
-              notes: e.notes
+              notes: e.notes,
+              target: (e as any).target ?? undefined
             };
           });
           this.exercises.set(entries);
+          this.entryOrigins.set(origins);
         }
         if (session.analysis) {
           this.analysis.set(session.analysis);
@@ -177,9 +307,9 @@ export class StrengthLogComponent implements OnInit {
         if (planned.targetDuration) {
           this.sessionDuration.set(planned.targetDuration);
         }
-        // Pre-populate exercises from coach's strength plan
-        if (planned.strengthPlan?.exercises?.length) {
-          this.buildEntriesFromPlan(planned.strengthPlan.exercises);
+        const plan = planned.strengthPlan;
+        if (plan && (plan.exercises?.length || plan.circuit?.exercises?.length || plan.superset?.pairs?.length)) {
+          this.buildEntriesFromPlan(plan);
         }
       },
       error: (err) => {
@@ -188,25 +318,78 @@ export class StrengthLogComponent implements OnInit {
     });
   }
 
-  buildEntriesFromPlan(planExercises: any[]) {
+  buildEntriesFromPlan(plan: any) {
     const library = this.exerciseLibrary();
-    const entries: ExerciseEntry[] = planExercises.map((pe, i) => {
-      let exercise: Exercise | string = pe.exercise;
-      // If backend didn't populate (string ID), resolve from already-loaded library
-      if (typeof exercise === 'string') {
-        exercise = library.find(e => e._id === exercise) ?? exercise;
-      }
-      return {
-        exercise,
-        order: i,
-        sets: Array.from({ length: pe.targetSets ?? 3 }, () => ({
-          reps: parseInt((pe.targetReps ?? '').split('-')[0]) || 10,
-          weight: pe.targetWeight ?? undefined
-        })),
-        notes: pe.notes
-      };
+    const resolveExercise = (raw: any): Exercise | string => {
+      if (!raw) return '';
+      if (typeof raw === 'string') return library.find(e => e._id === raw) ?? raw;
+      return raw;
+    };
+
+    const buildSets = (pe: any, count?: number) => {
+      const n = Math.max(1, count ?? pe.targetSets ?? 3);
+      return Array.from({ length: n }, () => ({
+        reps: parseInt((pe.targetReps ?? '').split('-')[0]) || 10,
+        weight: pe.targetWeight ?? undefined
+      }));
+    };
+
+    const buildTarget = (pe: any, sets?: number) => ({
+      sets: sets ?? pe.targetSets,
+      reps: pe.targetReps,
+      weight: pe.targetWeight,
+      rest: pe.targetRest
     });
+
+    const entries: ExerciseEntry[] = [];
+    const origins: EntryOrigin[] = [];
+    let order = 0;
+
+    (plan.exercises ?? []).forEach((pe: any, i: number) => {
+      entries.push({
+        exercise: resolveExercise(pe.exercise),
+        order: order++,
+        sets: buildSets(pe),
+        notes: pe.notes,
+        target: buildTarget(pe)
+      });
+      origins.push({ kind: 'single', index: i });
+    });
+
+    if (plan.circuit?.exercises?.length) {
+      const rounds = plan.circuit.rounds ?? 3;
+      plan.circuit.exercises.forEach((pe: any, i: number) => {
+        entries.push({
+          exercise: resolveExercise(pe.exercise),
+          order: order++,
+          sets: buildSets(pe, rounds),
+          notes: pe.notes,
+          target: buildTarget(pe, rounds)
+        });
+        origins.push({ kind: 'circuit', index: i });
+      });
+    }
+
+    if (plan.superset?.pairs?.length) {
+      const sets = plan.superset.sets ?? 4;
+      plan.superset.pairs.forEach((pair: any, pairIndex: number) => {
+        (['a', 'b'] as const).forEach(slot => {
+          const pe = pair[slot];
+          if (!pe) return;
+          entries.push({
+            exercise: resolveExercise(pe.exercise),
+            order: order++,
+            sets: buildSets(pe, sets),
+            notes: pe.notes,
+            target: buildTarget(pe, sets)
+          });
+          origins.push({ kind: 'superset', pairIndex, slot });
+        });
+      });
+    }
+
     this.exercises.set(entries);
+    this.entryOrigins.set(origins);
   }
 
   loadExerciseLibrary() {
@@ -225,12 +408,41 @@ export class StrengthLogComponent implements OnInit {
           }));
           this.exercises.set(resolved);
         }
+        // Re-resolve exercises inside the planned circuit/superset blocks too
+        const planned = this.linkedPlannedSession();
+        if (planned?.strengthPlan) {
+          this.linkedPlannedSession.set({ ...planned });
+        }
       },
       error: (err) => {
         console.error('Failed to load exercises:', err);
         this.isLoadingExercises.set(false);
       }
     });
+  }
+
+  resolvePlannedExercise(raw: any): Exercise | null {
+    if (!raw) return null;
+    if (typeof raw === 'string') {
+      return this.exerciseLibrary().find(e => e._id === raw) ?? null;
+    }
+    return raw as Exercise;
+  }
+
+  getPlannedExerciseName(pe: StrengthPlanExercise | undefined | null): string {
+    if (!pe) return '—';
+    const ex = this.resolvePlannedExercise(pe.exercise);
+    if (ex) return ex.name;
+    if (typeof pe.exercise === 'string') return 'Exercice';
+    return '—';
+  }
+
+  formatRest(seconds: number | undefined | null): string {
+    if (!seconds) return '0s';
+    if (seconds < 60) return `${seconds}s`;
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return s ? `${m}m${s.toString().padStart(2, '0')}` : `${m}min`;
   }
 
   openExercisePicker() {
@@ -250,11 +462,14 @@ export class StrengthLogComponent implements OnInit {
       order: this.exercises().length
     };
     this.exercises.update(list => [...list, newEntry]);
+    // Manually-added entries have no plan origin
+    this.entryOrigins.update(list => [...list, null as any]);
     this.closeExercisePicker();
   }
 
   removeExercise(index: number) {
     this.exercises.update(list => list.filter((_, i) => i !== index));
+    this.entryOrigins.update(list => list.filter((_, i) => i !== index));
   }
 
   addSet(exerciseIndex: number) {
@@ -293,12 +508,46 @@ export class StrengthLogComponent implements OnInit {
 
   getPlanTarget(index: number): string | null {
     const plan = this.linkedPlannedSession()?.strengthPlan;
-    if (!plan?.exercises?.[index]) return null;
-    const pe = plan.exercises[index];
-    let hint = `${pe.targetSets} × ${pe.targetReps}`;
-    if (pe.targetWeight) hint += ` @ ${pe.targetWeight}kg`;
-    if (pe.targetRest) hint += ` — repos ${pe.targetRest}`;
-    return hint;
+    if (!plan) return null;
+    const origin = this.entryOrigins()[index];
+    let pe: StrengthPlanExercise | undefined;
+    let context = '';
+
+    if (origin?.kind === 'circuit') {
+      pe = plan.circuit?.exercises?.[origin.index] as StrengthPlanExercise | undefined;
+      const rounds = plan.circuit?.rounds ?? 3;
+      context = `Circuit · ${rounds} tours`;
+    } else if (origin?.kind === 'superset') {
+      const pair = plan.superset?.pairs?.[origin.pairIndex];
+      pe = pair?.[origin.slot] as StrengthPlanExercise | undefined;
+      const sets = plan.superset?.sets ?? 4;
+      context = `Super-set · paire ${origin.pairIndex + 1}${origin.slot.toUpperCase()} · ${sets} séries`;
+    } else if (origin?.kind === 'single' || !origin) {
+      const i = origin?.index ?? index;
+      pe = plan.exercises?.[i] as StrengthPlanExercise | undefined;
+    }
+
+    if (!pe) return null;
+    const targets: string[] = [];
+    if (pe.targetSets) targets.push(`${pe.targetSets} × ${pe.targetReps}`);
+    else if (pe.targetReps) targets.push(pe.targetReps);
+    if (pe.targetWeight) targets.push(`@ ${pe.targetWeight}kg`);
+    if (pe.targetRest) targets.push(`repos ${pe.targetRest}`);
+    const targetText = targets.join(' ');
+    return context ? `${context} — ${targetText}` : targetText || null;
+  }
+
+  getEntryBadge(index: number): { label: string; kind: 'circuit' | 'superset' } | null {
+    const origin = this.entryOrigins()[index];
+    if (!origin) return null;
+    if (origin.kind === 'circuit') return { label: 'Circuit', kind: 'circuit' };
+    if (origin.kind === 'superset') {
+      return {
+        label: `Super-set ${origin.pairIndex + 1}${origin.slot.toUpperCase()}`,
+        kind: 'superset'
+      };
+    }
+    return null;
   }
 
   getMuscleLabel(muscle: MuscleGroup): string {
@@ -331,17 +580,31 @@ export class StrengthLogComponent implements OnInit {
     const plannedId = this.linkedPlannedId();
     const editId = this.editSessionId();
 
+    const origins = this.entryOrigins();
     const session: Partial<StrengthSession> = {
       date: new Date(this.sessionDate()),
       sessionType: this.sessionType(),
       duration: this.sessionDuration(),
       feeling: this.sessionFeeling(),
       notes: this.sessionNotes() || undefined,
-      exercises: this.exercises().map((e, i) => ({
-        exercise: typeof e.exercise === 'string' ? e.exercise : (e.exercise as Exercise)._id,
-        sets: e.sets,
-        order: i
-      })),
+      exercises: this.exercises().map((e, i) => {
+        const origin = origins[i];
+        const block: ExerciseEntry['block'] = origin?.kind === 'circuit'
+          ? { kind: 'circuit' }
+          : origin?.kind === 'superset'
+            ? { kind: 'superset', pairIndex: origin.pairIndex, slot: origin.slot }
+            : { kind: 'single' };
+        return {
+          exercise: typeof e.exercise === 'string' ? e.exercise : (e.exercise as Exercise)._id,
+          sets: e.sets,
+          order: i,
+          notes: e.notes,
+          block,
+          target: e.target
+        } as any;
+      }),
+      circuit: this.serializeCircuitMeta(),
+      superset: this.serializeSupersetMeta(),
       ...(plannedId && !editId ? { linkedPlannedSession: plannedId } : {})
     };
 

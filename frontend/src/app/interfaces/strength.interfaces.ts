@@ -75,6 +75,17 @@ export interface ExerciseEntry {
   sets: ExerciseSet[];
   order: number;
   notes?: string;
+  block?: {
+    kind: 'single' | 'circuit' | 'superset';
+    pairIndex?: number | null;
+    slot?: 'a' | 'b' | null;
+  };
+  target?: {
+    sets?: number;
+    reps?: string;
+    weight?: number;
+    rest?: string;
+  };
 }
 
 // Séance de musculation loggée
@@ -85,6 +96,10 @@ export interface StrengthSession {
   duration?: number; // minutes
   sessionType: StrengthSessionType;
   exercises: ExerciseEntry[];
+  // Méta-données du bloc circuit (snapshot pris au moment du log)
+  circuit?: { name?: string; rounds?: number; restBetweenRounds?: number } | null;
+  // Idem super-set
+  superset?: { name?: string; sets?: number; restBetweenSets?: number } | null;
   notes?: string;
   feeling?: number; // 1-10
   linkedPlannedSession?: string;

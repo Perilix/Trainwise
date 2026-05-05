@@ -1191,3 +1191,58 @@ $display-font: 'GulfsDisplay', 'Archivo Black', serif;
     .pair-connector-pill { background: $cyan-line; }
   }
 }
+
+.origin-badge {
+  display: inline-block;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  color: #fff;
+  margin-left: 0.5rem;
+
+  &.origin-circuit { background: linear-gradient(135deg, $cyan 0%, $violet 100%); }
+  &.origin-superset { background: linear-gradient(135deg, $violet 0%, $cyan 100%); }
+}
+
+.slot-badge {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+  background: $violet-soft;
+  color: $violet;
+  font-weight: 800;
+  font-size: 0.7rem;
+  font-family: $display-font;
+  font-style: italic;
+  margin-right: 0.4rem;
+}
+
+.exercise-card-circuit { border-left: 3px solid $cyan; }
+.exercise-card-superset { border-left: 3px solid $violet; }
+
+.target-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  font-size: 0.75rem;
+  color: $muted;
+  background: $cyan-soft;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+
+  .target-label {
+    font-weight: 700;
+    color: $navy-ink;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.65rem;
+  }
+}
+

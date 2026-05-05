@@ -8,7 +8,7 @@ const { createNotification } = require('./notification.controller');
 // Créer une séance de muscu
 exports.createSession = async (req, res) => {
   try {
-    const { date, duration, sessionType, exercises, notes, feeling, linkedPlannedSession } = req.body;
+    const { date, duration, sessionType, exercises, notes, feeling, linkedPlannedSession, circuit, superset } = req.body;
 
     const session = await StrengthSession.create({
       user: req.user._id,
@@ -16,6 +16,8 @@ exports.createSession = async (req, res) => {
       duration,
       sessionType,
       exercises,
+      circuit,
+      superset,
       notes,
       feeling,
       linkedPlannedSession

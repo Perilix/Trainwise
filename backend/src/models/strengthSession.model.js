@@ -29,7 +29,22 @@ const exerciseEntrySchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  notes: String
+  notes: String,
+  // Quel bloc structurel cette entrée représente. Permet de regrouper visuellement
+  // les exos d'un circuit / super-set lors du re-chargement.
+  block: {
+    kind: { type: String, enum: ['single', 'circuit', 'superset'], default: 'single' },
+    pairIndex: { type: Number, default: null },          // super-set uniquement
+    slot: { type: String, enum: ['a', 'b', null], default: null } // super-set uniquement
+  },
+  // Snapshot de ce que le coach avait prévu pour cet exo (targetReps, etc.).
+  // Permet au coach (et à l'athlète) de comparer "prévu" vs "fait" après save.
+  target: {
+    sets: Number,
+    reps: String,
+    weight: Number,
+    rest: String
+  }
 });
 
 const strengthSessionSchema = new mongoose.Schema({
@@ -53,6 +68,21 @@ const strengthSessionSchema = new mongoose.Schema({
     default: 'full_body'
   },
   exercises: [exerciseEntrySchema],
+
+  // Méta-données du bloc circuit (snapshot au moment du logging).
+  // Les exos qui composent le circuit vivent dans `exercises[]` avec block.kind = 'circuit'.
+  circuit: {
+    name: String,
+    rounds: Number,
+    restBetweenRounds: Number
+  },
+  // Idem pour le super-set
+  superset: {
+    name: String,
+    sets: Number,
+    restBetweenSets: Number
+  },
+
   notes: {
     type: String,
     trim: true

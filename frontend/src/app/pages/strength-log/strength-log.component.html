@@ -44,6 +44,110 @@
   }
 
   <div class="log-form">
+    <!-- Plan du coach / Structure de la séance (lecture seule) -->
+    @if (hasPlannedStructure()) {
+      <section class="form-section coach-plan-section">
+        <h2>{{ linkedPlannedSession() ? 'Plan du coach' : 'Structure de la séance' }}</h2>
+
+        @if (plannedCircuit(); as c) {
+          <div class="block-banner banner-circuit">
+            <div class="banner-left">
+              <div class="banner-label">Circuit · en boucle</div>
+              <div class="banner-name">{{ c.name || 'Circuit' }}</div>
+            </div>
+            <div class="banner-rounds">
+              <span class="banner-rounds-num">{{ c.rounds }}×</span>
+              <span class="banner-rounds-suffix">tours</span>
+            </div>
+          </div>
+
+          <div class="flow flow-circuit">
+            @for (ex of c.exercises; track $index; let last = $last) {
+              <div class="flow-node filled">
+                <div class="flow-num">{{ $index + 1 }}</div>
+                <div class="flow-body">
+                  <div class="flow-name">{{ getPlannedExerciseName(ex) }}</div>
+                  <div class="flow-meta">
+                    <b>{{ ex.targetReps }}</b>
+                    @if (ex.targetWeight) { <span> · {{ ex.targetWeight }} kg</span> }
+                    @if (ex.targetRest) { <span> · repos {{ ex.targetRest }}</span> }
+                  </div>
+                  @if (ex.notes) { <div class="flow-notes">{{ ex.notes }}</div> }
+                </div>
+              </div>
+              @if (!last) {
+                <div class="flow-arrow" aria-hidden="true">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+              }
+            }
+          </div>
+
+          <div class="block-summary">
+            <span>{{ c.rounds }} tours</span>
+            <span>Récup {{ formatRest(c.restBetweenRounds) }}</span>
+          </div>
+        }
+
+        @if (plannedSuperset(); as s) {
+          <div class="block-banner banner-superset">
+            <div class="banner-left">
+              <div class="banner-label">Super-set</div>
+              <div class="banner-name">{{ s.name || 'Super-set' }}</div>
+            </div>
+            <div class="banner-rounds">
+              <span class="banner-rounds-num">{{ s.sets }}</span>
+              <span class="banner-rounds-suffix">séries</span>
+            </div>
+          </div>
+
+          @for (pair of s.pairs; track $index) {
+            <div class="pair-container">
+              <div class="pair-badge">Paire {{ $index + 1 }}</div>
+
+              @if (pair.a) {
+                <div class="flow-node filled flow-node-violet">
+                  <div class="flow-num flow-num-violet">A</div>
+                  <div class="flow-body">
+                    <div class="flow-name">{{ getPlannedExerciseName(pair.a) }}</div>
+                    <div class="flow-meta">
+                      <b>{{ pair.a.targetReps }}</b>
+                      @if (pair.a.targetWeight) { <span> · {{ pair.a.targetWeight }} kg</span> }
+                    </div>
+                  </div>
+                </div>
+              }
+
+              @if (pair.a && pair.b) {
+                <div class="pair-connector">
+                  <div class="pair-connector-line"></div>
+                  <div class="pair-connector-pill">sans repos</div>
+                </div>
+              }
+
+              @if (pair.b) {
+                <div class="flow-node filled flow-node-violet">
+                  <div class="flow-num flow-num-violet">B</div>
+                  <div class="flow-body">
+                    <div class="flow-name">{{ getPlannedExerciseName(pair.b) }}</div>
+                    <div class="flow-meta">
+                      <b>{{ pair.b.targetReps }}</b>
+                      @if (pair.b.targetWeight) { <span> · {{ pair.b.targetWeight }} kg</span> }
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          <div class="block-summary">
+            <span>{{ s.sets }} séries</span>
+            <span>Récup {{ formatRest(s.restBetweenSets) }}</span>
+          </div>
+        }
+      </section>
+    }
+
     <!-- Session info -->
     <section class="form-section">
       <h2>Informations</h2>
@@ -104,6 +208,9 @@
                 <div class="exercise-info">
                   <div class="exercise-meta">
                     <h3>{{ getExercise(entry).name }}</h3>
+                    @if (getEntryBadge(i); as b) {
+                      <span class="origin-badge" [class.origin-circuit]="b.kind === 'circuit'" [class.origin-superset]="b.kind === 'superset'">{{ b.label }}</span>
+                    }
                     <span class="muscle-tag">{{ getMuscleLabel(getExercise(entry).primaryMuscle) }}</span>
                   </div>
                 </div>

@@ -223,6 +223,47 @@ export class MuscuDetailComponent implements OnInit {
     });
   }
 
+  // ───── Regroupe les exercices loggés en single / circuit / super-set ─────
+  // pour afficher la structure que l'athlète a effectivement réalisée.
+  completedGroupedEntries = computed(() => {
+    const session: any = this.completedSession();
+    if (!session?.exercises?.length) return null;
+
+    const singles: any[] = [];
+    const circuitEntries: any[] = [];
+    const pairsMap = new Map<number, { a?: any; b?: any }>();
+
+    session.exercises.forEach((e: any) => {
+      const kind = e?.block?.kind ?? 'single';
+      if (kind === 'circuit') {
+        circuitEntries.push(e);
+      } else if (kind === 'superset') {
+        const pi = e.block?.pairIndex ?? 0;
+        const slot: 'a' | 'b' = e.block?.slot ?? 'a';
+        const cur = pairsMap.get(pi) ?? {};
+        cur[slot] = e;
+        pairsMap.set(pi, cur);
+      } else {
+        singles.push(e);
+      }
+    });
+
+    const supersetPairs = Array.from(pairsMap.entries())
+      .sort(([a], [b]) => a - b)
+      .map(([, p]) => p);
+
+    return {
+      singles,
+      circuit: circuitEntries.length
+        ? { meta: session.circuit ?? {}, entries: circuitEntries }
+        : null,
+      superset: supersetPairs.length
+        ? { meta: session.superset ?? {}, pairs: supersetPairs }
+        : null
+    };
+  });
+
+
   saveExercises() {
     if (this.isNew()) {
       this.createSession();

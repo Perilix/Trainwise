@@ -461,31 +461,7 @@
           @if (completedSession().notes) {
             <p class="completed-notes">{{ completedSession().notes }}</p>
           }
-          <div class="completed-exercises">
-            @for (entry of completedSession().exercises; track $index) {
-              <div class="exercise-card completed">
-                <div class="exercise-card-header">
-                  <span class="exercise-name">{{ entry.exercise?.name ?? 'Exercice' }}</span>
-                </div>
-                <div class="sets-table">
-                  <div class="sets-head">
-                    <span>Série</span><span>Reps</span><span>Charge</span><span>RPE</span>
-                  </div>
-                  @for (set of entry.sets; track $index) {
-                    <div class="sets-row">
-                      <span>{{ $index + 1 }}</span>
-                      <span>{{ set.reps }}</span>
-                      <span>{{ set.weight ? set.weight + ' kg' : '—' }}</span>
-                      <span>{{ set.rpe ?? '—' }}</span>
-                    </div>
-                  }
-                </div>
-                @if (entry.notes) {
-                  <p class="ex-notes">{{ entry.notes }}</p>
-                }
-              </div>
-            }
-          </div>
+          <ng-container *ngTemplateOutlet="completedBlocks; context: { $implicit: completedGroupedEntries() }"></ng-container>
         } @else {
           <div class="empty-state">
             <p>L'athlète n'a pas encore détaillé cette séance.</p>
@@ -528,31 +504,7 @@
         <p class="completed-notes">{{ completedSession().notes }}</p>
       }
       @if (completedSession().exercises && completedSession().exercises.length > 0) {
-        <div class="completed-exercises">
-          @for (entry of completedSession().exercises; track $index) {
-            <div class="exercise-card completed">
-              <div class="exercise-card-header">
-                <span class="exercise-name">{{ entry.exercise?.name ?? 'Exercice' }}</span>
-              </div>
-              <div class="sets-table">
-                <div class="sets-head">
-                  <span>Série</span><span>Reps</span><span>Charge</span><span>RPE</span>
-                </div>
-                @for (set of entry.sets; track $index) {
-                  <div class="sets-row">
-                    <span>{{ $index + 1 }}</span>
-                    <span>{{ set.reps }}</span>
-                    <span>{{ set.weight ? set.weight + ' kg' : '—' }}</span>
-                    <span>{{ set.rpe ?? '—' }}</span>
-                  </div>
-                }
-              </div>
-              @if (entry.notes) {
-                <p class="ex-notes">{{ entry.notes }}</p>
-              }
-            </div>
-          }
-        </div>
+        <ng-container *ngTemplateOutlet="completedBlocks; context: { $implicit: completedGroupedEntries() }"></ng-container>
       } @else {
         <div class="empty-state">
           <p>L'athlète n'a pas détaillé d'exercice pour cette séance.</p>
@@ -599,3 +551,124 @@
     </div>
   </div>
 }
+
+<!-- Affichage des exos loggés, regroupés par bloc (single / circuit / super-set) -->
+<ng-template #completedBlocks let-grouped>
+  <div class="completed-exercises">
+    @for (entry of grouped?.singles ?? []; track $index) {
+      <div class="exercise-card completed">
+        <div class="exercise-card-header">
+          <span class="exercise-name">{{ entry.exercise?.name ?? 'Exercice' }}</span>
+        </div>
+        <ng-container *ngTemplateOutlet="setsTable; context: { $implicit: entry }"></ng-container>
+        @if (entry.notes) { <p class="ex-notes">{{ entry.notes }}</p> }
+      </div>
+    }
+
+    @if (grouped?.circuit; as c) {
+      <div class="block-banner banner-circuit">
+        <div class="banner-left">
+          <div class="banner-label">Circuit · en boucle</div>
+          @if (c.meta?.name) { <div class="banner-name">{{ c.meta.name }}</div> }
+        </div>
+        @if (c.meta?.rounds) {
+          <div class="banner-rounds">
+            <span class="banner-rounds-num">{{ c.meta.rounds }}×</span>
+            <span class="banner-rounds-suffix">tours</span>
+          </div>
+        }
+      </div>
+      @for (entry of c.entries; track $index) {
+        <div class="exercise-card completed exercise-card-circuit">
+          <div class="exercise-card-header">
+            <span class="exercise-name">{{ entry.exercise?.name ?? 'Exercice' }}</span>
+            <span class="origin-badge origin-circuit">Circuit</span>
+          </div>
+          <ng-container *ngTemplateOutlet="setsTable; context: { $implicit: entry }"></ng-container>
+          @if (entry.notes) { <p class="ex-notes">{{ entry.notes }}</p> }
+        </div>
+      }
+      @if (c.meta?.restBetweenRounds) {
+        <div class="block-summary">
+          <span>Récup / tour {{ formatRest(c.meta.restBetweenRounds) }}</span>
+        </div>
+      }
+    }
+
+    @if (grouped?.superset; as s) {
+      <div class="block-banner banner-superset">
+        <div class="banner-left">
+          <div class="banner-label">Super-set</div>
+          @if (s.meta?.name) { <div class="banner-name">{{ s.meta.name }}</div> }
+        </div>
+        @if (s.meta?.sets) {
+          <div class="banner-rounds">
+            <span class="banner-rounds-num">{{ s.meta.sets }}</span>
+            <span class="banner-rounds-suffix">séries</span>
+          </div>
+        }
+      </div>
+      @for (pair of s.pairs; track $index) {
+        <div class="pair-container">
+          <div class="pair-badge">Paire {{ $index + 1 }}</div>
+          @if (pair.a) {
+            <div class="exercise-card completed exercise-card-superset">
+              <div class="exercise-card-header">
+                <span class="slot-badge">A</span>
+                <span class="exercise-name">{{ pair.a.exercise?.name ?? 'Exercice' }}</span>
+              </div>
+              <ng-container *ngTemplateOutlet="setsTable; context: { $implicit: pair.a }"></ng-container>
+              @if (pair.a.notes) { <p class="ex-notes">{{ pair.a.notes }}</p> }
+            </div>
+          }
+          @if (pair.a && pair.b) {
+            <div class="pair-connector">
+              <div class="pair-connector-line"></div>
+              <div class="pair-connector-pill">sans repos</div>
+            </div>
+          }
+          @if (pair.b) {
+            <div class="exercise-card completed exercise-card-superset">
+              <div class="exercise-card-header">
+                <span class="slot-badge">B</span>
+                <span class="exercise-name">{{ pair.b.exercise?.name ?? 'Exercice' }}</span>
+              </div>
+              <ng-container *ngTemplateOutlet="setsTable; context: { $implicit: pair.b }"></ng-container>
+              @if (pair.b.notes) { <p class="ex-notes">{{ pair.b.notes }}</p> }
+            </div>
+          }
+        </div>
+      }
+      @if (s.meta?.restBetweenSets) {
+        <div class="block-summary">
+          <span>Récup / série {{ formatRest(s.meta.restBetweenSets) }}</span>
+        </div>
+      }
+    }
+  </div>
+</ng-template>
+
+<ng-template #setsTable let-entry>
+  @if (entry.target?.reps || entry.target?.weight || entry.target?.sets) {
+    <div class="target-line">
+      <span class="target-label">Prévu :</span>
+      @if (entry.target.sets) { <span>{{ entry.target.sets }} ×</span> }
+      <span>{{ entry.target.reps || '—' }}</span>
+      @if (entry.target.weight) { <span>@ {{ entry.target.weight }} kg</span> }
+      @if (entry.target.rest) { <span>· repos {{ entry.target.rest }}</span> }
+    </div>
+  }
+  <div class="sets-table">
+    <div class="sets-head">
+      <span>Série</span><span>Reps</span><span>Charge</span><span>RPE</span>
+    </div>
+    @for (set of entry.sets; track $index) {
+      <div class="sets-row">
+        <span>{{ $index + 1 }}</span>
+        <span>{{ set.reps }}</span>
+        <span>{{ set.weight ? set.weight + ' kg' : '—' }}</span>
+        <span>{{ set.rpe ?? '—' }}</span>
+      </div>
+    }
+  </div>
+</ng-template>
