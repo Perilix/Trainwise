@@ -9,9 +9,9 @@ const PACE_ZONES = {
   endurance: {
     key: 'endurance',
     label: 'Endurance fondamentale',
-    defaultPercent: 70,
-    minPercent: 65,
-    maxPercent: 75
+    defaultPercent: 57,
+    minPercent: 55,
+    maxPercent: 65
   },
   marathon: {
     key: 'marathon',

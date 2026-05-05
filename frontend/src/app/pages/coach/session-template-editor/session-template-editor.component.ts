@@ -174,6 +174,40 @@ export class SessionTemplateEditorComponent implements OnInit {
     this.runBlocks.set(next);
   }
 
+  // Réordonne librement n'importe quel bloc (le coach décide de l'ordre)
+  moveRunBlock(index: number, delta: -1 | 1) {
+    const list = this.runBlocks();
+    const target = index + delta;
+    if (target < 0 || target >= list.length) return;
+    const next = [...list];
+    [next[index], next[target]] = [next[target], next[index]];
+    this.runBlocks.set(next.map((b, i) => ({ ...b, order: i })));
+  }
+
+  canMoveRunBlock(index: number, delta: -1 | 1): boolean {
+    const list = this.runBlocks();
+    const target = index + delta;
+    return target >= 0 && target < list.length;
+  }
+
+  // Conversion km <-> m pour les blocs main (saisis en mètres, stockés en km)
+  kmToMeters(km: number | null | undefined): number | null {
+    if (km == null) return null;
+    return Math.round(km * 1000);
+  }
+
+  setRunBlockDistanceMeters(index: number, meters: number | string | null) {
+    const m = typeof meters === 'string' ? parseFloat(meters) : meters;
+    const km = m == null || isNaN(m as number) || (m as number) <= 0 ? null : (m as number) / 1000;
+    this.updateRunBlock(index, 'distance', km);
+  }
+
+  setRunBlockRecoveryDistanceMeters(index: number, meters: number | string | null) {
+    const m = typeof meters === 'string' ? parseFloat(meters) : meters;
+    const km = m == null || isNaN(m as number) || (m as number) <= 0 ? null : (m as number) / 1000;
+    this.updateRunBlock(index, 'recoveryDistance', km);
+  }
+
   updateRunBlock<K extends keyof TemplateRunBlock>(index: number, field: K, value: TemplateRunBlock[K]) {
     const next = [...this.runBlocks()];
     next[index] = { ...next[index], [field]: value };
@@ -246,6 +280,15 @@ export class SessionTemplateEditorComponent implements OnInit {
     this.strengthExercises.set(next);
   }
 
+  moveStrengthExercise(index: number, delta: -1 | 1) {
+    const list = this.strengthExercises();
+    const target = index + delta;
+    if (target < 0 || target >= list.length) return;
+    const next = [...list];
+    [next[index], next[target]] = [next[target], next[index]];
+    this.strengthExercises.set(next);
+  }
+
   // ===== Circuit =====
   addCircuit() {
     if (this.strengthCircuit()) return;
@@ -287,6 +330,16 @@ export class SessionTemplateEditorComponent implements OnInit {
     if (!c) return;
     const next = [...c.exercises];
     next[index] = { ...next[index], [field]: value };
+    this.strengthCircuit.set({ ...c, exercises: next });
+  }
+
+  moveCircuitExercise(index: number, delta: -1 | 1) {
+    const c = this.strengthCircuit();
+    if (!c) return;
+    const target = index + delta;
+    if (target < 0 || target >= c.exercises.length) return;
+    const next = [...c.exercises];
+    [next[index], next[target]] = [next[target], next[index]];
     this.strengthCircuit.set({ ...c, exercises: next });
   }
 
@@ -335,6 +388,65 @@ export class SessionTemplateEditorComponent implements OnInit {
     const next = [...s.pairs];
     next[index] = { ...next[index], [slot]: { ...next[index][slot], [field]: value } };
     this.strengthSuperset.set({ ...s, pairs: next });
+  }
+
+  moveSupersetPair(index: number, delta: -1 | 1) {
+    const s = this.strengthSuperset();
+    if (!s) return;
+    const target = index + delta;
+    if (target < 0 || target >= s.pairs.length) return;
+    const next = [...s.pairs];
+    [next[index], next[target]] = [next[target], next[index]];
+    this.strengthSuperset.set({ ...s, pairs: next });
+  }
+
+  // Steppers (delta) — UX cohérente avec muscu-detail
+  setCircuitRounds(delta: number) {
+    const c = this.strengthCircuit();
+    if (!c) return;
+    const next = Math.max(1, (c.rounds ?? 3) + delta);
+    this.strengthCircuit.set({ ...c, rounds: next });
+  }
+  setCircuitRest(delta: number) {
+    const c = this.strengthCircuit();
+    if (!c) return;
+    const next = Math.max(0, (c.restBetweenRounds ?? 60) + delta);
+    this.strengthCircuit.set({ ...c, restBetweenRounds: next });
+  }
+  setSupersetSets(delta: number) {
+    const s = this.strengthSuperset();
+    if (!s) return;
+    const next = Math.max(1, (s.sets ?? 4) + delta);
+    this.strengthSuperset.set({ ...s, sets: next });
+  }
+  setSupersetRest(delta: number) {
+    const s = this.strengthSuperset();
+    if (!s) return;
+    const next = Math.max(0, (s.restBetweenSets ?? 90) + delta);
+    this.strengthSuperset.set({ ...s, restBetweenSets: next });
+  }
+
+  // Édition inline du nom dans la banner
+  editingCircuitName = signal(false);
+  editingSupersetName = signal(false);
+  setCircuitName(name: string) { this.updateCircuitField('name', name); }
+  setSupersetName(name: string) { this.updateSupersetField('name', name); }
+
+  // Helpers d'affichage
+  formatRest(seconds?: number): string {
+    if (seconds == null) return '—';
+    if (seconds < 60) return `${seconds}s`;
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return s === 0 ? `${m} min` : `${m}min${s.toString().padStart(2, '0')}`;
+  }
+
+  getExerciseName(entry: StrengthExerciseEntry | null | undefined): string {
+    if (!entry || !entry.exercise) return '—';
+    const id = typeof entry.exercise === 'string' ? entry.exercise : (entry.exercise as any)?._id;
+    if (!id) return '—';
+    const found = this.exercises().find(e => e._id === id);
+    return found?.name || '—';
   }
 
   // ===== Sport switch =====

@@ -1,11 +1,15 @@
 const Exercise = require('../models/exercise.model');
 
-// Lister tous les exercices (avec filtres)
 exports.getExercises = async (req, res) => {
   try {
     const { muscle, equipment, difficulty, search, limit = 50 } = req.query;
 
-    const query = { isPublic: true };
+    const query = {
+      $or: [
+        { createdBy: req.user._id },
+        { isPublic: true, createdBy: null }
+      ]
+    };
 
     // Filtres
     if (muscle) {
@@ -80,7 +84,8 @@ exports.createExercise = async (req, res) => {
       videoUrl,
       imageUrl,
       thumbnailUrl,
-      isPublic: isPublic !== false,
+      // Exo créé par un coach = privé par défaut (bibliothèque perso)
+      isPublic: isPublic === true,
       createdBy: req.user._id
     });
 

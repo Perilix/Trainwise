@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CoachService } from '../../../services/coach.service';
 import { ExerciseService } from '../../../services/exercise.service';
+import { SessionTemplateService } from '../../../services/session-template.service';
 import { PlannedSession } from '../../../services/planning.service';
 import {
   Exercise, StrengthPlanExercise, CircuitBlock, SupersetBlock, SupersetPair,
@@ -105,11 +106,14 @@ export class MuscuDetailComponent implements OnInit {
   muscleGroups: MuscleGroup[] = ['chest', 'back', 'shoulders', 'biceps', 'triceps', 'core', 'quadriceps', 'hamstrings', 'glutes', 'calves'];
   strengthSessionLabels = STRENGTH_SESSION_LABELS;
 
+  isSavingTemplate = signal(false);
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private coachService: CoachService,
-    private exerciseService: ExerciseService
+    private exerciseService: ExerciseService,
+    private templateService: SessionTemplateService
   ) {}
 
   ngOnInit() {
@@ -582,5 +586,32 @@ export class MuscuDetailComponent implements OnInit {
     } else {
       this.router.navigate(['/coach/athletes', this.athleteId, 'planning']);
     }
+  }
+
+  saveAsTemplate() {
+    if (this.isNew()) {
+      this.error.set('Enregistre d\'abord la séance avant de la sauvegarder en template');
+      return;
+    }
+    const session = this.session();
+    if (!session?._id) return;
+
+    const sessionTypeLabel = STRENGTH_SESSION_LABELS[session.sessionType as StrengthSessionType] || session.sessionType;
+    const defaultName = `${sessionTypeLabel}${this.description() ? ' — ' + this.description().slice(0, 40) : ''}`;
+    const name = window.prompt('Nom de la séance dans la bibliothèque :', defaultName);
+    if (!name || !name.trim()) return;
+
+    this.isSavingTemplate.set(true);
+    this.templateService.createFromPlanning(session._id, name.trim()).subscribe({
+      next: () => {
+        this.isSavingTemplate.set(false);
+        this.successMessage.set('Séance ajoutée à ta bibliothèque');
+        setTimeout(() => this.successMessage.set(null), 3000);
+      },
+      error: (err: any) => {
+        this.isSavingTemplate.set(false);
+        this.error.set(err.error?.error || 'Erreur lors de la sauvegarde');
+      }
+    });
   }
 }

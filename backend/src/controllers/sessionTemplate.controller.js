@@ -165,6 +165,85 @@ exports.previewAssignment = async (req, res) => {
   }
 };
 
+exports.createTemplateFromPlanning = async (req, res) => {
+  try {
+    const { plannedRunId } = req.params;
+    const { name, description } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Le nom du template est requis' });
+    }
+
+    const planned = await PlannedRun.findById(plannedRunId).lean();
+    if (!planned) return res.status(404).json({ error: 'Séance source non trouvée' });
+
+    const relationship = await CoachAthlete.findOne({
+      coach: req.user._id,
+      athlete: planned.user,
+      status: 'accepted'
+    });
+    if (!relationship) return res.status(403).json({ error: 'Accès refusé' });
+
+    const runBlocks = (planned.runBlocks || []).map(b => {
+      const pace = b.paceSource && b.paceSource.mode
+        ? {
+            mode: b.paceSource.mode,
+            zone: b.paceSource.zone,
+            vmaPercent: b.paceSource.vmaPercent,
+            absolute: b.pace
+          }
+        : { mode: 'absolute', absolute: b.pace || null };
+
+      const recoveryPace = b.recoveryPace
+        ? (b.recoveryPaceSource && b.recoveryPaceSource.mode
+            ? {
+                mode: b.recoveryPaceSource.mode,
+                zone: b.recoveryPaceSource.zone,
+                vmaPercent: b.recoveryPaceSource.vmaPercent,
+                absolute: b.recoveryPace
+              }
+            : { mode: 'absolute', absolute: b.recoveryPace })
+        : null;
+
+      return {
+        role: b.role,
+        mode: b.mode,
+        distance: b.distance,
+        duration: b.duration,
+        pace,
+        repetitions: b.repetitions,
+        description: b.description,
+        recoveryMode: b.recoveryMode,
+        recoveryDistance: b.recoveryDistance,
+        recoveryDuration: b.recoveryDuration,
+        recoveryPace,
+        recoveryDescription: b.recoveryDescription,
+        order: b.order
+      };
+    });
+
+    const template = await SessionTemplate.create({
+      name: name.trim(),
+      description: description?.trim() || planned.description || '',
+      sport: planned.activityType || 'running',
+      sessionType: planned.sessionType,
+      targetDistance: planned.targetDistance,
+      targetDuration: planned.targetDuration,
+      warmup: planned.warmup,
+      mainWorkout: planned.mainWorkout,
+      cooldown: planned.cooldown,
+      runBlocks: planned.activityType === 'running' ? runBlocks : [],
+      strengthPlan: planned.activityType === 'strength' ? planned.strengthPlan : null,
+      coach: req.user._id
+    });
+
+    res.status(201).json(template);
+  } catch (error) {
+    console.error('Error creating template from planning:', error);
+    res.status(400).json({ error: error.message });
+  }
+};
+
 exports.assignTemplate = async (req, res) => {
   try {
     const { id } = req.params;

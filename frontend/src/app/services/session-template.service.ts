@@ -63,4 +63,11 @@ export class SessionTemplateService {
       { assignments }
     );
   }
+
+  createFromPlanning(plannedRunId: string, name: string, description?: string): Observable<SessionTemplate> {
+    return this.http.post<SessionTemplate>(
+      `${this.API_URL}/from-planning/${plannedRunId}`,
+      { name, description }
+    );
+  }
 }

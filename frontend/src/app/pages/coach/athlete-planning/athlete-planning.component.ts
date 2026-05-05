@@ -1,9 +1,11 @@
 import { Component, OnInit, signal, computed, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { CoachService } from '../../../services/coach.service';
+import { SessionTemplateService } from '../../../services/session-template.service';
+import { SessionTemplate, Sport } from '../../../interfaces/session-template.interfaces';
 import { AthleteDetail, CalendarData } from '../../../interfaces/coach.interfaces';
 import { PlannedSession, SessionType, ActivityType, RunningSessionType } from '../../../services/planning.service';
 import {
@@ -27,7 +29,7 @@ interface CalendarDay {
 @Component({
   selector: 'app-athlete-planning',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavbarComponent],
+  imports: [CommonModule, FormsModule, RouterLink, NavbarComponent],
   templateUrl: './athlete-planning.component.html',
   styleUrl: './athlete-planning.component.scss'
 })
@@ -47,6 +49,26 @@ export class AthletePlanningComponent implements OnInit {
   selectedDay = signal<CalendarDay | null>(null);
   isAddingSession = signal(false);
   isSaving = signal(false);
+
+  // Mode d'ajout : créer à la main ou choisir dans la bibliothèque
+  addMode = signal<'manual' | 'library'>('manual');
+  templates = signal<SessionTemplate[]>([]);
+  isLoadingTemplates = signal(false);
+  templateSportFilter = signal<'all' | Sport>('all');
+  templateSearch = signal('');
+  isAssigningTemplate = signal<string | null>(null); // _id du template en cours d'assignation
+
+  filteredTemplates = computed(() => {
+    const sport = this.templateSportFilter();
+    const search = this.templateSearch().toLowerCase();
+    let list = this.templates();
+    if (sport !== 'all') list = list.filter(t => t.sport === sport);
+    if (search) list = list.filter(t =>
+      t.name.toLowerCase().includes(search) ||
+      t.description?.toLowerCase().includes(search)
+    );
+    return list;
+  });
 
   @ViewChild('dayPagesViewport') dayPagesViewport?: ElementRef<HTMLElement>;
   isDragging = signal(false);
@@ -136,7 +158,8 @@ export class AthletePlanningComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private coachService: CoachService
+    private coachService: CoachService,
+    private templateService: SessionTemplateService
   ) {}
 
   ngOnInit() {
@@ -426,12 +449,80 @@ export class AthletePlanningComponent implements OnInit {
 
   openAddSession() {
     this.isAddingSession.set(true);
+    this.addMode.set('manual');
     this.resetNewSession();
   }
 
   cancelAddSession() {
     this.isAddingSession.set(false);
+    this.addMode.set('manual');
     this.resetNewSession();
+  }
+
+  setAddMode(mode: 'manual' | 'library') {
+    this.addMode.set(mode);
+    if (mode === 'library' && this.templates().length === 0) {
+      this.loadTemplatesForLibrary();
+    }
+  }
+
+  loadTemplatesForLibrary() {
+    this.isLoadingTemplates.set(true);
+    this.templateService.list({ scope: 'mine' }).subscribe({
+      next: (list) => {
+        this.templates.set(list);
+        this.isLoadingTemplates.set(false);
+      },
+      error: (err) => {
+        console.error(err);
+        this.isLoadingTemplates.set(false);
+      }
+    });
+  }
+
+  setTemplateSportFilter(sport: 'all' | Sport) {
+    this.templateSportFilter.set(sport);
+  }
+
+  assignTemplateToDay(template: SessionTemplate) {
+    const day = this.selectedDay();
+    if (!day || !this.athleteId) return;
+
+    this.isAssigningTemplate.set(template._id);
+    this.error.set(null);
+
+    this.templateService.assign(template._id, [{
+      athleteId: this.athleteId,
+      date: new Date(day.date).toISOString(),
+      paceOverrides: {}
+    }]).subscribe({
+      next: () => {
+        this.isAssigningTemplate.set(null);
+        this.isAddingSession.set(false);
+        this.successMessage.set(`« ${template.name} » planifiée`);
+        this.loadCalendar();
+        this.refreshSelectedDay();
+        setTimeout(() => this.successMessage.set(null), 3000);
+      },
+      error: (err) => {
+        this.isAssigningTemplate.set(null);
+        this.error.set(err.error?.error || 'Erreur lors de l\'assignation');
+      }
+    });
+  }
+
+  sportLabel(sport: Sport): string {
+    return sport === 'running' ? 'Course' : 'Muscu';
+  }
+
+  sessionTypeLabelTemplate(type: string): string {
+    const labels: Record<string, string> = {
+      endurance: 'Endurance', fractionne: 'Fractionné', tempo: 'Tempo',
+      recuperation: 'Récup', sortie_longue: 'Sortie longue', cotes: 'Côtes', fartlek: 'Fartlek',
+      upper_body: 'Haut du corps', lower_body: 'Bas du corps', full_body: 'Full body',
+      push: 'Push', pull: 'Pull', legs: 'Jambes', core: 'Gainage', hiit: 'HIIT'
+    };
+    return labels[type] || type;
   }
 
   resetNewSession() {

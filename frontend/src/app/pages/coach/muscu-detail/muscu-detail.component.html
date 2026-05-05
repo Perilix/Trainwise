@@ -429,9 +429,15 @@
             {{ isSaving() ? 'Création...' : 'Créer la séance' }}
           </button>
         } @else {
-          <button class="btn-save" [disabled]="isSaving()" (click)="saveExercises()">
-            {{ isSaving() ? 'Sauvegarde...' : 'Sauvegarder les exercices' }}
-          </button>
+          <div class="session-actions">
+            <button type="button" class="btn-save-template" [disabled]="isSavingTemplate()" (click)="saveAsTemplate()">
+              <span aria-hidden="true">📚</span>
+              {{ isSavingTemplate() ? 'Sauvegarde...' : 'Sauvegarder dans ma bibliothèque' }}
+            </button>
+            <button class="btn-save" [disabled]="isSaving()" (click)="saveExercises()">
+              {{ isSaving() ? 'Sauvegarde...' : 'Sauvegarder les exercices' }}
+            </button>
+          </div>
         }
       }
     </div>

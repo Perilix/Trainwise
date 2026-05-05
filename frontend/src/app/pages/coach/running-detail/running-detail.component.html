@@ -51,6 +51,10 @@
           {{ isSaving() ? 'Création...' : 'Créer la séance' }}
         </button>
       } @else {
+        <button type="button" class="btn-save-template" [disabled]="isSavingTemplate()" (click)="saveAsTemplate()">
+          <span aria-hidden="true">📚</span>
+          {{ isSavingTemplate() ? 'Sauvegarde...' : 'Sauvegarder dans ma bibliothèque' }}
+        </button>
         <button type="button" class="btn-primary" [disabled]="isSaving()" (click)="saveSession()">
           {{ isSaving() ? 'Enregistrement...' : 'Enregistrer la séance' }}
         </button>

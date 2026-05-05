@@ -6,12 +6,6 @@
       <h1>{{ templateId() ? 'Modifier' : 'Nouvelle' }} séance</h1>
       <p class="subtitle">Définissez une séance réutilisable, avec des allures basées sur la VMA de chaque athlète.</p>
     </div>
-    <div class="header-actions">
-      <button class="btn-secondary" (click)="cancel()">Annuler</button>
-      <button class="btn-primary" (click)="save()" [disabled]="isSaving()">
-        {{ isSaving() ? 'Enregistrement...' : 'Enregistrer' }}
-      </button>
-    </div>
   </header>
 
   @if (error()) {
@@ -47,14 +41,6 @@
             }
           </select>
         </div>
-        <div class="form-group">
-          <label>Distance cible (km)</label>
-          <input type="number" min="0" step="0.1" [ngModel]="targetDistance()" (ngModelChange)="targetDistance.set($event)">
-        </div>
-        <div class="form-group">
-          <label>Durée cible (min)</label>
-          <input type="number" min="0" step="1" [ngModel]="targetDuration()" (ngModelChange)="targetDuration.set($event)">
-        </div>
       </div>
     </section>
 
@@ -73,15 +59,23 @@
           <p class="empty-hint">Aucun bloc — ajoutez-en un ci-dessous.</p>
         }
 
-        @for (block of runBlocks(); track trackByIndex($index); let i = $index) {
+        @for (block of runBlocks(); track $index; let i = $index) {
           <div class="block-card" [class.warmup]="block.role === 'warmup'" [class.cooldown]="block.role === 'cooldown'">
             <div class="block-header">
               <span class="block-role">
-                @if (block.role === 'warmup') { 🔥 Échauffement }
-                @else if (block.role === 'cooldown') { 🧊 Retour au calme }
-                @else { 🎯 Bloc principal #{{ i }} }
+                @if (block.role === 'warmup') { Échauffement }
+                @else if (block.role === 'cooldown') { Retour au calme }
+                @else { Bloc principal }
               </span>
-              <button class="btn-icon danger" (click)="removeRunBlock(i)" title="Supprimer">×</button>
+              <div class="block-header-actions">
+                <button class="btn-icon" (click)="moveRunBlock(i, -1)" [disabled]="!canMoveRunBlock(i, -1)" title="Monter" aria-label="Monter le bloc">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+                </button>
+                <button class="btn-icon" (click)="moveRunBlock(i, 1)" [disabled]="!canMoveRunBlock(i, 1)" title="Descendre" aria-label="Descendre le bloc">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <button class="btn-icon danger" (click)="removeRunBlock(i)" title="Supprimer">×</button>
+              </div>
             </div>
 
             <div class="block-grid">
@@ -93,10 +87,17 @@
                 </div>
               </div>
               @if (block.mode === 'distance') {
-                <div class="form-group">
-                  <label>Distance (km)</label>
-                  <input type="number" min="0" step="0.05" [ngModel]="block.distance" (ngModelChange)="updateRunBlock(i, 'distance', $event)">
-                </div>
+                @if (block.role === 'main') {
+                  <div class="form-group">
+                    <label>Distance (m)</label>
+                    <input type="number" min="0" step="50" [ngModel]="kmToMeters(block.distance)" (ngModelChange)="setRunBlockDistanceMeters(i, $event)" placeholder="400">
+                  </div>
+                } @else {
+                  <div class="form-group">
+                    <label>Distance (km)</label>
+                    <input type="number" min="0" step="0.05" [ngModel]="block.distance" (ngModelChange)="updateRunBlock(i, 'distance', $event)">
+                  </div>
+                }
               } @else {
                 <div class="form-group">
                   <label>Durée (min)</label>
@@ -142,8 +143,8 @@
                     </div>
                     @if (block.recoveryMode === 'distance') {
                       <div class="form-group">
-                        <label>Distance récup (km)</label>
-                        <input type="number" min="0" step="0.05" [ngModel]="block.recoveryDistance" (ngModelChange)="updateRunBlock(i, 'recoveryDistance', $event)">
+                        <label>Distance récup (m)</label>
+                        <input type="number" min="0" step="50" [ngModel]="kmToMeters(block.recoveryDistance)" (ngModelChange)="setRunBlockRecoveryDistanceMeters(i, $event)" placeholder="200">
                       </div>
                     } @else {
                       <div class="form-group">
@@ -176,55 +177,60 @@
     } @else {
       <!-- Exercices simples -->
       <section class="form-section">
-        <h2>Exercices simples</h2>
+        <h2>Exercices</h2>
         @if (strengthExercises().length === 0) {
-          <p class="empty-hint">Aucun exercice — ajoutez-en un ci-dessous.</p>
-        }
-        @for (exo of strengthExercises(); track trackByIndex($index); let i = $index) {
-          <div class="block-card">
-            <div class="block-header">
-              <span class="block-role">💪 Exercice #{{ i + 1 }}</span>
-              <button class="btn-icon danger" (click)="removeStrengthExercise(i)" title="Supprimer">×</button>
-            </div>
-            <div class="block-grid">
-              <div class="form-group full-width">
-                <label>Exercice</label>
-                <select [ngModel]="exo.exercise" (ngModelChange)="updateStrengthEntry(i, 'exercise', $event)">
-                  <option [value]="''">— Choisir un exercice —</option>
-                  @for (e of exercises(); track e._id) {
-                    <option [value]="e._id">{{ e.name }}</option>
-                  }
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Séries</label>
-                <input type="number" min="1" [ngModel]="exo.targetSets" (ngModelChange)="updateStrengthEntry(i, 'targetSets', $event)">
-              </div>
-              <div class="form-group">
-                <label>Reps</label>
-                <input type="text" [ngModel]="exo.targetReps" (ngModelChange)="updateStrengthEntry(i, 'targetReps', $event)" placeholder="8-12">
-              </div>
-              <div class="form-group">
-                <label>Poids (kg)</label>
-                <input type="number" min="0" step="0.5" [ngModel]="exo.targetWeight" (ngModelChange)="updateStrengthEntry(i, 'targetWeight', $event)">
-              </div>
-              <div class="form-group">
-                <label>Repos</label>
-                <input type="text" [ngModel]="exo.targetRest" (ngModelChange)="updateStrengthEntry(i, 'targetRest', $event)" placeholder="60s">
-              </div>
-              <div class="form-group full-width">
-                <label>Notes</label>
-                <input type="text" [ngModel]="exo.notes" (ngModelChange)="updateStrengthEntry(i, 'notes', $event)">
-              </div>
-            </div>
+          <div class="empty-state">
+            <p>Aucun exercice. Ajoutez les exercices que les athlètes devront réaliser.</p>
+            <button class="btn-add" (click)="addStrengthExercise()">+ Ajouter</button>
           </div>
+        } @else {
+          <div class="exercises-list">
+            @for (exo of strengthExercises(); track $index; let i = $index; let first = $first; let last = $last) {
+              <div class="exercise-card">
+                <div class="exercise-card-header">
+                  <select class="exercise-select" [ngModel]="exo.exercise" (ngModelChange)="updateStrengthEntry(i, 'exercise', $event)">
+                    <option [value]="''">— Choisir un exercice —</option>
+                    @for (e of exercises(); track e._id) {
+                      <option [value]="e._id">{{ e.name }}</option>
+                    }
+                  </select>
+                  <div class="card-actions">
+                    <button type="button" class="card-action" (click)="moveStrengthExercise(i, -1)" [disabled]="first" title="Monter">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+                    </button>
+                    <button type="button" class="card-action" (click)="moveStrengthExercise(i, 1)" [disabled]="last" title="Descendre">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <button type="button" class="card-action card-action-danger" (click)="removeStrengthExercise(i)" title="Supprimer">×</button>
+                  </div>
+                </div>
+                <div class="exercise-fields">
+                  <div class="field">
+                    <label>Séries</label>
+                    <input type="number" min="1" [ngModel]="exo.targetSets" (ngModelChange)="updateStrengthEntry(i, 'targetSets', $event)">
+                  </div>
+                  <div class="field">
+                    <label>Reps</label>
+                    <input type="text" [ngModel]="exo.targetReps" (ngModelChange)="updateStrengthEntry(i, 'targetReps', $event)" placeholder="8-12">
+                  </div>
+                  <div class="field">
+                    <label>Charge (kg)</label>
+                    <input type="number" min="0" step="0.5" [ngModel]="exo.targetWeight" (ngModelChange)="updateStrengthEntry(i, 'targetWeight', $event)">
+                  </div>
+                  <div class="field">
+                    <label>Repos</label>
+                    <input type="text" [ngModel]="exo.targetRest" (ngModelChange)="updateStrengthEntry(i, 'targetRest', $event)" placeholder="60s">
+                  </div>
+                </div>
+                <input type="text" class="notes-input" [ngModel]="exo.notes" (ngModelChange)="updateStrengthEntry(i, 'notes', $event)" placeholder="Notes pour cet exercice...">
+              </div>
+            }
+          </div>
+          <button class="btn-add" (click)="addStrengthExercise()">+ Ajouter</button>
         }
-        <div class="block-actions">
-          <button class="btn-secondary" (click)="addStrengthExercise()">+ Ajouter un exercice</button>
-        </div>
       </section>
 
-      <!-- Circuit -->
+      <!-- ========== CIRCUIT ========== -->
       <section class="form-section">
         <div class="section-header">
           <h2>Circuit</h2>
@@ -236,64 +242,100 @@
         </div>
 
         @if (strengthCircuit(); as circuit) {
-          <div class="block-card circuit-card">
-            <div class="block-grid">
-              <div class="form-group full-width">
-                <label>Nom du circuit</label>
-                <input type="text" [ngModel]="circuit.name" (ngModelChange)="updateCircuitField('name', $event)" placeholder="Ex: Conditionnement">
+          @if (circuit.exercises.length === 0) {
+            <div class="block-intro">
+              <h3 class="block-intro-title">Compose ton circuit</h3>
+              <p class="block-intro-sub">Ajoute des exercices, ils seront répétés en boucle. Idéal pour HIIT et cardio.</p>
+            </div>
+          }
+
+          <div class="block-banner banner-circuit">
+            <div class="banner-left">
+              <div class="banner-label">Circuit · en boucle</div>
+              @if (editingCircuitName()) {
+                <input class="banner-name banner-name-input"
+                       [value]="circuit.name"
+                       (input)="setCircuitName($any($event.target).value)"
+                       (blur)="editingCircuitName.set(false)"
+                       (keydown.enter)="editingCircuitName.set(false)"
+                       autofocus>
+              } @else {
+                <div class="banner-name" (click)="editingCircuitName.set(true)">{{ circuit.name }}</div>
+              }
+            </div>
+            <div class="banner-rounds">
+              <span class="banner-rounds-num">{{ circuit.rounds }}×</span>
+              <span class="banner-rounds-suffix">tours</span>
+            </div>
+          </div>
+
+          <div class="flow flow-circuit">
+            @for (exo of circuit.exercises; track $index; let last = $last; let first = $first; let i = $index) {
+              <div class="flow-node filled">
+                <div class="flow-num">{{ i + 1 }}</div>
+                <div class="flow-body">
+                  <select class="flow-select" [ngModel]="exo.exercise" (ngModelChange)="updateCircuitExercise(i, 'exercise', $event)">
+                    <option [value]="''">— Choisir un exercice —</option>
+                    @for (e of exercises(); track e._id) {
+                      <option [value]="e._id">{{ e.name }}</option>
+                    }
+                  </select>
+                  <div class="flow-fields">
+                    <div class="field">
+                      <label>Reps / durée</label>
+                      <input type="text" [ngModel]="exo.targetReps" (ngModelChange)="updateCircuitExercise(i, 'targetReps', $event)" placeholder="12 ou 30s">
+                    </div>
+                    <div class="field">
+                      <label>Charge (kg)</label>
+                      <input type="number" min="0" step="0.5" [ngModel]="exo.targetWeight" (ngModelChange)="updateCircuitExercise(i, 'targetWeight', $event)">
+                    </div>
+                  </div>
+                </div>
+                <div class="flow-actions">
+                  <button type="button" class="card-action" (click)="moveCircuitExercise(i, -1)" [disabled]="first" title="Monter">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+                  </button>
+                  <button type="button" class="card-action" (click)="moveCircuitExercise(i, 1)" [disabled]="last" title="Descendre">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                  </button>
+                  <button type="button" class="remove-btn" (click)="removeCircuitExercise(i)" aria-label="Supprimer l'exercice">×</button>
+                </div>
               </div>
-              <div class="form-group">
-                <label>Tours</label>
-                <input type="number" min="1" [ngModel]="circuit.rounds" (ngModelChange)="updateCircuitField('rounds', $event)">
-              </div>
-              <div class="form-group">
-                <label>Repos entre tours (s)</label>
-                <input type="number" min="0" step="5" [ngModel]="circuit.restBetweenRounds" (ngModelChange)="updateCircuitField('restBetweenRounds', $event)">
+              @if (!last) {
+                <div class="flow-arrow" aria-hidden="true">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+              }
+            }
+          </div>
+
+          <button type="button" class="extend-btn extend-circuit" (click)="addCircuitExercise()">
+            <span class="pluscircle pluscircle-cyan">+</span>
+            Étendre le circuit
+          </button>
+
+          <div class="settings-grid">
+            <div class="setting-card">
+              <span class="setting-label">Tours</span>
+              <div class="stepper">
+                <button type="button" (click)="setCircuitRounds(-1)">−</button>
+                <span class="stepper-value">{{ circuit.rounds }}</span>
+                <button type="button" (click)="setCircuitRounds(1)">+</button>
               </div>
             </div>
-
-            @if (circuit.exercises.length === 0) {
-              <p class="empty-hint">Aucun exercice dans le circuit.</p>
-            }
-            @for (exo of circuit.exercises; track trackByIndex($index); let i = $index) {
-              <div class="sub-block">
-                <div class="sub-block-header">
-                  <span>Exo #{{ i + 1 }}</span>
-                  <button class="btn-icon danger" (click)="removeCircuitExercise(i)" title="Retirer">×</button>
-                </div>
-                <div class="block-grid">
-                  <div class="form-group full-width">
-                    <label>Exercice</label>
-                    <select [ngModel]="exo.exercise" (ngModelChange)="updateCircuitExercise(i, 'exercise', $event)">
-                      <option [value]="''">— Choisir —</option>
-                      @for (e of exercises(); track e._id) {
-                        <option [value]="e._id">{{ e.name }}</option>
-                      }
-                    </select>
-                  </div>
-                  <div class="form-group">
-                    <label>Reps / Durée</label>
-                    <input type="text" [ngModel]="exo.targetReps" (ngModelChange)="updateCircuitExercise(i, 'targetReps', $event)" placeholder="12 ou 30s">
-                  </div>
-                  <div class="form-group">
-                    <label>Poids (kg)</label>
-                    <input type="number" min="0" step="0.5" [ngModel]="exo.targetWeight" (ngModelChange)="updateCircuitExercise(i, 'targetWeight', $event)">
-                  </div>
-                  <div class="form-group">
-                    <label>Repos exo (s)</label>
-                    <input type="text" [ngModel]="exo.targetRest" (ngModelChange)="updateCircuitExercise(i, 'targetRest', $event)" placeholder="0s">
-                  </div>
-                </div>
+            <div class="setting-card">
+              <span class="setting-label">Récup / tour</span>
+              <div class="stepper">
+                <button type="button" (click)="setCircuitRest(-15)">−</button>
+                <span class="stepper-value">{{ formatRest(circuit.restBetweenRounds) }}</span>
+                <button type="button" (click)="setCircuitRest(15)">+</button>
               </div>
-            }
-            <div class="block-actions">
-              <button class="btn-secondary" (click)="addCircuitExercise()">+ Ajouter au circuit</button>
             </div>
           </div>
         }
       </section>
 
-      <!-- Super-set -->
+      <!-- ========== SUPER-SET ========== -->
       <section class="form-section">
         <div class="section-header">
           <h2>Super-set</h2>
@@ -305,83 +347,132 @@
         </div>
 
         @if (strengthSuperset(); as ss) {
-          <div class="block-card superset-card">
-            <div class="block-grid">
-              <div class="form-group full-width">
-                <label>Nom du super-set</label>
-                <input type="text" [ngModel]="ss.name" (ngModelChange)="updateSupersetField('name', $event)" placeholder="Ex: Bras">
-              </div>
-              <div class="form-group">
-                <label>Séries</label>
-                <input type="number" min="1" [ngModel]="ss.sets" (ngModelChange)="updateSupersetField('sets', $event)">
-              </div>
-              <div class="form-group">
-                <label>Repos entre séries (s)</label>
-                <input type="number" min="0" step="5" [ngModel]="ss.restBetweenSets" (ngModelChange)="updateSupersetField('restBetweenSets', $event)">
-              </div>
+          @if (ss.pairs.length === 0) {
+            <div class="block-intro">
+              <h3 class="block-intro-title">Compose ton super-set</h3>
+              <p class="block-intro-sub">Enchaîne 2 exercices sans repos entre les deux. Récup uniquement à la fin de chaque paire.</p>
             </div>
+          }
 
-            @if (ss.pairs.length === 0) {
-              <p class="empty-hint">Aucune paire — ajoutez deux exos enchaînés.</p>
-            }
-            @for (pair of ss.pairs; track trackByIndex($index); let i = $index) {
-              <div class="sub-block superset-pair">
-                <div class="sub-block-header">
-                  <span>Paire #{{ i + 1 }}</span>
-                  <button class="btn-icon danger" (click)="removeSupersetPair(i)" title="Retirer">×</button>
-                </div>
-                <div class="superset-slot">
-                  <div class="slot-label">A</div>
-                  <div class="block-grid">
-                    <div class="form-group full-width">
-                      <label>Exercice A</label>
-                      <select [ngModel]="pair.a.exercise" (ngModelChange)="updateSupersetPairSlot(i, 'a', 'exercise', $event)">
-                        <option [value]="''">— Choisir —</option>
-                        @for (e of exercises(); track e._id) {
-                          <option [value]="e._id">{{ e.name }}</option>
-                        }
-                      </select>
-                    </div>
-                    <div class="form-group">
+          <div class="block-banner banner-superset">
+            <div class="banner-left">
+              <div class="banner-label">Super-set</div>
+              @if (editingSupersetName()) {
+                <input class="banner-name banner-name-input"
+                       [value]="ss.name"
+                       (input)="setSupersetName($any($event.target).value)"
+                       (blur)="editingSupersetName.set(false)"
+                       (keydown.enter)="editingSupersetName.set(false)"
+                       autofocus>
+              } @else {
+                <div class="banner-name" (click)="editingSupersetName.set(true)">{{ ss.name }}</div>
+              }
+            </div>
+            <div class="banner-rounds">
+              <span class="banner-rounds-num">{{ ss.sets }}</span>
+              <span class="banner-rounds-suffix">séries</span>
+            </div>
+          </div>
+
+          @for (pair of ss.pairs; track $index; let pairFirst = $first; let pairLast = $last; let i = $index) {
+            <div class="pair-container">
+              <div class="pair-badge">Paire {{ i + 1 }}</div>
+              <div class="pair-actions">
+                <button type="button" class="pair-action" (click)="moveSupersetPair(i, -1)" [disabled]="pairFirst" aria-label="Monter la paire" title="Monter">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+                </button>
+                <button type="button" class="pair-action" (click)="moveSupersetPair(i, 1)" [disabled]="pairLast" aria-label="Descendre la paire" title="Descendre">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <button type="button" class="pair-action pair-action-danger" (click)="removeSupersetPair(i)" aria-label="Supprimer la paire" title="Supprimer">×</button>
+              </div>
+
+              <!-- Slot A -->
+              <div class="flow-node filled flow-node-violet">
+                <div class="flow-num flow-num-violet">A</div>
+                <div class="flow-body">
+                  <select class="flow-select" [ngModel]="pair.a.exercise" (ngModelChange)="updateSupersetPairSlot(i, 'a', 'exercise', $event)">
+                    <option [value]="''">— Exercice A —</option>
+                    @for (e of exercises(); track e._id) {
+                      <option [value]="e._id">{{ e.name }}</option>
+                    }
+                  </select>
+                  <div class="flow-fields">
+                    <div class="field">
                       <label>Reps</label>
                       <input type="text" [ngModel]="pair.a.targetReps" (ngModelChange)="updateSupersetPairSlot(i, 'a', 'targetReps', $event)" placeholder="10">
                     </div>
-                    <div class="form-group">
-                      <label>Poids (kg)</label>
+                    <div class="field">
+                      <label>Charge (kg)</label>
                       <input type="number" min="0" step="0.5" [ngModel]="pair.a.targetWeight" (ngModelChange)="updateSupersetPairSlot(i, 'a', 'targetWeight', $event)">
                     </div>
                   </div>
                 </div>
-                <div class="superset-slot">
-                  <div class="slot-label">B</div>
-                  <div class="block-grid">
-                    <div class="form-group full-width">
-                      <label>Exercice B</label>
-                      <select [ngModel]="pair.b.exercise" (ngModelChange)="updateSupersetPairSlot(i, 'b', 'exercise', $event)">
-                        <option [value]="''">— Choisir —</option>
-                        @for (e of exercises(); track e._id) {
-                          <option [value]="e._id">{{ e.name }}</option>
-                        }
-                      </select>
-                    </div>
-                    <div class="form-group">
+              </div>
+
+              <!-- Connector -->
+              <div class="pair-connector">
+                <div class="pair-connector-line"></div>
+                <div class="pair-connector-pill">sans repos</div>
+              </div>
+
+              <!-- Slot B -->
+              <div class="flow-node filled flow-node-violet">
+                <div class="flow-num flow-num-violet">B</div>
+                <div class="flow-body">
+                  <select class="flow-select" [ngModel]="pair.b.exercise" (ngModelChange)="updateSupersetPairSlot(i, 'b', 'exercise', $event)">
+                    <option [value]="''">— Exercice B —</option>
+                    @for (e of exercises(); track e._id) {
+                      <option [value]="e._id">{{ e.name }}</option>
+                    }
+                  </select>
+                  <div class="flow-fields">
+                    <div class="field">
                       <label>Reps</label>
-                      <input type="text" [ngModel]="pair.b.targetReps" (ngModelChange)="updateSupersetPairSlot(i, 'b', 'targetReps', $event)" placeholder="10">
+                      <input type="text" [ngModel]="pair.b.targetReps" (ngModelChange)="updateSupersetPairSlot(i, 'b', 'targetReps', $event)" placeholder="12">
                     </div>
-                    <div class="form-group">
-                      <label>Poids (kg)</label>
+                    <div class="field">
+                      <label>Charge (kg)</label>
                       <input type="number" min="0" step="0.5" [ngModel]="pair.b.targetWeight" (ngModelChange)="updateSupersetPairSlot(i, 'b', 'targetWeight', $event)">
                     </div>
                   </div>
                 </div>
               </div>
-            }
-            <div class="block-actions">
-              <button class="btn-secondary" (click)="addSupersetPair()">+ Ajouter une paire</button>
+            </div>
+          }
+
+          <button type="button" class="extend-btn extend-superset" (click)="addSupersetPair()">
+            <span class="pluscircle pluscircle-violet">+</span>
+            Ajouter une paire
+          </button>
+
+          <div class="settings-grid">
+            <div class="setting-card">
+              <span class="setting-label">Séries</span>
+              <div class="stepper">
+                <button type="button" (click)="setSupersetSets(-1)">−</button>
+                <span class="stepper-value">{{ ss.sets }}</span>
+                <button type="button" (click)="setSupersetSets(1)">+</button>
+              </div>
+            </div>
+            <div class="setting-card">
+              <span class="setting-label">Récup / série</span>
+              <div class="stepper">
+                <button type="button" (click)="setSupersetRest(-15)">−</button>
+                <span class="stepper-value">{{ formatRest(ss.restBetweenSets) }}</span>
+                <button type="button" (click)="setSupersetRest(15)">+</button>
+              </div>
             </div>
           </div>
         }
       </section>
     }
+
+    <div class="bottom-actions">
+      <button class="btn-secondary" (click)="cancel()">Annuler</button>
+      <button class="btn-primary" (click)="save()" [disabled]="isSaving()">
+        {{ isSaving() ? 'Enregistrement...' : 'Enregistrer' }}
+      </button>
+    </div>
   }
 </div>

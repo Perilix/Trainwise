@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CoachService } from '../../../services/coach.service';
+import { SessionTemplateService } from '../../../services/session-template.service';
 import { PlannedSession, RUNNING_SESSION_LABELS, RunningSessionType } from '../../../services/planning.service';
 import { RunBlock } from '../../../services/run.service';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
@@ -40,11 +41,40 @@ export class RunningDetailComponent implements OnInit {
 
   isNew = computed(() => this.sessionId === 'new');
 
+  isSavingTemplate = signal(false);
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private coachService: CoachService
+    private coachService: CoachService,
+    private templateService: SessionTemplateService
   ) {}
+
+  saveAsTemplate() {
+    if (this.isNew()) {
+      this.error.set('Enregistre d\'abord la séance avant de la sauvegarder en template');
+      return;
+    }
+    const session = this.session();
+    if (!session?._id) return;
+
+    const defaultName = `${this.getSessionTypeLabel(this.sessionType())}${this.description() ? ' — ' + this.description().slice(0, 40) : ''}`;
+    const name = window.prompt('Nom de la séance dans la bibliothèque :', defaultName);
+    if (!name || !name.trim()) return;
+
+    this.isSavingTemplate.set(true);
+    this.templateService.createFromPlanning(session._id, name.trim()).subscribe({
+      next: () => {
+        this.isSavingTemplate.set(false);
+        this.successMessage.set('Séance ajoutée à ta bibliothèque');
+        setTimeout(() => this.successMessage.set(null), 3000);
+      },
+      error: (err) => {
+        this.isSavingTemplate.set(false);
+        this.error.set(err.error?.error || 'Erreur lors de la sauvegarde');
+      }
+    });
+  }
 
   ngOnInit() {
     this.athleteId = this.route.snapshot.paramMap.get('athleteId') || '';

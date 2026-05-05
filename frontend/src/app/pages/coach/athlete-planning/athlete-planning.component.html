@@ -125,7 +125,75 @@
         <button class="close-btn" (click)="closeDetail()">&times;</button>
       </div>
       <div class="modal-body">
-        <!-- Formulaire d'ajout -->
+        <div class="add-mode-tabs">
+          <button type="button" class="add-mode-tab" [class.active]="addMode() === 'library'" (click)="setAddMode('library')">📚 Depuis la bibliothèque</button>
+          <button type="button" class="add-mode-tab" [class.active]="addMode() === 'manual'" (click)="setAddMode('manual')">✏️ Créer manuellement</button>
+        </div>
+
+        @if (addMode() === 'library') {
+          <div class="library-picker">
+            <div class="library-filters">
+              <input
+                type="text"
+                class="library-search"
+                placeholder="Rechercher une séance..."
+                [ngModel]="templateSearch()"
+                (ngModelChange)="templateSearch.set($event)"
+                name="templateSearch"
+              >
+              <div class="library-sport-chips">
+                <button type="button" class="sport-chip" [class.active]="templateSportFilter() === 'all'" (click)="setTemplateSportFilter('all')">Tous</button>
+                <button type="button" class="sport-chip" [class.active]="templateSportFilter() === 'running'" (click)="setTemplateSportFilter('running')">Course</button>
+                <button type="button" class="sport-chip" [class.active]="templateSportFilter() === 'strength'" (click)="setTemplateSportFilter('strength')">Muscu</button>
+              </div>
+            </div>
+
+            @if (isLoadingTemplates()) {
+              <p class="library-empty">Chargement...</p>
+            } @else if (filteredTemplates().length === 0) {
+              <div class="library-empty">
+                <p>Aucune séance dans ta bibliothèque pour ce filtre.</p>
+                <a routerLink="/coach/exercises" class="btn-link-inline">Aller à la bibliothèque →</a>
+              </div>
+            } @else {
+              <div class="library-list">
+                @for (tpl of filteredTemplates(); track tpl._id) {
+                  <button
+                    type="button"
+                    class="library-card"
+                    [class.assigning]="isAssigningTemplate() === tpl._id"
+                    [disabled]="isAssigningTemplate() !== null"
+                    (click)="assignTemplateToDay(tpl)"
+                  >
+                    <div class="library-card-icon">{{ tpl.sport === 'running' ? '🏃' : '💪' }}</div>
+                    <div class="library-card-content">
+                      <div class="library-card-title">{{ tpl.name }}</div>
+                      <div class="library-card-meta">
+                        <span>{{ sportLabel(tpl.sport) }}</span>
+                        <span>·</span>
+                        <span>{{ sessionTypeLabelTemplate(tpl.sessionType) }}</span>
+                        @if (tpl.targetDistance) { <span>· {{ tpl.targetDistance }} km</span> }
+                        @if (tpl.targetDuration) { <span>· {{ tpl.targetDuration }} min</span> }
+                      </div>
+                      @if (tpl.description) {
+                        <p class="library-card-desc">{{ tpl.description }}</p>
+                      }
+                    </div>
+                    @if (isAssigningTemplate() === tpl._id) {
+                      <span class="library-card-loader">…</span>
+                    } @else {
+                      <span class="library-card-action">Assigner →</span>
+                    }
+                  </button>
+                }
+              </div>
+            }
+
+            <div class="form-actions">
+              <button type="button" class="btn-secondary" (click)="cancelAddSession()">Annuler</button>
+            </div>
+          </div>
+        } @else {
           <form (ngSubmit)="saveSession()">
             <div class="activity-type-selector">
               <button type="button" class="activity-btn" [class.active]="newSession.activityType === 'running'" (click)="onActivityTypeChange('running')">
@@ -163,6 +231,7 @@
               </button>
             </div>
           </form>
+        }
       </div>
     </div>
     } @else {

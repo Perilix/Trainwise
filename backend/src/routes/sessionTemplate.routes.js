@@ -72,4 +72,13 @@ router.post('/:id/preview', ctrl.previewAssignment);
  */
 router.post('/:id/assign', ctrl.assignTemplate);
 
+/**
+ * @swagger
+ * /api/coach/session-templates/from-planning/{plannedRunId}:
+ *   post:
+ *     summary: Create a session template from an existing PlannedRun
+ *     tags: [SessionTemplates]
+ */
+router.post('/from-planning/:plannedRunId', ctrl.createTemplateFromPlanning);
+
 module.exports = router;
