@@ -10,6 +10,7 @@ export interface Athlete {
   profilePicture?: string;
   runningLevel?: string;
   goal?: string;
+  vma?: number | null;
   joinedAt: Date;
   packageType?: PackageType;
   // Statut calculé côté backend

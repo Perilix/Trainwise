@@ -1,19 +1,46 @@
 import { Component, OnInit, signal, computed, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ExerciseService } from '../../../services/exercise.service';
+import { SessionTemplateService } from '../../../services/session-template.service';
 import { Exercise, MuscleGroup, Equipment, Difficulty, MUSCLE_GROUP_LABELS, EQUIPMENT_LABELS, DIFFICULTY_LABELS } from '../../../interfaces/strength.interfaces';
+import { SessionTemplate, Sport } from '../../../interfaces/session-template.interfaces';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
+import { TemplateAssignmentModalComponent } from '../../../components/template-assignment-modal/template-assignment-modal.component';
+
+type LibraryTab = 'exercises' | 'templates';
 
 @Component({
   selector: 'app-exercises-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavbarComponent],
+  imports: [CommonModule, FormsModule, NavbarComponent, TemplateAssignmentModalComponent],
   templateUrl: './exercises-management.component.html',
   styleUrl: './exercises-management.component.scss'
 })
 export class ExercisesManagementComponent implements OnInit {
+  // Tabs
+  activeTab = signal<LibraryTab>('exercises');
+  sportFilter = signal<'all' | Sport>('all');
+
+  // Templates
+  templates = signal<SessionTemplate[]>([]);
+  isLoadingTemplates = signal(false);
+  templateToAssign = signal<SessionTemplate | null>(null);
+
+  filteredTemplates = computed(() => {
+    const sport = this.sportFilter();
+    const search = this.searchQuery().toLowerCase();
+    let result = this.templates();
+    if (sport !== 'all') result = result.filter(t => t.sport === sport);
+    if (search) {
+      result = result.filter(t =>
+        t.name.toLowerCase().includes(search) ||
+        t.description?.toLowerCase().includes(search)
+      );
+    }
+    return result;
+  });
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
   exercises = signal<Exercise[]>([]);
@@ -81,11 +108,114 @@ export class ExercisesManagementComponent implements OnInit {
     return result;
   });
 
-  constructor(private exerciseService: ExerciseService) {}
+  constructor(
+    private exerciseService: ExerciseService,
+    private sessionTemplateService: SessionTemplateService,
+    private router: Router
+  ) {}
 
   ngOnInit() {
     this.loadExercises();
+    this.loadTemplates();
   }
+
+  // ===== Templates =====
+  loadTemplates() {
+    this.isLoadingTemplates.set(true);
+    this.sessionTemplateService.list({ scope: 'mine' }).subscribe({
+      next: (list) => {
+        this.templates.set(list);
+        this.isLoadingTemplates.set(false);
+      },
+      error: (err) => {
+        console.error(err);
+        this.isLoadingTemplates.set(false);
+      }
+    });
+  }
+
+  setTab(tab: LibraryTab) {
+    this.activeTab.set(tab);
+  }
+
+  setSportFilter(sport: 'all' | Sport) {
+    this.sportFilter.set(sport);
+  }
+
+  createTemplate() {
+    this.router.navigate(['/coach/session-templates/new']);
+  }
+
+  editTemplate(template: SessionTemplate) {
+    this.router.navigate(['/coach/session-templates', template._id, 'edit']);
+  }
+
+  duplicateTemplate(template: SessionTemplate) {
+    const copy: Partial<SessionTemplate> = {
+      ...template,
+      name: `${template.name} (copie)`,
+    };
+    delete (copy as any)._id;
+    delete (copy as any).createdAt;
+    delete (copy as any).updatedAt;
+    delete (copy as any).usageCount;
+    delete (copy as any).lastUsedAt;
+    this.sessionTemplateService.create(copy).subscribe({
+      next: () => {
+        this.successMessage.set('Séance dupliquée');
+        this.loadTemplates();
+        setTimeout(() => this.successMessage.set(null), 2500);
+      },
+      error: (err) => {
+        this.error.set(err.error?.error || 'Erreur lors de la duplication');
+      }
+    });
+  }
+
+  deleteTemplate(template: SessionTemplate) {
+    if (!confirm(`Supprimer la séance "${template.name}" ?`)) return;
+    this.sessionTemplateService.delete(template._id).subscribe({
+      next: () => {
+        this.successMessage.set('Séance supprimée');
+        this.loadTemplates();
+        setTimeout(() => this.successMessage.set(null), 2500);
+      },
+      error: (err) => {
+        this.error.set(err.error?.error || 'Erreur lors de la suppression');
+      }
+    });
+  }
+
+  openAssignModal(template: SessionTemplate) {
+    this.templateToAssign.set(template);
+  }
+
+  closeAssignModal() {
+    this.templateToAssign.set(null);
+  }
+
+  onAssignmentDone() {
+    this.successMessage.set('Séance(s) assignée(s)');
+    this.templateToAssign.set(null);
+    this.loadTemplates();
+    setTimeout(() => this.successMessage.set(null), 2500);
+  }
+
+  sportLabel(sport: Sport): string {
+    return sport === 'running' ? 'Course' : 'Muscu';
+  }
+
+  sessionTypeLabel(type: string): string {
+    const labels: Record<string, string> = {
+      endurance: 'Endurance', fractionne: 'Fractionné', tempo: 'Tempo',
+      recuperation: 'Récup', sortie_longue: 'Sortie longue', cotes: 'Côtes', fartlek: 'Fartlek',
+      upper_body: 'Haut du corps', lower_body: 'Bas du corps', full_body: 'Full body',
+      push: 'Push', pull: 'Pull', legs: 'Jambes', core: 'Gainage', hiit: 'HIIT'
+    };
+    return labels[type] || type;
+  }
+  // ===== End templates =====
+
 
   loadExercises() {
     this.isLoading.set(true);

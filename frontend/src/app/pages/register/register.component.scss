@@ -162,6 +162,8 @@ header {
     border-radius: 10px;
     font-size: 1rem;
     transition: all 0.2s;
+    width: 100%;
+    box-sizing: border-box;
 
     &:focus {
       outline: none;
@@ -172,6 +174,101 @@ header {
     &::placeholder {
       color: #aaa;
     }
+  }
+}
+
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  input {
+    padding-right: 3rem;
+  }
+
+  .password-toggle {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: color 0.2s, background 0.2s;
+
+    &:hover {
+      color: #00a6fb;
+      background: rgba(0, 166, 251, 0.08);
+    }
+
+    &:focus-visible {
+      outline: 2px solid #00a6fb;
+      outline-offset: 2px;
+    }
+  }
+}
+
+.password-strength {
+  margin-top: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  .strength-bar {
+    flex: 1;
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .strength-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease, background 0.3s ease;
+  }
+
+  .strength-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    min-width: 70px;
+    text-align: right;
+  }
+
+  &[data-strength="0"] .strength-fill,
+  &[data-strength="1"] .strength-fill {
+    background: #ef4444;
+  }
+  &[data-strength="0"] .strength-label,
+  &[data-strength="1"] .strength-label {
+    color: #ef4444;
+  }
+
+  &[data-strength="2"] .strength-fill {
+    background: #f59e0b;
+  }
+  &[data-strength="2"] .strength-label {
+    color: #f59e0b;
+  }
+
+  &[data-strength="3"] .strength-fill {
+    background: #10b981;
+  }
+  &[data-strength="3"] .strength-label {
+    color: #10b981;
+  }
+
+  &[data-strength="4"] .strength-fill {
+    background: #059669;
+  }
+  &[data-strength="4"] .strength-label {
+    color: #059669;
   }
 }
 

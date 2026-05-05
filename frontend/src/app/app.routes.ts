@@ -122,6 +122,16 @@ export const routes: Routes = [
     canActivate: [authGuard, coachGuard]
   },
   {
+    path: 'coach/session-templates/new',
+    loadComponent: () => import('./pages/coach/session-template-editor/session-template-editor.component').then(m => m.SessionTemplateEditorComponent),
+    canActivate: [authGuard, coachGuard]
+  },
+  {
+    path: 'coach/session-templates/:id/edit',
+    loadComponent: () => import('./pages/coach/session-template-editor/session-template-editor.component').then(m => m.SessionTemplateEditorComponent),
+    canActivate: [authGuard, coachGuard]
+  },
+  {
     path: 'coach/profile',
     loadComponent: () => import('./pages/coach/coach-profile/coach-profile.component').then(m => m.CoachProfileComponent),
     canActivate: [authGuard, coachGuard]

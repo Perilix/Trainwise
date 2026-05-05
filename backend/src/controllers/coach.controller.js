@@ -74,7 +74,7 @@ exports.getAthletes = async (req, res) => {
     const relationships = await CoachAthlete.find({
       coach: req.user._id,
       status: 'accepted'
-    }).populate('athlete', 'firstName lastName email profilePicture runningLevel goal');
+    }).populate('athlete', 'firstName lastName email profilePicture runningLevel goal vma');
 
     const athletes = await Promise.all(relationships.map(async (rel) => {
       const statusData = await computeAthleteStatus(rel.athlete._id);
@@ -87,6 +87,7 @@ exports.getAthletes = async (req, res) => {
         profilePicture: rel.athlete.profilePicture,
         runningLevel: rel.athlete.runningLevel,
         goal: rel.athlete.goal,
+        vma: rel.athlete.vma,
         joinedAt: rel.respondedAt,
         packageType: rel.packageType,
         ...statusData

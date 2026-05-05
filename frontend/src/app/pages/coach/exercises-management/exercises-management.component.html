@@ -3,12 +3,14 @@
 <div class="container">
   <header class="page-header">
     <div class="header-content">
-      <h1>Bibliothèque d'exercices</h1>
-      <p class="subtitle">Gérez les exercices disponibles pour vos athlètes</p>
+      <h1>Bibliothèque</h1>
+      <p class="subtitle">Exercices et séances disponibles pour vos athlètes</p>
     </div>
-    <button class="btn-primary" (click)="openCreateModal()">
-      Ajouter un exercice
-    </button>
+    @if (activeTab() === 'exercises') {
+      <button class="btn-primary" (click)="openCreateModal()">Ajouter un exercice</button>
+    } @else {
+      <button class="btn-primary" (click)="createTemplate()">Nouvelle séance</button>
+    }
   </header>
 
   @if (error()) {
@@ -18,32 +20,69 @@
     <div class="alert success">{{ successMessage() }}</div>
   }
 
-  <!-- Filters -->
-  <div class="filters-bar">
-    <div class="search-box">
-      <input
-        type="text"
-        placeholder="Rechercher un exercice..."
-        [ngModel]="searchQuery()"
-        (ngModelChange)="searchQuery.set($event)"
-      >
-    </div>
-    <div class="filter-group">
-      <select [ngModel]="filterMuscle()" (ngModelChange)="filterMuscle.set($event)">
-        <option value="">Muscles</option>
-        @for (muscle of muscleGroups; track muscle) {
-          <option [value]="muscle">{{ getMuscleLabel(muscle) }}</option>
-        }
-      </select>
-      <select [ngModel]="filterEquipment()" (ngModelChange)="filterEquipment.set($event)">
-        <option value="">Equipements</option>
-        @for (equip of equipmentOptions; track equip) {
-          <option [value]="equip">{{ getEquipmentLabel(equip) }}</option>
-        }
-      </select>
-    </div>
+  <!-- Tabs -->
+  <div class="library-tabs">
+    <button
+      class="tab"
+      [class.active]="activeTab() === 'exercises'"
+      (click)="setTab('exercises')"
+    >Exercices</button>
+    <button
+      class="tab"
+      [class.active]="activeTab() === 'templates'"
+      (click)="setTab('templates')"
+    >Séances</button>
   </div>
 
+  <!-- Sport filter (visible sur l'onglet séances) -->
+  @if (activeTab() === 'templates') {
+    <div class="sport-filter">
+      <button class="chip" [class.active]="sportFilter() === 'all'" (click)="setSportFilter('all')">Tous</button>
+      <button class="chip" [class.active]="sportFilter() === 'running'" (click)="setSportFilter('running')">Course</button>
+      <button class="chip" [class.active]="sportFilter() === 'strength'" (click)="setSportFilter('strength')">Muscu</button>
+    </div>
+  }
+
+  <!-- Filters -->
+  @if (activeTab() === 'exercises') {
+    <div class="filters-bar">
+      <div class="search-box">
+        <input
+          type="text"
+          placeholder="Rechercher un exercice..."
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+        >
+      </div>
+      <div class="filter-group">
+        <select [ngModel]="filterMuscle()" (ngModelChange)="filterMuscle.set($event)">
+          <option value="">Muscles</option>
+          @for (muscle of muscleGroups; track muscle) {
+            <option [value]="muscle">{{ getMuscleLabel(muscle) }}</option>
+          }
+        </select>
+        <select [ngModel]="filterEquipment()" (ngModelChange)="filterEquipment.set($event)">
+          <option value="">Equipements</option>
+          @for (equip of equipmentOptions; track equip) {
+            <option [value]="equip">{{ getEquipmentLabel(equip) }}</option>
+          }
+        </select>
+      </div>
+    </div>
+  } @else {
+    <div class="filters-bar">
+      <div class="search-box">
+        <input
+          type="text"
+          placeholder="Rechercher une séance..."
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+        >
+      </div>
+    </div>
+  }
+
+  @if (activeTab() === 'exercises') {
   @if (isLoading()) {
     <div class="loading-state">
       <div class="loading-spinner"></div>
@@ -117,7 +156,93 @@
       </div>
     }
   }
+  } @else {
+    <!-- Onglet Séances -->
+    @if (isLoadingTemplates()) {
+      <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Chargement...</p>
+      </div>
+    } @else {
+      <div class="exercises-count">
+        {{ filteredTemplates().length }} séance{{ filteredTemplates().length > 1 ? 's' : '' }}
+      </div>
+
+      @if (filteredTemplates().length === 0) {
+        <div class="empty-state">
+          <p>Aucune séance dans votre bibliothèque.</p>
+          <button class="btn-secondary" (click)="createTemplate()">Créer une séance</button>
+        </div>
+      } @else {
+        <div class="exercises-grid">
+          @for (tpl of filteredTemplates(); track tpl._id) {
+            <div class="exercise-card template-card">
+              <div class="exercise-image">
+                <div class="placeholder-image">
+                  <span>{{ tpl.sport === 'running' ? '🏃' : '💪' }}</span>
+                </div>
+                <span class="difficulty-badge medium">{{ sportLabel(tpl.sport) }}</span>
+              </div>
+              <div class="exercise-content">
+                <h3>{{ tpl.name }}</h3>
+                <div class="exercise-meta">
+                  <span class="meta-item">
+                    <span class="icon">🏷️</span>
+                    {{ sessionTypeLabel(tpl.sessionType) }}
+                  </span>
+                  @if (tpl.targetDistance) {
+                    <span class="meta-item"><span class="icon">📏</span> {{ tpl.targetDistance }} km</span>
+                  }
+                  @if (tpl.targetDuration) {
+                    <span class="meta-item"><span class="icon">⏱️</span> {{ tpl.targetDuration }} min</span>
+                  }
+                </div>
+                @if (tpl.description) {
+                  <p class="exercise-description">{{ tpl.description }}</p>
+                }
+                @if (tpl.usageCount) {
+                  <p class="exercise-description"><small>Utilisée {{ tpl.usageCount }} fois</small></p>
+                }
+              </div>
+              <div class="exercise-actions">
+                <button class="btn-secondary" (click)="openAssignModal(tpl)" title="Assigner">
+                  Assigner
+                </button>
+                <button class="btn-icon" (click)="editTemplate(tpl)" title="Modifier">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </button>
+                <button class="btn-icon" (click)="duplicateTemplate(tpl)" title="Dupliquer">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </button>
+                <button class="btn-icon danger" (click)="deleteTemplate(tpl)" title="Supprimer">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3,6 5,6 21,6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+  }
 </div>
+
+<!-- Modal d'assignation -->
+@if (templateToAssign()) {
+  <app-template-assignment-modal
+    [template]="templateToAssign()!"
+    (close)="closeAssignModal()"
+    (assigned)="onAssignmentDone()"
+  ></app-template-assignment-modal>
+}
 
 <!-- Modal Créer/Modifier -->
 @if (showModal()) {

@@ -1,0 +1,126 @@
+<div class="modal-overlay" (click)="closeModal()">
+  <div class="modal large" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <h2>Assigner « {{ template.name }} »</h2>
+        <p class="modal-subtitle">
+          @if (step() === 'select') { Choisis les athlètes et la date }
+          @else { Vérifie les allures, modifie si besoin }
+        </p>
+      </div>
+      <button class="close-btn" (click)="closeModal()">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      @if (error()) {
+        <div class="alert error">{{ error() }}</div>
+      }
+
+      @if (isLoading()) {
+        <div class="loading-state"><div class="loading-spinner"></div><p>Chargement...</p></div>
+      }
+
+      @if (step() === 'select') {
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" [ngModel]="date()" (ngModelChange)="date.set($event)">
+        </div>
+
+        <div class="form-group">
+          <label>Athlètes ({{ selectedCount() }} sélectionné{{ selectedCount() > 1 ? 's' : '' }})</label>
+          @if (athletes().length === 0 && !isLoading()) {
+            <p class="empty-hint">Aucun athlète dans votre roster.</p>
+          }
+          <div class="athletes-list">
+            @for (a of athletes(); track a._id) {
+              <label class="athlete-row" [class.selected]="isSelected(a._id)">
+                <input
+                  type="checkbox"
+                  [checked]="isSelected(a._id)"
+                  (change)="toggleAthlete(a._id)"
+                >
+                <div class="athlete-info">
+                  <div class="athlete-name">{{ a.firstName }} {{ a.lastName }}</div>
+                  <div class="athlete-meta">
+                    @if (template.sport === 'running') {
+                      @if (a.vma) {
+                        VMA {{ a.vma }} km/h
+                      } @else {
+                        <span class="warn">⚠ Pas de VMA</span>
+                      }
+                    } @else {
+                      Athlète
+                    }
+                  </div>
+                </div>
+              </label>
+            }
+          </div>
+        </div>
+      } @else if (step() === 'review') {
+        @for (preview of previews(); track preview.athleteId) {
+          <div class="preview-card">
+            <div class="preview-header">
+              <strong>{{ preview.firstName }} {{ preview.lastName }}</strong>
+              @if (preview.vma) {
+                <span class="vma-pill">VMA {{ preview.vma }}</span>
+              } @else {
+                <span class="warn">⚠ VMA manquante — saisissez les allures manuellement</span>
+              }
+            </div>
+
+            @for (block of preview.blocks; track block.blockIndex) {
+              <div class="preview-block">
+                <div class="block-title">{{ blockLabel(block.role, block.blockIndex) }}</div>
+                <div class="pace-row">
+                  <label>Allure</label>
+                  <input
+                    type="text"
+                    placeholder="m:ss"
+                    [value]="displayPace(preview.athleteId, block.blockIndex, block.resolvedPace, 'pace')"
+                    (input)="setOverride(preview.athleteId, block.blockIndex, 'pace', $any($event.target).value)"
+                  >
+                  @if (isOverridden(preview.athleteId, block.blockIndex, 'pace')) {
+                    <span class="badge edited">modifié</span>
+                  } @else if (block.resolvedPace) {
+                    <span class="badge auto">auto</span>
+                  }
+                </div>
+                @if (block.recoveryPaceConfig) {
+                  <div class="pace-row">
+                    <label>Allure récup</label>
+                    <input
+                      type="text"
+                      placeholder="m:ss"
+                      [value]="displayPace(preview.athleteId, block.blockIndex, block.resolvedRecoveryPace, 'recoveryPace')"
+                      (input)="setOverride(preview.athleteId, block.blockIndex, 'recoveryPace', $any($event.target).value)"
+                    >
+                    @if (isOverridden(preview.athleteId, block.blockIndex, 'recoveryPace')) {
+                      <span class="badge edited">modifié</span>
+                    } @else if (block.resolvedRecoveryPace) {
+                      <span class="badge auto">auto</span>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      }
+    </div>
+
+    <div class="modal-footer">
+      @if (step() === 'select') {
+        <button class="btn-secondary" (click)="closeModal()">Annuler</button>
+        <button class="btn-primary" (click)="goToReview()" [disabled]="selectedCount() === 0 || isLoading()">
+          @if (template.sport === 'running') { Continuer } @else { Assigner }
+        </button>
+      } @else {
+        <button class="btn-secondary" (click)="goBack()">← Retour</button>
+        <button class="btn-primary" (click)="assign()" [disabled]="isSaving()">
+          {{ isSaving() ? 'Assignation...' : 'Assigner ' + selectedCount() + ' athlète(s)' }}
+        </button>
+      }
+    </div>
+  </div>
+</div>

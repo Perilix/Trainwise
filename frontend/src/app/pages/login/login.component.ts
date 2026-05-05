@@ -18,8 +18,13 @@ export class LoginComponent implements OnInit {
   isLoading = signal(false);
   error = signal<string | null>(null);
   resetSuccess = signal(false);
+  showPassword = signal(false);
 
   constructor(private authService: AuthService, private router: Router, private route: ActivatedRoute) {}
+
+  togglePassword() {
+    this.showPassword.update(v => !v);
+  }
 
   ngOnInit() {
     if (this.route.snapshot.queryParamMap.get('reset') === 'success') {

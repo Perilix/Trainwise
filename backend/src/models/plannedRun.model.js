@@ -115,7 +115,7 @@ const plannedRunSchema = new mongoose.Schema({
     mode: { type: String, enum: ['distance', 'duration'], default: 'distance' },
     distance: { type: Number, default: null }, // km, si mode='distance'
     duration: { type: Number, default: null }, // minutes, si mode='duration'
-    pace: { type: String, default: null }, // "mm:ss" /km
+    pace: { type: String, default: null }, // "mm:ss" /km — valeur finale affichée à l'athlète
     repetitions: { type: Number, default: 1, min: 1 },
     description: { type: String, default: '' },
     // Récup associée au bloc principal (uniquement pour role='main')
@@ -124,8 +124,30 @@ const plannedRunSchema = new mongoose.Schema({
     recoveryDuration: { type: Number, default: null }, // minutes
     recoveryPace: { type: String, default: null }, // "mm:ss" /km, optionnel
     recoveryDescription: { type: String, default: '' },
-    order: { type: Number, default: 0 }
+    order: { type: Number, default: 0 },
+    // Traçabilité de l'origine de l'allure (si générée depuis un template VMA)
+    paceSource: {
+      mode: { type: String, enum: ['absolute', 'vmaPercent', 'zone', null], default: null },
+      zone: { type: String, default: null },
+      vmaPercent: { type: Number, default: null },
+      resolvedFromVma: { type: Number, default: null }, // VMA athlète au moment du calcul
+      overridden: { type: Boolean, default: false }     // true si le coach a édité l'allure résolue
+    },
+    recoveryPaceSource: {
+      mode: { type: String, enum: ['absolute', 'vmaPercent', 'zone', null], default: null },
+      zone: { type: String, default: null },
+      vmaPercent: { type: Number, default: null },
+      resolvedFromVma: { type: Number, default: null },
+      overridden: { type: Boolean, default: false }
+    }
   }],
+
+  // Référence vers le template d'origine (si la séance a été créée depuis la bibliothèque)
+  templateRef: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'SessionTemplate',
+    default: null
+  },
 
   status: {
     type: String,

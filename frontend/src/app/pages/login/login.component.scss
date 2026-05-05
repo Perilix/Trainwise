@@ -82,6 +82,8 @@ header {
     border-radius: 10px;
     font-size: 1rem;
     transition: all 0.2s;
+    width: 100%;
+    box-sizing: border-box;
 
     &:focus {
       outline: none;
@@ -91,6 +93,43 @@ header {
 
     &::placeholder {
       color: #aaa;
+    }
+  }
+}
+
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  input {
+    padding-right: 3rem;
+  }
+
+  .password-toggle {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: color 0.2s, background 0.2s;
+
+    &:hover {
+      color: #00a6fb;
+      background: rgba(0, 166, 251, 0.08);
+    }
+
+    &:focus-visible {
+      outline: 2px solid #00a6fb;
+      outline-offset: 2px;
     }
   }
 }

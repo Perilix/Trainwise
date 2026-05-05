@@ -1,0 +1,71 @@
+<div class="pace-input">
+  <div class="pace-mode-toggle">
+    <button
+      type="button"
+      class="mode-btn"
+      [class.active]="internal().mode !== 'absolute'"
+      (click)="setMode('zone')"
+    >Zone VMA</button>
+    <button
+      type="button"
+      class="mode-btn"
+      [class.active]="internal().mode === 'absolute'"
+      (click)="setMode('absolute')"
+    >Allure fixe</button>
+  </div>
+
+  @if (internal().mode !== 'absolute') {
+    <div class="pace-row">
+      <select
+        class="zone-select"
+        [ngModel]="internal().zone"
+        (ngModelChange)="setZone($event)"
+      >
+        @for (z of zones; track z.key) {
+          <option [value]="z.key">{{ z.label }} ({{ z.defaultPercent }}%)</option>
+        }
+      </select>
+    </div>
+    @if (currentZone()) {
+      <div class="pace-row slider-row">
+        <div class="slider-label">
+          <span>% VMA : <strong>{{ internal().vmaPercent || currentZone()!.defaultPercent }}%</strong></span>
+          <small>plage {{ currentZone()!.minPercent }}–{{ currentZone()!.maxPercent }}%</small>
+        </div>
+        <input
+          type="range"
+          [min]="currentZone()!.minPercent"
+          [max]="currentZone()!.maxPercent"
+          step="1"
+          [ngModel]="internal().vmaPercent || currentZone()!.defaultPercent"
+          (ngModelChange)="setPercent($event)"
+        >
+        <div class="slider-bounds">
+          <span>{{ currentZone()!.minPercent }}%</span>
+          <span>{{ currentZone()!.maxPercent }}%</span>
+        </div>
+      </div>
+    }
+  } @else {
+    <div class="pace-row">
+      <input
+        type="text"
+        placeholder="m:ss"
+        pattern="^\d+:\d{2}$"
+        [ngModel]="internal().absolute"
+        (ngModelChange)="setAbsolute($event)"
+      >
+      <span class="unit">/km</span>
+    </div>
+  }
+
+  @if (resolvedPreview() && internal().mode !== 'absolute') {
+    <div class="preview">
+      @if (previewVma) {
+        Aperçu pour VMA {{ previewVma }} : <strong>{{ resolvedPreview() }}</strong>
+      } @else {
+        ≈ <em>Renseigne une VMA pour voir l'allure</em>
+      }
+    </div>
+  }
+</div>
