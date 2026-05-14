@@ -26,7 +26,7 @@ exports.getExercises = async (req, res) => {
     }
 
     const exercises = await Exercise.find(query)
-      .select('name slug description primaryMuscle muscleGroups equipment difficulty imageUrl thumbnailUrl isPublic')
+      .select('name slug description instructions primaryMuscle muscleGroups equipment difficulty videoUrl imageUrl thumbnailUrl isPublic')
       .limit(parseInt(limit))
       .sort({ name: 1 });
 
