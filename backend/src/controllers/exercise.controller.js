@@ -7,7 +7,7 @@ exports.getExercises = async (req, res) => {
     const query = {
       $or: [
         { createdBy: req.user._id },
-        { isPublic: true, createdBy: null }
+        { isPublic: true }
       ]
     };
 
