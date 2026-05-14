@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { StrengthService } from '../../services/strength.service';
 import { ExerciseService } from '../../services/exercise.service';
 import { PlanningService, PlannedSession } from '../../services/planning.service';
@@ -20,6 +20,7 @@ import {
   SESSION_TYPE_LABELS
 } from '../../interfaces/strength.interfaces';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
+import { PlannedMatchBannerComponent } from '../../components/planned-match-banner/planned-match-banner.component';
 
 type EntryOrigin =
   | { kind: 'single'; index: number }
@@ -29,7 +30,7 @@ type EntryOrigin =
 @Component({
   selector: 'app-strength-log',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, NavbarComponent],
+  imports: [CommonModule, FormsModule, NavbarComponent, PlannedMatchBannerComponent],
   templateUrl: './strength-log.component.html',
   styleUrl: './strength-log.component.scss'
 })
@@ -169,6 +170,7 @@ export class StrengthLogComponent implements OnInit {
   // Edit existing session
   editSessionId = signal<string | null>(null);
   editSessionIsStrava = signal(false);
+  currentSession = signal<StrengthSession | null>(null);
 
   // Analyse IA
   isAnalyzing = signal(false);
@@ -244,6 +246,7 @@ export class StrengthLogComponent implements OnInit {
   loadExistingSession(id: string) {
     this.strengthService.getSession(id).subscribe({
       next: (session) => {
+        this.currentSession.set(session);
         this.editSessionIsStrava.set(!!session.stravaActivityId);
         if (session.date) {
           const d = new Date(session.date);
@@ -649,6 +652,10 @@ export class StrengthLogComponent implements OnInit {
         console.error(err);
       }
     });
+  }
+
+  onMatchUpdated(updated: StrengthSession) {
+    this.currentSession.set(updated);
   }
 
   analyzeSession() {

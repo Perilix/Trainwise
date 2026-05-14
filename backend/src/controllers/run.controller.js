@@ -364,10 +364,14 @@ exports.createRun = async (req, res) => {
   }
 };
 
+const PENDING_MATCH_FIELDS = 'date activityType sessionType targetDistance targetDuration targetPace description generatedBy';
+
 // Récupérer toutes les courses de l'utilisateur connecté
 exports.getAllRuns = async (req, res) => {
   try {
-    const runs = await Run.find({ user: req.user._id }).sort({ date: -1 });
+    const runs = await Run.find({ user: req.user._id })
+      .populate('pendingPlannedMatch', PENDING_MATCH_FIELDS)
+      .sort({ date: -1 });
     res.json(runs);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -377,7 +381,8 @@ exports.getAllRuns = async (req, res) => {
 // Récupérer une course par ID (appartenant à l'utilisateur)
 exports.getRunById = async (req, res) => {
   try {
-    const run = await Run.findOne({ _id: req.params.id, user: req.user._id });
+    const run = await Run.findOne({ _id: req.params.id, user: req.user._id })
+      .populate('pendingPlannedMatch', PENDING_MATCH_FIELDS);
     if (!run) {
       return res.status(404).json({ error: 'Course non trouvée' });
     }

@@ -99,6 +99,17 @@ const strengthSessionSchema = new mongoose.Schema({
     ref: 'PlannedRun'
   },
 
+  // Suggestion de match avec une séance planifiée (proposée à l'import Strava).
+  pendingPlannedMatch: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'PlannedRun',
+    default: null
+  },
+  matchDismissed: {
+    type: Boolean,
+    default: false
+  },
+
   // Import Strava
   stravaActivityId: {
     type: Number,

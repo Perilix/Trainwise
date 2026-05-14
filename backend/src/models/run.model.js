@@ -46,6 +46,18 @@ const runSchema = new mongoose.Schema({
     sparse: true,
     index: true
   },
+
+  // Suggestion de match avec une séance planifiée (proposée à l'import Strava).
+  // Tant que non null et matchDismissed=false, un bandeau de confirmation s'affiche côté UI.
+  pendingPlannedMatch: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'PlannedRun',
+    default: null
+  },
+  matchDismissed: {
+    type: Boolean,
+    default: false
+  },
   polyline: {
     type: String,
     default: null

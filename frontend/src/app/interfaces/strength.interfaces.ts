@@ -1,3 +1,5 @@
+import { PlannedMatchSummary } from './planned-match.interface';
+
 // Types pour la musculation
 
 export type MuscleGroup =
@@ -103,6 +105,8 @@ export interface StrengthSession {
   notes?: string;
   feeling?: number; // 1-10
   linkedPlannedSession?: string;
+  pendingPlannedMatch?: PlannedMatchSummary | string | null;
+  matchDismissed?: boolean;
   stravaActivityId?: number;
   // Analyse IA
   analysis?: string;

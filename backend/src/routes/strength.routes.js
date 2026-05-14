@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const strengthController = require('../controllers/strength.controller');
+const matchController = require('../controllers/plannedMatch.controller');
 const { protect } = require('../middleware/auth.middleware');
 const checkAIAccess = require('../middleware/checkAIAccess');
 
@@ -223,5 +224,11 @@ router.get('/sessions/:id', strengthController.getSession);
 router.put('/sessions/:id', strengthController.updateSession);
 router.delete('/sessions/:id', strengthController.deleteSession);
 router.post('/sessions/:id/analyze', checkAIAccess(1), strengthController.analyzeSession);
+
+// Mapping séance Strava ⇄ séance planifiée
+router.get('/sessions/:id/match/candidates', matchController.getStrengthMatchCandidates);
+router.post('/sessions/:id/match/confirm', matchController.confirmStrengthMatch);
+router.post('/sessions/:id/match/dismiss', matchController.dismissStrengthMatch);
+router.post('/sessions/:id/match/link/:plannedId', matchController.linkStrengthToPlanned);
 
 module.exports = router;

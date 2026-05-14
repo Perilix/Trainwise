@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { RunService, Run } from '../../services/run.service';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 import { RunMiniMapComponent } from '../../components/run-mini-map/run-mini-map.component';
+import { PlannedMatchBannerComponent } from '../../components/planned-match-banner/planned-match-banner.component';
 
 type ViewMode = 'week' | 'month' | 'year';
 
@@ -28,7 +29,7 @@ export interface PeriodBlock {
 @Component({
   selector: 'app-sorties',
   standalone: true,
-  imports: [CommonModule, NavbarComponent, RunMiniMapComponent],
+  imports: [CommonModule, NavbarComponent, RunMiniMapComponent, PlannedMatchBannerComponent],
   templateUrl: './sorties.component.html',
   styleUrl: './sorties.component.scss'
 })
@@ -270,5 +271,10 @@ export class SortiesComponent implements OnInit {
   getRunTitle(run: Run): string {
     const name = run.notes?.split('\n')[0];
     return name || this.formatDate(run.date);
+  }
+
+  onMatchUpdated(updated: Run) {
+    if (!updated?._id) return;
+    this.allRuns.update(list => list.map(r => r._id === updated._id ? { ...r, ...updated } : r));
   }
 }

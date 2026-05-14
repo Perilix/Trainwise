@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { PlannedMatchSummary } from '../interfaces/planned-match.interface';
 
 export type RunBlockRole = 'warmup' | 'main' | 'cooldown';
 export type RunBlockMode = 'distance' | 'duration';
@@ -65,6 +66,8 @@ export interface Run {
   endLatLng?: number[];
   runBlocks?: RunBlock[];
   plannedSnapshot?: PlannedSnapshot;
+  pendingPlannedMatch?: PlannedMatchSummary | string | null;
+  matchDismissed?: boolean;
 }
 
 @Injectable({
@@ -97,5 +100,22 @@ export class RunService {
 
   analyzeRun(id: string): Observable<Run> {
     return this.http.post<Run>(`${this.apiUrl}/${id}/analyze`, {});
+  }
+
+  // ── Mapping séance Strava ⇄ séance planifiée ──────────────────
+  getMatchCandidates(runId: string): Observable<PlannedMatchSummary[]> {
+    return this.http.get<PlannedMatchSummary[]>(`${this.apiUrl}/${runId}/match/candidates`);
+  }
+
+  confirmMatch(runId: string): Observable<Run> {
+    return this.http.post<Run>(`${this.apiUrl}/${runId}/match/confirm`, {});
+  }
+
+  dismissMatch(runId: string): Observable<Run> {
+    return this.http.post<Run>(`${this.apiUrl}/${runId}/match/dismiss`, {});
+  }
+
+  linkToPlanned(runId: string, plannedId: string): Observable<Run> {
+    return this.http.post<Run>(`${this.apiUrl}/${runId}/match/link/${plannedId}`, {});
   }
 }

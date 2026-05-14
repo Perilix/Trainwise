@@ -94,6 +94,7 @@ exports.getSessions = async (req, res) => {
     const [sessions, total] = await Promise.all([
       StrengthSession.find(query)
         .populate('exercises.exercise', 'name slug imageUrl primaryMuscle')
+        .populate('pendingPlannedMatch', 'date activityType sessionType description generatedBy')
         .sort({ date: -1 })
         .skip(skip)
         .limit(parseInt(limit)),
@@ -123,7 +124,9 @@ exports.getSession = async (req, res) => {
     const session = await StrengthSession.findOne({
       _id: id,
       user: req.user._id
-    }).populate('exercises.exercise', 'name slug description imageUrl primaryMuscle muscleGroups equipment');
+    })
+      .populate('exercises.exercise', 'name slug description imageUrl primaryMuscle muscleGroups equipment')
+      .populate('pendingPlannedMatch', 'date activityType sessionType description generatedBy');
 
     if (!session) {
       return res.status(404).json({ error: 'Séance non trouvée' });

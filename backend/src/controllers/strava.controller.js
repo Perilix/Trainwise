@@ -3,7 +3,7 @@ const User = require('../models/user.model');
 const Run = require('../models/run.model');
 const StrengthSession = require('../models/strengthSession.model');
 const { emitTrainCoinsUpdate } = require('../socket/index');
-const { autoCompletePlannedSessions } = require('../services/planningAutoComplete');
+const { findPlannedMatches } = require('../services/planningAutoComplete');
 const { athleteHasCoach } = require('../services/coachRelation.service');
 
 const STRAVA_AUTH_URL = 'https://www.strava.com/oauth/authorize';
@@ -347,6 +347,9 @@ exports.syncActivities = async (req, res) => {
         notes += `\n\n${description}`;
       }
 
+      // Suggestion de match avec une séance planifiée (l'athlète confirmera via le bandeau UI)
+      const plannedCandidates = await findPlannedMatches(req.user._id, new Date(activity.start_date), 'running');
+
       const run = new Run({
         user: req.user._id,
         stravaActivityId: activity.id,
@@ -362,7 +365,8 @@ exports.syncActivities = async (req, res) => {
         notes,
         polyline,
         startLatLng,
-        endLatLng
+        endLatLng,
+        pendingPlannedMatch: plannedCandidates[0]?._id || null
       });
 
       await run.save();
@@ -374,8 +378,6 @@ exports.syncActivities = async (req, res) => {
           { $set: { fcmax: run.maxHeartRate } }
         );
       }
-
-      await autoCompletePlannedSessions(req.user._id, run.date, 'running');
 
       imported.push({
         id: run._id,
@@ -413,6 +415,8 @@ exports.syncActivities = async (req, res) => {
       let notes = activity.name;
       if (description) notes += `\n\n${description}`;
 
+      const strengthCandidates = await findPlannedMatches(req.user._id, new Date(activity.start_date), 'strength');
+
       const session = new StrengthSession({
         user: req.user._id,
         stravaActivityId: activity.id,
@@ -420,11 +424,11 @@ exports.syncActivities = async (req, res) => {
         duration: secondsToMinutes(activity.moving_time || activity.elapsed_time),
         sessionType: mapStravaStrengthType(getActivityType(activity)),
         notes,
-        exercises: []
+        exercises: [],
+        pendingPlannedMatch: strengthCandidates[0]?._id || null
       });
 
       await session.save();
-      await autoCompletePlannedSessions(req.user._id, session.date, 'strength');
 
       importedStrength.push({
         id: session._id,

@@ -1,24 +1,31 @@
 const PlannedRun = require('../models/plannedRun.model');
 
+function dayBounds(date) {
+  const d = new Date(date);
+  return {
+    dayStart: new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0)),
+    dayEnd:   new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999))
+  };
+}
+
+function activityTypeFilter(activityType) {
+  return activityType === 'running'
+    ? [{ activityType: 'running' }, { activityType: { $exists: false } }, { activityType: null }]
+    : [{ activityType }];
+}
+
 /**
  * Marks planned sessions on the same day as 'completed' when a real session is logged.
  * Prevents duplicates when an athlete imports or manually adds a session that matches a plan.
  * Returns the matched planned sessions BEFORE deletion so callers can build snapshots / notify coaches.
  */
 async function autoCompletePlannedSessions(userId, date, activityType = 'running') {
-  const d = new Date(date);
-  const dayStart = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0));
-  const dayEnd   = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999));
-
-  // Pour les courses, matcher aussi les séances sans activityType (valeur par défaut = running)
-  const activityTypeConditions = activityType === 'running'
-    ? [{ activityType: 'running' }, { activityType: { $exists: false } }, { activityType: null }]
-    : [{ activityType }];
+  const { dayStart, dayEnd } = dayBounds(date);
 
   const query = {
     user: userId,
     date: { $gte: dayStart, $lte: dayEnd },
-    $or: activityTypeConditions,
+    $or: activityTypeFilter(activityType),
     status: 'planned',
     generatedBy: { $in: ['ai', 'coach'] }
   };
@@ -30,4 +37,21 @@ async function autoCompletePlannedSessions(userId, date, activityType = 'running
   return matched;
 }
 
-module.exports = { autoCompletePlannedSessions };
+/**
+ * Same matching rules as autoCompletePlannedSessions, but READ-ONLY:
+ * returns the planned sessions that could match without deleting anything.
+ * Used to suggest a confirmation prompt to the athlete after a Strava import.
+ */
+async function findPlannedMatches(userId, date, activityType = 'running') {
+  const { dayStart, dayEnd } = dayBounds(date);
+
+  return PlannedRun.find({
+    user: userId,
+    date: { $gte: dayStart, $lte: dayEnd },
+    $or: activityTypeFilter(activityType),
+    status: 'planned',
+    generatedBy: { $in: ['ai', 'coach'] }
+  }).sort({ date: 1 }).lean();
+}
+
+module.exports = { autoCompletePlannedSessions, findPlannedMatches };

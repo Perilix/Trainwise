@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { StrengthSession, StrengthStats, StrengthSessionType } from '../interfaces/strength.interfaces';
+import { PlannedMatchSummary } from '../interfaces/planned-match.interface';
 
 export interface StrengthSessionFilters {
   startDate?: string;
@@ -85,5 +86,22 @@ export class StrengthService {
   // Analyser une séance avec l'IA
   analyzeSession(id: string): Observable<StrengthSession> {
     return this.http.post<StrengthSession>(`${this.API_URL}/sessions/${id}/analyze`, {});
+  }
+
+  // ── Mapping séance Strava ⇄ séance planifiée ──────────────────
+  getMatchCandidates(sessionId: string): Observable<PlannedMatchSummary[]> {
+    return this.http.get<PlannedMatchSummary[]>(`${this.API_URL}/sessions/${sessionId}/match/candidates`);
+  }
+
+  confirmMatch(sessionId: string): Observable<StrengthSession> {
+    return this.http.post<StrengthSession>(`${this.API_URL}/sessions/${sessionId}/match/confirm`, {});
+  }
+
+  dismissMatch(sessionId: string): Observable<StrengthSession> {
+    return this.http.post<StrengthSession>(`${this.API_URL}/sessions/${sessionId}/match/dismiss`, {});
+  }
+
+  linkToPlanned(sessionId: string, plannedId: string): Observable<StrengthSession> {
+    return this.http.post<StrengthSession>(`${this.API_URL}/sessions/${sessionId}/match/link/${plannedId}`, {});
   }
 }

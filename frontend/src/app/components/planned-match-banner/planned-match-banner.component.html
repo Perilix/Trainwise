@@ -1,0 +1,61 @@
+@if (visible) {
+  <div class="match-banner" (click)="$event.stopPropagation()">
+
+    @if (!pickerOpen()) {
+      <div class="banner-head">
+        <i class="fa-solid fa-link"></i>
+        <div class="banner-text">
+          <div class="banner-title">Cette activité correspond-elle à ta séance planifiée&nbsp;?</div>
+          <div class="banner-sub">
+            <strong>{{ plannedLabel }}</strong>
+            @if (plannedSummary) { <span class="dot">·</span> {{ plannedSummary }} }
+          </div>
+        </div>
+      </div>
+
+      <div class="banner-actions">
+        <button class="btn-yes" (click)="confirm($event)" [disabled]="loading()">
+          <i class="fa-solid fa-check"></i> Oui
+        </button>
+        <button class="btn-other" (click)="openPicker($event)" [disabled]="loading()">
+          <i class="fa-solid fa-arrow-right-arrow-left"></i> Lier à une autre
+        </button>
+        <button class="btn-no" (click)="dismiss($event)" [disabled]="loading()">
+          <i class="fa-solid fa-xmark"></i> Non
+        </button>
+      </div>
+    } @else {
+      <div class="picker-head">
+        <span>Choisis la séance planifiée à lier&nbsp;:</span>
+        <button class="picker-close" (click)="closePicker($event)">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      @if (loading()) {
+        <div class="picker-empty">Chargement…</div>
+      } @else if (candidates().length === 0) {
+        <div class="picker-empty">Aucune autre séance planifiée à proximité.</div>
+      } @else {
+        <div class="picker-list">
+          @for (c of candidates(); track c._id) {
+            <button class="picker-item" (click)="selectAlternative($event, c._id)" [disabled]="loading()">
+              <div class="picker-item-main">
+                <strong>{{ candidateLabel(c) }}</strong>
+                <span class="picker-item-date">{{ candidateDate(c) }}</span>
+              </div>
+              @if (c.targetDistance || c.targetDuration) {
+                <div class="picker-item-sub">
+                  @if (c.targetDistance) { {{ c.targetDistance }} km }
+                  @if (c.targetDistance && c.targetDuration) { · }
+                  @if (c.targetDuration) { {{ c.targetDuration }} min }
+                </div>
+              }
+            </button>
+          }
+        </div>
+      }
+    }
+
+  </div>
+}

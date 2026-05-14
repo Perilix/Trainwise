@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const runController = require('../controllers/run.controller');
+const matchController = require('../controllers/plannedMatch.controller');
 const { protect } = require('../middleware/auth.middleware');
 const checkAIAccess = require('../middleware/checkAIAccess');
 
@@ -218,5 +219,11 @@ router.post('/:id/analyze', checkAIAccess(1), runController.analyzeRun);
  *         description: Server error
  */
 router.patch('/:id/analysis', runController.updateAnalysis);
+
+// Mapping séance Strava ⇄ séance planifiée
+router.get('/:id/match/candidates', matchController.getRunMatchCandidates);
+router.post('/:id/match/confirm', matchController.confirmRunMatch);
+router.post('/:id/match/dismiss', matchController.dismissRunMatch);
+router.post('/:id/match/link/:plannedId', matchController.linkRunToPlanned);
 
 module.exports = router;

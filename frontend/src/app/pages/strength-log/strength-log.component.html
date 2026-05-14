@@ -43,6 +43,14 @@
     <div class="alert success">{{ successMessage() }}</div>
   }
 
+  @if (currentSession(); as session) {
+    <app-planned-match-banner
+      [activity]="session"
+      kind="strength"
+      (updated)="onMatchUpdated($any($event))">
+    </app-planned-match-banner>
+  }
+
   <div class="log-form">
     <!-- Plan du coach / Structure de la séance (lecture seule) -->
     @if (hasPlannedStructure()) {
