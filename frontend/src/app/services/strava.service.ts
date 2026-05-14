@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { PlannedMatchSummary } from '../interfaces/planned-match.interface';
 
 export interface StravaStatus {
   connected: boolean;
@@ -13,22 +14,31 @@ export interface StravaAuthUrl {
   authUrl: string;
 }
 
+export interface StravaImportedRun {
+  id: string;
+  stravaId: number;
+  name: string;
+  date: Date;
+  distance?: number;
+  duration?: number;
+  sessionType?: string;
+  pendingPlannedMatch?: PlannedMatchSummary | null;
+}
+
+export interface StravaImportedStrength {
+  id: string;
+  stravaId: number;
+  name: string;
+  date: Date;
+  duration?: number;
+  sessionType?: string;
+  pendingPlannedMatch?: PlannedMatchSummary | null;
+}
+
 export interface StravaSyncResult {
   message: string;
-  imported: Array<{
-    id: string;
-    stravaId: number;
-    name: string;
-    date: Date;
-    distance: number;
-  }>;
-  importedStrength: Array<{
-    id: string;
-    stravaId: number;
-    name: string;
-    date: Date;
-    sessionType: string;
-  }>;
+  imported: StravaImportedRun[];
+  importedStrength: StravaImportedStrength[];
   skipped: number[];
 }
 

@@ -347,7 +347,7 @@ exports.syncActivities = async (req, res) => {
         notes += `\n\n${description}`;
       }
 
-      // Suggestion de match avec une séance planifiée (l'athlète confirmera via le bandeau UI)
+      // Suggestion de match avec une séance planifiée (l'athlète confirmera via la popup UI)
       const plannedCandidates = await findPlannedMatches(req.user._id, new Date(activity.start_date), 'running');
 
       const run = new Run({
@@ -384,7 +384,10 @@ exports.syncActivities = async (req, res) => {
         stravaId: activity.id,
         name: activity.name,
         date: run.date,
-        distance: run.distance
+        distance: run.distance,
+        duration: run.duration,
+        sessionType: run.sessionType,
+        pendingPlannedMatch: plannedCandidates[0] || null
       });
     }
 
@@ -435,7 +438,9 @@ exports.syncActivities = async (req, res) => {
         stravaId: activity.id,
         name: activity.name,
         date: session.date,
-        sessionType: session.sessionType
+        duration: session.duration,
+        sessionType: session.sessionType,
+        pendingPlannedMatch: strengthCandidates[0] || null
       });
     }
 
@@ -528,6 +533,59 @@ exports.resyncActivities = async (req, res) => {
     });
   } catch (error) {
     console.error('Strava resync error:', error.response?.data || error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Rebalayer les activités Strava existantes pour leur attribuer une suggestion de match
+// (rattrape les imports faits avant l'intro du bandeau, ou les planifiées créées après l'import).
+exports.rematchExistingActivities = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const runs = await Run.find({
+      user: userId,
+      stravaActivityId: { $ne: null },
+      pendingPlannedMatch: null,
+      matchDismissed: { $ne: true }
+    });
+
+    let runUpdates = 0;
+    for (const run of runs) {
+      const matches = await findPlannedMatches(userId, run.date, 'running');
+      if (matches.length > 0) {
+        run.pendingPlannedMatch = matches[0]._id;
+        await run.save();
+        runUpdates++;
+      }
+    }
+
+    const sessions = await StrengthSession.find({
+      user: userId,
+      stravaActivityId: { $ne: null },
+      pendingPlannedMatch: null,
+      matchDismissed: { $ne: true },
+      $or: [{ linkedPlannedSession: { $exists: false } }, { linkedPlannedSession: null }]
+    });
+
+    let strengthUpdates = 0;
+    for (const session of sessions) {
+      const matches = await findPlannedMatches(userId, session.date, 'strength');
+      if (matches.length > 0) {
+        session.pendingPlannedMatch = matches[0]._id;
+        await session.save();
+        strengthUpdates++;
+      }
+    }
+
+    res.json({
+      message: `${runUpdates} course(s) et ${strengthUpdates} séance(s) muscu re-mappées`,
+      runUpdates,
+      strengthUpdates,
+      scanned: { runs: runs.length, strength: sessions.length }
+    });
+  } catch (error) {
+    console.error('Strava rematch error:', error.message);
     res.status(500).json({ error: error.message });
   }
 };

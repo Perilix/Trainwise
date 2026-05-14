@@ -2,10 +2,12 @@ import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Observable } from 'rxjs';
 import { RunService, Run } from '../../services/run.service';
-import { PlanningService, PlannedSession } from '../../services/planning.service';
+import { PlanningService, PlannedSession, RUNNING_SESSION_LABELS } from '../../services/planning.service';
 import { StrengthService } from '../../services/strength.service';
 import { StrengthSession, SESSION_TYPE_LABELS } from '../../interfaces/strength.interfaces';
+import { PlannedMatchSummary } from '../../interfaces/planned-match.interface';
 import { AuthService } from '../../services/auth.service';
 import { ChatService, Conversation } from '../../services/chat.service';
 import { AthleteService } from '../../services/athlete.service';
@@ -24,6 +26,21 @@ interface WeekDay {
   isPast: boolean;
   runs: Run[];
   plannedRuns: PlannedSession[];
+}
+
+interface StravaFeelingItem {
+  kind: 'run' | 'strength';
+  id: string;
+  date: Date;
+  distance?: number;
+  duration?: number;
+  sessionType?: string;
+  feeling: number;
+  pendingMatch: PlannedMatchSummary | null;
+  matchDecision: 'pending' | 'confirmed' | 'dismissed' | 'linked';
+  showPicker: boolean;
+  candidates: PlannedMatchSummary[];
+  loadingMatch: boolean;
 }
 
 interface RecentSession {
@@ -77,7 +94,7 @@ export class DashboardComponent implements OnInit {
   stravaLoading = signal(false);
   stravaSyncing = signal(false);
   stravaMessage = signal<string | null>(null);
-  stravaFeelingModal = signal<{ open: boolean; items: { run: Run; feeling: number }[] }>({ open: false, items: [] });
+  stravaFeelingModal = signal<{ open: boolean; items: StravaFeelingItem[] }>({ open: false, items: [] });
 
   // Computed
   streak = signal(0);
@@ -841,24 +858,42 @@ export class DashboardComponent implements OnInit {
         const hasRuns = result.imported.length > 0;
         const hasStrength = (result.importedStrength?.length ?? 0) > 0;
 
-        if (hasRuns) {
+        if (hasRuns || hasStrength) {
           this.loadDashboardData();
           this.loadRecentSessions();
-          this.stravaFeelingModal.set({
-            open: true,
-            items: result.imported.map((run: Run) => ({ run, feeling: 5 }))
-          });
-        }
 
-        if (hasStrength) {
-          this.loadRecentSessions();
-          const s = result.importedStrength.length;
-          const msg = `${s} séance${s > 1 ? 's' : ''} muscu importée${s > 1 ? 's' : ''} !`;
-          this.stravaMessage.set(msg);
-          setTimeout(() => this.stravaMessage.set(null), 5000);
-        }
+          const items: StravaFeelingItem[] = [
+            ...result.imported.map(r => ({
+              kind: 'run' as const,
+              id: r.id,
+              date: r.date,
+              distance: r.distance,
+              duration: r.duration,
+              sessionType: r.sessionType,
+              feeling: 5,
+              pendingMatch: r.pendingPlannedMatch ?? null,
+              matchDecision: 'pending' as const,
+              showPicker: false,
+              candidates: [] as PlannedMatchSummary[],
+              loadingMatch: false
+            })),
+            ...result.importedStrength.map(s => ({
+              kind: 'strength' as const,
+              id: s.id,
+              date: s.date,
+              duration: s.duration,
+              sessionType: s.sessionType,
+              feeling: 5,
+              pendingMatch: s.pendingPlannedMatch ?? null,
+              matchDecision: 'pending' as const,
+              showPicker: false,
+              candidates: [] as PlannedMatchSummary[],
+              loadingMatch: false
+            }))
+          ];
 
-        if (!hasRuns && !hasStrength) {
+          this.stravaFeelingModal.set({ open: true, items });
+        } else {
           this.stravaMessage.set(result.message);
           setTimeout(() => this.stravaMessage.set(null), 5000);
         }
@@ -875,26 +910,122 @@ export class DashboardComponent implements OnInit {
     const items = this.stravaFeelingModal().items;
     this.stravaFeelingModal.set({ open: false, items: [] });
     items.forEach(item => {
-      const runId = (item.run as any).id || item.run._id;
-      if (runId) {
-        this.runService.updateRun(runId, { feeling: item.feeling }).subscribe();
+      if (!item.id) return;
+      if (item.kind === 'run') {
+        this.runService.updateRun(item.id, { feeling: item.feeling }).subscribe();
+      } else {
+        this.strengthService.updateSession(item.id, { feeling: item.feeling }).subscribe();
       }
     });
-    this.stravaMessage.set(`${items.length} course${items.length > 1 ? 's' : ''} importée${items.length > 1 ? 's' : ''} !`);
+    this.stravaMessage.set(`${items.length} séance${items.length > 1 ? 's' : ''} importée${items.length > 1 ? 's' : ''} !`);
     setTimeout(() => this.stravaMessage.set(null), 4000);
   }
 
   skipStravaFeelings() {
     const count = this.stravaFeelingModal().items.length;
     this.stravaFeelingModal.set({ open: false, items: [] });
-    this.stravaMessage.set(`${count} course${count > 1 ? 's' : ''} importée${count > 1 ? 's' : ''} !`);
+    this.stravaMessage.set(`${count} séance${count > 1 ? 's' : ''} importée${count > 1 ? 's' : ''} !`);
     setTimeout(() => this.stravaMessage.set(null), 4000);
   }
 
   setStravaFeeling(index: number, value: number) {
-    const items = [...this.stravaFeelingModal().items];
-    items[index] = { ...items[index], feeling: value };
-    this.stravaFeelingModal.set({ open: true, items });
+    this.patchFeelingItem(index, { feeling: value });
+  }
+
+  private patchFeelingItem(index: number, patch: Partial<StravaFeelingItem>) {
+    const current = this.stravaFeelingModal();
+    if (!current.items[index]) return;
+    const items = [...current.items];
+    items[index] = { ...items[index], ...patch };
+    this.stravaFeelingModal.set({ ...current, items });
+  }
+
+  // ── Mapping match ─────────────────────────────────────────────
+  confirmStravaMatch(index: number) {
+    const item = this.stravaFeelingModal().items[index];
+    if (!item || !item.pendingMatch || item.loadingMatch) return;
+    this.patchFeelingItem(index, { loadingMatch: true });
+    const obs: Observable<unknown> = item.kind === 'run'
+      ? this.runService.confirmMatch(item.id)
+      : this.strengthService.confirmMatch(item.id);
+    obs.subscribe({
+      next: () => this.patchFeelingItem(index, { matchDecision: 'confirmed', loadingMatch: false, showPicker: false }),
+      error: () => this.patchFeelingItem(index, { loadingMatch: false })
+    });
+  }
+
+  dismissStravaMatch(index: number) {
+    const item = this.stravaFeelingModal().items[index];
+    if (!item || item.loadingMatch) return;
+    this.patchFeelingItem(index, { loadingMatch: true });
+    const obs: Observable<unknown> = item.kind === 'run'
+      ? this.runService.dismissMatch(item.id)
+      : this.strengthService.dismissMatch(item.id);
+    obs.subscribe({
+      next: () => this.patchFeelingItem(index, { matchDecision: 'dismissed', loadingMatch: false, showPicker: false }),
+      error: () => this.patchFeelingItem(index, { loadingMatch: false })
+    });
+  }
+
+  openStravaMatchPicker(index: number) {
+    const item = this.stravaFeelingModal().items[index];
+    if (!item || item.loadingMatch) return;
+    this.patchFeelingItem(index, { loadingMatch: true, showPicker: true });
+    const obs: Observable<PlannedMatchSummary[]> = item.kind === 'run'
+      ? this.runService.getMatchCandidates(item.id)
+      : this.strengthService.getMatchCandidates(item.id);
+    obs.subscribe({
+      next: (list) => {
+        const filtered = list.filter(c => c._id !== item.pendingMatch?._id);
+        this.patchFeelingItem(index, { candidates: filtered, loadingMatch: false });
+      },
+      error: () => this.patchFeelingItem(index, { loadingMatch: false })
+    });
+  }
+
+  closeStravaMatchPicker(index: number) {
+    this.patchFeelingItem(index, { showPicker: false });
+  }
+
+  selectStravaMatchCandidate(index: number, plannedId: string) {
+    const item = this.stravaFeelingModal().items[index];
+    if (!item || item.loadingMatch) return;
+    this.patchFeelingItem(index, { loadingMatch: true });
+    const obs: Observable<unknown> = item.kind === 'run'
+      ? this.runService.linkToPlanned(item.id, plannedId)
+      : this.strengthService.linkToPlanned(item.id, plannedId);
+    obs.subscribe({
+      next: () => this.patchFeelingItem(index, { matchDecision: 'linked', loadingMatch: false, showPicker: false }),
+      error: () => this.patchFeelingItem(index, { loadingMatch: false })
+    });
+  }
+
+  matchLabel(m: PlannedMatchSummary | null): string {
+    if (!m) return '';
+    if (m.activityType === 'strength') {
+      return SESSION_TYPE_LABELS[m.sessionType as keyof typeof SESSION_TYPE_LABELS] || 'Muscu';
+    }
+    return RUNNING_SESSION_LABELS[m.sessionType as keyof typeof RUNNING_SESSION_LABELS] || 'Course';
+  }
+
+  matchSummary(m: PlannedMatchSummary | null): string {
+    if (!m) return '';
+    const parts: string[] = [];
+    if (m.targetDistance) parts.push(`${m.targetDistance} km`);
+    if (m.targetDuration) parts.push(`${m.targetDuration} min`);
+    if (m.targetPace) parts.push(`${m.targetPace}/km`);
+    return parts.join(' · ');
+  }
+
+  matchCandidateDate(c: PlannedMatchSummary): string {
+    return new Date(c.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+  }
+
+  itemTitle(item: StravaFeelingItem): string {
+    if (item.kind === 'strength') {
+      return SESSION_TYPE_LABELS[item.sessionType as keyof typeof SESSION_TYPE_LABELS] || 'Muscu';
+    }
+    return 'Course';
   }
 
   resyncStrava() {

@@ -141,6 +141,8 @@ router.post('/sync', stravaController.syncActivities);
  */
 router.post('/resync', stravaController.resyncActivities);
 
+router.post('/rematch', stravaController.rematchExistingActivities);
+
 /**
  * @swagger
  * /api/strava/disconnect:

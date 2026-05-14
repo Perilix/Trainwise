@@ -88,13 +88,6 @@
             }
           </div>
 
-          <!-- Bandeau de mapping séance planifiée -->
-          <app-planned-match-banner
-            [activity]="run"
-            kind="run"
-            (updated)="onMatchUpdated($any($event))">
-          </app-planned-match-banner>
-
           <!-- Mini map Leaflet -->
           @if (run.polyline) {
             <div class="run-map">

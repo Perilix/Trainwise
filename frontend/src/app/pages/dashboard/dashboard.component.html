@@ -6,20 +6,24 @@
     <div class="feeling-popup">
       <div class="feeling-popup-header">
         <div>
-          <h2>Courses importées</h2>
-          <p>{{ stravaFeelingModal().items.length }} course{{ stravaFeelingModal().items.length > 1 ? 's' : '' }} depuis Strava — note ton ressenti</p>
+          <h2>Séances importées</h2>
+          <p>{{ stravaFeelingModal().items.length }} séance{{ stravaFeelingModal().items.length > 1 ? 's' : '' }} depuis Strava — note ton ressenti</p>
         </div>
         <button class="feeling-popup-close" (click)="skipStravaFeelings()">×</button>
       </div>
 
       <div class="feeling-popup-list">
-        @for (item of stravaFeelingModal().items; track item.run._id; let i = $index) {
+        @for (item of stravaFeelingModal().items; track item.id; let i = $index) {
           <div class="feeling-run-card">
             <div class="feeling-run-info">
-              <span class="feeling-run-date">{{ formatRunFullDate(item.run.date) }}</span>
+              <span class="feeling-run-date">
+                <i class="fa-solid" [class.fa-person-running]="item.kind === 'run'" [class.fa-dumbbell]="item.kind === 'strength'"></i>
+                {{ formatRunFullDate(item.date) }}
+              </span>
               <div class="feeling-run-stats">
-                @if (item.run.distance) { <span>{{ item.run.distance }} km</span> }
-                @if (item.run.duration) { <span>{{ formatDuration(item.run.duration) }}</span> }
+                @if (item.distance) { <span>{{ item.distance }} km</span> }
+                @if (item.duration) { <span>{{ formatDuration(item.duration) }}</span> }
+                @if (item.kind === 'strength') { <span>{{ itemTitle(item) }}</span> }
               </div>
             </div>
             <div class="feeling-run-slider">
@@ -38,6 +42,71 @@
                 <span class="slider-hint-text">Excellent</span>
               </div>
             </div>
+
+            <!-- Section match séance planifiée -->
+            @if (item.pendingMatch && item.matchDecision === 'pending') {
+              @if (!item.showPicker) {
+                <div class="strava-match">
+                  <div class="strava-match-head">
+                    <i class="fa-solid fa-link"></i>
+                    <div>
+                      <div class="strava-match-title">Cette séance correspond à ta séance planifiée&nbsp;?</div>
+                      <div class="strava-match-sub">
+                        <strong>{{ matchLabel(item.pendingMatch) }}</strong>
+                        @if (matchSummary(item.pendingMatch); as s) { <span class="dot">·</span> {{ s }} }
+                      </div>
+                    </div>
+                  </div>
+                  <div class="strava-match-actions">
+                    <button class="match-yes" (click)="confirmStravaMatch(i)" [disabled]="item.loadingMatch">
+                      <i class="fa-solid fa-check"></i> Oui
+                    </button>
+                    <button class="match-other" (click)="openStravaMatchPicker(i)" [disabled]="item.loadingMatch">
+                      <i class="fa-solid fa-arrow-right-arrow-left"></i> Lier à une autre
+                    </button>
+                    <button class="match-no" (click)="dismissStravaMatch(i)" [disabled]="item.loadingMatch">
+                      <i class="fa-solid fa-xmark"></i> Non
+                    </button>
+                  </div>
+                </div>
+              } @else {
+                <div class="strava-match strava-match-picker">
+                  <div class="picker-head">
+                    <span>Choisis la séance planifiée à lier&nbsp;:</span>
+                    <button class="picker-close" (click)="closeStravaMatchPicker(i)">
+                      <i class="fa-solid fa-xmark"></i>
+                    </button>
+                  </div>
+                  @if (item.loadingMatch) {
+                    <div class="picker-empty">Chargement…</div>
+                  } @else if (item.candidates.length === 0) {
+                    <div class="picker-empty">Aucune autre séance planifiée à proximité.</div>
+                  } @else {
+                    <div class="picker-list">
+                      @for (c of item.candidates; track c._id) {
+                        <button class="picker-item" (click)="selectStravaMatchCandidate(i, c._id)" [disabled]="item.loadingMatch">
+                          <div class="picker-item-main">
+                            <strong>{{ matchLabel(c) }}</strong>
+                            <span class="picker-item-date">{{ matchCandidateDate(c) }}</span>
+                          </div>
+                          @if (matchSummary(c); as s) {
+                            <div class="picker-item-sub">{{ s }}</div>
+                          }
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            } @else if (item.matchDecision === 'confirmed' || item.matchDecision === 'linked') {
+              <div class="strava-match-result match-result-ok">
+                <i class="fa-solid fa-circle-check"></i> Liée à ta séance planifiée
+              </div>
+            } @else if (item.matchDecision === 'dismissed') {
+              <div class="strava-match-result match-result-skip">
+                <i class="fa-regular fa-circle"></i> Sans lien avec une planifiée
+              </div>
+            }
           </div>
         }
       </div>

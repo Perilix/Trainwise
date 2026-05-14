@@ -41,6 +41,10 @@ async function autoCompletePlannedSessions(userId, date, activityType = 'running
  * Same matching rules as autoCompletePlannedSessions, but READ-ONLY:
  * returns the planned sessions that could match without deleting anything.
  * Used to suggest a confirmation prompt to the athlete after a Strava import.
+ *
+ * Pas de filtre sur generatedBy (contrairement à autoCompletePlannedSessions qui
+ * lui est destructif) : l'athlète confirmera la suggestion, donc on peut aussi
+ * proposer les séances qu'il a créées manuellement.
  */
 async function findPlannedMatches(userId, date, activityType = 'running') {
   const { dayStart, dayEnd } = dayBounds(date);
@@ -49,8 +53,7 @@ async function findPlannedMatches(userId, date, activityType = 'running') {
     user: userId,
     date: { $gte: dayStart, $lte: dayEnd },
     $or: activityTypeFilter(activityType),
-    status: 'planned',
-    generatedBy: { $in: ['ai', 'coach'] }
+    status: 'planned'
   }).sort({ date: 1 }).lean();
 }
 
