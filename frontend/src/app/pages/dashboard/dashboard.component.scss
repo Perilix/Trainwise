@@ -2109,10 +2109,10 @@
 
     // ── Section mapping séance planifiée ────────────────────────
     .strava-match {
-      background: linear-gradient(135deg, rgba(0, 166, 251, 0.10), rgba(0, 53, 84, 0.05));
-      border: 1px solid rgba(0, 166, 251, 0.22);
+      background: linear-gradient(135deg, rgba(252, 76, 2, 0.08), rgba(252, 76, 2, 0.03));
+      border: 1px solid rgba(252, 76, 2, 0.22);
       border-radius: 10px;
-      padding: 0.65rem 0.8rem;
+      padding: 0.6rem 0.75rem;
       margin-top: 0.2rem;
     }
 
@@ -2123,13 +2123,13 @@
 
       i {
         margin-top: 3px;
-        color: #00a6fb;
+        color: #FC4C02;
         font-size: 0.85rem;
       }
     }
 
     .strava-match-title {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 600;
       color: #003554;
       line-height: 1.25;
@@ -2137,43 +2137,44 @@
 
     .strava-match-sub {
       margin-top: 2px;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       color: rgba(0, 53, 84, 0.7);
 
       .dot { margin: 0 4px; opacity: 0.5; }
     }
 
     .strava-match-actions {
-      margin-top: 8px;
+      margin-top: 7px;
       display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
+      gap: 5px;
+      flex-wrap: nowrap;
 
       button {
         flex: 1;
-        min-width: 80px;
+        min-width: 0;
         border: none;
-        border-radius: 8px;
-        padding: 6px 8px;
+        border-radius: 7px;
+        padding: 5px 6px;
         font-family: 'Poppins', sans-serif;
-        font-size: 0.74rem;
+        font-size: 0.68rem;
         font-weight: 600;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 5px;
-        transition: transform 0.1s, opacity 0.15s;
+        gap: 4px;
+        white-space: nowrap;
+        transition: transform 0.1s, opacity 0.15s, background 0.15s;
 
         &:disabled { opacity: 0.5; cursor: not-allowed; }
         &:not(:disabled):active { transform: scale(0.97); }
 
-        i { font-size: 0.7rem; }
+        i { font-size: 0.62rem; }
       }
 
-      .match-yes   { background: #003554; color: #fff; }
-      .match-other { background: #fff; color: #003554; border: 1px solid rgba(0, 53, 84, 0.18); }
-      .match-no    { background: rgba(0, 53, 84, 0.08); color: rgba(0, 53, 84, 0.7); }
+      .match-yes   { background: #FC4C02; color: #fff; }
+      .match-other { background: #fff; color: #FC4C02; border: 1px solid rgba(252, 76, 2, 0.35); }
+      .match-no    { background: rgba(0, 53, 84, 0.06); color: rgba(0, 53, 84, 0.7); }
     }
 
     .strava-match-picker {
@@ -2181,7 +2182,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        font-size: 0.78rem;
+        font-size: 0.76rem;
         font-weight: 600;
         color: #003554;
         margin-bottom: 6px;
@@ -2198,7 +2199,7 @@
       }
 
       .picker-empty {
-        font-size: 0.74rem;
+        font-size: 0.72rem;
         color: rgba(0, 53, 84, 0.6);
         padding: 4px 0;
       }
@@ -2222,7 +2223,7 @@
         color: #003554;
         transition: border-color 0.15s, background 0.15s;
 
-        &:hover { border-color: #00a6fb; background: rgba(0, 166, 251, 0.05); }
+        &:hover { border-color: #FC4C02; background: rgba(252, 76, 2, 0.05); }
         &:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .picker-item-main {
@@ -2230,18 +2231,18 @@
           align-items: baseline;
           justify-content: space-between;
           gap: 8px;
-          font-size: 0.76rem;
+          font-size: 0.74rem;
         }
 
         .picker-item-date {
           color: rgba(0, 53, 84, 0.55);
-          font-size: 0.68rem;
+          font-size: 0.66rem;
           font-weight: 500;
           text-transform: capitalize;
         }
 
         .picker-item-sub {
-          font-size: 0.68rem;
+          font-size: 0.66rem;
           color: rgba(0, 53, 84, 0.6);
           margin-top: 2px;
         }

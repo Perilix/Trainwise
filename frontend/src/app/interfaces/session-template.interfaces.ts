@@ -15,8 +15,8 @@ export type SessionType = RunSessionType | StrengthSessionType;
 export type PaceMode = 'absolute' | 'vmaPercent' | 'zone';
 
 export type PaceZoneKey =
-  | 'recovery' | 'endurance' | 'marathon' | 'semi'
-  | 'threshold' | 'vma' | 'speed';
+  | 'recovery' | 'recoveryActive' | 'endurance' | 'marathon' | 'semi'
+  | 'threshold' | 'tenK' | 'fiveK' | 'vma' | 'speed';
 
 export interface PaceZone {
   key: PaceZoneKey;
