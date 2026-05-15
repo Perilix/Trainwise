@@ -8,6 +8,7 @@ import { StravaService, StravaStatus } from '../../services/strava.service';
 import { AthleteService } from '../../services/athlete.service';
 import { CoachInvitation, Coach } from '../../interfaces/coach.interfaces';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
+import { CompetitionsManagerComponent } from '../../components/competitions-manager/competitions-manager.component';
 
 type Metric = 'seances' | 'distance' | 'temps';
 type ChartPeriod = 'semaine' | 'mois' | 'annee';
@@ -25,7 +26,7 @@ interface PeriodStat {
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, NavbarComponent],
+  imports: [CommonModule, FormsModule, RouterLink, NavbarComponent, CompetitionsManagerComponent],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss'
 })
@@ -170,8 +171,6 @@ export class ProfileComponent implements OnInit {
 
   profileForm: UpdateProfileData = {
     runningLevel: undefined,
-    goal: undefined,
-    goalDetails: '',
     weeklyFrequency: undefined,
     injuries: '',
     availableDays: [],
@@ -214,17 +213,6 @@ export class ProfileComponent implements OnInit {
   genders = [
     { value: 'homme', label: 'Homme' },
     { value: 'femme', label: 'Femme' },
-    { value: 'autre', label: 'Autre' }
-  ];
-
-  goals = [
-    { value: 'remise_en_forme', label: 'Remise en forme' },
-    { value: '5km', label: '5 km' },
-    { value: '10km', label: '10 km' },
-    { value: 'semi_marathon', label: 'Semi-marathon' },
-    { value: 'marathon', label: 'Marathon' },
-    { value: 'trail', label: 'Trail' },
-    { value: 'ultra', label: 'Ultra-trail' },
     { value: 'autre', label: 'Autre' }
   ];
 
@@ -301,8 +289,6 @@ export class ProfileComponent implements OnInit {
     if (user) {
       this.profileForm = {
         runningLevel: user.runningLevel || undefined,
-        goal: user.goal || undefined,
-        goalDetails: user.goalDetails || '',
         weeklyFrequency: user.weeklyFrequency || undefined,
         injuries: user.injuries || '',
         availableDays: user.availableDays || [],
@@ -461,12 +447,6 @@ export class ProfileComponent implements OnInit {
     if (!level) return 'Non défini';
     const found = this.runningLevels.find(l => l.value === level);
     return found ? found.label : level;
-  }
-
-  getGoalLabel(goal: string | undefined): string {
-    if (!goal) return 'Non défini';
-    const found = this.goals.find(g => g.value === goal);
-    return found ? found.label : goal;
   }
 
   // Coach methods

@@ -3,6 +3,7 @@ const PlannedRun = require('../models/plannedRun.model');
 const Run = require('../models/run.model');
 const User = require('../models/user.model');
 const StrengthSession = require('../models/strengthSession.model');
+const { getUpcomingCompetitionsForContext } = require('../utils/competitions');
 
 // Récupérer toutes les séances planifiées de l'utilisateur
 exports.getPlannedRuns = async (req, res) => {
@@ -311,13 +312,13 @@ exports.generatePlan = async (req, res) => {
       fcTempo: fcmax ? `${Math.round(fcmax * 0.80)}–${Math.round(fcmax * 0.87)} bpm` : null,
     };
 
+    const upcomingCompetitions = await getUpcomingCompetitionsForContext(req.user._id);
+
     // Construire le contexte pour l'IA
     const planningContext = {
       runner: {
         name: `${user.firstName} ${user.lastName}`,
         level: user.runningLevel,
-        goal: user.goal,
-        goalDetails: user.goalDetails,
         weeklyFrequency: user.weeklyFrequency,
         injuries: user.injuries,
         availableDays: user.availableDays,
@@ -328,6 +329,7 @@ exports.generatePlan = async (req, res) => {
         strengthGoal: user.strengthGoal || null,
         strengthType: user.strengthType || null
       },
+      upcomingCompetitions,
       paceTargets,
       // Dates séparées par type
       runningDates: availableRunningDates,

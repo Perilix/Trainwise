@@ -248,17 +248,4 @@ export class CoachDashboardComponent implements OnInit {
     return level ? levels[level] || level : 'Non défini';
   }
 
-  getGoalLabel(goal: string | undefined): string {
-    const goals: Record<string, string> = {
-      'remise_en_forme': 'Remise en forme',
-      '5km': '5 km',
-      '10km': '10 km',
-      'semi_marathon': 'Semi-marathon',
-      'marathon': 'Marathon',
-      'trail': 'Trail',
-      'ultra': 'Ultra',
-      'autre': 'Autre'
-    };
-    return goal ? goals[goal] || goal : 'Non défini';
-  }
 }

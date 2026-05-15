@@ -52,15 +52,6 @@ const userSchema = new mongoose.Schema({
     enum: ['debutant', 'intermediaire', 'confirme', 'expert'],
     default: null
   },
-  goal: {
-    type: String,
-    enum: ['remise_en_forme', '5km', '10km', 'semi_marathon', 'marathon', 'trail', 'ultra', 'autre'],
-    default: null
-  },
-  goalDetails: {
-    type: String,
-    trim: true
-  },
   weeklyFrequency: {
     type: Number,
     min: 1,

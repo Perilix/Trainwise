@@ -13,7 +13,6 @@ interface UserProfile {
   email: string;
   profilePicture?: string;
   runningLevel?: string;
-  goal?: string;
   weeklyFrequency?: number;
   createdAt: Date;
 }
@@ -44,17 +43,6 @@ export class UserProfileComponent implements OnInit {
     'intermediaire': 'Intermédiaire',
     'confirme': 'Confirmé',
     'expert': 'Expert'
-  };
-
-  goals: Record<string, string> = {
-    'remise_en_forme': 'Remise en forme',
-    '5km': '5 km',
-    '10km': '10 km',
-    'semi_marathon': 'Semi-marathon',
-    'marathon': 'Marathon',
-    'trail': 'Trail',
-    'ultra': 'Ultra-trail',
-    'autre': 'Autre'
   };
 
   constructor(

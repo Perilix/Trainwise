@@ -5,6 +5,7 @@ const StrengthSession = require('../models/strengthSession.model');
 const { emitTrainCoinsUpdate } = require('../socket/index');
 const { findPlannedMatches } = require('../services/planningAutoComplete');
 const { athleteHasCoach } = require('../services/coachRelation.service');
+const { getUpcomingCompetitionsForContext } = require('../utils/competitions');
 
 const STRAVA_AUTH_URL = 'https://www.strava.com/oauth/authorize';
 const STRAVA_TOKEN_URL = 'https://www.strava.com/oauth/token';
@@ -48,6 +49,7 @@ const analyzeRunInBackground = async (run, user) => {
 
     const totalDistance = twoWeeksRuns.reduce((sum, r) => sum + (r.distance || 0), 0);
     const totalDuration = twoWeeksRuns.reduce((sum, r) => sum + (r.duration || 0), 0);
+    const upcomingCompetitions = await getUpcomingCompetitionsForContext(user._id);
 
     const enrichedContext = {
       runId: run._id,
@@ -67,8 +69,6 @@ const analyzeRunInBackground = async (run, user) => {
       runner: {
         name: `${freshUser.firstName} ${freshUser.lastName}`,
         level: freshUser.runningLevel,
-        goal: freshUser.goal,
-        goalDetails: freshUser.goalDetails,
         weeklyFrequency: freshUser.weeklyFrequency,
         injuries: freshUser.injuries || null,
         height: freshUser.height || null,
@@ -76,6 +76,7 @@ const analyzeRunInBackground = async (run, user) => {
         vma: freshUser.vma || null,
         fcmax: freshUser.fcmax || null
       },
+      upcomingCompetitions,
       recentRuns: recentRuns.map(r => ({
         date: r.date,
         distance: r.distance,

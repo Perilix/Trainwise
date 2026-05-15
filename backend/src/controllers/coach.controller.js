@@ -3,6 +3,7 @@ const CoachAthlete = require('../models/coachAthlete.model');
 const PlannedRun = require('../models/plannedRun.model');
 const Run = require('../models/run.model');
 const StrengthSession = require('../models/strengthSession.model');
+const Competition = require('../models/competition.model');
 const crypto = require('crypto');
 const { createNotification } = require('./notification.controller');
 
@@ -74,7 +75,28 @@ exports.getAthletes = async (req, res) => {
     const relationships = await CoachAthlete.find({
       coach: req.user._id,
       status: 'accepted'
-    }).populate('athlete', 'firstName lastName email profilePicture runningLevel goal vma');
+    }).populate('athlete', 'firstName lastName email profilePicture runningLevel vma');
+
+    // Récupérer la prochaine compétition de chaque athlète en une seule requête
+    const athleteIds = relationships.map(rel => rel.athlete._id);
+    const now = new Date();
+    const upcomingCompetitions = await Competition.find({
+      user: { $in: athleteIds },
+      status: 'upcoming',
+      date: { $gte: now }
+    }).sort({ date: 1 }).lean();
+
+    // Map athleteId → next competition (priorité A en priorité, sinon la plus proche)
+    const nextCompetitionByAthlete = {};
+    for (const c of upcomingCompetitions) {
+      const key = c.user.toString();
+      const current = nextCompetitionByAthlete[key];
+      if (!current) {
+        nextCompetitionByAthlete[key] = c;
+      } else if (c.priority === 'A' && current.priority !== 'A') {
+        nextCompetitionByAthlete[key] = c;
+      }
+    }
 
     const athletes = await Promise.all(relationships.map(async (rel) => {
       const statusData = await computeAthleteStatus(rel.athlete._id);
@@ -86,8 +108,8 @@ exports.getAthletes = async (req, res) => {
         email: rel.athlete.email,
         profilePicture: rel.athlete.profilePicture,
         runningLevel: rel.athlete.runningLevel,
-        goal: rel.athlete.goal,
         vma: rel.athlete.vma,
+        nextCompetition: nextCompetitionByAthlete[rel.athlete._id.toString()] || null,
         joinedAt: rel.respondedAt,
         packageType: rel.packageType,
         ...statusData
@@ -691,6 +713,31 @@ exports.getPendingInvitations = async (req, res) => {
     }).populate('athlete', 'firstName lastName email profilePicture');
 
     res.json(invitations);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Obtenir les compétitions d'un athlète
+exports.getAthleteCompetitions = async (req, res) => {
+  try {
+    const { athleteId } = req.params;
+    const { status } = req.query;
+
+    const relationship = await CoachAthlete.findOne({
+      coach: req.user._id,
+      athlete: athleteId,
+      status: 'accepted'
+    });
+    if (!relationship) {
+      return res.status(403).json({ error: 'Cet athlète ne fait pas partie de vos athlètes' });
+    }
+
+    const query = { user: athleteId };
+    if (status) query.status = status;
+
+    const competitions = await Competition.find(query).sort({ date: 1 });
+    res.json(competitions);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

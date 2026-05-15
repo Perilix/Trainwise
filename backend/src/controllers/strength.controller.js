@@ -5,6 +5,7 @@ const User = require('../models/user.model');
 const { autoCompletePlannedSessions } = require('../services/planningAutoComplete');
 const { createNotification } = require('./notification.controller');
 const { athleteHasCoach } = require('../services/coachRelation.service');
+const { getUpcomingCompetitionsForContext } = require('../utils/competitions');
 
 // Créer une séance de muscu
 exports.createSession = async (req, res) => {
@@ -199,6 +200,8 @@ exports.analyzeSession = async (req, res) => {
       _id: { $ne: session._id }
     }).sort({ analyzedAt: -1 });
 
+    const upcomingCompetitions = await getUpcomingCompetitionsForContext(req.user._id);
+
     const enrichedContext = {
       type: 'strength',
       sessionId: session._id,
@@ -223,7 +226,6 @@ exports.analyzeSession = async (req, res) => {
         name: `${user.firstName} ${user.lastName}`,
         email: user.email,
         level: user.runningLevel,
-        goal: user.goal,
         height: user.height || null,
         weight: user.weight || null,
         strengthFrequency: user.strengthFrequency || null,
@@ -231,6 +233,7 @@ exports.analyzeSession = async (req, res) => {
         strengthType: user.strengthType || null,
         injuries: user.injuries || null
       },
+      upcomingCompetitions,
       recentSessions: recentSessions.map(s => ({
         date: s.date,
         sessionType: s.sessionType,

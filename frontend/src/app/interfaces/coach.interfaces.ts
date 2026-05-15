@@ -1,6 +1,7 @@
 import { PlannedSession } from '../services/planning.service';
 import { StrengthSession } from './strength.interfaces';
 import { PackageType } from './package.interface';
+import { Competition } from '../services/competition.service';
 
 export interface Athlete {
   _id: string;
@@ -9,8 +10,8 @@ export interface Athlete {
   email: string;
   profilePicture?: string;
   runningLevel?: string;
-  goal?: string;
   vma?: number | null;
+  nextCompetition?: Competition | null;
   joinedAt: Date;
   packageType?: PackageType;
   // Statut calculé côté backend

@@ -6,11 +6,12 @@ import { CoachService } from '../../../services/coach.service';
 import { ChatService } from '../../../services/chat.service';
 import { AthleteDetail, RecentActivity } from '../../../interfaces/coach.interfaces';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
+import { CompetitionsManagerComponent } from '../../../components/competitions-manager/competitions-manager.component';
 
 @Component({
   selector: 'app-athlete-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavbarComponent],
+  imports: [CommonModule, FormsModule, NavbarComponent, CompetitionsManagerComponent],
   templateUrl: './athlete-detail.component.html',
   styleUrl: './athlete-detail.component.scss'
 })
@@ -98,20 +99,6 @@ export class AthleteDetailComponent implements OnInit {
       'expert': 'Expert'
     };
     return level ? levels[level] || level : 'Non défini';
-  }
-
-  getGoalLabel(goal: string | undefined): string {
-    const goals: Record<string, string> = {
-      'remise_en_forme': 'Remise en forme',
-      '5km': '5 km',
-      '10km': '10 km',
-      'semi_marathon': 'Semi-marathon',
-      'marathon': 'Marathon',
-      'trail': 'Trail',
-      'ultra': 'Ultra',
-      'autre': 'Autre'
-    };
-    return goal ? goals[goal] || goal : 'Non défini';
   }
 
   getPreferredTimeLabel(time: string | undefined): string {

@@ -141,8 +141,16 @@
                   <span class="value">{{ getLevelLabel(athlete.runningLevel) }}</span>
                 </div>
                 <div class="detail-row">
-                  <span class="label">Objectif</span>
-                  <span class="value">{{ getGoalLabel(athlete.goal) }}</span>
+                  <span class="label">Prochaine course</span>
+                  @if (athlete.nextCompetition) {
+                    <span class="value next-competition">
+                      <span class="comp-priority priority-{{ athlete.nextCompetition.priority }}">{{ athlete.nextCompetition.priority }}</span>
+                      {{ athlete.nextCompetition.name }}
+                      <span class="comp-date">· {{ athlete.nextCompetition.date | date:'dd MMM' }}</span>
+                    </span>
+                  } @else {
+                    <span class="value muted">Aucune</span>
+                  }
                 </div>
                 <div class="detail-row">
                   <span class="label">Depuis</span>

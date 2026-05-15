@@ -1,0 +1,195 @@
+<div class="competitions-manager">
+  <div class="cm-header">
+    <h3 class="cm-title">Compétitions</h3>
+
+    <div class="cm-filters">
+      <button class="cm-filter" [class.active]="filter() === 'upcoming'" (click)="filter.set('upcoming')">
+        À venir
+      </button>
+      <button class="cm-filter" [class.active]="filter() === 'completed'" (click)="filter.set('completed')">
+        Terminées
+      </button>
+      <button class="cm-filter" [class.active]="filter() === 'all'" (click)="filter.set('all')">
+        Toutes
+      </button>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="cm-error">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="cm-loading">
+      <i class="fa-solid fa-circle-notch fa-spin"></i> Chargement…
+    </div>
+  } @else {
+    @if (filteredCompetitions().length === 0) {
+      <div class="cm-empty">
+        <p class="cm-empty-text">
+          Aucune compétition {{ filter() === 'upcoming' ? 'à venir' : filter() === 'completed' ? 'terminée' : 'enregistrée' }}.
+        </p>
+        @if (!readonly && filter() !== 'completed') {
+          <button class="btn-add" (click)="openAddForm()">
+            <i class="fa-solid fa-plus"></i> Ajouter une compétition
+          </button>
+        }
+      </div>
+    } @else {
+      <ul class="cm-list">
+        @for (c of filteredCompetitions(); track c._id) {
+          <li class="cm-item">
+            <div class="cm-item-main">
+              <span class="cm-priority priority-{{ c.priority }}">{{ c.priority }}</span>
+              <div class="cm-item-info">
+                <div class="cm-item-name">{{ c.name }}</div>
+                <div class="cm-item-meta">
+                  <span>{{ disciplineLabels[c.discipline] }}</span>
+                  <span>·</span>
+                  <span>{{ c.date | date:'dd MMM yyyy' }}</span>
+                  @if (c.targetTime) {
+                    <span>·</span>
+                    <span>objectif {{ c.targetTime }}</span>
+                  }
+                  @if (c.location) {
+                    <span>·</span>
+                    <span>{{ c.location }}</span>
+                  }
+                </div>
+                @if (c.status === 'completed' && c.result?.finishTime) {
+                  <div class="cm-item-result">
+                    <i class="fa-solid fa-stopwatch"></i>
+                    Résultat : {{ c.result?.finishTime }}
+                    @if (c.result?.position) { · {{ c.result?.position }}<sup>e</sup> }
+                  </div>
+                }
+              </div>
+            </div>
+            @if (!readonly) {
+              <div class="cm-item-actions">
+                <button class="icon-btn" (click)="openEditForm(c)" aria-label="Modifier">
+                  <i class="fa-solid fa-pen"></i>
+                </button>
+                <button class="icon-btn danger" (click)="remove(c)" aria-label="Supprimer">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            }
+          </li>
+        }
+      </ul>
+
+      @if (!readonly) {
+        <button class="btn-add" (click)="openAddForm()">
+          <i class="fa-solid fa-plus"></i> Ajouter une compétition
+        </button>
+      }
+    }
+  }
+
+  @if (formOpen() && !readonly) {
+    <div class="cm-form-overlay" (click)="closeForm()">
+      <div class="cm-form" (click)="$event.stopPropagation()">
+        <div class="cm-form-header">
+          <h4>{{ editingId() ? 'Modifier' : 'Ajouter' }} une compétition</h4>
+          <button class="icon-btn" (click)="closeForm()" aria-label="Fermer">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div class="cm-form-body">
+          <div class="field-group">
+            <label>Nom de la course</label>
+            <input type="text" placeholder="ex: Marathon de Paris 2026"
+              [ngModel]="form().name" (ngModelChange)="updateField('name', $event)">
+          </div>
+
+          <div class="fields-row">
+            <div class="field-group half">
+              <label>Date</label>
+              <input type="date"
+                [ngModel]="form().date" (ngModelChange)="updateField('date', $event)">
+            </div>
+            <div class="field-group half">
+              <label>Lieu (optionnel)</label>
+              <input type="text" placeholder="ex: Paris"
+                [ngModel]="form().location" (ngModelChange)="updateField('location', $event)">
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label>Discipline</label>
+            <div class="discipline-grid">
+              @for (d of disciplineOptions; track d.value) {
+                <button class="discipline-card"
+                  [class.selected]="form().discipline === d.value"
+                  (click)="updateField('discipline', d.value)">
+                  <i [class]="'fa-solid ' + d.faIcon"></i>
+                  <span>{{ d.label }}</span>
+                </button>
+              }
+            </div>
+          </div>
+
+          @if (form().discipline === 'trail' || form().discipline === 'ultra' || form().discipline === 'autre') {
+            <div class="fields-row">
+              <div class="field-group half">
+                <label>Distance (km)</label>
+                <input type="number" min="0" step="0.1"
+                  [ngModel]="form().distance" (ngModelChange)="updateField('distance', $event)">
+              </div>
+              <div class="field-group half">
+                <label>D+ (m)</label>
+                <input type="number" min="0"
+                  [ngModel]="form().elevationGain" (ngModelChange)="updateField('elevationGain', $event)">
+              </div>
+            </div>
+          }
+
+          <div class="fields-row">
+            <div class="field-group half">
+              <label>Objectif temps (optionnel)</label>
+              <input type="text" placeholder="ex: 3:45:00"
+                [ngModel]="form().targetTime" (ngModelChange)="updateField('targetTime', $event)">
+            </div>
+            <div class="field-group half">
+              <label>Statut</label>
+              <select [ngModel]="form().status" (ngModelChange)="updateField('status', $event)">
+                <option value="upcoming">À venir</option>
+                <option value="completed">Terminée</option>
+                <option value="cancelled">Annulée</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label>Priorité</label>
+            <div class="priority-row">
+              @for (p of priorityOptions; track p.value) {
+                <button class="priority-btn priority-{{ p.value }}"
+                  [class.selected]="form().priority === p.value"
+                  (click)="updateField('priority', p.value)">
+                  <strong>{{ p.label }}</strong>
+                  <span>{{ p.desc }}</span>
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label>Notes (optionnel)</label>
+            <textarea rows="2" placeholder="ex: parcours plat, objectif chrono…"
+              [ngModel]="form().notes" (ngModelChange)="updateField('notes', $event)"></textarea>
+          </div>
+        </div>
+
+        <div class="cm-form-footer">
+          <button class="btn-secondary" (click)="closeForm()">Annuler</button>
+          <button class="btn-primary" [disabled]="!canSubmit()" (click)="submit()">
+            {{ editingId() ? 'Enregistrer' : 'Ajouter' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

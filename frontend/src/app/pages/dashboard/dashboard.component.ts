@@ -526,15 +526,6 @@ export class DashboardComponent implements OnInit {
       });
     }
 
-    // Tip basé sur l'objectif
-    if (user?.goal === 'marathon') {
-      tips.push({
-        icon: '🎯',
-        title: 'Objectif Marathon',
-        text: 'N\'oublie pas ta sortie longue hebdomadaire, clé de l\'endurance.'
-      });
-    }
-
     // Tips génériques si rien de spécifique
     if (tips.length === 0) {
       tips.push({

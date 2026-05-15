@@ -92,26 +92,94 @@
       </div>
     }
 
-    <!-- RUNNING : Objectif -->
-    @if (currentKind() === 'runningGoal') {
+    <!-- RUNNING : Compétitions de la saison -->
+    @if (currentKind() === 'runningCompetitions') {
       <div class="step-content">
-        <h2 class="step-title">Ton objectif running</h2>
-        <p class="step-sub">Ton objectif principal guide la structure de tes entraînements.</p>
-        <div class="goal-grid goal-grid--3col">
-          @for (g of goals; track g.value) {
-            <button
-              class="goal-card"
-              [class.selected]="goal() === g.value"
-              (click)="goal.set(g.value)">
-              <i [class]="'fa-solid ' + g.faIcon + ' card-icon'"></i>
-              <span class="card-label">{{ g.label }}</span>
-            </button>
-          }
-        </div>
+        <h2 class="step-title">Tes compétitions</h2>
+        <p class="step-sub">Ajoute les courses que tu prépares cette saison. (optionnel, modifiable plus tard)</p>
+
+        @if (competitions().length > 0) {
+          <ul class="competition-list">
+            @for (c of competitions(); track $index) {
+              <li class="competition-item">
+                <div class="competition-info">
+                  <span class="competition-priority priority-{{ c.priority }}">{{ c.priority }}</span>
+                  <div>
+                    <div class="competition-name">{{ c.name }}</div>
+                    <div class="competition-meta">
+                      {{ disciplineLabels[c.discipline] }} · {{ c.date | date:'dd MMM yyyy' }}
+                      @if (c.targetTime) { · objectif {{ c.targetTime }} }
+                    </div>
+                  </div>
+                </div>
+                <button class="icon-btn" (click)="removeCompetition($index)" aria-label="Supprimer">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+
+        @if (showCompetitionForm()) {
+          <div class="competition-form">
+            <div class="field-group">
+              <label class="field-label">Nom de la course</label>
+              <input class="field-input" type="text" placeholder="ex: Marathon de Paris 2026"
+                [ngModel]="newCompetitionName()" (ngModelChange)="newCompetitionName.set($event)">
+            </div>
+            <div class="fields-row">
+              <div class="field-group half">
+                <label class="field-label">Date</label>
+                <input class="field-input" type="date"
+                  [ngModel]="newCompetitionDate()" (ngModelChange)="newCompetitionDate.set($event)">
+              </div>
+              <div class="field-group half">
+                <label class="field-label">Objectif temps (optionnel)</label>
+                <input class="field-input" type="text" placeholder="ex: 3:45:00"
+                  [ngModel]="newCompetitionTargetTime()" (ngModelChange)="newCompetitionTargetTime.set($event)">
+              </div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Discipline</label>
+              <div class="goal-grid goal-grid--3col">
+                @for (d of disciplineOptions; track d.value) {
+                  <button class="goal-card"
+                    [class.selected]="newCompetitionDiscipline() === d.value"
+                    (click)="newCompetitionDiscipline.set(d.value)">
+                    <i [class]="'fa-solid ' + d.faIcon + ' card-icon'"></i>
+                    <span class="card-label">{{ d.label }}</span>
+                  </button>
+                }
+              </div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Priorité</label>
+              <div class="priority-row">
+                @for (p of priorityOptions; track p.value) {
+                  <button class="priority-btn priority-{{ p.value }}"
+                    [class.selected]="newCompetitionPriority() === p.value"
+                    (click)="newCompetitionPriority.set(p.value)">
+                    <strong>{{ p.label }}</strong>
+                    <span>{{ p.desc }}</span>
+                  </button>
+                }
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="btn-secondary" (click)="showCompetitionForm.set(false); resetCompetitionForm()">Annuler</button>
+              <button class="btn-primary" [disabled]="!canAddCompetition()" (click)="addCompetition()">Ajouter</button>
+            </div>
+          </div>
+        } @else {
+          <button class="btn-add-competition" (click)="showCompetitionForm.set(true)">
+            <i class="fa-solid fa-plus"></i>
+            Ajouter une compétition
+          </button>
+        }
       </div>
       <div class="step-footer two-buttons">
         <button class="btn-secondary" (click)="prev()">Retour</button>
-        <button class="btn-primary" [disabled]="!canProceed()" (click)="next()">Continuer</button>
+        <button class="btn-primary" (click)="next()">Continuer</button>
       </div>
     }
 

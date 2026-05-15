@@ -207,6 +207,33 @@ router.get('/athletes/:athleteId/calendar', coachController.getAthleteCalendar);
 
 /**
  * @swagger
+ * /api/coach/athletes/{athleteId}/competitions:
+ *   get:
+ *     summary: Get an athlete's competitions
+ *     tags: [Coach]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: athleteId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [upcoming, completed, cancelled]
+ *     responses:
+ *       200:
+ *         description: List of the athlete's competitions
+ *       403:
+ *         description: Not authorized
+ */
+router.get('/athletes/:athleteId/competitions', coachController.getAthleteCompetitions);
+
+/**
+ * @swagger
  * /api/coach/athletes/{athleteId}/planning:
  *   get:
  *     summary: Get all planned sessions for an athlete

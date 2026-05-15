@@ -5,6 +5,7 @@ const CoachAthlete = require('../models/coachAthlete.model');
 const { autoCompletePlannedSessions } = require('../services/planningAutoComplete');
 const { createNotification } = require('./notification.controller');
 const { athleteHasCoach } = require('../services/coachRelation.service');
+const { getUpcomingCompetitionsForContext } = require('../utils/competitions');
 
 // Helper: Calculer les statistiques des courses récentes
 const calculateStats = (runs) => {
@@ -160,6 +161,7 @@ exports.createRun = async (req, res) => {
         }).sort({ date: -1 });
 
         const stats = calculateStats(twoWeeksRuns);
+        const upcomingCompetitions = await getUpcomingCompetitionsForContext(req.user._id);
 
         // Construire le contexte enrichi
         const enrichedContext = {
@@ -184,14 +186,15 @@ exports.createRun = async (req, res) => {
             name: `${user.firstName} ${user.lastName}`,
             email: user.email,
             level: user.runningLevel,
-            goal: user.goal,
-            goalDetails: user.goalDetails,
             weeklyFrequency: user.weeklyFrequency,
             injuries: user.injuries,
             strengthFrequency: user.strengthFrequency,
             strengthGoal: user.strengthGoal,
             strengthType: user.strengthType
           },
+
+          // Prochaines compétitions (objectifs)
+          upcomingCompetitions,
 
           // Historique récent
           recentRuns: formatRunsForContext(recentRuns),
@@ -255,6 +258,7 @@ exports.createRun = async (req, res) => {
           _id: { $ne: run._id }
         }).sort({ date: -1 });
         const stats = calculateStats(twoWeeksRuns);
+        const upcomingCompetitions = await getUpcomingCompetitionsForContext(req.user._id);
 
         const blocksContext = {
           runId: run._id,
@@ -316,8 +320,6 @@ exports.createRun = async (req, res) => {
             name: `${user.firstName} ${user.lastName}`,
             email: user.email,
             level: user.runningLevel,
-            goal: user.goal,
-            goalDetails: user.goalDetails,
             weeklyFrequency: user.weeklyFrequency,
             injuries: user.injuries,
             height: user.height || null,
@@ -328,6 +330,7 @@ exports.createRun = async (req, res) => {
             strengthGoal: user.strengthGoal,
             strengthType: user.strengthType
           },
+          upcomingCompetitions,
           recentRuns: formatRunsForContext(recentRuns),
           lastAnalysis: lastAnalyzedRun ? {
             date: lastAnalyzedRun.date,
@@ -438,6 +441,7 @@ exports.analyzeRun = async (req, res) => {
     }).sort({ date: -1 });
 
     const stats = calculateStats(twoWeeksRuns);
+    const upcomingCompetitions = await getUpcomingCompetitionsForContext(req.user._id);
 
     // Construire le contexte enrichi
     const enrichedContext = {
@@ -459,8 +463,6 @@ exports.analyzeRun = async (req, res) => {
         name: `${user.firstName} ${user.lastName}`,
         email: user.email,
         level: user.runningLevel,
-        goal: user.goal,
-        goalDetails: user.goalDetails,
         weeklyFrequency: user.weeklyFrequency,
         injuries: user.injuries || null,
         height: user.height || null,
@@ -471,6 +473,7 @@ exports.analyzeRun = async (req, res) => {
         strengthGoal: user.strengthGoal || null,
         strengthType: user.strengthType || null
       },
+      upcomingCompetitions,
       recentRuns: formatRunsForContext(recentRuns),
       lastAnalysis: lastAnalyzedRun ? {
         date: lastAnalyzedRun.date,

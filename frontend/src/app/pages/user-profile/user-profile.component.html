@@ -75,12 +75,6 @@
     <div class="info-card">
       <h2>Informations</h2>
       <div class="info-grid">
-        @if (user()!.goal) {
-          <div class="info-item">
-            <span class="info-label">Objectif</span>
-            <span class="info-value">{{ goals[user()!.goal!] || user()!.goal }}</span>
-          </div>
-        }
         @if (user()!.weeklyFrequency) {
           <div class="info-item">
             <span class="info-label">Entraînements / semaine</span>

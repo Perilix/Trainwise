@@ -11,7 +11,6 @@ const userSchema = new mongoose.Schema({
   role: { type: String, enum: ['user', 'admin', 'coach'], default: 'user' },
   coachInviteCode: { type: String, unique: true, sparse: true },
   runningLevel: { type: String, default: null },
-  goal: { type: String, default: null },
   weeklyFrequency: { type: Number, default: null },
   age: { type: Number, default: null },
   gender: { type: String, default: null },

@@ -55,10 +55,6 @@
             <span class="profile-value">{{ getLevelLabel(authService.currentUser()?.runningLevel) }}</span>
           </div>
           <div class="profile-item">
-            <span class="profile-label">Objectif</span>
-            <span class="profile-value">{{ getGoalLabel(authService.currentUser()?.goal) }}</span>
-          </div>
-          <div class="profile-item">
             <span class="profile-label">Fréquence</span>
             <span class="profile-value">
               @if (authService.currentUser()?.weeklyFrequency) {
@@ -74,10 +70,6 @@
             <div class="profile-item">
               <span class="profile-label">Genre</span>
               <span class="profile-value">{{ authService.currentUser()?.gender || 'Non défini' }}</span>
-            </div>
-            <div class="profile-item">
-              <span class="profile-label">Détails objectif</span>
-              <span class="profile-value">{{ authService.currentUser()?.goalDetails || 'Non défini' }}</span>
             </div>
             <div class="profile-item full-width">
               <span class="profile-label">Blessures / Points de vigilance</span>
@@ -140,7 +132,7 @@
         <form class="profile-form" (ngSubmit)="saveProfile()">
           <div class="form-grid">
             <div class="form-group">
-              <label for="goalDetails">Age</label>
+              <label for="age">Age</label>
               <input type="text" id="age" [(ngModel)]="profileForm.age" name="age" placeholder="Votre âge">
             </div>
 
@@ -165,23 +157,8 @@
             </div>
 
             <div class="form-group">
-              <label for="goal">Objectif</label>
-              <select id="goal" [(ngModel)]="profileForm.goal" name="goal">
-                <option [ngValue]="undefined">-- Sélectionner --</option>
-                @for (goal of goals; track goal.value) {
-                  <option [value]="goal.value">{{ goal.label }}</option>
-                }
-              </select>
-            </div>
-
-            <div class="form-group">
               <label for="frequency">Fréquence (séances/semaine)</label>
               <input type="number" id="frequency" [(ngModel)]="profileForm.weeklyFrequency" name="weeklyFrequency" min="1" max="14" placeholder="3">
-            </div>
-
-            <div class="form-group">
-              <label for="goalDetails">Détails objectif</label>
-              <input type="text" id="goalDetails" [(ngModel)]="profileForm.goalDetails" name="goalDetails" placeholder="Ex: Marathon de Paris en avril">
             </div>
 
             <div class="form-group full-width">
@@ -276,6 +253,11 @@
           </div>
         </form>
       }
+    </section>
+
+    <!-- Compétitions de la saison -->
+    <section class="competitions-section">
+      <app-competitions-manager></app-competitions-manager>
     </section>
 
     <!-- Section Strava (déconnexion) -->

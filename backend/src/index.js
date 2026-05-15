@@ -24,6 +24,7 @@ const strengthRoutes = require('./routes/strength.routes');
 const pushNotificationRoutes = require('./routes/pushNotification.routes');
 const subscriptionRoutes = require('./routes/subscription.routes');
 const betaFeedbackRoutes = require('./routes/betaFeedback.routes');
+const competitionRoutes = require('./routes/competition.routes');
 const { initializeSocket } = require('./socket/index');
 
 const app = express();
@@ -107,6 +108,7 @@ app.use('/api/strength', strengthRoutes);
 app.use('/api/users', pushNotificationRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/beta', betaFeedbackRoutes);
+app.use('/api/competitions', competitionRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

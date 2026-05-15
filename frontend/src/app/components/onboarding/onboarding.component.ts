@@ -2,6 +2,14 @@ import { Component, EventEmitter, Output, signal, computed, inject } from '@angu
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
+import {
+  CompetitionService,
+  CompetitionInput,
+  CompetitionDiscipline,
+  CompetitionPriority,
+  DISCIPLINE_LABELS
+} from '../../services/competition.service';
+import { forkJoin } from 'rxjs';
 
 type DayKey = 'lundi' | 'mardi' | 'mercredi' | 'jeudi' | 'vendredi' | 'samedi' | 'dimanche';
 
@@ -9,7 +17,7 @@ type StepKind =
   | 'welcome'
   | 'sport'
   | 'runningLevel'
-  | 'runningGoal'
+  | 'runningCompetitions'
   | 'runningFrequency'
   | 'muscuLevel'
   | 'muscuGoal'
@@ -41,11 +49,13 @@ export class OnboardingComponent {
   @Output() skipped = new EventEmitter<void>();
 
   private authService = inject(AuthService);
+  private competitionService = inject(CompetitionService);
 
   step = signal(0);
   isSaving = signal(false);
 
   readonly days = DAYS;
+  readonly disciplineLabels = DISCIPLINE_LABELS;
 
   // Sélection de sport
   disciplines = signal<string[]>([]);
@@ -54,8 +64,17 @@ export class OnboardingComponent {
 
   // Données running
   runningLevel = signal<string>('');
-  goal = signal<string>('');
   weeklyFrequency = signal<number>(3);
+
+  // Compétitions saisies pendant l'onboarding (0..n)
+  competitions = signal<CompetitionInput[]>([]);
+  // Formulaire d'ajout inline
+  showCompetitionForm = signal(false);
+  newCompetitionName = signal<string>('');
+  newCompetitionDate = signal<string>('');
+  newCompetitionDiscipline = signal<CompetitionDiscipline | ''>('');
+  newCompetitionPriority = signal<CompetitionPriority>('A');
+  newCompetitionTargetTime = signal<string>('');
 
   // Données muscu
   strengthLevel = signal<string>('');
@@ -76,7 +95,7 @@ export class OnboardingComponent {
   // Liste dynamique des étapes selon les sports sélectionnés
   steps = computed<StepKind[]>(() => {
     const list: StepKind[] = ['welcome', 'sport'];
-    if (this.hasRunning()) list.push('runningLevel', 'runningGoal', 'runningFrequency');
+    if (this.hasRunning()) list.push('runningLevel', 'runningCompetitions', 'runningFrequency');
     if (this.hasMuscu()) list.push('muscuLevel', 'muscuGoal', 'muscuType', 'muscuFrequency');
     list.push('planning', 'stats', 'done');
     return list;
@@ -106,8 +125,7 @@ export class OnboardingComponent {
     { value: 'expert', label: 'Expert', faIcon: 'fa-trophy', desc: 'Compétiteur ou coureur très expérimenté' },
   ];
 
-  readonly goals = [
-    { value: 'remise_en_forme', label: 'Remise en forme', faIcon: 'fa-heart-pulse' },
+  readonly disciplineOptions: { value: CompetitionDiscipline; label: string; faIcon: string }[] = [
     { value: '5km', label: '5 km', faIcon: 'fa-flag-checkered' },
     { value: '10km', label: '10 km', faIcon: 'fa-flag-checkered' },
     { value: 'semi_marathon', label: 'Semi-marathon', faIcon: 'fa-medal' },
@@ -115,6 +133,12 @@ export class OnboardingComponent {
     { value: 'trail', label: 'Trail', faIcon: 'fa-mountain' },
     { value: 'ultra', label: 'Ultra', faIcon: 'fa-feather-pointed' },
     { value: 'autre', label: 'Autre', faIcon: 'fa-star' },
+  ];
+
+  readonly priorityOptions: { value: CompetitionPriority; label: string; desc: string }[] = [
+    { value: 'A', label: 'A', desc: 'Objectif principal' },
+    { value: 'B', label: 'B', desc: 'Course intermédiaire' },
+    { value: 'C', label: 'C', desc: 'Préparation' },
   ];
 
   readonly muscuLevels = [
@@ -164,12 +188,45 @@ export class OnboardingComponent {
     switch (this.currentKind()) {
       case 'sport': return this.disciplines().length > 0;
       case 'runningLevel': return !!this.runningLevel();
-      case 'runningGoal': return !!this.goal();
+      case 'runningCompetitions': return true; // étape optionnelle
       case 'muscuLevel': return !!this.strengthLevel();
       case 'muscuGoal': return !!this.strengthGoal();
       case 'muscuType': return !!this.strengthType();
       default: return true;
     }
+  }
+
+  resetCompetitionForm() {
+    this.newCompetitionName.set('');
+    this.newCompetitionDate.set('');
+    this.newCompetitionDiscipline.set('');
+    this.newCompetitionPriority.set('A');
+    this.newCompetitionTargetTime.set('');
+  }
+
+  canAddCompetition(): boolean {
+    return !!this.newCompetitionName().trim()
+      && !!this.newCompetitionDate()
+      && !!this.newCompetitionDiscipline();
+  }
+
+  addCompetition() {
+    if (!this.canAddCompetition()) return;
+    const c: CompetitionInput = {
+      name: this.newCompetitionName().trim(),
+      date: this.newCompetitionDate(),
+      discipline: this.newCompetitionDiscipline() as CompetitionDiscipline,
+      priority: this.newCompetitionPriority(),
+      targetTime: this.newCompetitionTargetTime().trim() || null,
+      status: 'upcoming'
+    };
+    this.competitions.update(list => [...list, c]);
+    this.resetCompetitionForm();
+    this.showCompetitionForm.set(false);
+  }
+
+  removeCompetition(index: number) {
+    this.competitions.update(list => list.filter((_, i) => i !== index));
   }
 
   next() {
@@ -232,7 +289,6 @@ export class OnboardingComponent {
 
     if (this.hasRunning()) {
       if (this.runningLevel()) payload['runningLevel'] = this.runningLevel();
-      if (this.goal()) payload['goal'] = this.goal();
       if (this.weeklyFrequency()) payload['weeklyFrequency'] = this.weeklyFrequency();
       if (this.fcmax()) payload['fcmax'] = this.fcmax();
       if (this.vma()) payload['vma'] = this.vma();
@@ -252,23 +308,29 @@ export class OnboardingComponent {
     if (this.height()) payload['height'] = this.height();
     if (this.weight()) payload['weight'] = this.weight();
 
+    const finish = () => {
+      this.isSaving.set(false);
+      if (skippedByUser) {
+        this.skipped.emit();
+      } else {
+        setTimeout(() => this.completed.emit(), 1200);
+      }
+    };
+
     this.authService.updateProfile(payload as any).subscribe({
       next: () => {
-        this.isSaving.set(false);
-        if (skippedByUser) {
-          this.skipped.emit();
-        } else {
-          setTimeout(() => this.completed.emit(), 1200);
+        const comps = this.competitions();
+        if (skippedByUser || comps.length === 0) {
+          finish();
+          return;
         }
+        // Crée les compétitions en parallèle puis ferme
+        forkJoin(comps.map(c => this.competitionService.create(c))).subscribe({
+          next: () => finish(),
+          error: () => finish()
+        });
       },
-      error: () => {
-        this.isSaving.set(false);
-        if (skippedByUser) {
-          this.skipped.emit();
-        } else {
-          setTimeout(() => this.completed.emit(), 1200);
-        }
-      }
+      error: () => finish()
     });
   }
 }
