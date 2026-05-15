@@ -122,6 +122,7 @@ export interface CalendarData {
   runs: any[];
   plannedRuns: PlannedSession[];
   strengthSessions: StrengthSession[];
+  competitions?: Competition[];
   month: number;
   year: number;
 }

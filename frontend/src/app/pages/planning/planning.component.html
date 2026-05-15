@@ -73,9 +73,16 @@
                 class="calendar-day"
                 [class.other-month]="!day.isCurrentMonth"
                 [class.today]="day.isToday"
-                [class.has-events]="day.runs.length > 0 || day.plannedRuns.length > 0 || (day.strengthSessions?.length ?? 0) > 0"
+                [class.has-events]="day.runs.length > 0 || day.plannedRuns.length > 0 || (day.strengthSessions?.length ?? 0) > 0 || day.competitions.length > 0"
+                [class.has-competition]="day.competitions.length > 0"
                 (click)="selectDay(day)">
                 <span class="day-number">{{ day.dayOfMonth }}</span>
+
+                @if (day.competitions.length > 0) {
+                  <span class="competition-flag priority-{{ day.competitions[0].priority }}" [title]="day.competitions[0].name">
+                    <i class="fa-solid fa-flag-checkered"></i>
+                  </span>
+                }
 
                 @if (day.runs.length > 0 || day.plannedRuns.length > 0 || (day.strengthSessions?.length ?? 0) > 0) {
                   <div class="day-indicators">
@@ -113,6 +120,10 @@
             <span>Planifiée IA</span>
           </div>
         }
+        <div class="legend-item">
+          <span class="legend-flag"><i class="fa-solid fa-flag-checkered"></i></span>
+          <span>Compétition</span>
+        </div>
       </div>
     </div>
   </div>
@@ -246,10 +257,39 @@
 
 <ng-template #dayContentTpl let-day>
   @if (day) {
-    @if (day.runs.length === 0 && day.plannedRuns.length === 0 && (!day.strengthSessions || day.strengthSessions.length === 0)) {
+    @if (day.runs.length === 0 && day.plannedRuns.length === 0 && (!day.strengthSessions || day.strengthSessions.length === 0) && (!day.competitions || day.competitions.length === 0)) {
       <div class="empty-day">
         <p>Aucune activité ce jour</p>
         <button class="btn-add-empty" (click)="openAddSession()">+ Ajouter une séance</button>
+      </div>
+    }
+
+    <!-- Compétitions du jour -->
+    @if (day.competitions?.length > 0) {
+      <div class="section">
+        <h3>Compétition</h3>
+        @for (comp of day.competitions; track comp._id) {
+          <div class="competition-card priority-{{ comp.priority }}">
+            <div class="competition-card-head">
+              <span class="competition-card-priority">{{ comp.priority }}</span>
+              <span class="competition-card-name">{{ comp.name }}</span>
+            </div>
+            <div class="competition-card-meta">
+              <span>{{ disciplineLabel(comp.discipline) }}</span>
+              @if (comp.targetTime) {
+                <span>·</span>
+                <span>objectif {{ comp.targetTime }}</span>
+              }
+              @if (comp.location) {
+                <span>·</span>
+                <span>{{ comp.location }}</span>
+              }
+            </div>
+            @if (comp.notes) {
+              <p class="competition-card-notes">{{ comp.notes }}</p>
+            }
+          </div>
+        }
       </div>
     }
 

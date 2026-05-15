@@ -1882,3 +1882,99 @@
   font-size: 2rem;
   line-height: 1;
 }
+
+/* === Compétitions === */
+.calendar-day.has-competition {
+  background: linear-gradient(180deg, rgba(214, 40, 40, 0.06) 0%, transparent 60%);
+}
+
+.competition-flag {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.55rem;
+  background: #d62828;
+  z-index: 2;
+
+  &.priority-B { background: #f77f00; }
+  &.priority-C { background: #6c757d; }
+}
+
+.legend-flag {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #d62828;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.5rem;
+}
+
+.competition-card {
+  position: relative;
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  border-left: 4px solid #d62828;
+  box-shadow: 0 1px 4px rgba(0, 53, 84, 0.08);
+
+  &.priority-B { border-left-color: #f77f00; }
+  &.priority-C { border-left-color: #6c757d; }
+}
+
+.competition-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.competition-card-priority {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #d62828;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  .competition-card.priority-B & { background: #f77f00; }
+  .competition-card.priority-C & { background: #6c757d; }
+}
+
+.competition-card-name {
+  font-weight: 700;
+  color: #051923;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+}
+
+.competition-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: #0582ca;
+  font-weight: 500;
+}
+
+.competition-card-notes {
+  margin: 6px 0 0;
+  font-size: 0.82rem;
+  color: #555;
+  line-height: 1.35;
+}

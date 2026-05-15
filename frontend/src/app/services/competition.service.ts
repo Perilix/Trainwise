@@ -10,6 +10,11 @@ export type CompetitionDiscipline =
   | 'marathon'
   | 'trail'
   | 'ultra'
+  | 'hyrox'
+  | 'crossfit'
+  | 'obstacle_race'
+  | 'cross_country'
+  | 'piste'
   | 'autre';
 
 export type CompetitionPriority = 'A' | 'B' | 'C';
@@ -49,6 +54,11 @@ export const DISCIPLINE_LABELS: Record<CompetitionDiscipline, string> = {
   marathon: 'Marathon',
   trail: 'Trail',
   ultra: 'Ultra',
+  hyrox: 'Hyrox',
+  crossfit: 'CrossFit',
+  obstacle_race: 'Course à obstacles',
+  cross_country: 'Cross',
+  piste: 'Piste',
   autre: 'Autre'
 };
 

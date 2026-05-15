@@ -35,29 +35,28 @@
 
 .cm-filters {
   display: flex;
-  gap: 4px;
-  background: rgba(5, 130, 202, 0.08);
+  gap: 2px;
+  background: rgba(0, 53, 84, 0.08);
   padding: 3px;
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 .cm-filter {
-  background: transparent;
+  padding: 5px 12px;
   border: none;
-  padding: 5px 10px;
-  border-radius: 6px;
-  font-size: 0.75rem;
+  background: transparent;
+  color: rgba(0, 53, 84, 0.55);
   font-family: 'Poppins', sans-serif;
-  color: #0582ca;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 8px;
   cursor: pointer;
-  font-weight: 600;
-  letter-spacing: 0.3px;
+  transition: all 0.2s;
 }
 
 .cm-filter.active {
-  background: #fff;
-  color: #051923;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  background: #003554;
+  color: #fff;
 }
 
 .cm-error {
@@ -225,59 +224,24 @@
   }
 }
 
-/* Form modal */
-.cm-form-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 16px;
-}
+/* Largeur dédiée pour cette modale (un peu plus large que le default 480px) */
+.competition-modal {
+  max-width: 520px;
 
-.cm-form {
-  background: #fff;
-  border-radius: 16px;
-  width: 100%;
-  max-width: 500px;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-}
-
-.cm-form-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.cm-form-header h4 {
-  margin: 0;
-  font-size: 0.95rem;
-  color: #051923;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.cm-form-body {
-  padding: 1.25rem;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
+  // Body interne : structure le formulaire
+  .cm-form-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding-top: 0.25rem;
+  }
 }
 
 .field-group {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 0.4rem;
+  min-width: 0;
 }
 
 .field-group label {
@@ -287,19 +251,41 @@
   text-transform: uppercase;
   letter-spacing: 0.4px;
   font-family: 'Poppins', sans-serif;
+  line-height: 1.2;
+  min-height: 0.86rem;
 }
 
 .field-group input,
 .field-group select,
 .field-group textarea {
+  width: 100%;
   border: 1.5px solid #e0e0e0;
   border-radius: 8px;
-  padding: 9px 11px;
+  padding: 0 0.75rem;
+  height: 40px;
   font-size: 0.9rem;
   font-family: 'Poppins', sans-serif;
   background: #fff;
   outline: none;
   color: #051923;
+  box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.field-group select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%230582ca' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 1.75rem;
+}
+
+.field-group textarea {
+  height: auto;
+  padding: 0.55rem 0.75rem;
+  resize: vertical;
+  min-height: 60px;
+  line-height: 1.4;
 }
 
 .field-group input:focus,
@@ -309,33 +295,40 @@
 }
 
 .fields-row {
-  display: flex;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  align-items: start;
 }
 
 .fields-row .field-group.half {
-  flex: 1;
+  width: 100%;
 }
 
 .discipline-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
 }
 
 .discipline-card {
   background: #fff;
   border: 1.5px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 8px 4px;
+  border-radius: 10px;
+  padding: 0.6rem 0.3rem;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  justify-content: center;
+  gap: 4px;
   font-family: 'Poppins', sans-serif;
-  font-size: 0.74rem;
+  font-size: 0.72rem;
+  font-weight: 500;
   color: #555;
+  min-height: 64px;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s;
 }
 
 .discipline-card i {
@@ -346,35 +339,42 @@
 .discipline-card.selected {
   border-color: #0582ca;
   background: rgba(5, 130, 202, 0.08);
+  color: #051923;
+  font-weight: 600;
 }
 
 .priority-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .priority-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1px;
-  padding: 8px 4px;
-  border-radius: 8px;
+  justify-content: center;
+  gap: 2px;
+  padding: 0.6rem 0.3rem;
+  border-radius: 10px;
   border: 1.5px solid #e0e0e0;
   background: #fff;
   cursor: pointer;
   font-family: 'Poppins', sans-serif;
+  min-height: 64px;
+  transition: border-color 0.15s, background 0.15s;
 }
 
 .priority-btn strong {
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 700;
+  line-height: 1;
 }
 
 .priority-btn span {
-  font-size: 0.66rem;
+  font-size: 0.68rem;
   color: #666;
+  line-height: 1.2;
 }
 
 .priority-btn.selected.priority-A { border-color: #d62828; background: #fdecec; }
@@ -384,12 +384,14 @@
 .priority-btn.selected.priority-C { border-color: #6c757d; background: #f0f0f0; }
 .priority-btn.selected.priority-C strong { color: #6c757d; }
 
-.cm-form-footer {
-  padding: 1rem 1.25rem;
-  border-top: 1px solid #f0f0f0;
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
+/* Sur petits écrans, on passe les half en pleine largeur pour éviter les lignes serrées */
+@media (max-width: 420px) {
+  .fields-row {
+    grid-template-columns: 1fr;
+  }
+  .discipline-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .btn-primary,

@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { Run, RunBlock } from './run.service';
 import { environment } from '../../environments/environment';
 import { StrengthSession, StrengthPlan, StrengthSessionType } from '../interfaces/strength.interfaces';
+import { Competition } from './competition.service';
 
 // Types d'activité
 export type ActivityType = 'running' | 'strength';
@@ -48,6 +49,7 @@ export interface CalendarData {
   runs: Run[];
   plannedRuns: PlannedSession[];
   strengthSessions: StrengthSession[];
+  competitions?: Competition[];
   month: number;
   year: number;
 }

@@ -82,13 +82,19 @@
             class="calendar-day"
             [class.other-month]="!day.isCurrentMonth"
             [class.today]="day.isToday"
-            [class.has-content]="day.runs.length > 0 || day.plannedRuns.length > 0"
+            [class.has-content]="day.runs.length > 0 || day.plannedRuns.length > 0 || day.competitions.length > 0"
+            [class.has-competition]="day.competitions.length > 0"
             [class.non-training-day]="day.isCurrentMonth && !isTrainingDay(day.date) && (athlete()?.availableDays?.length ?? 0) > 0"
             [class.duplication-target]="isDateSelected(day)"
             [class.duplication-source]="isSourceDay(day)"
             (click)="selectDay(day)"
           >
             <span class="day-number">{{ day.dayOfMonth }}</span>
+            @if (day.competitions.length > 0) {
+              <span class="competition-flag priority-{{ day.competitions[0].priority }}" [title]="day.competitions[0].name">
+                <i class="fa-solid fa-flag-checkered"></i>
+              </span>
+            }
             <div class="day-indicators">
               @for (indicator of getDayIndicators(day); track indicator.type) {
                 <div class="indicator-badge" [class]="indicator.type">{{ indicator.count }}</div>
@@ -105,6 +111,7 @@
       <span class="legend-item"><span class="dot planned-coach"></span> Planifiée coach</span>
       <span class="legend-item"><span class="dot planned-athlete"></span> Planifiée athlète</span>
       <span class="legend-item"><span class="dot skipped"></span> Sautée</span>
+      <span class="legend-item"><span class="legend-flag"><i class="fa-solid fa-flag-checkered"></i></span> Compétition</span>
     </div>
   }
 </div>
@@ -286,7 +293,7 @@
         <span>Attention, votre athlète n'a pas indiqué s'entraîner ce jour. Parlez-en avec lui avant de planifier une séance.</span>
       </div>
     }
-    @if (day.plannedRuns.length === 0 && day.runs.length === 0 && day.strengthSessions.length === 0) {
+    @if (day.plannedRuns.length === 0 && day.runs.length === 0 && day.strengthSessions.length === 0 && day.competitions.length === 0) {
       <div class="day-empty-state">
         <p class="empty-day">Aucune séance ce jour</p>
         <button class="btn-primary" (click)="openAddSession()">
@@ -294,6 +301,35 @@
         </button>
       </div>
     } @else {
+
+    <!-- Compétitions du jour -->
+    @if (day.competitions.length > 0) {
+      <div class="section">
+        <h3>Compétition</h3>
+        @for (comp of day.competitions; track comp._id) {
+          <div class="competition-card priority-{{ comp.priority }}">
+            <div class="competition-card-head">
+              <span class="competition-card-priority">{{ comp.priority }}</span>
+              <span class="competition-card-name">{{ comp.name }}</span>
+            </div>
+            <div class="competition-card-meta">
+              <span>{{ disciplineLabel(comp.discipline) }}</span>
+              @if (comp.targetTime) {
+                <span>·</span>
+                <span>objectif {{ comp.targetTime }}</span>
+              }
+              @if (comp.location) {
+                <span>·</span>
+                <span>{{ comp.location }}</span>
+              }
+            </div>
+            @if (comp.notes) {
+              <p class="competition-card-notes">{{ comp.notes }}</p>
+            }
+          </div>
+        }
+      </div>
+    }
 
     <!-- Courses effectuées -->
     @for (run of day.runs; track run._id) {

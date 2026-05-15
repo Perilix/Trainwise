@@ -128,10 +128,15 @@ export class OnboardingComponent {
   readonly disciplineOptions: { value: CompetitionDiscipline; label: string; faIcon: string }[] = [
     { value: '5km', label: '5 km', faIcon: 'fa-flag-checkered' },
     { value: '10km', label: '10 km', faIcon: 'fa-flag-checkered' },
-    { value: 'semi_marathon', label: 'Semi-marathon', faIcon: 'fa-medal' },
+    { value: 'semi_marathon', label: 'Semi', faIcon: 'fa-medal' },
     { value: 'marathon', label: 'Marathon', faIcon: 'fa-award' },
     { value: 'trail', label: 'Trail', faIcon: 'fa-mountain' },
     { value: 'ultra', label: 'Ultra', faIcon: 'fa-feather-pointed' },
+    { value: 'hyrox', label: 'Hyrox', faIcon: 'fa-fire' },
+    { value: 'crossfit', label: 'CrossFit', faIcon: 'fa-dumbbell' },
+    { value: 'obstacle_race', label: 'Obstacles', faIcon: 'fa-shield-halved' },
+    { value: 'cross_country', label: 'Cross', faIcon: 'fa-tree' },
+    { value: 'piste', label: 'Piste', faIcon: 'fa-stopwatch' },
     { value: 'autre', label: 'Autre', faIcon: 'fa-star' },
   ];
 

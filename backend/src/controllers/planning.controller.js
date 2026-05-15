@@ -3,6 +3,7 @@ const PlannedRun = require('../models/plannedRun.model');
 const Run = require('../models/run.model');
 const User = require('../models/user.model');
 const StrengthSession = require('../models/strengthSession.model');
+const Competition = require('../models/competition.model');
 const { getUpcomingCompetitionsForContext } = require('../utils/competitions');
 
 // Récupérer toutes les séances planifiées de l'utilisateur
@@ -458,10 +459,17 @@ exports.getCalendarData = async (req, res) => {
       .populate('exercises.exercise', 'name slug imageUrl primaryMuscle')
       .sort({ date: 1 });
 
+    // Compétitions du mois (toutes statuts pour pouvoir afficher passées et à venir)
+    const competitions = await Competition.find({
+      user: req.user._id,
+      date: { $gte: startDate, $lte: endDate }
+    }).sort({ date: 1 });
+
     res.json({
       runs,
       plannedRuns,
       strengthSessions,
+      competitions,
       month: parseInt(month),
       year: parseInt(year)
     });

@@ -10,6 +10,7 @@ import { AthleteService } from '../../services/athlete.service';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 import { TourTooltipComponent, TourStep } from '../../components/tour-tooltip/tour-tooltip.component';
 import { SubscriptionService } from '../../services/subscription.service';
+import { Competition, DISCIPLINE_LABELS } from '../../services/competition.service';
 
 interface CalendarDay {
   date: Date;
@@ -19,6 +20,7 @@ interface CalendarDay {
   runs: Run[];
   plannedRuns: PlannedSession[];
   strengthSessions: StrengthSession[];
+  competitions: Competition[];
 }
 
 @Component({
@@ -109,7 +111,8 @@ export class PlanningComponent implements OnInit {
       isToday: key === todayKey,
       runs: [],
       plannedRuns: [],
-      strengthSessions: []
+      strengthSessions: [],
+      competitions: []
     };
   }
 
@@ -322,6 +325,12 @@ export class PlanningComponent implements OnInit {
         return strengthDateStr === dateStr;
       });
 
+      const dayCompetitions = (data.competitions || []).filter(c => {
+        const d = new Date(c.date);
+        const compDateStr = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+        return compDateStr === dateStr;
+      });
+
       days.push({
         date,
         dayOfMonth: date.getDate(),
@@ -329,11 +338,17 @@ export class PlanningComponent implements OnInit {
         isToday: dateStr === todayStr,
         runs: dayRuns,
         plannedRuns: dayPlanned,
-        strengthSessions: dayStrength
+        strengthSessions: dayStrength,
+        competitions: dayCompetitions
       });
     }
 
     this.calendarDays.set(days);
+  }
+
+  // Label de discipline pour affichage des compétitions
+  disciplineLabel(d: string): string {
+    return (DISCIPLINE_LABELS as Record<string, string>)[d] || d;
   }
 
   previousMonth() {

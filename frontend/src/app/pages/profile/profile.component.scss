@@ -522,22 +522,21 @@
       padding: 3px;
 
       .period-btn {
-        padding: 0.25rem 0.55rem;
+        padding: 5px 12px;
         border: none;
-        border-radius: 7px;
-        font-size: 0.72rem;
-        font-weight: 600;
+        background: transparent;
+        color: rgba(0, 53, 84, 0.55);
+        font-family: 'Poppins', sans-serif;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border-radius: 8px;
         cursor: pointer;
         transition: all 0.2s;
-        background: transparent;
-        color: #888;
-        font-family: 'Poppins', sans-serif;
         white-space: nowrap;
 
         &.active {
-          background: #0582ca;
+          background: #003554;
           color: #fff;
-          box-shadow: 0 1px 4px rgba(5, 130, 202, 0.3);
         }
       }
     }
@@ -545,29 +544,28 @@
 
   .metric-toggles {
     display: flex;
-    gap: 4px;
+    gap: 2px;
     background: rgba(0, 53, 84, 0.08);
-    border-radius: 12px;
-    padding: 4px;
+    border-radius: 10px;
+    padding: 3px;
     margin-bottom: 1.5rem;
 
     .metric-btn {
       flex: 1;
-      padding: 0.45rem 0;
+      padding: 5px 12px;
       border: none;
-      border-radius: 9px;
-      font-size: 0.8rem;
-      font-weight: 600;
+      background: transparent;
+      color: rgba(0, 53, 84, 0.55);
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 500;
+      border-radius: 8px;
       cursor: pointer;
       transition: all 0.2s;
-      background: transparent;
-      color: #888;
-      font-family: 'Poppins', sans-serif;
 
       &.active {
-        background: #0582ca;
+        background: #003554;
         color: #fff;
-        box-shadow: 0 1px 4px rgba(5, 130, 202, 0.3);
       }
     }
   }

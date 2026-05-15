@@ -17,7 +17,18 @@ const competitionSchema = new mongoose.Schema({
   },
   discipline: {
     type: String,
-    enum: ['5km', '10km', 'semi_marathon', 'marathon', 'trail', 'ultra', 'autre'],
+    enum: [
+      // Course sur route
+      '5km', '10km', 'semi_marathon', 'marathon',
+      // Trail / montagne
+      'trail', 'ultra',
+      // Cross-training / fitness racing
+      'hyrox', 'crossfit', 'obstacle_race',
+      // Athlétisme
+      'cross_country', 'piste',
+      // Fallback
+      'autre'
+    ],
     required: true
   },
   // Distance en km (utile pour trail/ultra/autre où la distance n'est pas implicite)
