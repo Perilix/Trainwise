@@ -148,8 +148,8 @@
                       </div>
                     } @else {
                       <div class="form-group">
-                        <label>Durée récup (min)</label>
-                        <input type="number" min="0" step="0.5" [ngModel]="block.recoveryDuration" (ngModelChange)="updateRunBlock(i, 'recoveryDuration', $event)">
+                        <label>Durée récup</label>
+                        <input type="text" placeholder="ex: 1min30" [ngModel]="block.recoveryDuration" (ngModelChange)="updateRunBlock(i, 'recoveryDuration', $event)">
                       </div>
                     }
                   </div>
@@ -215,7 +215,7 @@
                   </div>
                   <div class="field">
                     <label>Charge (kg)</label>
-                    <input type="number" min="0" step="0.5" [ngModel]="exo.targetWeight" (ngModelChange)="updateStrengthEntry(i, 'targetWeight', $event)">
+                    <input type="number" min="0" step="any" [ngModel]="exo.targetWeight" (ngModelChange)="updateStrengthEntry(i, 'targetWeight', $event)">
                   </div>
                   <div class="field">
                     <label>Repos</label>
@@ -287,7 +287,7 @@
                     </div>
                     <div class="field">
                       <label>Charge (kg)</label>
-                      <input type="number" min="0" step="0.5" [ngModel]="exo.targetWeight" (ngModelChange)="updateCircuitExercise(i, 'targetWeight', $event)">
+                      <input type="number" min="0" step="any" [ngModel]="exo.targetWeight" (ngModelChange)="updateCircuitExercise(i, 'targetWeight', $event)">
                     </div>
                   </div>
                 </div>
@@ -404,7 +404,7 @@
                     </div>
                     <div class="field">
                       <label>Charge (kg)</label>
-                      <input type="number" min="0" step="0.5" [ngModel]="pair.a.targetWeight" (ngModelChange)="updateSupersetPairSlot(i, 'a', 'targetWeight', $event)">
+                      <input type="number" min="0" step="any" [ngModel]="pair.a.targetWeight" (ngModelChange)="updateSupersetPairSlot(i, 'a', 'targetWeight', $event)">
                     </div>
                   </div>
                 </div>
@@ -433,7 +433,7 @@
                     </div>
                     <div class="field">
                       <label>Charge (kg)</label>
-                      <input type="number" min="0" step="0.5" [ngModel]="pair.b.targetWeight" (ngModelChange)="updateSupersetPairSlot(i, 'b', 'targetWeight', $event)">
+                      <input type="number" min="0" step="any" [ngModel]="pair.b.targetWeight" (ngModelChange)="updateSupersetPairSlot(i, 'b', 'targetWeight', $event)">
                     </div>
                   </div>
                 </div>

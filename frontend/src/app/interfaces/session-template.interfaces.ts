@@ -43,7 +43,7 @@ export interface TemplateRunBlock {
   description?: string;
   recoveryMode?: 'distance' | 'duration' | null;
   recoveryDistance?: number | null;
-  recoveryDuration?: number | null;
+  recoveryDuration?: string | null;
   recoveryPace?: PaceConfig | null;
   recoveryDescription?: string;
   order: number;

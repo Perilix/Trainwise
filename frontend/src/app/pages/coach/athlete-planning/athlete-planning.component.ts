@@ -839,13 +839,8 @@ export class AthletePlanningComponent implements OnInit {
       if (pace && pace > 0) main = ((block.duration || 0) / pace) * reps;
     }
     let recovery = 0;
-    if (block.role === 'main' && block.recoveryMode) {
-      if (block.recoveryMode === 'distance') {
-        recovery = (block.recoveryDistance || 0) * reps;
-      } else if (block.recoveryMode === 'duration' && block.recoveryPace) {
-        const rp = this.paceToMinPerKm(block.recoveryPace);
-        if (rp && rp > 0) recovery = ((block.recoveryDuration || 0) / rp) * reps;
-      }
+    if (block.role === 'main' && block.recoveryMode === 'distance') {
+      recovery = (block.recoveryDistance || 0) * reps;
     }
     return main + recovery;
   }

@@ -26,7 +26,7 @@ const templateRunBlockSchema = new mongoose.Schema({
   description: { type: String, default: '' },
   recoveryMode: { type: String, enum: ['distance', 'duration', null], default: null },
   recoveryDistance: { type: Number, default: null },
-  recoveryDuration: { type: Number, default: null },
+  recoveryDuration: { type: String, default: null },
   recoveryPace: { type: paceConfigSchema, default: null },
   recoveryDescription: { type: String, default: '' },
   order: { type: Number, default: 0 }

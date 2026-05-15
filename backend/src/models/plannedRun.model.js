@@ -121,7 +121,7 @@ const plannedRunSchema = new mongoose.Schema({
     // Récup associée au bloc principal (uniquement pour role='main')
     recoveryMode: { type: String, enum: ['distance', 'duration', null], default: null },
     recoveryDistance: { type: Number, default: null }, // km
-    recoveryDuration: { type: Number, default: null }, // minutes
+    recoveryDuration: { type: String, default: null }, // texte libre, ex: "1min30"
     recoveryPace: { type: String, default: null }, // "mm:ss" /km, optionnel
     recoveryDescription: { type: String, default: '' },
     order: { type: Number, default: 0 },

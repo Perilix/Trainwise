@@ -91,7 +91,7 @@
                       </div>
                       <div class="field">
                         <label>Charge (kg)</label>
-                        <input type="number" [value]="ex.targetWeight ?? ''" (input)="updatePlanExercise($index, 'targetWeight', +$any($event.target).value || undefined)" min="0">
+                        <input type="number" [value]="ex.targetWeight ?? ''" (input)="updatePlanExercise($index, 'targetWeight', +$any($event.target).value || undefined)" min="0" step="any">
                       </div>
                       <div class="field">
                         <label>Repos</label>
@@ -164,7 +164,7 @@
                         </div>
                         <div class="field">
                           <label>Charge (kg)</label>
-                          <input type="number" [value]="ex.targetWeight ?? ''" (input)="updateCircuitExercise($index, 'targetWeight', +$any($event.target).value || undefined)" min="0">
+                          <input type="number" [value]="ex.targetWeight ?? ''" (input)="updateCircuitExercise($index, 'targetWeight', +$any($event.target).value || undefined)" min="0" step="any">
                         </div>
                       </div>
                     } @else {
@@ -297,7 +297,7 @@
                       @if (canEdit()) {
                         <div class="flow-fields">
                           <div class="field"><label>Reps</label><input type="text" [value]="pair.a.targetReps" (input)="updateSupersetSlot($index, 'a', 'targetReps', $any($event.target).value)" placeholder="10"></div>
-                          <div class="field"><label>Charge (kg)</label><input type="number" [value]="pair.a.targetWeight ?? ''" (input)="updateSupersetSlot($index, 'a', 'targetWeight', +$any($event.target).value || undefined)" min="0"></div>
+                          <div class="field"><label>Charge (kg)</label><input type="number" [value]="pair.a.targetWeight ?? ''" (input)="updateSupersetSlot($index, 'a', 'targetWeight', +$any($event.target).value || undefined)" min="0" step="any"></div>
                         </div>
                       } @else {
                         <div class="flow-meta"><b>{{ pair.a.targetReps }}</b>@if (pair.a.targetWeight) { <span> · {{ pair.a.targetWeight }} kg</span> }</div>
@@ -325,7 +325,7 @@
                       @if (canEdit()) {
                         <div class="flow-fields">
                           <div class="field"><label>Reps</label><input type="text" [value]="pair.b.targetReps" (input)="updateSupersetSlot($index, 'b', 'targetReps', $any($event.target).value)" placeholder="12"></div>
-                          <div class="field"><label>Charge (kg)</label><input type="number" [value]="pair.b.targetWeight ?? ''" (input)="updateSupersetSlot($index, 'b', 'targetWeight', +$any($event.target).value || undefined)" min="0"></div>
+                          <div class="field"><label>Charge (kg)</label><input type="number" [value]="pair.b.targetWeight ?? ''" (input)="updateSupersetSlot($index, 'b', 'targetWeight', +$any($event.target).value || undefined)" min="0" step="any"></div>
                         </div>
                       } @else {
                         <div class="flow-meta"><b>{{ pair.b.targetReps }}</b>@if (pair.b.targetWeight) { <span> · {{ pair.b.targetWeight }} kg</span> }</div>

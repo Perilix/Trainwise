@@ -240,7 +240,7 @@ export class SessionTemplateEditorComponent implements OnInit {
       next[index] = {
         ...block,
         recoveryMode: 'duration',
-        recoveryDuration: 1,
+        recoveryDuration: '1min',
         recoveryPace: { mode: 'zone', zone: 'recovery', vmaPercent: null }
       };
     }

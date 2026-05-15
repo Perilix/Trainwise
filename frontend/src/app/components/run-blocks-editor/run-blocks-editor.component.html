@@ -199,8 +199,8 @@
               </label>
             } @else {
               <label class="rb-field">
-                <span>Durée (min)</span>
-                <input type="number" step="0.5" min="0" [(ngModel)]="block.recoveryDuration" [disabled]="readonly" (ngModelChange)="onFieldChange()">
+                <span>Durée</span>
+                <input type="text" placeholder="ex: 1min30" [(ngModel)]="block.recoveryDuration" [disabled]="readonly" (ngModelChange)="onFieldChange()">
               </label>
             }
             @if (enableVmaPaces && !readonly) {

@@ -282,7 +282,7 @@ export class RunBlocksEditorComponent implements OnInit, OnChanges {
       block.recoveryDescription = '';
     } else {
       block.recoveryMode = 'duration';
-      block.recoveryDuration = 1;
+      block.recoveryDuration = '1min';
     }
     this.emit();
   }
@@ -340,18 +340,8 @@ export class RunBlocksEditorComponent implements OnInit, OnChanges {
       }
     }
     let recovery = 0;
-    if (block.role === 'main' && block.recoveryMode) {
-      // Récup s'effectue entre les répétitions, donc reps - 1 fois pour les fractionnés
-      // Mais on facture aussi le tour de récup final si présent. Convention simple : reps fois.
-      const recReps = reps;
-      if (block.recoveryMode === 'distance') {
-        recovery = (block.recoveryDistance || 0) * recReps;
-      } else if (block.recoveryMode === 'duration' && block.recoveryPace) {
-        const rp = this.paceToMinPerKm(block.recoveryPace);
-        if (rp && rp > 0) {
-          recovery = ((block.recoveryDuration || 0) / rp) * recReps;
-        }
-      }
+    if (block.role === 'main' && block.recoveryMode === 'distance') {
+      recovery = (block.recoveryDistance || 0) * reps;
     }
     return main + recovery;
   }
@@ -407,7 +397,7 @@ export class RunBlocksEditorComponent implements OnInit, OnChanges {
     if (block.role === 'main' && block.recoveryMode) {
       const rec = block.recoveryMode === 'distance'
         ? (block.recoveryDistance ? `${Math.round(block.recoveryDistance * 1000)}m` : '')
-        : (block.recoveryDuration ? `${block.recoveryDuration} min` : '');
+        : (block.recoveryDuration ? `${block.recoveryDuration}` : '');
       const recPace = block.recoveryPace ? ` @ ${block.recoveryPace}` : '';
       if (rec) parts.push(`/ ${rec} récup${recPace}`);
     }

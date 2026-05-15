@@ -83,7 +83,7 @@ const runSchema = new mongoose.Schema({
     description: { type: String, default: '' },
     recoveryMode: { type: String, enum: ['distance', 'duration', null], default: null },
     recoveryDistance: { type: Number, default: null },
-    recoveryDuration: { type: Number, default: null },
+    recoveryDuration: { type: String, default: null },
     recoveryPace: { type: String, default: null },
     recoveryDescription: { type: String, default: '' },
     notes: { type: String, default: '' },
@@ -107,7 +107,7 @@ const runSchema = new mongoose.Schema({
       description: String,
       recoveryMode: String,
       recoveryDistance: Number,
-      recoveryDuration: Number,
+      recoveryDuration: String,
       recoveryPace: String,
       recoveryDescription: String,
       order: Number

@@ -26,7 +26,7 @@ export interface RunBlock {
   description?: string;
   recoveryMode?: RunBlockMode | null;
   recoveryDistance?: number | null;
-  recoveryDuration?: number | null;
+  recoveryDuration?: string | null;
   recoveryPace?: string | null;
   recoveryDescription?: string;
   notes?: string;
