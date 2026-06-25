@@ -84,17 +84,16 @@
             [class.today]="day.isToday"
             [class.has-content]="day.runs.length > 0 || day.plannedRuns.length > 0 || day.competitions.length > 0"
             [class.has-competition]="day.competitions.length > 0"
+            [class.comp-priority-A]="day.competitions.length > 0 && day.competitions[0].priority === 'A'"
+            [class.comp-priority-B]="day.competitions.length > 0 && day.competitions[0].priority === 'B'"
+            [class.comp-priority-C]="day.competitions.length > 0 && day.competitions[0].priority === 'C'"
+            [title]="day.competitions.length > 0 ? day.competitions[0].name : ''"
             [class.non-training-day]="day.isCurrentMonth && !isTrainingDay(day.date) && (athlete()?.availableDays?.length ?? 0) > 0"
             [class.duplication-target]="isDateSelected(day)"
             [class.duplication-source]="isSourceDay(day)"
             (click)="selectDay(day)"
           >
             <span class="day-number">{{ day.dayOfMonth }}</span>
-            @if (day.competitions.length > 0) {
-              <span class="competition-flag priority-{{ day.competitions[0].priority }}" [title]="day.competitions[0].name">
-                <i class="fa-solid fa-flag-checkered"></i>
-              </span>
-            }
             <div class="day-indicators">
               @for (indicator of getDayIndicators(day); track indicator.type) {
                 <div class="indicator-badge" [class]="indicator.type">{{ indicator.count }}</div>
@@ -111,7 +110,6 @@
       <span class="legend-item"><span class="dot planned-coach"></span> Planifiée coach</span>
       <span class="legend-item"><span class="dot planned-athlete"></span> Planifiée athlète</span>
       <span class="legend-item"><span class="dot skipped"></span> Sautée</span>
-      <span class="legend-item"><span class="legend-flag"><i class="fa-solid fa-flag-checkered"></i></span> Compétition</span>
     </div>
   }
 </div>

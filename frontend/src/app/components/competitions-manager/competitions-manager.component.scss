@@ -132,9 +132,13 @@
   flex-shrink: 0;
 }
 
-.priority-A { background: #d62828; }
-.priority-B { background: #f77f00; }
-.priority-C { background: #6c757d; }
+.priority-A { background: #003554; }
+.priority-B { background: #0582ca; }
+.priority-C {
+  background: transparent;
+  color: #003554;
+  border: 1.5px dashed #003554;
+}
 
 .cm-item-info {
   min-width: 0;
@@ -377,12 +381,12 @@
   line-height: 1.2;
 }
 
-.priority-btn.selected.priority-A { border-color: #d62828; background: #fdecec; }
-.priority-btn.selected.priority-A strong { color: #d62828; }
-.priority-btn.selected.priority-B { border-color: #f77f00; background: #fff3e0; }
-.priority-btn.selected.priority-B strong { color: #f77f00; }
-.priority-btn.selected.priority-C { border-color: #6c757d; background: #f0f0f0; }
-.priority-btn.selected.priority-C strong { color: #6c757d; }
+.priority-btn.selected.priority-A { border-color: #003554; background: rgba(0, 53, 84, 0.08); }
+.priority-btn.selected.priority-A strong { color: #003554; }
+.priority-btn.selected.priority-B { border-color: #0582ca; background: rgba(5, 130, 202, 0.08); }
+.priority-btn.selected.priority-B strong { color: #0582ca; }
+.priority-btn.selected.priority-C { border-color: #003554; border-style: dashed; background: rgba(0, 53, 84, 0.04); }
+.priority-btn.selected.priority-C strong { color: #003554; }
 
 /* Sur petits écrans, on passe les half en pleine largeur pour éviter les lignes serrées */
 @media (max-width: 420px) {

@@ -1883,40 +1883,38 @@
   line-height: 1;
 }
 
-/* === Compétitions === */
-.calendar-day.has-competition {
-  background: linear-gradient(180deg, rgba(214, 40, 40, 0.06) 0%, transparent 60%);
-}
-
-.competition-flag {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 0.55rem;
-  background: #d62828;
-  z-index: 2;
-
-  &.priority-B { background: #f77f00; }
-  &.priority-C { background: #6c757d; }
-}
-
-.legend-flag {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #d62828;
+/* === Compétitions : pastille colorée autour du numéro du jour === */
+.calendar-day.has-competition .day-number {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-weight: 700;
+  line-height: 1;
+  box-sizing: border-box;
+}
+
+/* A : pleine bleu foncé (objectif principal) */
+.calendar-day.comp-priority-A .day-number {
+  background: #003554;
   color: #fff;
-  font-size: 0.5rem;
+  box-shadow: 0 2px 6px rgba(0, 53, 84, 0.35);
+}
+
+/* B : pleine bleu clair (objectif intermédiaire) */
+.calendar-day.comp-priority-B .day-number {
+  background: #0582ca;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(5, 130, 202, 0.3);
+}
+
+/* C : outline pointillé bleu foncé (préparation) */
+.calendar-day.comp-priority-C .day-number {
+  background: transparent;
+  color: #003554;
+  border: 1.5px dashed #003554;
 }
 
 .competition-card {
@@ -1925,11 +1923,14 @@
   border-radius: 12px;
   padding: 12px 14px;
   margin-bottom: 8px;
-  border-left: 4px solid #d62828;
+  border: 1px solid #003554;
   box-shadow: 0 1px 4px rgba(0, 53, 84, 0.08);
 
-  &.priority-B { border-left-color: #f77f00; }
-  &.priority-C { border-left-color: #6c757d; }
+  &.priority-B { border-color: #0582ca; }
+  &.priority-C {
+    border-color: #003554;
+    border-style: dashed;
+  }
 }
 
 .competition-card-head {
@@ -1943,7 +1944,7 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #d62828;
+  background: #003554;
   color: #fff;
   font-size: 0.72rem;
   font-weight: 700;
@@ -1951,9 +1952,14 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-sizing: border-box;
 
-  .competition-card.priority-B & { background: #f77f00; }
-  .competition-card.priority-C & { background: #6c757d; }
+  .competition-card.priority-B & { background: #0582ca; }
+  .competition-card.priority-C & {
+    background: transparent;
+    color: #003554;
+    border: 1.5px dashed #003554;
+  }
 }
 
 .competition-card-name {

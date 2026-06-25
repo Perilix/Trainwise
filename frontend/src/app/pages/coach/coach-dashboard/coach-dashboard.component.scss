@@ -944,9 +944,13 @@
   flex-shrink: 0;
 }
 
-.comp-priority.priority-A { background: #d62828; }
-.comp-priority.priority-B { background: #f77f00; }
-.comp-priority.priority-C { background: #6c757d; }
+.comp-priority.priority-A { background: #003554; color: #fff; }
+.comp-priority.priority-B { background: #0582ca; color: #fff; }
+.comp-priority.priority-C {
+  background: transparent;
+  color: #003554;
+  border: 1.5px dashed #003554;
+}
 
 .comp-date {
   color: #888;

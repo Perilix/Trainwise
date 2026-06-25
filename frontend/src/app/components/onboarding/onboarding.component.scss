@@ -680,9 +680,14 @@
   flex-shrink: 0;
 }
 
-.priority-A { background: #d62828; }
-.priority-B { background: #f77f00; }
-.priority-C { background: #6c757d; }
+.priority-A { background: #003554; color: #fff; }
+.priority-B { background: #0582ca; color: #fff; }
+.priority-C {
+  background: transparent;
+  color: #003554;
+  border: 1.5px dashed #003554;
+  box-sizing: border-box;
+}
 
 .competition-name {
   font-weight: 600;
@@ -778,12 +783,12 @@
   color: #666;
 }
 
-.priority-btn.selected.priority-A { border-color: #d62828; background: #fdecec; }
-.priority-btn.selected.priority-A strong { color: #d62828; }
-.priority-btn.selected.priority-B { border-color: #f77f00; background: #fff3e0; }
-.priority-btn.selected.priority-B strong { color: #f77f00; }
-.priority-btn.selected.priority-C { border-color: #6c757d; background: #f0f0f0; }
-.priority-btn.selected.priority-C strong { color: #6c757d; }
+.priority-btn.selected.priority-A { border-color: #003554; background: rgba(0, 53, 84, 0.08); }
+.priority-btn.selected.priority-A strong { color: #003554; }
+.priority-btn.selected.priority-B { border-color: #0582ca; background: rgba(5, 130, 202, 0.08); }
+.priority-btn.selected.priority-B strong { color: #0582ca; }
+.priority-btn.selected.priority-C { border-color: #003554; border-style: dashed; background: rgba(0, 53, 84, 0.04); }
+.priority-btn.selected.priority-C strong { color: #003554; }
 
 .form-actions {
   display: flex;

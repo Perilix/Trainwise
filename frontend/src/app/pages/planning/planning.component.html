@@ -75,14 +75,12 @@
                 [class.today]="day.isToday"
                 [class.has-events]="day.runs.length > 0 || day.plannedRuns.length > 0 || (day.strengthSessions?.length ?? 0) > 0 || day.competitions.length > 0"
                 [class.has-competition]="day.competitions.length > 0"
+                [class.comp-priority-A]="day.competitions.length > 0 && day.competitions[0].priority === 'A'"
+                [class.comp-priority-B]="day.competitions.length > 0 && day.competitions[0].priority === 'B'"
+                [class.comp-priority-C]="day.competitions.length > 0 && day.competitions[0].priority === 'C'"
+                [title]="day.competitions.length > 0 ? day.competitions[0].name : ''"
                 (click)="selectDay(day)">
                 <span class="day-number">{{ day.dayOfMonth }}</span>
-
-                @if (day.competitions.length > 0) {
-                  <span class="competition-flag priority-{{ day.competitions[0].priority }}" [title]="day.competitions[0].name">
-                    <i class="fa-solid fa-flag-checkered"></i>
-                  </span>
-                }
 
                 @if (day.runs.length > 0 || day.plannedRuns.length > 0 || (day.strengthSessions?.length ?? 0) > 0) {
                   <div class="day-indicators">
@@ -120,10 +118,6 @@
             <span>Planifiée IA</span>
           </div>
         }
-        <div class="legend-item">
-          <span class="legend-flag"><i class="fa-solid fa-flag-checkered"></i></span>
-          <span>Compétition</span>
-        </div>
       </div>
     </div>
   </div>
