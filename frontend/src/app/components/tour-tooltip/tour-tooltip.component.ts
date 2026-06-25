@@ -38,6 +38,9 @@ export class TourTooltipComponent implements OnInit, OnDestroy {
   /** Marge (px) entre l'élément ciblé et le bord du trou lumineux. */
   private readonly PAD = 8;
 
+  /** Présence dans le DOM (la carte est montée mais peut être encore invisible). */
+  isMounted = signal(false);
+  /** État affiché (déclenche l'animation d'entrée une fois positionné). */
   isVisible = signal(false);
   currentStepIndex = signal(0);
   /** Position de l'élément ciblé ; null = pas d'ancre / introuvable → carte centrée en bas. */
@@ -92,11 +95,11 @@ export class TourTooltipComponent implements OnInit, OnDestroy {
   private onReposition = () => this.measure(false);
 
   constructor() {
-    // Re-mesure dès que l'étape change (et que le tour est visible).
+    // À chaque changement d'étape (tour déjà monté) : on repositionne en douceur.
     effect(() => {
       this.currentStepIndex();
-      if (this.isVisible()) {
-        queueMicrotask(() => this.measure(true));
+      if (this.isMounted()) {
+        queueMicrotask(() => this.revealStep(false));
       }
     });
   }
@@ -104,10 +107,9 @@ export class TourTooltipComponent implements OnInit, OnDestroy {
   ngOnInit() {
     if (!this.onboardingService.hasSeenTour(this.pageId)) {
       setTimeout(() => {
-        this.isVisible.set(true);
-        this.measure(true);
         window.addEventListener('resize', this.onReposition);
         window.addEventListener('scroll', this.onReposition, true);
+        this.revealStep(true);
       }, 900);
     }
   }
@@ -117,26 +119,42 @@ export class TourTooltipComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Localise l'élément de l'étape courante, le scrolle en vue puis met à jour `targetRect`.
-   * @param scroll Si vrai, scrolle l'élément au centre avant de mesurer.
+   * Mesure l'élément de l'étape courante PUIS affiche la carte directement au bon
+   * endroit (fondu), pour éviter l'effet « apparaît en bas puis saute sur le champ ».
+   * @param initial Premier affichage du tour (sinon simple changement d'étape).
    */
-  private measure(scroll: boolean) {
+  private revealStep(initial: boolean) {
     const step = this.currentStep();
+
+    const apply = (rect: DOMRect | null) => {
+      this.targetRect.set(rect);
+      if (!this.isMounted()) {
+        // 1er affichage : on monte la carte (invisible) puis on l'affiche à la frame suivante
+        this.isMounted.set(true);
+        requestAnimationFrame(() => requestAnimationFrame(() => this.isVisible.set(true)));
+      }
+    };
+
     if (!step?.anchor) {
-      this.targetRect.set(null);
+      apply(null);
       return;
     }
     const el = document.querySelector<HTMLElement>(`[data-tour="${step.anchor}"]`);
     if (!el) {
-      this.targetRect.set(null);
+      apply(null);
       return;
     }
-    if (scroll) {
-      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      setTimeout(() => this.targetRect.set(el.getBoundingClientRect()), 350);
-    } else {
-      this.targetRect.set(el.getBoundingClientRect());
-    }
+    // Scroll instantané au 1er affichage (la carte n'est pas encore visible), fluide ensuite.
+    el.scrollIntoView({ block: 'center', behavior: initial ? 'auto' : 'smooth' });
+    setTimeout(() => apply(el.getBoundingClientRect()), initial ? 180 : 320);
+  }
+
+  /** Repositionnement sans (dé)montage (resize / scroll). */
+  private measure(_scroll: boolean) {
+    const step = this.currentStep();
+    if (!step?.anchor) { this.targetRect.set(null); return; }
+    const el = document.querySelector<HTMLElement>(`[data-tour="${step.anchor}"]`);
+    this.targetRect.set(el ? el.getBoundingClientRect() : null);
   }
 
   nextStep() {
@@ -152,9 +170,10 @@ export class TourTooltipComponent implements OnInit, OnDestroy {
   }
 
   dismiss() {
-    this.isVisible.set(false);
+    this.isVisible.set(false); // déclenche l'animation de sortie
     this.teardownListeners();
     this.onboardingService.markTourSeen(this.pageId);
+    setTimeout(() => this.isMounted.set(false), 300);
   }
 
   private teardownListeners() {

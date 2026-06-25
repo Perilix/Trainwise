@@ -25,6 +25,9 @@ exports.createSession = async (req, res) => {
       linkedPlannedSession
     });
 
+    // Marque la dernière activité (pour le ciblage des relances de ré-engagement)
+    await User.updateOne({ _id: req.user._id }, { $set: { lastActivityAt: new Date() } });
+
     // Capture la séance planifiée (si présente) AVANT suppression pour notifier le coach
     let coachPlanned = null;
     if (linkedPlannedSession) {

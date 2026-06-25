@@ -1,0 +1,131 @@
+<%- include('_header', { title: 'Relances automatiques', page: 'reengagement' }) %>
+
+<div class="page-header">
+  <h1>Relances automatiques</h1>
+  <p>Historique des notifications de ré-engagement envoyées par les jobs planifiés</p>
+</div>
+
+<%
+  const typeLabels = {
+    inactive:   { label: 'Inactif', color: '#0582ca', bg: 'rgba(0,166,251,0.1)' },
+    streak:     { label: 'Streak',  color: '#d97706', bg: 'rgba(217,119,6,0.1)' },
+    recap:      { label: 'Récap',   color: '#7c3aed', bg: 'rgba(124,58,237,0.1)' },
+    onboarding: { label: 'Onboarding', color: '#059669', bg: 'rgba(16,185,129,0.1)' }
+  };
+%>
+
+<!-- Stats par type -->
+<div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px;">
+  <% ['inactive','streak','recap','onboarding'].forEach(t => { %>
+    <div class="stat-card">
+      <div class="stat-card-top">
+        <div class="stat-label"><%= typeLabels[t].label %></div>
+        <div class="stat-icon" style="background:<%= typeLabels[t].bg %>;color:<%= typeLabels[t].color %>;"><i class="fa-solid fa-bell"></i></div>
+      </div>
+      <div class="stat-value"><%= (byType[t] && byType[t].sent) || 0 %></div>
+      <div class="stat-sub">sur <%= (byType[t] && byType[t].total) || 0 %> tentatives</div>
+    </div>
+  <% }); %>
+</div>
+
+<!-- Filtres -->
+<div class="card" style="margin-bottom:24px;">
+  <div class="card-body">
+    <form method="GET" action="/notifications/reengagement" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">Type</label>
+        <select name="type" class="form-control" style="min-width:150px;">
+          <option value="">Tous les types</option>
+          <option value="inactive"   <%= filters.type === 'inactive'   ? 'selected' : '' %>>Inactif</option>
+          <option value="streak"     <%= filters.type === 'streak'     ? 'selected' : '' %>>Streak</option>
+          <option value="recap"      <%= filters.type === 'recap'      ? 'selected' : '' %>>Récap hebdo</option>
+          <option value="onboarding" <%= filters.type === 'onboarding' ? 'selected' : '' %>>Onboarding</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">Statut</label>
+        <select name="status" class="form-control" style="min-width:150px;">
+          <option value="">Tous les statuts</option>
+          <option value="sent"     <%= filters.status === 'sent'     ? 'selected' : '' %>>Envoyé</option>
+          <option value="failed"   <%= filters.status === 'failed'   ? 'selected' : '' %>>Échec</option>
+          <option value="no_token" <%= filters.status === 'no_token' ? 'selected' : '' %>>Sans token</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0;flex:1;min-width:200px;">
+        <label class="form-label">Email du destinataire</label>
+        <input type="text" name="q" class="form-control" placeholder="Rechercher par email…" value="<%= filters.q %>">
+      </div>
+      <button type="submit" class="btn btn-save" style="padding:10px 18px;display:flex;align-items:center;gap:8px;">
+        <i class="fa-solid fa-filter"></i> Filtrer
+      </button>
+      <% if (filters.type || filters.status || filters.q) { %>
+        <a href="/notifications/reengagement" class="btn" style="padding:10px 18px;color:var(--text-muted);">Réinitialiser</a>
+      <% } %>
+    </form>
+  </div>
+</div>
+
+<!-- Tableau -->
+<div class="card">
+  <div class="card-header">
+    <span class="card-title"><i class="fa-solid fa-clock-rotate-left" style="color:var(--text-muted);margin-right:6px;"></i>Dernières relances (200 max)</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Destinataire</th>
+          <th>Type</th>
+          <th>Notification</th>
+          <th>Statut</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% logs.forEach(log => {
+          const tl = typeLabels[log.type] || { label: log.type, color: 'var(--navy)', bg: 'rgba(0,53,84,0.08)' };
+        %>
+        <tr>
+          <td>
+            <div style="font-weight:600;font-size:0.85rem;"><%= log.firstName || '—' %></div>
+            <div style="font-size:0.78rem;color:var(--text-muted);"><%= log.email || '—' %></div>
+          </td>
+          <td>
+            <span class="badge" style="background:<%= tl.bg %>;color:<%= tl.color %>;"><%= tl.label %></span>
+          </td>
+          <td style="max-width:300px;">
+            <div style="font-weight:600;font-size:0.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><%= log.title %></div>
+            <div style="font-size:0.78rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><%= log.body %></div>
+          </td>
+          <td>
+            <% if (log.status === 'sent') { %>
+              <span style="color:var(--success);font-weight:600;"><i class="fa-solid fa-circle-check" style="font-size:0.7rem;margin-right:4px;"></i>Envoyé</span>
+            <% } else if (log.status === 'no_token') { %>
+              <span class="text-muted"><i class="fa-solid fa-mobile-screen" style="font-size:0.7rem;margin-right:4px;"></i>Sans token</span>
+            <% } else { %>
+              <span style="color:var(--danger);font-weight:600;" title="<%= log.error || '' %>"><i class="fa-solid fa-triangle-exclamation" style="font-size:0.7rem;margin-right:4px;"></i>Échec</span>
+            <% } %>
+          </td>
+          <td class="text-muted text-small">
+            <%= new Date(log.sentAt).toLocaleDateString('fr-FR', { day:'2-digit', month:'short' }) %>
+            <span style="color:#cbd5e1;margin:0 2px;">·</span>
+            <%= new Date(log.sentAt).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }) %>
+          </td>
+        </tr>
+        <% }); %>
+        <% if (!logs.length) { %>
+        <tr>
+          <td colspan="5">
+            <div class="empty-state">
+              <i class="fa-solid fa-bell-slash"></i>
+              <p>Aucune relance envoyée pour l'instant</p>
+            </div>
+          </td>
+        </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('_footer') %>

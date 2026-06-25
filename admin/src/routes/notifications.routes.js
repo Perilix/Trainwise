@@ -3,6 +3,7 @@ const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const User = require('../models/user.model');
 const NotificationLog = require('../models/notificationLog.model');
+const ReengagementLog = require('../models/reengagementLog.model');
 const axios = require('axios');
 const { JWT } = require('google-auth-library');
 
@@ -92,6 +93,32 @@ router.post('/', requireAuth, async (req, res) => {
     logs: freshLogs,
     success: `Envoyée à ${successCount} appareil${successCount > 1 ? 's' : ''}${failCount > 0 ? ` (${failCount} échec${failCount > 1 ? 's' : ''})` : ''}.`,
     error: null
+  });
+});
+
+// ── Journal des relances automatiques (ré-engagement) ──────────────────────
+router.get('/reengagement', requireAuth, async (req, res) => {
+  const { type, status, q } = req.query;
+
+  const filter = {};
+  if (type && ['inactive', 'streak', 'recap', 'onboarding'].includes(type)) filter.type = type;
+  if (status && ['sent', 'failed', 'no_token'].includes(status)) filter.status = status;
+  if (q && q.trim()) filter.email = { $regex: q.trim(), $options: 'i' };
+
+  const [logs, counts] = await Promise.all([
+    ReengagementLog.find(filter).sort({ sentAt: -1 }).limit(200).lean(),
+    ReengagementLog.aggregate([
+      { $group: { _id: '$type', total: { $sum: 1 }, sent: { $sum: { $cond: [{ $eq: ['$status', 'sent'] }, 1, 0] } } } }
+    ])
+  ]);
+
+  const byType = {};
+  counts.forEach(c => { byType[c._id] = c; });
+
+  res.render('reengagement', {
+    logs,
+    byType,
+    filters: { type: type || '', status: status || '', q: q || '' }
   });
 });
 

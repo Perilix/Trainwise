@@ -13,7 +13,7 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['invitation', 'invitation_response', 'session', 'message', 'friend'],
+    enum: ['invitation', 'invitation_response', 'session', 'message', 'friend', 'reengagement'],
     required: true
   },
   action: {

@@ -69,6 +69,9 @@ exports.createRun = async (req, res) => {
     });
     await run.save();
 
+    // Marque la dernière activité (pour le ciblage des relances de ré-engagement)
+    await User.updateOne({ _id: req.user._id }, { $set: { lastActivityAt: new Date() } });
+
     // Auto-update FCmax si la séance dépasse la valeur enregistrée
     if (run.maxHeartRate) {
       await User.updateOne(

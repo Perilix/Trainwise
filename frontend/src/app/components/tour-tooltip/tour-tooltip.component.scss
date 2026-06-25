@@ -3,7 +3,12 @@
   inset: 0;
   z-index: 998;
   background: transparent;
-  transition: background 0.3s ease;
+  opacity: 0;
+  transition: background 0.3s ease, opacity 0.3s ease;
+
+  &.visible {
+    opacity: 1;
+  }
 
   // Quand l'étape n'a pas d'ancre : on assombrit toute la page.
   &.dimmed {

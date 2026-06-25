@@ -211,6 +211,23 @@ const userSchema = new mongoose.Schema({
     enum: ['ios', 'android', 'web'],
     default: null
   },
+  // Dernière activité (run ou séance muscu) — mise à jour à chaque enregistrement
+  lastActivityAt: {
+    type: Date,
+    default: null
+  },
+  // Préférences de relances automatiques (opt-out par type)
+  notificationPreferences: {
+    reengagement: { type: Boolean, default: true }, // inactif depuis X jours
+    streak:       { type: Boolean, default: true }, // streak en danger
+    weeklyRecap:  { type: Boolean, default: true }, // récap hebdo
+    onboarding:   { type: Boolean, default: true }  // inscrit mais jamais de séance
+  },
+  // Suivi anti-spam des relances automatiques
+  reengagement: {
+    lastSentAt: { type: Date, default: null },   // dernière relance, tous types confondus
+    lastType:   { type: String, default: null }  // 'inactive' | 'streak' | 'recap' | 'onboarding'
+  },
   passwordResetToken: { type: String, select: false },
   passwordResetExpires: { type: Date, select: false },
   createdAt: {
@@ -232,5 +249,8 @@ userSchema.pre('save', async function() {
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
+
+// Index pour le ciblage des relances automatiques (cron de ré-engagement)
+userSchema.index({ lastActivityAt: 1 });
 
 module.exports = mongoose.model('User', userSchema);

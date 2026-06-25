@@ -1,6 +1,6 @@
-@if (isVisible()) {
+@if (isMounted()) {
   <!-- Couche qui bloque l'interaction avec la page (et l'assombrit si pas d'ancre) -->
-  <div class="tour-backdrop" [class.dimmed]="!targetRect()" (click)="!targetRect() && dismiss()"></div>
+  <div class="tour-backdrop" [class.visible]="isVisible()" [class.dimmed]="!targetRect()" (click)="!targetRect() && dismiss()"></div>
 
   <!-- Trou lumineux sur l'élément ciblé -->
   @if (spotlightStyle(); as sp) {

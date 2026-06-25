@@ -8,12 +8,14 @@ const Run = require('../models/run.model');
 
 // Catalogue des visites guidées (feature tours) — doit rester aligné avec les pageId du frontend
 const TOUR_PAGES = [
-  { id: 'dashboard',       label: 'Accueil (tableau de bord)' },
-  { id: 'sorties',         label: 'Mes sorties' },
-  { id: 'planning',        label: 'Planning' },
-  { id: 'analyse',         label: 'Analyse (nouvelle course)' },
-  { id: 'profile',         label: 'Profil' },
-  { id: 'coach-dashboard', label: 'Espace coach' },
+  { id: 'dashboard',            label: 'Accueil (tableau de bord)' },
+  { id: 'sorties',             label: 'Mes sorties' },
+  { id: 'planning',            label: 'Planning' },
+  { id: 'analyse',             label: 'Analyse (nouvelle course)' },
+  { id: 'profile',             label: 'Profil' },
+  { id: 'coach-dashboard',     label: 'Espace coach' },
+  { id: 'run-detail-complete', label: 'Détail séance — compléter (séance coach)' },
+  { id: 'run-detail-view',     label: 'Détail séance — visualisation' },
 ];
 const TOUR_IDS = TOUR_PAGES.map(p => p.id);
 
