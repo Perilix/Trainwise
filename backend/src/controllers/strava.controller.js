@@ -316,6 +316,28 @@ exports.syncActivities = async (req, res) => {
       });
 
       if (existing) {
+        // DEBUG : logger aussi les séances déjà importées (sinon l'import les saute sans rien afficher)
+        try {
+          const dbg = await axios.get(`${STRAVA_API_URL}/activities/${activity.id}`, {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          });
+          const d = dbg.data;
+          console.log('\n===== [Strava DEBUG import - déjà importée] Activité', activity.id, '-', d.name, '=====');
+          console.log('[Strava DEBUG] type/sport_type/workout_type :', d.type, '/', d.sport_type, '/', d.workout_type);
+          console.log('[Strava DEBUG] LAPS (intervalles/blocs) — nb =', (d.laps || []).length);
+          console.log(JSON.stringify((d.laps || []).map(l => ({
+            name: l.name, lap_index: l.lap_index, distance: l.distance,
+            moving_time: l.moving_time, elapsed_time: l.elapsed_time,
+            average_speed: l.average_speed, max_speed: l.max_speed,
+            average_heartrate: l.average_heartrate, average_cadence: l.average_cadence
+          })), null, 2));
+          console.log('[Strava DEBUG] SPLITS_METRIC — nb =', (d.splits_metric || []).length);
+          console.log('[Strava DEBUG] PAYLOAD COMPLET ↓↓↓');
+          console.log(JSON.stringify(d, null, 2));
+          console.log('===== [Strava DEBUG import] fin', activity.id, '=====\n');
+        } catch (e) {
+          console.error('[Strava DEBUG] échec détail pour', activity.id, e.message);
+        }
         skipped.push(activity.id);
         continue;
       }
