@@ -36,6 +36,9 @@ export class PushNotificationService {
       this.addListeners();
       await PushNotifications.register();
 
+      // Effacer un éventuel badge resté collé sur l'icône de l'app
+      await this.clearBadge();
+
       // Lire le token FCM caché par Swift via Capacitor Preferences
       const { value: fcmToken } = await Preferences.get({ key: 'fcmToken' });
       if (fcmToken) {
@@ -44,6 +47,21 @@ export class PushNotificationService {
 
     } catch (error) {
       console.error('Error initializing push notifications:', error);
+    }
+  }
+
+  /**
+   * Efface le badge (le "1") sur l'icône de l'app et retire les notifications
+   * déjà délivrées du centre de notifications iOS.
+   */
+  async clearBadge(): Promise<void> {
+    if (!Capacitor.isNativePlatform()) {
+      return;
+    }
+    try {
+      await PushNotifications.removeAllDeliveredNotifications();
+    } catch (error) {
+      console.error('Error clearing badge:', error);
     }
   }
 
@@ -76,7 +94,8 @@ export class PushNotificationService {
       await toast.present();
     });
 
-    PushNotifications.addListener('pushNotificationActionPerformed', (notification: ActionPerformed) => {
+    PushNotifications.addListener('pushNotificationActionPerformed', async (notification: ActionPerformed) => {
+      await this.clearBadge();
       const url = notification.notification.data?.actionUrl;
       if (url) this.router.navigateByUrl(url);
     });

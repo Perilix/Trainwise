@@ -3,6 +3,7 @@ import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 import { Keyboard } from '@capacitor/keyboard';
 import { BottomNavComponent } from './components/bottom-nav/bottom-nav.component';
 import { CoachBottomNavComponent } from './components/coach-bottom-nav/coach-bottom-nav.component';
@@ -55,6 +56,7 @@ export class App {
 
     this.initSafeAreas();
     this.setupKeyboardAdjustment();
+    this.setupBadgeClearing();
 
     // Initialiser les services natifs quand l'utilisateur se connecte
     let revenueCatInitialized = false;
@@ -67,6 +69,19 @@ export class App {
       }
       if (!user) {
         revenueCatInitialized = false;
+      }
+    });
+  }
+
+  // Effacer le badge de l'icône à l'ouverture et à chaque retour au premier plan
+  private setupBadgeClearing() {
+    if (!Capacitor.isNativePlatform()) {
+      return;
+    }
+    this.pushNotificationService.clearBadge();
+    CapacitorApp.addListener('appStateChange', ({ isActive }) => {
+      if (isActive) {
+        this.pushNotificationService.clearBadge();
       }
     });
   }
