@@ -41,4 +41,25 @@ router.get('/', requireAuth, async (req, res) => {
   });
 });
 
+// Consulter une course (détail complet)
+router.get('/:id', requireAuth, async (req, res) => {
+  // .lean() pour récupérer tous les champs stockés (runBlocks, plannedSnapshot, etc.),
+  // même s'ils ne sont pas déclarés dans le schéma admin minimal.
+  const run = await Run.findById(req.params.id)
+    .populate('user', 'firstName lastName email')
+    .lean();
+
+  if (!run) {
+    return res.status(404).render('run-detail', { run: null });
+  }
+
+  res.render('run-detail', { run });
+});
+
+// Supprimer une course
+router.post('/:id/delete', requireAuth, async (req, res) => {
+  await Run.findByIdAndDelete(req.params.id);
+  res.redirect('/runs');
+});
+
 module.exports = router;

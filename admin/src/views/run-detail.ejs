@@ -1,0 +1,149 @@
+<%- include('_header', { title: 'Détail course', page: 'runs' }) %>
+
+<a href="/runs" class="back-link">
+  <i class="fa-solid fa-arrow-left"></i> Retour aux sorties
+</a>
+
+<% if (!run) { %>
+  <div class="card" style="padding:24px;">
+    <div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i><p>Course introuvable</p></div>
+  </div>
+<% } else { %>
+
+<%
+  // Helpers d'affichage
+  const fmtDur = (min) => {
+    if (min == null) return '—';
+    const h = Math.floor(min / 60), m = Math.round(min % 60);
+    return h > 0 ? (h + 'h' + String(m).padStart(2, '0')) : (m + 'min');
+  };
+  const fmtBlockValue = (b) => {
+    if (b.mode === 'distance') return b.distance ? Math.round(b.distance * 1000) + ' m' : '—';
+    return b.duration ? b.duration + ' min' : '—';
+  };
+  const fmtRecovery = (b) => {
+    if (!b.recoveryMode) return '';
+    const v = b.recoveryMode === 'distance'
+      ? (b.recoveryDistance ? Math.round(b.recoveryDistance * 1000) + ' m' : '')
+      : (b.recoveryDuration || '');
+    const p = b.recoveryPace ? ' @ ' + b.recoveryPace + '/km' : '';
+    return v ? ('récup ' + v + p) : 'récup';
+  };
+  const roleLabel = (r) => r === 'warmup' ? 'Échauffement' : r === 'cooldown' ? 'Retour au calme' : 'Effort';
+%>
+
+<!-- En-tête -->
+<div class="profile-header">
+  <div class="user-avatar-lg" style="background:linear-gradient(135deg,#00a6fb,#0582ca);">
+    <i class="fa-solid fa-person-running"></i>
+  </div>
+  <div class="profile-info" style="flex:1;">
+    <h2>
+      <%= run.sessionType || 'Course' %>
+      <span style="color:#94a3b8;font-weight:400;font-size:0.9rem;">
+        <%= new Date(run.date).toLocaleDateString('fr-FR', { weekday:'long', day:'2-digit', month:'long', year:'numeric' }) %>
+      </span>
+    </h2>
+    <p>
+      <% if (run.user) { %>
+        <a href="/users/<%= run.user._id %>" class="table-link">
+          <i class="fa-solid fa-user" style="font-size:0.72rem;"></i>
+          <%= run.user.firstName || '' %> <%= run.user.lastName || '' %> · <%= run.user.email %>
+        </a>
+      <% } else { %><span class="text-muted">Utilisateur supprimé</span><% } %>
+      <% if (run.sessionType) { %><span class="badge badge-user"><%= run.sessionType %></span><% } %>
+      <% if (run.stravaActivityId) { %><span class="badge" style="background:rgba(252,76,2,0.1);color:#fc4c02;">Strava #<%= run.stravaActivityId %></span><% } %>
+    </p>
+  </div>
+  <form method="POST" action="/runs/<%= run._id %>/delete" onsubmit="return confirm('Supprimer définitivement cette course ? Cette action est irréversible.')">
+    <button type="submit" class="btn" style="background:rgba(239,68,68,0.08);color:var(--danger);border-color:rgba(239,68,68,0.2);">
+      <i class="fa-solid fa-trash"></i> Supprimer
+    </button>
+  </form>
+</div>
+
+<!-- Stats -->
+<div class="user-mini-stats">
+  <div class="mini-stat"><div class="mini-stat-icon stat-icon blue"><i class="fa-solid fa-route"></i></div><div class="mini-stat-content"><div class="value"><%= run.distance ? run.distance.toFixed(2) + ' km' : '—' %></div><div class="label">Distance</div></div></div>
+  <div class="mini-stat"><div class="mini-stat-icon stat-icon navy"><i class="fa-solid fa-stopwatch"></i></div><div class="mini-stat-content"><div class="value"><%= fmtDur(run.duration) %></div><div class="label">Durée</div></div></div>
+  <div class="mini-stat"><div class="mini-stat-icon stat-icon blue"><i class="fa-solid fa-gauge-high"></i></div><div class="mini-stat-content"><div class="value"><%= run.averagePace || '—' %><%= run.averagePace ? ' /km' : '' %></div><div class="label">Allure moy.</div></div></div>
+  <div class="mini-stat"><div class="mini-stat-icon stat-icon orange"><i class="fa-solid fa-heart-pulse"></i></div><div class="mini-stat-content"><div class="value"><%= run.averageHeartRate || '—' %><% if (run.maxHeartRate) { %> <span class="text-muted text-small">/ <%= run.maxHeartRate %> max</span><% } %></div><div class="label">FC moy. (bpm)</div></div></div>
+  <div class="mini-stat"><div class="mini-stat-icon stat-icon navy"><i class="fa-solid fa-shoe-prints"></i></div><div class="mini-stat-content"><div class="value"><%= run.averageCadence || '—' %></div><div class="label">Cadence</div></div></div>
+  <div class="mini-stat"><div class="mini-stat-icon stat-icon navy"><i class="fa-solid fa-mountain"></i></div><div class="mini-stat-content"><div class="value"><%= run.elevationGain != null ? Math.round(run.elevationGain) + ' m' : '—' %></div><div class="label">Dénivelé+</div></div></div>
+  <div class="mini-stat"><div class="mini-stat-icon stat-icon orange"><i class="fa-solid fa-face-smile"></i></div><div class="mini-stat-content"><div class="value"><%= run.feeling ? run.feeling + '/10' : '—' %></div><div class="label">Ressenti</div></div></div>
+</div>
+
+<!-- Notes -->
+<% if (run.notes) { %>
+<div class="card" style="padding:18px;margin-top:16px;">
+  <h3 style="margin:0 0 10px;font-size:0.95rem;"><i class="fa-solid fa-note-sticky text-muted"></i> Notes</h3>
+  <div style="white-space:pre-wrap;font-size:0.88rem;color:#334155;"><%= run.notes %></div>
+</div>
+<% } %>
+
+<!-- Analyse IA -->
+<% if (run.analysis) { %>
+<div class="card" style="padding:18px;margin-top:16px;">
+  <h3 style="margin:0 0 10px;font-size:0.95rem;color:var(--purple);"><i class="fa-solid fa-wand-magic-sparkles"></i> Analyse IA</h3>
+  <div style="white-space:pre-wrap;font-size:0.88rem;color:#334155;line-height:1.5;"><%= run.analysis %></div>
+</div>
+<% } %>
+
+<!-- Blocs (réalisés + plan figé) -->
+<%
+  const blockSets = [];
+  if (run.runBlocks && run.runBlocks.length) blockSets.push({ title: 'Blocs réalisés', blocks: run.runBlocks });
+  if (run.plannedSnapshot && run.plannedSnapshot.runBlocks && run.plannedSnapshot.runBlocks.length) {
+    blockSets.push({ title: 'Plan du coach (figé)', blocks: run.plannedSnapshot.runBlocks });
+  }
+%>
+<% blockSets.forEach(set => { %>
+<div class="card" style="padding:18px;margin-top:16px;">
+  <h3 style="margin:0 0 12px;font-size:0.95rem;"><i class="fa-solid fa-layer-group text-muted"></i> <%= set.title %></h3>
+  <div style="display:flex;flex-direction:column;gap:8px;">
+    <% (set.blocks || []).slice().sort((a,b)=>(a.order||0)-(b.order||0)).forEach(b => { %>
+      <% if (b.children && b.children.length) { %>
+        <!-- Groupe répété -->
+        <div style="border:1px solid #dceffb;background:#f6fbff;border-radius:12px;padding:12px;">
+          <div style="font-size:0.75rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#0e7fc0;margin-bottom:8px;">
+            <i class="fa-solid fa-repeat"></i> Répéter <%= b.repetitions || 1 %>×
+          </div>
+          <% b.children.slice().sort((a,c)=>(a.order||0)-(c.order||0)).forEach(c => { %>
+            <div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed #e2e8f0;">
+              <span style="font-weight:600;font-size:0.85rem;"><%= c.description || roleLabel(c.role) %> · <%= fmtBlockValue(c) %><% if (c.pace) { %> <span class="text-muted">@ <%= c.pace %>/km</span><% } %></span>
+              <% if (c.recoveryMode) { %><span class="text-muted text-small"><%= fmtRecovery(c) %></span><% } %>
+            </div>
+          <% }); %>
+        </div>
+      <% } else { %>
+        <!-- Bloc simple -->
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;">
+          <div>
+            <span class="badge badge-user" style="font-size:0.68rem;"><%= roleLabel(b.role) %></span>
+            <span style="font-weight:600;font-size:0.88rem;margin-left:6px;">
+              <% if ((b.repetitions || 1) > 1) { %><%= b.repetitions %>× <% } %><%= fmtBlockValue(b) %>
+            </span>
+            <% if (b.pace) { %><span class="text-muted text-small">@ <%= b.pace %>/km</span><% } %>
+            <% if (b.description) { %><span class="text-muted text-small">— <%= b.description %></span><% } %>
+          </div>
+          <% if (b.recoveryMode) { %><span class="text-muted text-small"><%= fmtRecovery(b) %></span><% } %>
+        </div>
+      <% } %>
+    <% }); %>
+  </div>
+</div>
+<% }); %>
+
+<!-- Métadonnées -->
+<div class="card" style="padding:18px;margin-top:16px;">
+  <h3 style="margin:0 0 10px;font-size:0.95rem;"><i class="fa-solid fa-circle-info text-muted"></i> Métadonnées</h3>
+  <div style="font-size:0.82rem;color:#64748b;display:flex;flex-direction:column;gap:4px;">
+    <div>ID : <code><%= run._id %></code></div>
+    <div>Créée le : <%= run.createdAt ? new Date(run.createdAt).toLocaleString('fr-FR') : '—' %></div>
+    <div>Modifiée le : <%= run.updatedAt ? new Date(run.updatedAt).toLocaleString('fr-FR') : '—' %></div>
+  </div>
+</div>
+
+<% } %>
+
+<%- include('_footer') %>
