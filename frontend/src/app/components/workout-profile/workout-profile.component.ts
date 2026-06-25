@@ -85,22 +85,23 @@ export class WorkoutProfileComponent {
       const units = block.children?.length ? block.children : [block];
       let phaseFlex = 0;
 
+      // La boucle itère déjà `reps` fois → on additionne une seule fois par passage.
       for (let i = 0; i < reps; i++) {
         for (const unit of units) {
           const effortMin = this.effortDurationMin(unit);
           const effortKm = this.effortDistanceKm(unit);
           segments.push({ type: 'run', flex: this.weight(effortMin, effortKm) });
           phaseFlex += this.weight(effortMin, effortKm);
+          totalKm += effortKm;
+          totalMin += effortMin;
           if (unit.recoveryMode) {
             const recMin = this.recoveryDurationMin(unit);
             const recKm = this.recoveryDistanceKm(unit);
             segments.push({ type: 'rec', flex: this.weight(recMin, recKm) });
             phaseFlex += this.weight(recMin, recKm);
-            totalKm += recKm * reps;
-            totalMin += recMin * reps;
+            totalKm += recKm;
+            totalMin += recMin;
           }
-          totalKm += effortKm * reps;
-          totalMin += effortMin * reps;
         }
       }
 
