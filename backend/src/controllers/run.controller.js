@@ -495,6 +495,9 @@ exports.updateRun = async (req, res) => {
       if (req.body[field] !== undefined) updates[field] = req.body[field];
     });
 
+    // Dès que l'athlète édite ses blocs, ils ne sont plus "auto" → le resync ne les écrasera plus
+    if (req.body.runBlocks !== undefined) updates.blocksAutoReconstructed = false;
+
     const run = await Run.findOneAndUpdate(
       { _id: req.params.id, user: req.user._id },
       updates,

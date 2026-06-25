@@ -97,6 +97,14 @@ const runSchema = new mongoose.Schema({
     children: { type: [runBlockStepFields], default: undefined }
   }],
 
+  // Données détaillées Strava (laps, splits/km, best efforts, zones d'allure,
+  // chaussures, social…) pour enrichir l'affichage de la séance.
+  stravaData: { type: mongoose.Schema.Types.Mixed, default: undefined },
+
+  // true si les runBlocks ci-dessus ont été reconstruits automatiquement depuis
+  // les laps Strava (suggestion non encore validée/éditée par l'athlète).
+  blocksAutoReconstructed: { type: Boolean, default: false },
+
   // Snapshot figé de ce que le coach avait prévu (copié à la complétion d'une séance planifiée)
   plannedSnapshot: {
     sessionType: { type: String, default: null },

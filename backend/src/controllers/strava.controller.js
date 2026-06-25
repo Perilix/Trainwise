@@ -6,6 +6,8 @@ const { emitTrainCoinsUpdate } = require('../socket/index');
 const { findPlannedMatches } = require('../services/planningAutoComplete');
 const { athleteHasCoach } = require('../services/coachRelation.service');
 const { getUpcomingCompetitionsForContext } = require('../utils/competitions');
+const { reconstructBlocksFromLaps } = require('../utils/stravaReconstruct');
+const { buildStravaData } = require('../utils/stravaMetrics');
 
 const STRAVA_AUTH_URL = 'https://www.strava.com/oauth/authorize';
 const STRAVA_TOKEN_URL = 'https://www.strava.com/oauth/token';
@@ -308,24 +310,6 @@ exports.syncActivities = async (req, res) => {
     const imported = [];
     const skipped = [];
     const skippedStrength = [];
-    const stravaDebug = []; // DEBUG : renvoyé au front pour inspection en console navigateur
-
-    // DEBUG : construit l'objet de détail Strava renvoyé au front
-    const buildDebug = (d, alreadyImported) => ({
-      id: d.id,
-      name: d.name,
-      alreadyImported,
-      type: d.type,
-      sport_type: d.sport_type,
-      workout_type: d.workout_type,
-      distance: d.distance,
-      moving_time: d.moving_time,
-      elapsed_time: d.elapsed_time,
-      laps: d.laps || [],
-      splits_metric: d.splits_metric || [],
-      segment_efforts: d.segment_efforts || [],
-      full: d
-    });
 
     for (const activity of runActivities) {
       const existing = await Run.findOne({
@@ -334,15 +318,6 @@ exports.syncActivities = async (req, res) => {
       });
 
       if (existing) {
-        // DEBUG : collecter aussi les séances déjà importées (l'import les saute sinon)
-        try {
-          const dbg = await axios.get(`${STRAVA_API_URL}/activities/${activity.id}`, {
-            headers: { Authorization: `Bearer ${accessToken}` }
-          });
-          stravaDebug.push(buildDebug(dbg.data, true));
-        } catch (e) {
-          console.error('[Strava] échec détail (debug) pour', activity.id, e.message);
-        }
         skipped.push(activity.id);
         continue;
       }
@@ -351,24 +326,23 @@ exports.syncActivities = async (req, res) => {
       let polyline = activity.map?.summary_polyline || null;
       let startLatLng = activity.start_latlng || null;
       let endLatLng = activity.end_latlng || null;
+      let stravaData = null;
+      let detailLaps = null;
 
       try {
         const detailResponse = await axios.get(`${STRAVA_API_URL}/activities/${activity.id}`, {
           headers: { Authorization: `Bearer ${accessToken}` }
         });
+        const detail = detailResponse.data;
 
-        stravaDebug.push(buildDebug(detailResponse.data, false)); // DEBUG
+        // Métriques détaillées (laps, splits, zones, chaussures…)
+        stravaData = buildStravaData(detail);
+        detailLaps = detail.laps;
 
-        description = detailResponse.data.description || '';
-        if (detailResponse.data.map?.polyline) {
-          polyline = detailResponse.data.map.polyline;
-        }
-        if (detailResponse.data.start_latlng) {
-          startLatLng = detailResponse.data.start_latlng;
-        }
-        if (detailResponse.data.end_latlng) {
-          endLatLng = detailResponse.data.end_latlng;
-        }
+        description = detail.description || '';
+        if (detail.map?.polyline) polyline = detail.map.polyline;
+        if (detail.start_latlng) startLatLng = detail.start_latlng;
+        if (detail.end_latlng) endLatLng = detail.end_latlng;
       } catch (e) {
         console.error(`Failed to fetch details for activity ${activity.id}`);
       }
@@ -380,6 +354,11 @@ exports.syncActivities = async (req, res) => {
 
       // Suggestion de match avec une séance planifiée (l'athlète confirmera via la popup UI)
       const plannedCandidates = await findPlannedMatches(req.user._id, new Date(activity.start_date), 'running');
+
+      // Reconstruction des blocs réalisés : si une séance coach matche ce jour-là, on
+      // CALE les laps sur son squelette (10×500 prévu → rempli avec 10×550 réels) ;
+      // sinon détection autonome de la structure.
+      const reconstructedBlocks = reconstructBlocksFromLaps(detailLaps, plannedCandidates[0]?.runBlocks);
 
       const run = new Run({
         user: req.user._id,
@@ -397,7 +376,10 @@ exports.syncActivities = async (req, res) => {
         polyline,
         startLatLng,
         endLatLng,
-        pendingPlannedMatch: plannedCandidates[0]?._id || null
+        pendingPlannedMatch: plannedCandidates[0]?._id || null,
+        stravaData: stravaData || undefined,
+        runBlocks: reconstructedBlocks.length ? reconstructedBlocks : undefined,
+        blocksAutoReconstructed: reconstructedBlocks.length > 0
       });
 
       await run.save();
@@ -442,8 +424,6 @@ exports.syncActivities = async (req, res) => {
           headers: { Authorization: `Bearer ${accessToken}` }
         });
 
-        stravaDebug.push(buildDebug(detailResponse.data, false)); // DEBUG
-
         description = detailResponse.data.description || '';
       } catch (e) {
         console.error(`Failed to fetch strength details for activity ${activity.id}`);
@@ -486,8 +466,7 @@ exports.syncActivities = async (req, res) => {
       importedStrength,
       skipped,
       skippedStrength,
-      unrecognized,
-      stravaDebug // DEBUG : détail Strava (laps/splits/payload) pour inspection en console navigateur
+      unrecognized
     });
   } catch (error) {
     console.error('Strava sync error:', error.response?.data || error.message);
@@ -539,8 +518,7 @@ exports.resyncActivities = async (req, res) => {
         const startLatLng = activity.start_latlng || null;
         const endLatLng = activity.end_latlng || null;
 
-        // Mettre à jour la course
-        await Run.findByIdAndUpdate(run._id, {
+        const update = {
           notes,
           distance: Math.round(activity.distance / 1000 * 100) / 100,
           duration: secondsToMinutes(activity.moving_time),
@@ -551,8 +529,18 @@ exports.resyncActivities = async (req, res) => {
           elevationGain: activity.total_elevation_gain || null,
           polyline,
           startLatLng,
-          endLatLng
-        });
+          endLatLng,
+          stravaData: buildStravaData(activity)
+        };
+
+        // Re-reconstruire les blocs UNIQUEMENT s'ils sont encore auto (athlète n'a rien édité)
+        if (run.blocksAutoReconstructed) {
+          // Si la course est liée à un plan coach figé, on reste aligné dessus
+          const blocks = reconstructBlocksFromLaps(activity.laps, run.plannedSnapshot?.runBlocks);
+          if (blocks.length) update.runBlocks = blocks;
+        }
+
+        await Run.findByIdAndUpdate(run._id, update);
 
         updated++;
       } catch (e) {

@@ -3,6 +3,7 @@ const StrengthSession = require('../models/strengthSession.model');
 const PlannedRun = require('../models/plannedRun.model');
 const User = require('../models/user.model');
 const { createNotification } = require('./notification.controller');
+const { mapRunBlockPlain } = require('../utils/runBlockMapper');
 
 const CANDIDATE_WINDOW_DAYS = 3;
 
@@ -13,21 +14,8 @@ function buildPlannedSnapshot(planned) {
     targetDuration: planned.targetDuration,
     targetPace: planned.targetPace,
     description: planned.description,
-    runBlocks: (planned.runBlocks || []).map(b => ({
-      role: b.role,
-      mode: b.mode,
-      distance: b.distance,
-      duration: b.duration,
-      pace: b.pace,
-      repetitions: b.repetitions,
-      description: b.description,
-      recoveryMode: b.recoveryMode,
-      recoveryDistance: b.recoveryDistance,
-      recoveryDuration: b.recoveryDuration,
-      recoveryPace: b.recoveryPace,
-      recoveryDescription: b.recoveryDescription,
-      order: b.order
-    })),
+    // mapRunBlockPlain préserve les groupes « Répéter » (children)
+    runBlocks: (planned.runBlocks || []).map(mapRunBlockPlain),
     coach: planned.createdBy || null
   };
 }
