@@ -71,6 +71,10 @@ export interface Run {
   plannedSnapshot?: PlannedSnapshot;
   pendingPlannedMatch?: PlannedMatchSummary | string | null;
   matchDismissed?: boolean;
+  // Données détaillées Strava (laps, splits, zones, chaussures…) pour l'affichage enrichi
+  stravaData?: any;
+  // true si les runBlocks ont été reconstruits auto depuis les laps Strava
+  blocksAutoReconstructed?: boolean;
 }
 
 @Injectable({

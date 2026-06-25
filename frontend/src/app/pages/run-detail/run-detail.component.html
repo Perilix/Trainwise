@@ -1,5 +1,12 @@
 <app-navbar></app-navbar>
 
+@if (run()) {
+  <app-tour-tooltip
+    [pageId]="isPlannedMode() ? 'run-detail-complete' : 'run-detail-view'"
+    [steps]="isPlannedMode() ? completeTourSteps : viewTourSteps">
+  </app-tour-tooltip>
+}
+
 <div class="container">
   @if (isLoading()) {
     <div class="loading-state">
@@ -38,8 +45,15 @@
       </div>
     }
 
+    <!-- Map (en haut) -->
+    @if (run()?.polyline) {
+      <section class="map-section" data-tour="rd-map">
+        <div id="map" class="map-container"></div>
+      </section>
+    }
+
     @if (!isPlannedMode() && plannedBlocks().length > 0) {
-      <section class="coach-plan-section">
+      <section class="coach-plan-section" data-tour="rd-compare">
         <div class="coach-plan-header">
           <h2>Plan du coach vs réalisé</h2>
           @if (!isEditingBlocks()) {
@@ -73,69 +87,15 @@
       </section>
     }
 
-    <!-- Map -->
-    @if (run()?.polyline) {
-      <section class="map-section">
-        <div id="map" class="map-container"></div>
+    <!-- Affichage enrichi Strava (allure/km, zones, contexte, best efforts, FC) -->
+    @if (run()?.stravaData) {
+      <section class="insights-section" data-tour="rd-insights">
+        <app-strava-insights [stravaData]="run()!.stravaData"></app-strava-insights>
       </section>
     }
 
-    <!-- Stats Grid -->
-    <section class="stats-section">
-      <div class="stats-grid">
-        @if (run()?.distance) {
-          <div class="stat-card">
-            <span class="stat-value">{{ run()!.distance }}</span>
-            <span class="stat-unit">km</span>
-            <span class="stat-label">Distance</span>
-          </div>
-        }
-        @if (run()?.duration) {
-          <div class="stat-card">
-            <span class="stat-value">{{ formatDuration(run()!.duration!) }}</span>
-            <span class="stat-label">Durée</span>
-          </div>
-        }
-        @if (run()?.averagePace) {
-          <div class="stat-card">
-            <span class="stat-value">{{ run()!.averagePace }}</span>
-            <span class="stat-unit">/km</span>
-            <span class="stat-label">Allure</span>
-          </div>
-        }
-        @if (run()?.elevationGain) {
-          <div class="stat-card">
-            <span class="stat-value">{{ run()!.elevationGain }}</span>
-            <span class="stat-unit">m</span>
-            <span class="stat-label">Dénivelé</span>
-          </div>
-        }
-        @if (run()?.averageHeartRate) {
-          <div class="stat-card">
-            <span class="stat-value">{{ run()!.averageHeartRate }}</span>
-            <span class="stat-unit">bpm</span>
-            <span class="stat-label">FC moyenne</span>
-          </div>
-        }
-        @if (run()?.maxHeartRate) {
-          <div class="stat-card">
-            <span class="stat-value">{{ run()!.maxHeartRate }}</span>
-            <span class="stat-unit">bpm</span>
-            <span class="stat-label">FC max</span>
-          </div>
-        }
-        @if (run()?.averageCadence) {
-          <div class="stat-card">
-            <span class="stat-value">{{ run()!.averageCadence }}</span>
-            <span class="stat-unit">ppm</span>
-            <span class="stat-label">Cadence</span>
-          </div>
-        }
-      </div>
-    </section>
-
     <!-- Ressenti -->
-    <section class="feeling-section">
+    <section class="feeling-section" data-tour="rd-feeling">
       <h2>Ressenti de séance</h2>
       <div class="feeling-display">
         <span class="feeling-number" [style.color]="getFeelingColor(feelingValue())">{{ feelingValue() }}</span>
@@ -170,7 +130,7 @@
         <h2>Plan de la séance</h2>
         <p class="completion-hint">Le plan du coach est pré-rempli. Touche le crayon ✎ pour ajuster un bloc si tu as fait différemment.</p>
 
-        <div class="completion-blocks">
+        <div class="completion-blocks" data-tour="rd-complete-blocks">
           <app-run-blocks-editor
             [blocks]="myBlocks()"
             [compact]="true"
@@ -197,7 +157,7 @@
                 [(ngModel)]="completionForm.notes" placeholder="Ressenti, conditions, etc."></textarea>
             </div>
           </div>
-          <button type="submit" class="btn-submit-completion" [disabled]="isSubmittingCompletion()">
+          <button type="submit" class="btn-submit-completion" data-tour="rd-complete-submit" [disabled]="isSubmittingCompletion()">
             @if (isSubmittingCompletion()) {
               Enregistrement...
             } @else {

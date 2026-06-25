@@ -1,0 +1,134 @@
+@if (hasData) {
+  <div class="si">
+
+    <!-- Allure par km -->
+    @if (splitBars().length) {
+      <section class="si-card">
+        <div class="si-head">
+          <h2>Allure par km</h2>
+          @if (negativeSplit() === true) { <span class="si-tag">Negative split</span> }
+        </div>
+        <div class="si-bars">
+          @for (b of splitBars(); track b.km) {
+            <div class="si-bar" [class.fast]="b.fastest" [class.slow]="b.slowest">
+              <span class="lab">{{ b.km }}</span>
+              <div class="track"><div class="fill" [style.width.%]="b.width"></div></div>
+              <span class="pace">{{ b.pace }}</span>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- Zones d'allure -->
+    @if (zoneEntries().length) {
+      <section class="si-card">
+        <div class="si-head"><h2>Zones d'allure</h2></div>
+        <div class="si-zones">
+          @for (z of zoneEntries(); track z.zone) {
+            <div [style.flex]="z.percent" [style.background]="z.color"></div>
+          }
+        </div>
+        <div class="si-zlegend">
+          @for (z of zoneEntries(); track z.zone) {
+            <span class="si-zli">
+              <span class="zd" [style.background]="z.color"></span>{{ z.label }}
+              <strong>{{ z.time }}</strong>
+            </span>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- Fréquence cardiaque -->
+    <section class="si-card">
+      <div class="si-head"><h2>Fréquence cardiaque</h2></div>
+      @if (hasHr && hrChart(); as hc) {
+        <div class="si-hr">
+          <div class="si-hr-chart">
+            <!-- Axe Y : bpm -->
+            <div class="si-hr-yaxis">
+              @for (t of hrYTicks(); track t.bpm) {
+                <span class="si-hr-ytick" [style.top.%]="t.topPct">{{ t.bpm }}</span>
+              }
+            </div>
+
+            <!-- Zone de tracé -->
+            <div class="si-hr-plot"
+                 (pointerdown)="onHrPointer($event)"
+                 (pointermove)="$event.buttons || $event.pointerType !== 'mouse' ? onHrPointer($event) : null"
+                 (pointerleave)="clearHrCursor()">
+              @for (t of hrYTicks(); track t.bpm) {
+                <div class="si-hr-grid" [style.top.%]="t.topPct"></div>
+              }
+              <svg class="si-hr-svg" viewBox="0 0 100 38" preserveAspectRatio="none">
+                <path [attr.d]="hc.area" class="hr-area"></path>
+                <path [attr.d]="hc.line" class="hr-line"></path>
+              </svg>
+              @if (selectedHr(); as p) {
+                <div class="si-hr-marker" [style.left.%]="p.xPct"></div>
+                <div class="si-hr-dot" [style.left.%]="p.xPct" [style.top.%]="p.yPct"></div>
+                <div class="si-hr-tip" [style.left.%]="p.xPct">
+                  <strong>{{ p.bpm }}</strong> bpm <span>· km {{ p.km }}</span>
+                </div>
+              }
+            </div>
+
+            <!-- Axe X : km -->
+            <div class="si-hr-xaxis">
+              @for (t of hrXTicks(); track t.km) {
+                <span class="si-hr-xtick" [style.left.%]="t.xPct">{{ t.km }}</span>
+              }
+            </div>
+            <div class="si-hr-xlabel">km</div>
+          </div>
+
+          <div class="si-hr-stats">
+            <div><span class="v">{{ hc.avg }}</span><span class="u">bpm</span><span class="l">Moyenne</span></div>
+            <div><span class="v">{{ hc.max }}</span><span class="u">bpm</span><span class="l">Max</span></div>
+            <div><span class="v">{{ hc.min }}</span><span class="u">bpm</span><span class="l">Min</span></div>
+          </div>
+        </div>
+      } @else if (hasHr && avgHr) {
+        <div class="si-hr-stats only">
+          <div><span class="v">{{ avgHr }}</span><span class="u">bpm</span><span class="l">Moyenne</span></div>
+          @if (maxHr) { <div><span class="v">{{ maxHr }}</span><span class="u">bpm</span><span class="l">Max</span></div> }
+        </div>
+      } @else {
+        <p class="si-note">Pas de capteur cardio sur cette séance.</p>
+      }
+    </section>
+
+    <!-- Meilleurs efforts -->
+    @if (bestEfforts().length) {
+      <section class="si-card">
+        <div class="si-head"><h2>Meilleurs efforts</h2></div>
+        <div class="si-be">
+          @for (e of bestEfforts(); track e.name) {
+            <div class="si-ber">
+              <span class="n">{{ e.name }}@if (e.prRank) { <span class="pr">Record</span> }</span>
+              <span class="t">{{ mmss(e.movingTime) }}</span>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- Contexte -->
+    @if (contextItems().length) {
+      <section class="si-card">
+        <div class="si-head"><h2>Contexte</h2></div>
+        <div class="si-ctx">
+          @for (c of contextItems(); track c.label) {
+            <div class="si-ci">
+              <div class="l">{{ c.label }}</div>
+              <div class="v">{{ c.value }}</div>
+              @if (c.sub) { <div class="s">{{ c.sub }}</div> }
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+  </div>
+}

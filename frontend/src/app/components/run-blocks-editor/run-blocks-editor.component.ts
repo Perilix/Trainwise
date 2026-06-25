@@ -471,6 +471,44 @@ export class RunBlocksEditorComponent implements OnInit, OnChanges {
     return orig ? this.recoveryValue(orig) : '';
   }
 
+  // ---- Compare DANS un groupe (enfant prévu → réalisé) ----
+  private origGroupChild(group: RunBlock, index: number): RunBlock | null {
+    const orig = this.findOriginal(group);
+    if (!orig || !orig.children) return null;
+    return orig.children[index] || null;
+  }
+
+  childValueChanged(group: RunBlock, child: RunBlock, index: number): boolean {
+    const o = this.origGroupChild(group, index);
+    return !!o && this.stepValue(o) !== this.stepValue(child);
+  }
+
+  origChildValue(group: RunBlock, index: number): string {
+    const o = this.origGroupChild(group, index);
+    return o ? this.stepValue(o) : '';
+  }
+
+  childRecoveryChanged(group: RunBlock, child: RunBlock, index: number): boolean {
+    const o = this.origGroupChild(group, index);
+    return !!o && this.recoveryValue(o) !== this.recoveryValue(child);
+  }
+
+  origChildRecoveryValue(group: RunBlock, index: number): string {
+    const o = this.origGroupChild(group, index);
+    return o ? this.recoveryValue(o) : '';
+  }
+
+  /** Nb de répétitions prévu (du groupe original), pour afficher « 8× → 6× ». */
+  origRepetitions(block: RunBlock): number | null {
+    const orig = this.findOriginal(block);
+    return orig ? Math.max(1, orig.repetitions || 1) : null;
+  }
+
+  repetitionsChanged(block: RunBlock): boolean {
+    const o = this.origRepetitions(block);
+    return o !== null && o !== Math.max(1, block.repetitions || 1);
+  }
+
   // ============= Repeat stepper =============
 
   incRepeat(block: RunBlock) {

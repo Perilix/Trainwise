@@ -6,6 +6,8 @@ import { RunService, Run, RunBlock } from '../../services/run.service';
 import { PlanningService, PlannedSession } from '../../services/planning.service';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 import { RunBlocksEditorComponent } from '../../components/run-blocks-editor/run-blocks-editor.component';
+import { StravaInsightsComponent } from '../../components/strava-insights/strava-insights.component';
+import { TourTooltipComponent, TourStep } from '../../components/tour-tooltip/tour-tooltip.component';
 import { SubscriptionService } from '../../services/subscription.service';
 import { AthleteService } from '../../services/athlete.service';
 import * as L from 'leaflet';
@@ -21,7 +23,7 @@ L.Icon.Default.mergeOptions({
 @Component({
   selector: 'app-run-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavbarComponent, RunBlocksEditorComponent],
+  imports: [CommonModule, FormsModule, NavbarComponent, RunBlocksEditorComponent, StravaInsightsComponent, TourTooltipComponent],
   templateUrl: './run-detail.component.html',
   styleUrl: './run-detail.component.scss'
 })
@@ -55,6 +57,33 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   isEditingBlocks = signal(false);
   isSavingBlocks = signal(false);
   blocksSavedMessage = signal<string | null>(null);
+
+  // ── Visite guidée : complétion d'une séance coach (mode "à compléter") ──
+  get completeTourSteps(): TourStep[] {
+    return [
+      { faIcon: 'fa-person-running', title: 'La séance de ton coach', description: 'Ton coach a prévu cette séance. Renseigne ce que tu as réellement fait pour la valider et suivre ta progression.' },
+      { anchor: 'rd-complete-blocks', faIcon: 'fa-list-check', title: 'Le plan est pré-rempli', description: 'Chaque bloc reprend ce que le coach a prévu. Touche le crayon ✎ pour ajuster une valeur si tu as fait différemment.' },
+      { anchor: 'rd-feeling', faIcon: 'fa-face-smile', title: 'Ton ressenti', description: 'Note la difficulté ressentie, de 1 (épuisant) à 10 (excellent).' },
+      { anchor: 'rd-complete-submit', faIcon: 'fa-circle-check', title: 'Valide ta séance', description: 'Une fois rempli, enregistre : ta séance devient une course réalisée, comparée au plan du coach.' },
+    ];
+  }
+
+  // ── Visite guidée : 1re visualisation d'une séance réalisée ──
+  get viewTourSteps(): TourStep[] {
+    const steps: TourStep[] = [
+      { faIcon: 'fa-chart-simple', title: 'Ta séance en détail', description: "Voici l'analyse complète de ta sortie. Petit tour rapide des sections 👇" },
+    ];
+    if (this.run()?.polyline) {
+      steps.push({ anchor: 'rd-map', faIcon: 'fa-map-location-dot', title: 'Ton parcours', description: 'La trace GPS de ta sortie.' });
+    }
+    if (this.plannedBlocks().length > 0) {
+      steps.push({ anchor: 'rd-compare', faIcon: 'fa-code-compare', title: 'Coach vs réalisé', description: 'Le prévu par ton coach (barré) face à ce que tu as fait (en bleu), bloc par bloc.' });
+    }
+    if (this.run()?.stravaData) {
+      steps.push({ anchor: 'rd-insights', faIcon: 'fa-heart-pulse', title: 'Tes métriques', description: "Allure par km, zones d'effort, fréquence cardiaque (touche la courbe !), meilleurs efforts et contexte." });
+    }
+    return steps;
+  }
 
   private map: L.Map | null = null;
   private feelingTimer: ReturnType<typeof setTimeout> | null = null;

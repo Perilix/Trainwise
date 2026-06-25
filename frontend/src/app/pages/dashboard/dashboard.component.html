@@ -48,18 +48,19 @@
               @if (!item.showPicker) {
                 <div class="strava-match">
                   <div class="strava-match-head">
-                    <i class="fa-solid fa-link"></i>
+                    <i class="fa-solid fa-code-merge"></i>
                     <div>
-                      <div class="strava-match-title">Cette séance correspond à ta séance planifiée&nbsp;?</div>
+                      <div class="strava-match-title">Tu avais une séance prévue ce jour-là 📋</div>
                       <div class="strava-match-sub">
                         <strong>{{ matchLabel(item.pendingMatch) }}</strong>
                         @if (matchSummary(item.pendingMatch); as s) { <span class="dot">·</span> {{ s }} }
                       </div>
+                      <div class="strava-match-hint">On les combine pour comparer le prévu et ce que tu as réellement fait&nbsp;?</div>
                     </div>
                   </div>
                   <div class="strava-match-actions">
                     <button class="match-yes" (click)="confirmStravaMatch(i)" [disabled]="item.loadingMatch">
-                      <i class="fa-solid fa-check"></i> Oui
+                      <i class="fa-solid fa-code-merge"></i> Combiner
                     </button>
                     <button class="match-other" (click)="openStravaMatchPicker(i)" [disabled]="item.loadingMatch">
                       <i class="fa-solid fa-arrow-right-arrow-left"></i> Autre
@@ -100,7 +101,7 @@
               }
             } @else if (item.matchDecision === 'confirmed' || item.matchDecision === 'linked') {
               <div class="strava-match-result match-result-ok">
-                <i class="fa-solid fa-circle-check"></i> Liée à ta séance planifiée
+                <i class="fa-solid fa-circle-check"></i> Combinée — prévu vs réalisé disponible
               </div>
             } @else if (item.matchDecision === 'dismissed') {
               <div class="strava-match-result match-result-skip">

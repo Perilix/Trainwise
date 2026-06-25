@@ -1,0 +1,280 @@
+:host {
+  --navy: #003554;
+  --navy-soft: #0582ca;
+  --cyan: #00a6fb;
+  --ink: #051923;
+  --muted: #5a6878;
+  --paper: #F6F4F0;
+  --line: rgba(0, 53, 84, 0.2);
+  --shadow: 0 0 10px 4px rgba(0, 53, 84, 0.15);
+  display: block;
+}
+
+.si {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.si-card {
+  background: var(--paper);
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+
+.si-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 1.25rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--navy);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+}
+
+.si-tag {
+  margin-left: auto;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--navy-soft);
+  background: rgba(5, 130, 202, 0.1);
+  border: 1px solid rgba(5, 130, 202, 0.25);
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+// ---- Allure par km ----
+.si-bars { display: flex; flex-direction: column; gap: 7px; }
+
+.si-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.78rem;
+
+  .lab { width: 22px; color: var(--muted); font-weight: 700; text-align: center; }
+  .track { flex: 1; height: 14px; background: rgba(0, 53, 84, 0.07); border-radius: 7px; overflow: hidden; }
+  .fill { height: 100%; border-radius: 7px; background: var(--navy); opacity: 0.85; }
+  .pace { width: 44px; text-align: right; font-weight: 700; color: var(--ink); }
+
+  &.fast .fill { background: var(--cyan); opacity: 1; }
+  &.slow .fill { background: rgba(0, 53, 84, 0.35); }
+}
+
+// ---- Zones ----
+.si-zones {
+  display: flex;
+  gap: 2px;
+  height: 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+
+  > div { height: 100%; min-width: 3px; }
+}
+
+.si-zlegend { display: flex; flex-direction: column; gap: 7px; }
+
+.si-zli {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.78rem;
+  color: var(--muted);
+
+  .zd { width: 9px; height: 9px; border-radius: 3px; flex: 0 0 auto; }
+  strong { margin-left: auto; color: var(--ink); font-weight: 700; }
+}
+
+// ---- FC ----
+.si-hr-chart {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  grid-template-rows: 70px 16px;
+  grid-template-areas:
+    "yaxis plot"
+    "corner xaxis";
+  margin-bottom: 1rem;
+}
+
+.si-hr-yaxis {
+  grid-area: yaxis;
+  position: relative;
+}
+
+.si-hr-ytick {
+  position: absolute;
+  right: 7px;
+  transform: translateY(-50%);
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.si-hr-plot {
+  grid-area: plot;
+  position: relative;
+  height: 70px;
+  touch-action: none;
+  cursor: pointer;
+  user-select: none;
+  border-left: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.si-hr-grid {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(0, 53, 84, 0.07);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.si-hr-xaxis {
+  grid-area: xaxis;
+  position: relative;
+}
+
+.si-hr-xtick {
+  position: absolute;
+  top: 3px;
+  transform: translateX(-50%);
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.si-hr-xlabel {
+  grid-area: corner;
+  align-self: start;
+  justify-self: end;
+  padding-right: 6px;
+  margin-top: 3px;
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.si-hr-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+
+  .hr-area { fill: rgba(0, 166, 251, 0.12); stroke: none; }
+  .hr-line { fill: none; stroke: var(--cyan); stroke-width: 1.5; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+}
+
+.si-hr-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(0, 53, 84, 0.25);
+  transform: translateX(-0.5px);
+  pointer-events: none;
+}
+
+.si-hr-dot {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--cyan);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 53, 84, 0.4);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.si-hr-tip {
+  position: absolute;
+  top: -6px;
+  transform: translate(-50%, -100%);
+  background: var(--navy);
+  color: #fff;
+  font-size: 0.72rem;
+  padding: 4px 9px;
+  border-radius: 8px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 4px 12px -4px rgba(0, 53, 84, 0.5);
+
+  strong { font-size: 0.82rem; }
+  span { opacity: 0.7; }
+}
+
+.si-hr-hint {
+  font-size: 0.66rem;
+  color: var(--muted);
+  font-style: italic;
+  margin: 6px 0 1rem;
+}
+
+.si-hr-stats {
+  display: flex;
+  gap: 1rem;
+
+  &.only { margin-top: 0; }
+
+  > div {
+    flex: 1;
+    text-align: center;
+    border-right: 1px solid var(--line);
+
+    &:last-child { border-right: none; }
+  }
+
+  .v { font-family: 'GulfsDisplay', serif; font-size: 1.6rem; color: var(--ink); }
+  .u { font-size: 0.78rem; font-weight: 600; color: var(--navy-soft); margin-left: 3px; }
+  .l { display: block; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; margin-top: 3px; }
+}
+
+// ---- Best efforts ----
+.si-be { display: flex; flex-direction: column; gap: 8px; }
+
+.si-ber {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(0, 53, 84, 0.04);
+  border: 1px solid var(--line);
+
+  .n { font-size: 0.85rem; font-weight: 600; color: var(--ink); }
+  .t { font-family: 'GulfsDisplay', serif; font-size: 1.1rem; color: var(--navy); }
+  .pr { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; color: #fff; background: var(--navy-soft); padding: 2px 7px; border-radius: 999px; margin-left: 8px; vertical-align: middle; }
+}
+
+// ---- Contexte ----
+.si-ctx {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.1rem 1rem;
+}
+
+.si-ci {
+  min-width: 0;
+
+  .l { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; }
+  .v { font-size: 0.95rem; font-weight: 700; color: var(--ink); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .s { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
+}
+
+.si-note { margin: 0; font-size: 0.8rem; color: var(--muted); font-style: italic; }

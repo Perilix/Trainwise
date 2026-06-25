@@ -261,7 +261,15 @@
             <button type="button" class="rb-step-del" (click)="removeBlock(block)" aria-label="Supprimer le groupe">×</button>
           </div>
         } @else {
-          <span class="rb-repeat-count">{{ block.repetitions }}×</span>
+          @if (compareTo && repetitionsChanged(block)) {
+            <span class="rb-repeat-count">
+              <span class="rb-sc-old">{{ origRepetitions(block) }}×</span>
+              <span class="rb-sc-arr">→</span>
+              <span class="rb-sc-new">{{ block.repetitions }}×</span>
+            </span>
+          } @else {
+            <span class="rb-repeat-count">{{ block.repetitions }}×</span>
+          }
         }
       </div>
 
@@ -273,7 +281,15 @@
               <div class="rb-step-main">
                 <div class="rb-step-type">{{ stepTypeLabel(child) }}</div>
                 @if (!isChildOpen(block, $index)) {
-                  <div class="rb-step-val">{{ stepValue(child) }}</div>
+                  @if (compareTo && childValueChanged(block, child, $index)) {
+                    <div class="rb-step-compare">
+                      <span class="rb-sc-old">{{ origChildValue(block, $index) }}</span>
+                      <span class="rb-sc-arr">→</span>
+                      <span class="rb-sc-new">{{ stepValue(child) }}</span>
+                    </div>
+                  } @else {
+                    <div class="rb-step-val">{{ stepValue(child) }}</div>
+                  }
                   @if (stepTarget(child)) { <div class="rb-step-target">{{ stepTarget(child) }}</div> }
                 }
               </div>
@@ -297,7 +313,8 @@
           @if (!isChildOpen(block, $index) && child.recoveryMode) {
             <div class="rb-substep">
               <ng-container *ngTemplateOutlet="stepDisplay; context: {
-                type: 'rec', label: 'Récupération', value: recoveryValue(child), target: recoveryTarget(child) }"></ng-container>
+                type: 'rec', label: 'Récupération', value: recoveryValue(child), target: recoveryTarget(child),
+                changed: !!compareTo && childRecoveryChanged(block, child, $index), old: origChildRecoveryValue(block, $index) }"></ng-container>
             </div>
           }
         }
