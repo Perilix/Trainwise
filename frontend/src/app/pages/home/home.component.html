@@ -2,9 +2,7 @@
 
 <app-tour-tooltip
   pageId="analyse"
-  faIcon="fa-person-running"
-  title="Enregistre tes séances"
-  description="Saisis tes courses manuellement ou synchronise depuis Strava dans tes réglages. Chaque séance sera analysée par l'IA.">
+  [steps]="homeTourSteps">
 </app-tour-tooltip>
 
 <div class="container">
@@ -16,7 +14,7 @@
   <div class="main-layout">
     <!-- Zone principale : Formulaire -->
     <div class="main-content">
-      <form class="run-form">
+      <form class="run-form" data-tour="run-form">
         <div class="form-grid">
           <!-- Date -->
           <div class="form-group">
@@ -95,7 +93,7 @@
     <!-- Sidebar : Actions et résultats -->
     <div class="sidebar">
       <!-- Carte Actions -->
-      <div class="sidebar-card actions-card">
+      <div class="sidebar-card actions-card" data-tour="analyse-actions">
         <h3>Actions</h3>
         <div class="sidebar-actions">
           <button type="button" class="btn-primary" (click)="submitRun()" [disabled]="isLoading()">

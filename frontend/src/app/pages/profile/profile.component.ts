@@ -9,6 +9,7 @@ import { AthleteService } from '../../services/athlete.service';
 import { CoachInvitation, Coach } from '../../interfaces/coach.interfaces';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 import { CompetitionsManagerComponent } from '../../components/competitions-manager/competitions-manager.component';
+import { TourTooltipComponent, TourStep } from '../../components/tour-tooltip/tour-tooltip.component';
 
 type Metric = 'seances' | 'distance' | 'temps';
 type ChartPeriod = 'semaine' | 'mois' | 'annee';
@@ -26,11 +27,45 @@ interface PeriodStat {
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, NavbarComponent, CompetitionsManagerComponent],
+  imports: [CommonModule, FormsModule, RouterLink, NavbarComponent, CompetitionsManagerComponent, TourTooltipComponent],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss'
 })
 export class ProfileComponent implements OnInit {
+  // Visite guidée de la page profil (spotlight étape par étape)
+  readonly profileTourSteps: TourStep[] = [
+    {
+      anchor: 'profile-card',
+      faIcon: 'fa-id-card',
+      title: 'Ta carte de profil',
+      description: 'Ta photo, ton nom et l\'accès à tes paramètres (icône engrenage) se trouvent ici.',
+    },
+    {
+      anchor: 'profile-sport',
+      faIcon: 'fa-person-running',
+      title: 'Ton profil sportif',
+      description: 'Niveau, VMA, fréquence... Clique sur Modifier pour mettre à jour tes données d\'entraînement.',
+    },
+    {
+      anchor: 'profile-competitions',
+      faIcon: 'fa-trophy',
+      title: 'Tes compétitions',
+      description: 'Ajoute tes objectifs de la saison pour orienter tes plans et suivre tes échéances.',
+    },
+    {
+      anchor: 'profile-coach',
+      faIcon: 'fa-user-group',
+      title: 'Ton coach',
+      description: 'Gère ta relation avec ton coach ou rejoins-en un via un code d\'invitation.',
+    },
+    {
+      anchor: 'profile-stats',
+      faIcon: 'fa-chart-line',
+      title: 'Tes statistiques',
+      description: 'Visualise ton volume d\'entraînement par semaine, mois ou année.',
+    },
+  ];
+
   runs = signal<Run[]>([]);
   isLoading = signal(true);
   error = signal<string | null>(null);

@@ -153,6 +153,43 @@
     </div>
   </div>
 
+  <!-- Onboarding & visites guidées -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="fa-solid fa-route" style="color:var(--blue);margin-right:6px;"></i>Onboarding &amp; visites guidées</span>
+      <span class="badge badge-<%= user.hasCompletedOnboarding ? 'pro' : 'free' %>">
+        <%= (user.toursSeen || []).length %>/<%= tourPages.length %> tours vus
+      </span>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="/users/<%= user._id %>/onboarding">
+        <label style="display:flex;align-items:center;gap:8px;margin-bottom:18px;cursor:pointer;">
+          <input type="checkbox" name="hasCompletedOnboarding" <%= user.hasCompletedOnboarding ? 'checked' : '' %>>
+          <span style="font-weight:500;">Onboarding (remplissage des infos) complété</span>
+        </label>
+
+        <p style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;">Visites guidées déjà vues</p>
+        <div class="form-grid">
+          <% tourPages.forEach(p => { %>
+          <label class="form-group" style="flex-direction:row;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" name="toursSeen" value="<%= p.id %>" <%= (user.toursSeen || []).includes(p.id) ? 'checked' : '' %>>
+            <span><%= p.label %></span>
+          </label>
+          <% }); %>
+        </div>
+
+        <div class="form-actions" style="display:flex;gap:8px;">
+          <button type="submit" class="btn btn-save"><i class="fa-solid fa-floppy-disk"></i> Enregistrer</button>
+          <button type="submit" name="action" value="reset" class="btn"
+            style="background:rgba(239,68,68,0.08);color:var(--danger);border-color:rgba(239,68,68,0.2);"
+            onclick="return confirm('Réinitialiser toutes les visites guidées de cet utilisateur ? Il les reverra à sa prochaine visite.')">
+            <i class="fa-solid fa-arrow-rotate-left"></i> Réinitialiser les tours
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Profil readonly -->
   <div class="card">
     <div class="card-header">

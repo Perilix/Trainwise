@@ -52,6 +52,7 @@ exports.register = async (req, res) => {
         vma: user.vma,
         fcmax: user.fcmax,
         hasCompletedOnboarding: user.hasCompletedOnboarding,
+        toursSeen: user.toursSeen,
         trainCoins: user.trainCoins,
         subscriptionStatus: user.subscriptionStatus,
         subscriptionExpiry: user.subscriptionExpiry
@@ -111,6 +112,7 @@ exports.login = async (req, res) => {
         vma: user.vma,
         fcmax: user.fcmax,
         hasCompletedOnboarding: user.hasCompletedOnboarding,
+        toursSeen: user.toursSeen,
         trainCoins: user.trainCoins,
         subscriptionStatus: user.subscriptionStatus,
         subscriptionExpiry: user.subscriptionExpiry
@@ -151,11 +153,44 @@ exports.getMe = async (req, res) => {
       vma: user.vma,
       fcmax: user.fcmax,
       hasCompletedOnboarding: user.hasCompletedOnboarding,
+      toursSeen: user.toursSeen,
       trainCoins: user.trainCoins,
       subscriptionStatus: user.subscriptionStatus,
       subscriptionExpiry: user.subscriptionExpiry,
       createdAt: user.createdAt
     });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Marquer une visite guidée (feature tour) comme vue
+exports.markTourSeen = async (req, res) => {
+  try {
+    const { pageId } = req.body;
+    if (!pageId || typeof pageId !== 'string') {
+      return res.status(400).json({ error: 'pageId requis' });
+    }
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { $addToSet: { toursSeen: pageId } },
+      { new: true }
+    );
+    res.json({ toursSeen: user.toursSeen });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Réinitialiser toutes les visites guidées (pour les rejouer)
+exports.resetToursSeen = async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { toursSeen: [] },
+      { new: true }
+    );
+    res.json({ toursSeen: user.toursSeen });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -231,6 +266,7 @@ exports.updateProfile = async (req, res) => {
       vma: user.vma,
       fcmax: user.fcmax,
       hasCompletedOnboarding: user.hasCompletedOnboarding,
+      toursSeen: user.toursSeen,
       trainCoins: user.trainCoins,
       subscriptionStatus: user.subscriptionStatus,
       subscriptionExpiry: user.subscriptionExpiry,

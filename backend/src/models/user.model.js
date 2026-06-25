@@ -132,6 +132,11 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  // Visites guidées (feature tours) déjà vues, par pageId
+  toursSeen: {
+    type: [String],
+    default: []
+  },
   // TrainCoins & abonnement
   trainCoins: {
     type: Number,

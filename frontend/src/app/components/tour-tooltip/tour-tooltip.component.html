@@ -1,7 +1,21 @@
 @if (isVisible()) {
-  <div class="tour-backdrop" (click)="dismiss()"></div>
+  <!-- Couche qui bloque l'interaction avec la page (et l'assombrit si pas d'ancre) -->
+  <div class="tour-backdrop" [class.dimmed]="!targetRect()" (click)="!targetRect() && dismiss()"></div>
 
-  <div class="tour-card" [class.visible]="isVisible()">
+  <!-- Trou lumineux sur l'élément ciblé -->
+  @if (spotlightStyle(); as sp) {
+    <div class="tour-spotlight"
+         [style.top]="sp.top"
+         [style.left]="sp.left"
+         [style.width]="sp.width"
+         [style.height]="sp.height"></div>
+  }
+
+  <div class="tour-card"
+       [class.visible]="isVisible()"
+       [class.anchored]="!!tooltipStyle()"
+       [style.top]="tooltipStyle()?.top"
+       [style.left]="tooltipStyle()?.left">
 
     <div class="tour-step-content">
       <div class="tour-icon-wrap">
@@ -23,6 +37,11 @@
       }
 
       <div class="tour-actions">
+        @if (isMultiStep() && !isFirstStep()) {
+          <button class="btn-prev" (click)="prevStep()">
+            <i class="fa-solid fa-arrow-left"></i>
+          </button>
+        }
         <button class="btn-dismiss-text" (click)="dismiss()">Passer</button>
         @if (!isLastStep()) {
           <button class="btn-next" (click)="nextStep()">

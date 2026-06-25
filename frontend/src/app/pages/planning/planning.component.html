@@ -2,7 +2,7 @@
 
 <app-tour-tooltip
   pageId="planning"
-  [steps]="planningTourSteps">
+  [steps]="planningTourSteps()">
 </app-tour-tooltip>
 
 <div class="container">
@@ -22,7 +22,7 @@
   <div class="sidebar">
     <!-- Carte Génération IA — masquée si l'athlète a un coach -->
     @if (!hasCoach()) {
-      <div class="sidebar-card generate-card" [class.is-generating]="isGenerating()">
+      <div class="sidebar-card generate-card" [class.is-generating]="isGenerating()" data-tour="planning-generate">
         <h3>Génération IA</h3>
         <p class="card-description">Laisse l'IA créer ton programme d'entraînement personnalisé pour la semaine.</p>
         <button
@@ -55,7 +55,7 @@
       </div>
 
       <!-- Calendrier -->
-      <div class="calendar">
+      <div class="calendar" data-tour="planning-calendar">
         <!-- En-têtes des jours -->
         <div class="calendar-header">
           @for (day of weekDays; track day) {
@@ -67,7 +67,7 @@
         @if (isLoading()) {
           <div class="loading">Chargement...</div>
         } @else {
-          <div class="calendar-grid">
+          <div class="calendar-grid" data-tour="planning-grid">
             @for (day of calendarDays(); track day.date.getTime()) {
               <div
                 class="calendar-day"

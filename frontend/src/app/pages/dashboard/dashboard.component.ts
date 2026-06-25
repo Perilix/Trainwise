@@ -16,7 +16,7 @@ import { SubscriptionService } from '../../services/subscription.service';
 import { CoachInvitationModalService } from '../../services/coach-invitation-modal.service';
 import { Coach } from '../../interfaces/coach.interfaces';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
-import { TourTooltipComponent } from '../../components/tour-tooltip/tour-tooltip.component';
+import { TourTooltipComponent, TourStep } from '../../components/tour-tooltip/tour-tooltip.component';
 
 interface WeekDay {
   date: Date;
@@ -66,6 +66,58 @@ interface RecentSession {
   styleUrl: './dashboard.component.scss'
 })
 export class DashboardComponent implements OnInit {
+  // Visite guidée du tableau de bord (spotlight étape par étape) — couvre tous les blocs.
+  readonly dashboardTourSteps: TourStep[] = [
+    {
+      anchor: 'nav-profile',
+      faIcon: 'fa-user',
+      title: 'Ton profil',
+      description: 'Clique sur ta photo en haut pour accéder à ton profil et tes informations.',
+    },
+    {
+      anchor: 'nav-coins',
+      faIcon: 'fa-coins',
+      title: 'Tes TrainCoins',
+      description: 'Tes TrainCoins et la boutique sont accessibles ici à tout moment.',
+    },
+    {
+      anchor: 'dash-coaching',
+      faIcon: 'fa-user-group',
+      title: 'Ton coaching',
+      description: 'Retrouve ici ton coach et vos échanges, ou rejoins-en un via un code d\'invitation.',
+    },
+    {
+      anchor: 'dash-week',
+      faIcon: 'fa-calendar-week',
+      title: 'Ta semaine en un coup d\'œil',
+      description: 'Visualise tes séances de la semaine : effectuées, planifiées et à venir, avec un code couleur.',
+    },
+    {
+      anchor: 'dash-upcoming',
+      faIcon: 'fa-forward',
+      title: 'Prochains entraînements',
+      description: 'Tes séances à venir. Clique sur l\'une d\'elles pour voir le détail dans le planning.',
+    },
+    {
+      anchor: 'dash-recent',
+      faIcon: 'fa-clock-rotate-left',
+      title: 'Tes derniers entraînements',
+      description: 'L\'historique de tes séances récentes. Clique pour revoir l\'analyse de chacune.',
+    },
+    {
+      anchor: 'dash-stats',
+      faIcon: 'fa-chart-simple',
+      title: 'Tes stats de la semaine',
+      description: 'Distance, durée et nombre de séances : ton résumé hebdomadaire en un coup d\'œil.',
+    },
+    {
+      anchor: 'dash-tips',
+      faIcon: 'fa-lightbulb',
+      title: 'Conseils personnalisés',
+      description: 'Des recommandations adaptées à ton activité pour progresser et éviter les blessures.',
+    },
+  ];
+
   // Data
   recentSessions = signal<RecentSession[]>([]);
   upcomingRuns = signal<PlannedSession[]>([]);

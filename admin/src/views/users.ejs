@@ -92,6 +92,9 @@
             <% } else { %>
               <span class="text-muted text-small"><i class="fa-solid fa-circle-half-stroke"></i> En cours</span>
             <% } %>
+            <span class="text-muted text-small" style="display:block;margin-top:2px;">
+              <i class="fa-solid fa-route"></i> <%= (u.toursSeen || []).length %> tour<%= (u.toursSeen || []).length > 1 ? 's' : '' %>
+            </span>
           </td>
           <td class="text-muted text-small">
             <%= new Date(u.createdAt).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' }) %>

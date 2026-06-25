@@ -121,9 +121,7 @@
 
 <app-tour-tooltip
   pageId="dashboard"
-  faIcon="fa-house"
-  title="Ton tableau de bord"
-  description="Retrouve ici ton calendrier hebdo, tes courses récentes et les séances planifiées par ton coach.">
+  [steps]="dashboardTourSteps">
 </app-tour-tooltip>
 
 <div class="container">
@@ -154,7 +152,7 @@
         <!-- Section Coaching -->
         @if (currentCoach()) {
           <!-- Utilisateur avec coach -->
-          <section class="coaching-section has-coach">
+          <section class="coaching-section has-coach" data-tour="dash-coaching">
             <div class="coach-header">
               <div class="coach-profile">
                 <div class="coach-avatar">
@@ -196,7 +194,7 @@
             }
           </section>
         } @else {
-          <section class="coaching-section no-coach">
+          <section class="coaching-section no-coach" data-tour="dash-coaching">
             @if (pendingCoachInvitations().length > 0) {
               <div class="invitations-block">
                 <h4 class="invitations-title">
@@ -282,7 +280,7 @@
         }
 
         <!-- Timeline de la semaine -->
-        <section class="week-timeline">
+        <section class="week-timeline" data-tour="dash-week">
           <div class="section-header">
             <h3>Cette semaine</h3>
             <a routerLink="/planning" class="see-all">Voir tout →</a>
@@ -320,7 +318,7 @@
         </section>
 
         @if (upcomingRuns().length > 0) {
-          <section class="upcoming-runs">
+          <section class="upcoming-runs" data-tour="dash-upcoming">
             <div class="section-header">
               <h3>Prochains entraînements</h3>
               <a routerLink="/planning" class="see-all">Voir tout →</a>
@@ -360,7 +358,7 @@
         }
 
         <!-- Feed des dernières courses -->
-        <section class="recent-runs">
+        <section class="recent-runs" data-tour="dash-recent">
           <div class="section-header">
             <h3>Deniers entraînements</h3>
             <a routerLink="/sorties" class="see-all">Voir tout →</a>
@@ -504,7 +502,7 @@
 
       <!-- Sidebar -->
       <aside class="sidebar">
-        <div class="stats-card">
+        <div class="stats-card" data-tour="dash-stats">
           <h3>Cette semaine</h3>
           <div class="stats-grid">
             <div class="stat-item">
@@ -577,7 +575,7 @@
         </div>-->
 
         <!-- Tips / Conseils -->
-        <div class="tips-card">
+        <div class="tips-card" data-tour="dash-tips">
           <h3>Conseils</h3>
           @for (tip of getTips(); track tip.title) {
             <div class="tip-item">

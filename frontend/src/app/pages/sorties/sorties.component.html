@@ -1,5 +1,10 @@
 <app-navbar></app-navbar>
 
+<app-tour-tooltip
+  pageId="sorties"
+  [steps]="sortiesTourSteps">
+</app-tour-tooltip>
+
 <div class="page-scroll page-content sorties-page">
 
   <!-- Header -->
@@ -7,7 +12,7 @@
     <h1 class="sorties-title">Mes sorties</h1>
 
     <!-- View mode toggle -->
-    <div class="period-toggle">
+    <div class="period-toggle" data-tour="sorties-period">
       <button [class.active]="viewMode() === 'week'" (click)="setViewMode('week')">Semaine</button>
       <button [class.active]="viewMode() === 'month'" (click)="setViewMode('month')">Mois</button>
       <button [class.active]="viewMode() === 'year'" (click)="setViewMode('year')">An</button>
@@ -18,7 +23,7 @@
 
     <!-- Period blocks -->
     @if (periodBlocks().length > 0) {
-      <div class="blocks-scroll">
+      <div class="blocks-scroll" data-tour="sorties-blocks">
         @for (block of periodBlocks(); track block.id) {
           <div class="period-block" [class.selected]="selectedBlockId() === block.id" (click)="selectBlock(block.id)">
             <div class="block-label">{{ block.label }}</div>
@@ -36,7 +41,7 @@
     }
 
     <!-- KPIs -->
-    <div class="kpi-wrapper">
+    <div class="kpi-wrapper" data-tour="sorties-kpis">
       <div class="kpi-grid">
         <div class="kpi-card">
           <div class="kpi-icon"><i class="fa-solid fa-road"></i></div>
@@ -71,7 +76,7 @@
     }
 
     <!-- Run feed -->
-    <div class="run-feed">
+    <div class="run-feed" data-tour="sorties-feed">
       @for (run of filteredRuns(); track run._id) {
         <div class="run-card" (click)="goToRun(run)">
 

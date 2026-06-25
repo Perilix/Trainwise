@@ -31,28 +31,49 @@ interface CalendarDay {
   styleUrl: './planning.component.scss'
 })
 export class PlanningComponent implements OnInit {
-  readonly planningTourSteps: TourStep[] = [
-    {
-      faIcon: 'fa-calendar-days',
-      title: 'Vue calendrier',
-      description: 'Navigue entre les mois pour voir toutes tes séances planifiées et réalisées.'
-    },
-    {
-      faIcon: 'fa-wand-magic-sparkles',
-      title: 'Plan IA en 1 clic',
-      description: 'Appuie sur Générer pour créer un plan personnalisé basé sur ton niveau, tes objectifs et tes dispo.'
-    },
-    {
-      faIcon: 'fa-circle-plus',
-      title: 'Créer manuellement',
-      description: 'Clique sur n\'importe quel jour du calendrier pour ajouter une séance de course ou de musculation.'
-    },
-    {
+  // Visite guidée du planning. L'étape "Plan IA" est masquée pour les athlètes
+  // suivis par un coach (pas de génération IA, c'est le coach qui planifie).
+  readonly planningTourSteps = computed<TourStep[]>(() => {
+    const steps: TourStep[] = [
+      {
+        anchor: 'planning-calendar',
+        faIcon: 'fa-calendar-days',
+        title: 'Vue calendrier',
+        description: 'Navigue entre les mois pour voir toutes tes séances planifiées et réalisées.'
+      }
+    ];
+
+    if (this.hasCoach()) {
+      steps.push({
+        anchor: 'planning-grid',
+        faIcon: 'fa-user-pen',
+        title: 'Séances de ton coach',
+        description: 'Ton coach planifie tes séances ici. Clique sur un jour pour voir le détail de chaque entraînement.'
+      });
+    } else {
+      steps.push({
+        anchor: 'planning-generate',
+        faIcon: 'fa-wand-magic-sparkles',
+        title: 'Plan IA en 1 clic',
+        description: 'Appuie sur Générer pour créer un plan personnalisé basé sur ton niveau, tes objectifs et tes dispo.'
+      });
+      steps.push({
+        anchor: 'planning-grid',
+        faIcon: 'fa-circle-plus',
+        title: 'Créer manuellement',
+        description: 'Clique sur n\'importe quel jour du calendrier pour ajouter une séance de course ou de musculation.'
+      });
+    }
+
+    steps.push({
+      anchor: 'planning-grid',
       faIcon: 'fa-chart-line',
       title: 'Suivi & ressenti',
-      description: 'Après chaque séance, marque-la réalisée et note ton ressenti (1-10) pour affiner tes futurs plans.'
-    }
-  ];
+      description: 'Après chaque séance, marque-la réalisée et note ton ressenti (1-10) pour affiner ton suivi.'
+    });
+
+    return steps;
+  });
 
   currentDate = new Date();
   currentMonth = signal(this.currentDate.getMonth() + 1);

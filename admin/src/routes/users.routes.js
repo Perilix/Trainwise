@@ -6,6 +6,17 @@ const { requireAuth } = require('../middleware/auth');
 const User = require('../models/user.model');
 const Run = require('../models/run.model');
 
+// Catalogue des visites guidées (feature tours) — doit rester aligné avec les pageId du frontend
+const TOUR_PAGES = [
+  { id: 'dashboard',       label: 'Accueil (tableau de bord)' },
+  { id: 'sorties',         label: 'Mes sorties' },
+  { id: 'planning',        label: 'Planning' },
+  { id: 'analyse',         label: 'Analyse (nouvelle course)' },
+  { id: 'profile',         label: 'Profil' },
+  { id: 'coach-dashboard', label: 'Espace coach' },
+];
+const TOUR_IDS = TOUR_PAGES.map(p => p.id);
+
 // ── List users ──────────────────────────────────────────────
 router.get('/', requireAuth, async (req, res) => {
   const { search = '', role = '', subscription = '', page = 1 } = req.query;
@@ -25,7 +36,7 @@ router.get('/', requireAuth, async (req, res) => {
 
   const [users, total] = await Promise.all([
     User.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit)
-      .select('firstName lastName email role subscriptionStatus trainCoins createdAt hasCompletedOnboarding strava'),
+      .select('firstName lastName email role subscriptionStatus trainCoins createdAt hasCompletedOnboarding toursSeen strava'),
     User.countDocuments(filter)
   ]);
 
@@ -100,6 +111,7 @@ router.get('/:id', requireAuth, async (req, res) => {
     runCount,
     totalKm: Math.round(runsAgg[0]?.totalKm || 0),
     avgFeeling: runsAgg[0]?.avgFeeling ? (Math.round(runsAgg[0].avgFeeling * 10) / 10) : '-',
+    tourPages: TOUR_PAGES,
     success: req.query.success === '1',
     error: null
   });
@@ -128,6 +140,26 @@ router.post('/:id', requireAuth, async (req, res) => {
   }
 
   await User.findByIdAndUpdate(req.params.id, update);
+  res.redirect(`/users/${req.params.id}?success=1`);
+});
+
+// ── Manage onboarding & feature tours ────────────────────────
+router.post('/:id/onboarding', requireAuth, async (req, res) => {
+  // Réinitialiser toutes les visites guidées (l'utilisateur les reverra)
+  if (req.body.action === 'reset') {
+    await User.findByIdAndUpdate(req.params.id, { toursSeen: [] });
+    return res.redirect(`/users/${req.params.id}?success=1`);
+  }
+
+  // Les cases cochées arrivent sous req.body.toursSeen (string si une seule, array si plusieurs)
+  let toursSeen = req.body.toursSeen || [];
+  if (!Array.isArray(toursSeen)) toursSeen = [toursSeen];
+  toursSeen = toursSeen.filter(t => TOUR_IDS.includes(t));
+
+  await User.findByIdAndUpdate(req.params.id, {
+    hasCompletedOnboarding: req.body.hasCompletedOnboarding === 'on',
+    toursSeen
+  });
   res.redirect(`/users/${req.params.id}?success=1`);
 });
 

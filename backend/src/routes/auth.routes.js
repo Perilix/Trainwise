@@ -207,6 +207,45 @@ router.get('/me', protect, authController.getMe);
 
 /**
  * @swagger
+ * /api/auth/tours:
+ *   post:
+ *     summary: Mark a feature tour as seen for the authenticated user
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [pageId]
+ *             properties:
+ *               pageId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Updated list of seen tours
+ *       400:
+ *         description: Missing pageId
+ *       401:
+ *         description: Not authenticated
+ *   delete:
+ *     summary: Reset all seen feature tours (replay them)
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Tours reset
+ *       401:
+ *         description: Not authenticated
+ */
+router.post('/tours', protect, authController.markTourSeen);
+router.delete('/tours', protect, authController.resetToursSeen);
+
+/**
+ * @swagger
  * /api/auth/profile:
  *   patch:
  *     summary: Update the authenticated user's profile

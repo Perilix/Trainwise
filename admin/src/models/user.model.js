@@ -18,6 +18,7 @@ const userSchema = new mongoose.Schema({
   vma: { type: Number, default: null },
   fcmax: { type: Number, default: null },
   hasCompletedOnboarding: { type: Boolean, default: false },
+  toursSeen: { type: [String], default: [] },
   trainCoins: { type: Number, default: 10, min: 0 },
   subscriptionStatus: { type: String, enum: ['free', 'pro'], default: 'free' },
   subscriptionExpiry: { type: Date, default: null },

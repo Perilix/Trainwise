@@ -1,5 +1,10 @@
 <app-navbar></app-navbar>
 
+<app-tour-tooltip
+  pageId="profile"
+  [steps]="profileTourSteps">
+</app-tour-tooltip>
+
 <div class="container">
   <div class="page-header">
     <h1>Mon Profil</h1>
@@ -8,7 +13,7 @@
 
   <main>
     <!-- Infos utilisateur -->
-    <section class="user-card">
+    <section class="user-card" data-tour="profile-card">
       <div class="user-avatar">
         @if (authService.currentUser()?.profilePicture) {
           <img [src]="authService.currentUser()?.profilePicture" alt="Photo de profil">
@@ -26,7 +31,7 @@
     </section>
 
     <!-- Profil coureur -->
-    <section class="runner-profile">
+    <section class="runner-profile" data-tour="profile-sport">
       <div class="section-header">
         <h3>Profil sportif</h3>
         <button class="btn-edit" (click)="toggleEdit()">
@@ -256,7 +261,7 @@
     </section>
 
     <!-- Compétitions de la saison -->
-    <section class="competitions-section">
+    <section class="competitions-section" data-tour="profile-competitions">
       <app-competitions-manager></app-competitions-manager>
     </section>
 
@@ -292,7 +297,7 @@
     }
 
     <!-- Section Coach -->
-    <section class="coach-section">
+    <section class="coach-section" data-tour="profile-coach">
       <div class="section-header">
         <h3>
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -381,7 +386,7 @@
     </section>
 
     <!-- Graphique -->
-    <section class="chart-section">
+    <section class="chart-section" data-tour="profile-stats">
       <div class="chart-header">
         <h3>Statistiques</h3>
         <div class="period-filter">

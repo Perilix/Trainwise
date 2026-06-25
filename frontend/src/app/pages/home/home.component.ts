@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { RunService, Run } from '../../services/run.service';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
-import { TourTooltipComponent } from '../../components/tour-tooltip/tour-tooltip.component';
+import { TourTooltipComponent, TourStep } from '../../components/tour-tooltip/tour-tooltip.component';
 import { SubscriptionService } from '../../services/subscription.service';
 
 @Component({
@@ -40,6 +40,34 @@ export class HomeComponent {
   error = signal<string | null>(null);
 
   sessionTypes = ['Endurance', 'Fractionné', 'Tempo', 'Récupération', 'Sortie longue', 'Compétition'];
+
+  // Visite guidée de la page d'accueil (spotlight étape par étape)
+  homeTourSteps: TourStep[] = [
+    {
+      anchor: 'nav-profile',
+      faIcon: 'fa-user',
+      title: 'Ton profil',
+      description: 'Clique sur ta photo en haut pour accéder à ton profil et tes informations personnelles.',
+    },
+    {
+      anchor: 'nav-coins',
+      faIcon: 'fa-coins',
+      title: 'Tes TrainCoins',
+      description: 'Voici tes TrainCoins. Clique dessus pour ouvrir la boutique et débloquer des fonctionnalités.',
+    },
+    {
+      anchor: 'run-form',
+      faIcon: 'fa-person-running',
+      title: 'Enregistre ta séance',
+      description: 'Saisis les données de ta course ici. Tu peux aussi synchroniser depuis Strava dans tes réglages.',
+    },
+    {
+      anchor: 'analyse-actions',
+      faIcon: 'fa-wand-magic-sparkles',
+      title: 'Analyse IA',
+      description: 'Lance l\'analyse : l\'IA décortique ta séance et te donne un retour personnalisé.',
+    },
+  ];
 
   constructor(private runService: RunService) {}
 

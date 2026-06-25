@@ -6,7 +6,7 @@ import { CoachService } from '../../../services/coach.service';
 import { AuthService } from '../../../services/auth.service';
 import { Athlete, CoachStats, UserSearchResult, PendingInvitation } from '../../../interfaces/coach.interfaces';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
-import { TourTooltipComponent } from '../../../components/tour-tooltip/tour-tooltip.component';
+import { TourTooltipComponent, TourStep } from '../../../components/tour-tooltip/tour-tooltip.component';
 import { COACH_PACKAGES, PackageType } from '../../../interfaces/package.interface';
 
 @Component({
@@ -17,6 +17,28 @@ import { COACH_PACKAGES, PackageType } from '../../../interfaces/package.interfa
   styleUrl: './coach-dashboard.component.scss'
 })
 export class CoachDashboardComponent implements OnInit {
+  // Visite guidée de l'espace coach (spotlight étape par étape)
+  readonly coachTourSteps: TourStep[] = [
+    {
+      anchor: 'nav-profile',
+      faIcon: 'fa-user',
+      title: 'Ton profil coach',
+      description: 'Accède à ton profil et tes paramètres en cliquant sur ta photo en haut.',
+    },
+    {
+      anchor: 'coach-stats',
+      faIcon: 'fa-chart-simple',
+      title: 'Tes statistiques',
+      description: 'Vue d\'ensemble : nombre d\'athlètes, invitations en attente et séances créées.',
+    },
+    {
+      anchor: 'coach-athletes',
+      faIcon: 'fa-users',
+      title: 'Tes athlètes',
+      description: 'Point vert = actif, orange = inactif depuis 7j ou séances sautées, rouge = alerte. Clique sur un athlète pour le détail.',
+    },
+  ];
+
   athletes = signal<Athlete[]>([]);
   stats = signal<CoachStats | null>(null);
   pendingInvitations = signal<PendingInvitation[]>([]);

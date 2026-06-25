@@ -2,7 +2,7 @@
   <div class="navbar-container">
     <!-- Mobile left: photo profil + coins côte à côte -->
     <div class="mobile-left mobile-only">
-      <a [routerLink]="authService.isCoach() ? '/coach/profile' : '/profile'" class="mobile-profile-link">
+      <a [routerLink]="authService.isCoach() ? '/coach/profile' : '/profile'" class="mobile-profile-link" data-tour="nav-profile">
         @if (authService.currentUser()?.profilePicture) {
           <img [src]="authService.currentUser()?.profilePicture" alt="Avatar" class="mobile-header-avatar">
         } @else {
@@ -12,7 +12,7 @@
         }
       </a>
       @if (!authService.isCoach()) {
-        <app-traincoin-badge></app-traincoin-badge>
+        <app-traincoin-badge data-tour="nav-coins"></app-traincoin-badge>
       }
     </div>
 

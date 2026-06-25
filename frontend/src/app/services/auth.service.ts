@@ -38,6 +38,7 @@ export interface User {
   vma?: number;
   fcmax?: number;
   hasCompletedOnboarding?: boolean;
+  toursSeen?: string[];
   trainCoins?: number;
   subscriptionStatus?: 'free' | 'pro';
   subscriptionExpiry?: string | null;
@@ -115,6 +116,15 @@ export class AuthService {
         this.currentUser.set(user);
       })
     );
+  }
+
+  /** Met à jour localement (signal + cache) une partie du user courant. */
+  mergeCurrentUser(partial: Partial<User>): void {
+    const user = this.currentUser();
+    if (!user) return;
+    const updated = { ...user, ...partial };
+    localStorage.setItem(this.USER_KEY, JSON.stringify(updated));
+    this.currentUser.set(updated);
   }
 
   register(data: RegisterData): Observable<AuthResponse> {

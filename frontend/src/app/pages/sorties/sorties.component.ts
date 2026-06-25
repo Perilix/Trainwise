@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { RunService, Run } from '../../services/run.service';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 import { RunMiniMapComponent } from '../../components/run-mini-map/run-mini-map.component';
+import { TourTooltipComponent, TourStep } from '../../components/tour-tooltip/tour-tooltip.component';
 
 type ViewMode = 'week' | 'month' | 'year';
 
@@ -28,11 +29,39 @@ export interface PeriodBlock {
 @Component({
   selector: 'app-sorties',
   standalone: true,
-  imports: [CommonModule, NavbarComponent, RunMiniMapComponent],
+  imports: [CommonModule, NavbarComponent, RunMiniMapComponent, TourTooltipComponent],
   templateUrl: './sorties.component.html',
   styleUrl: './sorties.component.scss'
 })
 export class SortiesComponent implements OnInit {
+  // Visite guidée de la page "Mes sorties" (spotlight étape par étape)
+  readonly sortiesTourSteps: TourStep[] = [
+    {
+      anchor: 'sorties-period',
+      faIcon: 'fa-calendar-week',
+      title: 'Choisis ta période',
+      description: 'Bascule entre semaine, mois et année pour analyser tes sorties sur la durée qui t\'intéresse.',
+    },
+    {
+      anchor: 'sorties-blocks',
+      faIcon: 'fa-layer-group',
+      title: 'Navigue dans le temps',
+      description: 'Chaque bloc résume une période (km, nombre de sorties, évolution). Clique pour la sélectionner.',
+    },
+    {
+      anchor: 'sorties-kpis',
+      faIcon: 'fa-gauge-high',
+      title: 'Tes indicateurs clés',
+      description: 'Distance totale, nombre de sorties, allure moyenne et temps cumulé sur la période choisie.',
+    },
+    {
+      anchor: 'sorties-feed',
+      faIcon: 'fa-list',
+      title: 'Le détail de tes sorties',
+      description: 'La liste de toutes tes sorties. Clique sur l\'une d\'elles pour voir son analyse complète.',
+    },
+  ];
+
   allRuns = signal<Run[]>([]);
   loading = signal(true);
   viewMode = signal<ViewMode>('week');
