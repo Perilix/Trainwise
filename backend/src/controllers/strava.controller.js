@@ -308,6 +308,24 @@ exports.syncActivities = async (req, res) => {
     const imported = [];
     const skipped = [];
     const skippedStrength = [];
+    const stravaDebug = []; // DEBUG : renvoyé au front pour inspection en console navigateur
+
+    // DEBUG : construit l'objet de détail Strava renvoyé au front
+    const buildDebug = (d, alreadyImported) => ({
+      id: d.id,
+      name: d.name,
+      alreadyImported,
+      type: d.type,
+      sport_type: d.sport_type,
+      workout_type: d.workout_type,
+      distance: d.distance,
+      moving_time: d.moving_time,
+      elapsed_time: d.elapsed_time,
+      laps: d.laps || [],
+      splits_metric: d.splits_metric || [],
+      segment_efforts: d.segment_efforts || [],
+      full: d
+    });
 
     for (const activity of runActivities) {
       const existing = await Run.findOne({
@@ -316,27 +334,14 @@ exports.syncActivities = async (req, res) => {
       });
 
       if (existing) {
-        // DEBUG : logger aussi les séances déjà importées (sinon l'import les saute sans rien afficher)
+        // DEBUG : collecter aussi les séances déjà importées (l'import les saute sinon)
         try {
           const dbg = await axios.get(`${STRAVA_API_URL}/activities/${activity.id}`, {
             headers: { Authorization: `Bearer ${accessToken}` }
           });
-          const d = dbg.data;
-          console.log('\n===== [Strava DEBUG import - déjà importée] Activité', activity.id, '-', d.name, '=====');
-          console.log('[Strava DEBUG] type/sport_type/workout_type :', d.type, '/', d.sport_type, '/', d.workout_type);
-          console.log('[Strava DEBUG] LAPS (intervalles/blocs) — nb =', (d.laps || []).length);
-          console.log(JSON.stringify((d.laps || []).map(l => ({
-            name: l.name, lap_index: l.lap_index, distance: l.distance,
-            moving_time: l.moving_time, elapsed_time: l.elapsed_time,
-            average_speed: l.average_speed, max_speed: l.max_speed,
-            average_heartrate: l.average_heartrate, average_cadence: l.average_cadence
-          })), null, 2));
-          console.log('[Strava DEBUG] SPLITS_METRIC — nb =', (d.splits_metric || []).length);
-          console.log('[Strava DEBUG] PAYLOAD COMPLET ↓↓↓');
-          console.log(JSON.stringify(d, null, 2));
-          console.log('===== [Strava DEBUG import] fin', activity.id, '=====\n');
+          stravaDebug.push(buildDebug(dbg.data, true));
         } catch (e) {
-          console.error('[Strava DEBUG] échec détail pour', activity.id, e.message);
+          console.error('[Strava] échec détail (debug) pour', activity.id, e.message);
         }
         skipped.push(activity.id);
         continue;
@@ -352,32 +357,7 @@ exports.syncActivities = async (req, res) => {
           headers: { Authorization: `Bearer ${accessToken}` }
         });
 
-        // ───────── DEBUG : ce que Strava renvoie pour une séance ─────────
-        const d = detailResponse.data;
-        console.log('\n========== [Strava DEBUG] Activité', activity.id, '-', d.name, '==========');
-        console.log('[Strava DEBUG] Clés disponibles :', Object.keys(d).join(', '));
-        console.log('[Strava DEBUG] type/sport_type/workout_type :', d.type, '/', d.sport_type, '/', d.workout_type);
-        console.log('[Strava DEBUG] distance(m):', d.distance, '| moving_time(s):', d.moving_time, '| elapsed_time(s):', d.elapsed_time);
-        console.log('[Strava DEBUG] LAPS (intervalles/blocs) — nb =', (d.laps || []).length);
-        console.log(JSON.stringify((d.laps || []).map(l => ({
-          name: l.name,
-          lap_index: l.lap_index,
-          distance: l.distance,
-          moving_time: l.moving_time,
-          elapsed_time: l.elapsed_time,
-          average_speed: l.average_speed,
-          max_speed: l.max_speed,
-          average_heartrate: l.average_heartrate,
-          average_cadence: l.average_cadence,
-          total_elevation_gain: l.total_elevation_gain
-        })), null, 2));
-        console.log('[Strava DEBUG] SPLITS_METRIC (par km) — nb =', (d.splits_metric || []).length);
-        console.log(JSON.stringify(d.splits_metric || [], null, 2));
-        console.log('[Strava DEBUG] SEGMENT_EFFORTS — nb =', (d.segment_efforts || []).length);
-        console.log('[Strava DEBUG] PAYLOAD COMPLET ↓↓↓');
-        console.log(JSON.stringify(d, null, 2));
-        console.log('========== [Strava DEBUG] fin', activity.id, '==========\n');
-        // ─────────────────────────────────────────────────────────────────
+        stravaDebug.push(buildDebug(detailResponse.data, false)); // DEBUG
 
         description = detailResponse.data.description || '';
         if (detailResponse.data.map?.polyline) {
@@ -462,32 +442,7 @@ exports.syncActivities = async (req, res) => {
           headers: { Authorization: `Bearer ${accessToken}` }
         });
 
-        // ───────── DEBUG : ce que Strava renvoie pour une séance ─────────
-        const d = detailResponse.data;
-        console.log('\n========== [Strava DEBUG] Activité', activity.id, '-', d.name, '==========');
-        console.log('[Strava DEBUG] Clés disponibles :', Object.keys(d).join(', '));
-        console.log('[Strava DEBUG] type/sport_type/workout_type :', d.type, '/', d.sport_type, '/', d.workout_type);
-        console.log('[Strava DEBUG] distance(m):', d.distance, '| moving_time(s):', d.moving_time, '| elapsed_time(s):', d.elapsed_time);
-        console.log('[Strava DEBUG] LAPS (intervalles/blocs) — nb =', (d.laps || []).length);
-        console.log(JSON.stringify((d.laps || []).map(l => ({
-          name: l.name,
-          lap_index: l.lap_index,
-          distance: l.distance,
-          moving_time: l.moving_time,
-          elapsed_time: l.elapsed_time,
-          average_speed: l.average_speed,
-          max_speed: l.max_speed,
-          average_heartrate: l.average_heartrate,
-          average_cadence: l.average_cadence,
-          total_elevation_gain: l.total_elevation_gain
-        })), null, 2));
-        console.log('[Strava DEBUG] SPLITS_METRIC (par km) — nb =', (d.splits_metric || []).length);
-        console.log(JSON.stringify(d.splits_metric || [], null, 2));
-        console.log('[Strava DEBUG] SEGMENT_EFFORTS — nb =', (d.segment_efforts || []).length);
-        console.log('[Strava DEBUG] PAYLOAD COMPLET ↓↓↓');
-        console.log(JSON.stringify(d, null, 2));
-        console.log('========== [Strava DEBUG] fin', activity.id, '==========\n');
-        // ─────────────────────────────────────────────────────────────────
+        stravaDebug.push(buildDebug(detailResponse.data, false)); // DEBUG
 
         description = detailResponse.data.description || '';
       } catch (e) {
@@ -531,7 +486,8 @@ exports.syncActivities = async (req, res) => {
       importedStrength,
       skipped,
       skippedStrength,
-      unrecognized
+      unrecognized,
+      stravaDebug // DEBUG : détail Strava (laps/splits/payload) pour inspection en console navigateur
     });
   } catch (error) {
     console.error('Strava sync error:', error.response?.data || error.message);
@@ -571,23 +527,6 @@ exports.resyncActivities = async (req, res) => {
         });
 
         const activity = detailResponse.data;
-
-        // ───────── DEBUG : ce que Strava renvoie (resync) ─────────
-        console.log('\n========== [Strava DEBUG resync] Activité', activity.id, '-', activity.name, '==========');
-        console.log('[Strava DEBUG] Clés disponibles :', Object.keys(activity).join(', '));
-        console.log('[Strava DEBUG] type/sport_type/workout_type :', activity.type, '/', activity.sport_type, '/', activity.workout_type);
-        console.log('[Strava DEBUG] LAPS (intervalles/blocs) — nb =', (activity.laps || []).length);
-        console.log(JSON.stringify((activity.laps || []).map(l => ({
-          name: l.name, lap_index: l.lap_index, distance: l.distance,
-          moving_time: l.moving_time, elapsed_time: l.elapsed_time,
-          average_speed: l.average_speed, max_speed: l.max_speed,
-          average_heartrate: l.average_heartrate, average_cadence: l.average_cadence
-        })), null, 2));
-        console.log('[Strava DEBUG] SPLITS_METRIC — nb =', (activity.splits_metric || []).length);
-        console.log('[Strava DEBUG] PAYLOAD COMPLET ↓↓↓');
-        console.log(JSON.stringify(activity, null, 2));
-        console.log('========== [Strava DEBUG resync] fin', activity.id, '==========\n');
-        // ──────────────────────────────────────────────────────────
 
         // Construire les notes avec titre et description
         let notes = activity.name;
