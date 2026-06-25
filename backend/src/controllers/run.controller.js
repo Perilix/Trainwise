@@ -6,6 +6,7 @@ const { autoCompletePlannedSessions } = require('../services/planningAutoComplet
 const { createNotification } = require('./notification.controller');
 const { athleteHasCoach } = require('../services/coachRelation.service');
 const { getUpcomingCompetitionsForContext } = require('../utils/competitions');
+const { mapRunBlockPlain } = require('../utils/runBlockMapper');
 
 // Helper: Calculer les statistiques des courses récentes
 const calculateStats = (runs) => {
@@ -89,21 +90,7 @@ exports.createRun = async (req, res) => {
         targetDuration: coachPlanned.targetDuration,
         targetPace: coachPlanned.targetPace,
         description: coachPlanned.description,
-        runBlocks: (coachPlanned.runBlocks || []).map(b => ({
-          role: b.role,
-          mode: b.mode,
-          distance: b.distance,
-          duration: b.duration,
-          pace: b.pace,
-          repetitions: b.repetitions,
-          description: b.description,
-          recoveryMode: b.recoveryMode,
-          recoveryDistance: b.recoveryDistance,
-          recoveryDuration: b.recoveryDuration,
-          recoveryPace: b.recoveryPace,
-          recoveryDescription: b.recoveryDescription,
-          order: b.order
-        })),
+        runBlocks: (coachPlanned.runBlocks || []).map(mapRunBlockPlain),
         coach: coachPlanned.createdBy
       };
       await run.save();
@@ -275,22 +262,7 @@ exports.createRun = async (req, res) => {
             feeling: run.feeling,
             notes: run.notes,
             // Blocs réalisés par l'athlète
-            runBlocks: (run.runBlocks || []).map(b => ({
-              role: b.role,
-              mode: b.mode,
-              distance: b.distance,
-              duration: b.duration,
-              pace: b.pace,
-              repetitions: b.repetitions,
-              description: b.description,
-              recoveryMode: b.recoveryMode,
-              recoveryDistance: b.recoveryDistance,
-              recoveryDuration: b.recoveryDuration,
-              recoveryPace: b.recoveryPace,
-              recoveryDescription: b.recoveryDescription,
-              notes: b.notes,
-              order: b.order
-            }))
+            runBlocks: (run.runBlocks || []).map(mapRunBlockPlain)
           },
           // Plan figé du coach (s'il existe)
           coachPlan: run.plannedSnapshot && run.plannedSnapshot.coach ? {
@@ -299,21 +271,7 @@ exports.createRun = async (req, res) => {
             targetDuration: run.plannedSnapshot.targetDuration,
             targetPace: run.plannedSnapshot.targetPace,
             description: run.plannedSnapshot.description,
-            runBlocks: (run.plannedSnapshot.runBlocks || []).map(b => ({
-              role: b.role,
-              mode: b.mode,
-              distance: b.distance,
-              duration: b.duration,
-              pace: b.pace,
-              repetitions: b.repetitions,
-              description: b.description,
-              recoveryMode: b.recoveryMode,
-              recoveryDistance: b.recoveryDistance,
-              recoveryDuration: b.recoveryDuration,
-              recoveryPace: b.recoveryPace,
-              recoveryDescription: b.recoveryDescription,
-              order: b.order
-            })),
+            runBlocks: (run.plannedSnapshot.runBlocks || []).map(mapRunBlockPlain),
             coachId: run.plannedSnapshot.coach
           } : null,
           runner: {

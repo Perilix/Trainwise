@@ -1,5 +1,37 @@
 const mongoose = require('mongoose');
 
+// Champs d'une étape running (réutilisés pour les blocs de 1er niveau ET les
+// enfants d'un bloc « Répéter » multi-étapes via `children`).
+const runBlockStepFields = {
+  role: { type: String, enum: ['warmup', 'main', 'cooldown'], default: 'main' },
+  mode: { type: String, enum: ['distance', 'duration'], default: 'distance' },
+  distance: { type: Number, default: null }, // km, si mode='distance'
+  duration: { type: Number, default: null }, // minutes, si mode='duration'
+  pace: { type: String, default: null }, // "mm:ss" /km — valeur finale affichée à l'athlète
+  repetitions: { type: Number, default: 1, min: 1 },
+  description: { type: String, default: '' },
+  recoveryMode: { type: String, enum: ['distance', 'duration', null], default: null },
+  recoveryDistance: { type: Number, default: null }, // km
+  recoveryDuration: { type: String, default: null }, // texte libre, ex: "1min30"
+  recoveryPace: { type: String, default: null }, // "mm:ss" /km, optionnel
+  recoveryDescription: { type: String, default: '' },
+  order: { type: Number, default: 0 },
+  paceSource: {
+    mode: { type: String, enum: ['absolute', 'vmaPercent', 'zone', null], default: null },
+    zone: { type: String, default: null },
+    vmaPercent: { type: Number, default: null },
+    resolvedFromVma: { type: Number, default: null },
+    overridden: { type: Boolean, default: false }
+  },
+  recoveryPaceSource: {
+    mode: { type: String, enum: ['absolute', 'vmaPercent', 'zone', null], default: null },
+    zone: { type: String, default: null },
+    vmaPercent: { type: Number, default: null },
+    resolvedFromVma: { type: Number, default: null },
+    overridden: { type: Boolean, default: false }
+  }
+};
+
 const plannedRunSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
@@ -109,37 +141,13 @@ const plannedRunSchema = new mongoose.Schema({
     estimatedDuration: Number // minutes
   },
 
-  // Blocs running structurés (échauffement, corps de séance répétés, retour au calme)
+  // Blocs running structurés (échauffement, corps de séance répétés, retour au calme).
+  // Un bloc peut être un groupe « Répéter » multi-étapes via `children`.
   runBlocks: [{
-    role: { type: String, enum: ['warmup', 'main', 'cooldown'], default: 'main' },
-    mode: { type: String, enum: ['distance', 'duration'], default: 'distance' },
-    distance: { type: Number, default: null }, // km, si mode='distance'
-    duration: { type: Number, default: null }, // minutes, si mode='duration'
-    pace: { type: String, default: null }, // "mm:ss" /km — valeur finale affichée à l'athlète
-    repetitions: { type: Number, default: 1, min: 1 },
-    description: { type: String, default: '' },
-    // Récup associée au bloc principal (uniquement pour role='main')
-    recoveryMode: { type: String, enum: ['distance', 'duration', null], default: null },
-    recoveryDistance: { type: Number, default: null }, // km
-    recoveryDuration: { type: String, default: null }, // texte libre, ex: "1min30"
-    recoveryPace: { type: String, default: null }, // "mm:ss" /km, optionnel
-    recoveryDescription: { type: String, default: '' },
-    order: { type: Number, default: 0 },
-    // Traçabilité de l'origine de l'allure (si générée depuis un template VMA)
-    paceSource: {
-      mode: { type: String, enum: ['absolute', 'vmaPercent', 'zone', null], default: null },
-      zone: { type: String, default: null },
-      vmaPercent: { type: Number, default: null },
-      resolvedFromVma: { type: Number, default: null }, // VMA athlète au moment du calcul
-      overridden: { type: Boolean, default: false }     // true si le coach a édité l'allure résolue
-    },
-    recoveryPaceSource: {
-      mode: { type: String, enum: ['absolute', 'vmaPercent', 'zone', null], default: null },
-      zone: { type: String, default: null },
-      vmaPercent: { type: Number, default: null },
-      resolvedFromVma: { type: Number, default: null },
-      overridden: { type: Boolean, default: false }
-    }
+    ...runBlockStepFields,
+    // Étapes enfants d'un bloc « Répéter » (ex: 3×(400/500/600/500/400)).
+    // Si non vide, le bloc est un groupe : ces étapes sont répétées `repetitions` fois.
+    children: { type: [runBlockStepFields], default: undefined }
   }],
 
   // Référence vers le template d'origine (si la séance a été créée depuis la bibliothèque)

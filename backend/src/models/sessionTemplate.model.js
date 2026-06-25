@@ -16,7 +16,7 @@ const paceConfigSchema = new mongoose.Schema({
   absolute: { type: String, default: null }
 }, { _id: false });
 
-const templateRunBlockSchema = new mongoose.Schema({
+const templateRunBlockFields = {
   role: { type: String, enum: ['warmup', 'main', 'cooldown'], default: 'main' },
   mode: { type: String, enum: ['distance', 'duration'], default: 'distance' },
   distance: { type: Number, default: null },
@@ -30,6 +30,14 @@ const templateRunBlockSchema = new mongoose.Schema({
   recoveryPace: { type: paceConfigSchema, default: null },
   recoveryDescription: { type: String, default: '' },
   order: { type: Number, default: 0 }
+};
+
+// Étape enfant d'un bloc « Répéter » multi-étapes (un seul niveau d'imbrication).
+const templateRunBlockChildSchema = new mongoose.Schema(templateRunBlockFields, { _id: false });
+
+const templateRunBlockSchema = new mongoose.Schema({
+  ...templateRunBlockFields,
+  children: { type: [templateRunBlockChildSchema], default: undefined }
 }, { _id: false });
 
 const strengthPlanSchema = new mongoose.Schema({

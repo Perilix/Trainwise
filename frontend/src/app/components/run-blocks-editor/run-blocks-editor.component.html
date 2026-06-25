@@ -6,51 +6,39 @@
     </div>
   }
 
+  <!-- PROFIL DE LA SÉANCE -->
+  @if (showProfile) {
+    <app-workout-profile [blocks]="internal()"></app-workout-profile>
+  }
+
   <!-- ÉCHAUFFEMENT -->
-  <div class="rb-section">
-    <div class="rb-section-header">
-      <span class="rb-section-label">Échauffement</span>
-      @if (!readonly && !warmupBlock()) {
-        <button type="button" class="rb-add-btn" (click)="addWarmup()">+ Ajouter</button>
-      }
-    </div>
-    @if (warmupBlock()) {
-      <ng-container *ngTemplateOutlet="blockCard; context: { $implicit: warmupBlock(), index: -1, isMain: false }"></ng-container>
-    } @else {
-      <p class="rb-empty">Aucun échauffement défini</p>
-    }
-  </div>
+  @if (warmupBlock()) {
+    <ng-container *ngTemplateOutlet="blockCard; context: { $implicit: warmupBlock(), index: -1, isMain: false }"></ng-container>
+  } @else if (!readonly) {
+    <button type="button" class="rb-addslim warm" (click)="addWarmup()"><span class="pc">+</span> Échauffement</button>
+  }
 
   <!-- CORPS DE SÉANCE -->
-  <div class="rb-section">
-    <div class="rb-section-header">
-      <span class="rb-section-label">Corps de séance</span>
-      @if (!readonly) {
-        <button type="button" class="rb-add-btn" (click)="addMain()">+ Ajouter un bloc</button>
-      }
+  @if (mainBlocks().length === 0 && readonly) {
+    <p class="rb-empty">Aucun bloc</p>
+  }
+  @for (block of mainBlocks(); track $index) {
+    <ng-container *ngTemplateOutlet="blockCard; context: { $implicit: block, index: $index, isMain: true }"></ng-container>
+  }
+
+  @if (!readonly) {
+    <div class="rb-addrow">
+      <button type="button" class="rb-addchip" (click)="addMain()"><span class="pc">+</span> Étape</button>
+      <button type="button" class="rb-addchip alt" (click)="addRepeat()"><span class="pc">+</span> Bloc à répéter</button>
     </div>
-    @if (mainBlocks().length === 0) {
-      <p class="rb-empty">Aucun bloc</p>
-    }
-    @for (block of mainBlocks(); track $index) {
-      <ng-container *ngTemplateOutlet="blockCard; context: { $implicit: block, index: $index, isMain: true }"></ng-container>
-    }
-  </div>
+  }
 
   <!-- RETOUR AU CALME -->
-  <div class="rb-section">
-    <div class="rb-section-header">
-      <span class="rb-section-label">Retour au calme</span>
-      @if (!readonly && !cooldownBlock()) {
-        <button type="button" class="rb-add-btn" (click)="addCooldown()">+ Ajouter</button>
-      }
-    </div>
-    @if (cooldownBlock()) {
-      <ng-container *ngTemplateOutlet="blockCard; context: { $implicit: cooldownBlock(), index: -1, isMain: false }"></ng-container>
-    } @else {
-      <p class="rb-empty">Aucun retour au calme défini</p>
-    }
-  </div>
+  @if (cooldownBlock()) {
+    <ng-container *ngTemplateOutlet="blockCard; context: { $implicit: cooldownBlock(), index: -1, isMain: false }"></ng-container>
+  } @else if (!readonly) {
+    <button type="button" class="rb-addslim cool" (click)="addCooldown()"><span class="pc">+</span> Retour au calme</button>
+  }
 
   <div class="rb-footer" *ngIf="totalDistance() > 0">
     <span class="rb-total-label">Distance totale calculée</span>
@@ -58,48 +46,40 @@
   </div>
 </div>
 
-<ng-template #blockCard let-block let-index="index" let-isMain="isMain">
-  <div class="rb-card" [class.is-main]="isMain" [class.has-diff]="hasAnyDiff(block)">
-    <div class="rb-card-head">
-      <span class="rb-card-title">
-        @if (block.role === 'warmup') { Échauffement }
-        @else if (block.role === 'cooldown') { Retour au calme }
-        @else { Bloc {{ index + 1 }} }
-      </span>
-      <div class="rb-card-actions">
-        @if (!readonly && isMain && isExpanded(block)) {
-          <button type="button" class="rb-icon-btn" (click)="moveMainUp(index)" [disabled]="index === 0">↑</button>
-          <button type="button" class="rb-icon-btn" (click)="moveMainDown(index)" [disabled]="index === mainBlocks().length - 1">↓</button>
+<!-- ============================================================
+     Une étape « step » façon Garmin (affichage replié)
+     ============================================================ -->
+<ng-template #stepDisplay let-type="type" let-label="label" let-value="value" let-target="target"
+             let-changed="changed" let-old="old">
+  <div class="rb-step" [class]="'t-' + type">
+    <div class="rb-step-row">
+      <div class="rb-step-ico">{{ stepIcon(type) }}</div>
+      <div class="rb-step-main">
+        <div class="rb-step-type">{{ label }}</div>
+        @if (changed) {
+          <div class="rb-step-compare">
+            <span class="rb-sc-old">{{ old }}</span>
+            <span class="rb-sc-arr">→</span>
+            <span class="rb-sc-new">{{ value }}</span>
+          </div>
+        } @else {
+          <div class="rb-step-val">{{ value }}</div>
         }
-        @if (compact && !readonly) {
-          <button type="button" class="rb-icon-btn rb-pencil" (click)="toggleExpand(block)" [title]="isExpanded(block) ? 'Replier' : 'Modifier'">
-            @if (isExpanded(block)) { ✓ } @else { ✎ }
-          </button>
-        }
-        @if (!readonly && isExpanded(block)) {
-          <button type="button" class="rb-icon-btn rb-delete" (click)="removeBlock(block)">×</button>
-        }
+        @if (target) { <div class="rb-step-target">{{ target }}</div> }
       </div>
     </div>
+  </div>
+</ng-template>
 
-    @if (!isExpanded(block)) {
-      <div class="rb-summary">
-        @if (compareTo && hasAnyDiff(block)) {
-          <span class="rb-summary-old">{{ origSummary(block) }}</span>
-          <span class="rb-summary-arrow">→</span>
-          <span class="rb-summary-new">{{ blockSummary(block) }}</span>
-        } @else {
-          <span>{{ blockSummary(block) }}</span>
-        }
-        @if (block.description) {
-          <span class="rb-summary-desc">— {{ block.description }}</span>
-        }
-      </div>
-    } @else {
-
+<!-- ============================================================
+     Champs d'édition inline (effort + récup + répétitions)
+     ============================================================ -->
+<ng-template #editBody let-block let-isMain="isMain" let-showReps="showReps">
+  <div class="rb-edit">
+    <!-- Effort -->
     <div class="rb-mode-toggle">
-      <button type="button" class="rb-toggle-btn" [class.active]="block.mode === 'distance'" [disabled]="readonly" (click)="setMode(block, 'distance')">Distance</button>
-      <button type="button" class="rb-toggle-btn" [class.active]="block.mode === 'duration'" [disabled]="readonly" (click)="setMode(block, 'duration')">Durée</button>
+      <button type="button" class="rb-toggle-btn" [class.active]="block.mode === 'distance'" (click)="setMode(block, 'distance')">Distance</button>
+      <button type="button" class="rb-toggle-btn" [class.active]="block.mode === 'duration'" (click)="setMode(block, 'duration')">Durée</button>
     </div>
 
     <div class="rb-fields">
@@ -108,16 +88,16 @@
           <span>Distance (m)</span>
           <input type="number" step="50" min="0" placeholder="ex: 400"
             [value]="kmToMeters(block.distance)"
-            (input)="setDistanceFromMeters(block, $any($event.target).value)"
-            [disabled]="readonly">
+            (input)="setDistanceFromMeters(block, $any($event.target).value)">
         </label>
       } @else {
         <label class="rb-field">
           <span>Durée (min)</span>
-          <input type="number" step="1" min="0" [(ngModel)]="block.duration" [disabled]="readonly" (ngModelChange)="onFieldChange()">
+          <input type="number" step="1" min="0" [(ngModel)]="block.duration" (ngModelChange)="onFieldChange()">
         </label>
       }
-      @if (enableVmaPaces && !readonly) {
+
+      @if (enableVmaPaces) {
         <div class="rb-field rb-field-full rb-pace-block">
           <span>Allure</span>
           <div class="rb-pace-mode-toggle">
@@ -157,36 +137,40 @@
       } @else {
         <label class="rb-field">
           <span>Allure (mm:ss)</span>
-          <input type="text" placeholder="5:30" [(ngModel)]="block.pace" [disabled]="readonly" (ngModelChange)="onFieldChange()">
-        </label>
-      }
-      @if (isMain) {
-        <label class="rb-field rb-field-narrow">
-          <span>Répétitions</span>
-          <input type="number" min="1" [(ngModel)]="block.repetitions" [disabled]="readonly" (ngModelChange)="onFieldChange()">
+          <input type="text" placeholder="5:30" [(ngModel)]="block.pace" (ngModelChange)="onFieldChange()">
         </label>
       }
     </div>
 
     <label class="rb-field rb-field-full">
       <span>Description</span>
-      <input type="text" placeholder="Ex: tempo, fartlek..." [(ngModel)]="block.description" [disabled]="readonly" (ngModelChange)="onFieldChange()">
+      <input type="text" placeholder="Ex: tempo, fartlek..." [(ngModel)]="block.description" (ngModelChange)="onFieldChange()">
     </label>
 
+    @if (showReps) {
+      <div class="rb-reps-row">
+        <span class="rb-reps-label">Répétitions</span>
+        <div class="rb-stepper">
+          <button type="button" (click)="decRepeat(block)" aria-label="Diminuer">−</button>
+          <span class="rb-stepper-v">{{ block.repetitions || 1 }}×</span>
+          <button type="button" (click)="incRepeat(block)" aria-label="Augmenter">+</button>
+        </div>
+      </div>
+    }
+
+    <!-- Récup -->
     @if (isMain) {
       <div class="rb-recovery">
         <div class="rb-recovery-head">
-          <span class="rb-recovery-label">Récup</span>
-          @if (!readonly) {
-            <button type="button" class="rb-link-btn" (click)="toggleRecovery(block)">
-              {{ block.recoveryMode ? 'Retirer la récup' : '+ Ajouter une récup' }}
-            </button>
-          }
+          <span class="rb-recovery-label">💧 Récupération</span>
+          <button type="button" class="rb-link-btn" (click)="toggleRecovery(block)">
+            {{ block.recoveryMode ? 'Retirer' : '+ Ajouter' }}
+          </button>
         </div>
         @if (block.recoveryMode) {
           <div class="rb-mode-toggle small">
-            <button type="button" class="rb-toggle-btn" [class.active]="block.recoveryMode === 'distance'" [disabled]="readonly" (click)="setRecoveryMode(block, 'distance')">Distance</button>
-            <button type="button" class="rb-toggle-btn" [class.active]="block.recoveryMode === 'duration'" [disabled]="readonly" (click)="setRecoveryMode(block, 'duration')">Durée</button>
+            <button type="button" class="rb-toggle-btn" [class.active]="block.recoveryMode === 'distance'" (click)="setRecoveryMode(block, 'distance')">Distance</button>
+            <button type="button" class="rb-toggle-btn" [class.active]="block.recoveryMode === 'duration'" (click)="setRecoveryMode(block, 'duration')">Durée</button>
           </div>
           <div class="rb-fields">
             @if (block.recoveryMode === 'distance') {
@@ -194,16 +178,15 @@
                 <span>Distance (m)</span>
                 <input type="number" step="50" min="0" placeholder="ex: 200"
                   [value]="kmToMeters(block.recoveryDistance)"
-                  (input)="setRecoveryDistanceFromMeters(block, $any($event.target).value)"
-                  [disabled]="readonly">
+                  (input)="setRecoveryDistanceFromMeters(block, $any($event.target).value)">
               </label>
             } @else {
               <label class="rb-field">
                 <span>Durée</span>
-                <input type="text" placeholder="ex: 1min30" [(ngModel)]="block.recoveryDuration" [disabled]="readonly" (ngModelChange)="onFieldChange()">
+                <input type="text" placeholder="ex: 1min30" [(ngModel)]="block.recoveryDuration" (ngModelChange)="onFieldChange()">
               </label>
             }
-            @if (enableVmaPaces && !readonly) {
+            @if (enableVmaPaces) {
               <div class="rb-field rb-field-full rb-pace-block">
                 <span>Allure récup</span>
                 <div class="rb-pace-mode-toggle">
@@ -229,9 +212,7 @@
                   }
                   @if (block.recoveryPace) {
                     <div class="rb-pace-resolved">
-                      @if (athleteVma) {
-                        Allure récup : <strong>{{ block.recoveryPace }}/km</strong>
-                      }
+                      @if (athleteVma) { Allure récup : <strong>{{ block.recoveryPace }}/km</strong> }
                     </div>
                   }
                 } @else {
@@ -241,21 +222,180 @@
             } @else {
               <label class="rb-field">
                 <span>Allure récup</span>
-                <input type="text" placeholder="6:30" [(ngModel)]="block.recoveryPace" [disabled]="readonly" (ngModelChange)="onFieldChange()">
+                <input type="text" placeholder="6:30" [(ngModel)]="block.recoveryPace" (ngModelChange)="onFieldChange()">
               </label>
             }
           </div>
           <label class="rb-field rb-field-full">
             <span>Description récup</span>
-            <input type="text" placeholder="Ex: footing, marche..." [(ngModel)]="block.recoveryDescription" [disabled]="readonly" (ngModelChange)="onFieldChange()">
+            <input type="text" placeholder="Ex: footing, marche..." [(ngModel)]="block.recoveryDescription" (ngModelChange)="onFieldChange()">
           </label>
         }
       </div>
     }
-
-    <div class="rb-block-distance" *ngIf="blockDistanceLabel(block)">
-      {{ blockDistanceLabel(block) }}
-    </div>
-    }
   </div>
+</ng-template>
+
+<!-- ============================================================
+     Carte de bloc : step simple OU gros bloc « Répéter »
+     ============================================================ -->
+<ng-template #blockCard let-block let-index="index" let-isMain="isMain">
+
+  @if (isGroup(block)) {
+    <!-- ===== GROUPE « RÉPÉTER » MULTI-ÉTAPES ===== -->
+    <div class="rb-repeat" [class.has-diff]="hasAnyDiff(block)">
+      <div class="rb-repeat-head">
+        <div class="rb-repeat-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+          </svg>
+          Répéter
+        </div>
+        @if (!readonly) {
+          <div class="rb-stepper">
+            <button type="button" (click)="decRepeat(block)" aria-label="Diminuer le nombre de répétitions">−</button>
+            <span class="rb-stepper-v">{{ block.repetitions }}×</span>
+            <button type="button" (click)="incRepeat(block)" aria-label="Augmenter le nombre de répétitions">+</button>
+          </div>
+          <div class="rb-step-tools">
+            <button type="button" class="rb-step-del" (click)="removeBlock(block)" aria-label="Supprimer le groupe">×</button>
+          </div>
+        } @else {
+          <span class="rb-repeat-count">{{ block.repetitions }}×</span>
+        }
+      </div>
+
+      <div class="rb-repeat-body">
+        @for (child of block.children; track $index) {
+          <div class="rb-step" [class]="'t-' + stepType(child.role)" [class.editing]="isChildOpen(block, $index)">
+            <div class="rb-step-row">
+              <div class="rb-step-ico">{{ stepIcon(stepType(child.role)) }}</div>
+              <div class="rb-step-main">
+                <div class="rb-step-type">{{ stepTypeLabel(child) }}</div>
+                @if (!isChildOpen(block, $index)) {
+                  <div class="rb-step-val">{{ stepValue(child) }}</div>
+                  @if (stepTarget(child)) { <div class="rb-step-target">{{ stepTarget(child) }}</div> }
+                }
+              </div>
+              @if (!readonly) {
+                <div class="rb-step-tools">
+                  @if (isChildOpen(block, $index)) {
+                    <button type="button" class="rb-step-move" (click)="moveChildUp(block, $index)" [disabled]="$index === 0" aria-label="Monter">↑</button>
+                    <button type="button" class="rb-step-move" (click)="moveChildDown(block, $index)" [disabled]="$index === block.children.length - 1" aria-label="Descendre">↓</button>
+                  }
+                  <button type="button" class="rb-step-edit" (click)="toggleChild(block, $index)" [attr.aria-label]="isChildOpen(block, $index) ? 'Terminer' : 'Modifier l\'étape'">
+                    {{ isChildOpen(block, $index) ? '✓' : '✎' }}
+                  </button>
+                  <button type="button" class="rb-step-del" (click)="removeChild(block, child)" aria-label="Supprimer l'étape">×</button>
+                </div>
+              }
+            </div>
+            @if (isChildOpen(block, $index)) {
+              <ng-container *ngTemplateOutlet="editBody; context: { $implicit: child, isMain: true, showReps: false }"></ng-container>
+            }
+          </div>
+          @if (!isChildOpen(block, $index) && child.recoveryMode) {
+            <div class="rb-substep">
+              <ng-container *ngTemplateOutlet="stepDisplay; context: {
+                type: 'rec', label: 'Récupération', value: recoveryValue(child), target: recoveryTarget(child) }"></ng-container>
+            </div>
+          }
+        }
+        @if (!readonly) {
+          <button type="button" class="rb-addslim child" (click)="addChild(block)"><span class="pc">+</span> Étape dans le groupe</button>
+        }
+      </div>
+    </div>
+
+  } @else if (isRepeat(block)) {
+    <!-- ===== ANCIEN BLOC « RÉPÉTER » (étape unique, rétro-compat) ===== -->
+    <div class="rb-repeat" [class.has-diff]="hasAnyDiff(block)" [class.editing]="isExpanded(block)">
+      <div class="rb-repeat-head">
+        <div class="rb-repeat-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+          </svg>
+          Répéter
+        </div>
+        @if (!readonly) {
+          <div class="rb-stepper">
+            <button type="button" (click)="decRepeat(block)" aria-label="Diminuer le nombre de répétitions">−</button>
+            <span class="rb-stepper-v">{{ block.repetitions }}×</span>
+            <button type="button" (click)="incRepeat(block)" aria-label="Augmenter le nombre de répétitions">+</button>
+          </div>
+          <div class="rb-step-tools">
+            <button type="button" class="rb-step-edit" (click)="toggleExpand(block)" [attr.aria-label]="isExpanded(block) ? 'Terminer' : 'Modifier le bloc'">
+              {{ isExpanded(block) ? '✓' : '✎' }}
+            </button>
+            <button type="button" class="rb-step-del" (click)="removeBlock(block)" aria-label="Supprimer le bloc">×</button>
+          </div>
+        } @else {
+          <span class="rb-repeat-count">{{ block.repetitions }}×</span>
+        }
+      </div>
+
+      @if (isExpanded(block)) {
+        <ng-container *ngTemplateOutlet="editBody; context: { $implicit: block, isMain: true, showReps: false }"></ng-container>
+      } @else {
+        <div class="rb-repeat-body">
+          <ng-container *ngTemplateOutlet="stepDisplay; context: {
+            type: 'run', label: stepTypeLabel(block), value: stepValue(block), target: stepTarget(block),
+            changed: !!compareTo && stepValueChanged(block), old: origStepValue(block) }"></ng-container>
+          @if (block.recoveryMode) {
+            <ng-container *ngTemplateOutlet="stepDisplay; context: {
+              type: 'rec', label: 'Récupération', value: recoveryValue(block), target: recoveryTarget(block),
+              changed: !!compareTo && recoveryValueChanged(block), old: origRecoveryValue(block) }"></ng-container>
+          }
+        </div>
+      }
+    </div>
+
+  } @else {
+    <!-- ===== STEP SIMPLE ===== -->
+    <div class="rb-step" [class]="'t-' + stepType(block.role)" [class.editing]="isExpanded(block)">
+      <div class="rb-step-row">
+        <div class="rb-step-ico">{{ stepIcon(stepType(block.role)) }}</div>
+        <div class="rb-step-main">
+          <div class="rb-step-type">{{ stepTypeLabel(block) }}</div>
+          @if (!isExpanded(block)) {
+            @if (compareTo && stepValueChanged(block)) {
+              <div class="rb-step-compare">
+                <span class="rb-sc-old">{{ origStepValue(block) }}</span>
+                <span class="rb-sc-arr">→</span>
+                <span class="rb-sc-new">{{ stepValue(block) }}</span>
+              </div>
+            } @else {
+              <div class="rb-step-val">{{ stepValue(block) }}</div>
+            }
+            @if (stepTarget(block)) { <div class="rb-step-target">{{ stepTarget(block) }}</div> }
+          }
+        </div>
+        @if (!readonly) {
+          <div class="rb-step-tools">
+            @if (isMain && isExpanded(block)) {
+              <button type="button" class="rb-step-move" (click)="moveMainUp(index)" [disabled]="index === 0" aria-label="Monter">↑</button>
+              <button type="button" class="rb-step-move" (click)="moveMainDown(index)" [disabled]="index === mainBlocks().length - 1" aria-label="Descendre">↓</button>
+            }
+            <button type="button" class="rb-step-edit" (click)="toggleExpand(block)" [attr.aria-label]="isExpanded(block) ? 'Terminer' : 'Modifier l\'étape'">
+              {{ isExpanded(block) ? '✓' : '✎' }}
+            </button>
+            <button type="button" class="rb-step-del" (click)="removeBlock(block)" aria-label="Supprimer l'étape">×</button>
+          </div>
+        }
+      </div>
+
+      @if (isExpanded(block)) {
+        <ng-container *ngTemplateOutlet="editBody; context: { $implicit: block, isMain: isMain, showReps: isMain }"></ng-container>
+      }
+    </div>
+
+    <!-- récup affichée comme sous-step quand repliée -->
+    @if (!isExpanded(block) && isMain && block.recoveryMode) {
+      <div class="rb-substep">
+        <ng-container *ngTemplateOutlet="stepDisplay; context: {
+          type: 'rec', label: 'Récupération', value: recoveryValue(block), target: recoveryTarget(block),
+          changed: !!compareTo && recoveryValueChanged(block), old: origRecoveryValue(block) }"></ng-container>
+      </div>
+    }
+  }
 </ng-template>

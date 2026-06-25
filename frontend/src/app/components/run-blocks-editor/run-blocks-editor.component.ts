@@ -1,14 +1,25 @@
 import { Component, Input, Output, EventEmitter, computed, signal, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RunBlock, RunBlockMode } from '../../services/run.service';
+import { RunBlock, RunBlockMode, RunBlockRole } from '../../services/run.service';
 import { SessionTemplateService } from '../../services/session-template.service';
 import { PaceZone, PaceZoneKey } from '../../interfaces/session-template.interfaces';
+import { WorkoutProfileComponent } from '../workout-profile/workout-profile.component';
+
+type StepType = 'warm' | 'run' | 'rec' | 'cool' | 'rest';
+
+const STEP_META: Record<StepType, { icon: string; label: string }> = {
+  warm: { icon: '🔥', label: 'Échauffement' },
+  run: { icon: '🏃', label: 'Course' },
+  rec: { icon: '💧', label: 'Récupération' },
+  cool: { icon: '🧊', label: 'Retour au calme' },
+  rest: { icon: '⏸️', label: 'Repos' }
+};
 
 @Component({
   selector: 'app-run-blocks-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, WorkoutProfileComponent],
   templateUrl: './run-blocks-editor.component.html',
   styleUrl: './run-blocks-editor.component.scss'
 })
@@ -20,6 +31,8 @@ export class RunBlocksEditorComponent implements OnInit, OnChanges {
   @Input() compact = false;
   // Quand fourni : affiche un diff (valeur barrée si différente entre original et bloc courant)
   @Input() compareTo: RunBlock[] | null = null;
+  // Affiche le bloc « Profil de la séance » (timeline + stats) en haut
+  @Input() showProfile = true;
   // Active le mode zone VMA (toggle Zone / Allure fixe + slider)
   @Input() enableVmaPaces = false;
   // VMA de l'athlète pour résoudre les % en allures concrètes
@@ -30,7 +43,7 @@ export class RunBlocksEditorComponent implements OnInit, OnChanges {
 
   constructor(private templateService: SessionTemplateService) {}
 
-  expandedKeys = signal<Set<number>>(new Set<number>());
+  expandedKeys = signal<Set<string>>(new Set<string>());
 
   internal = signal<RunBlock[]>([]);
 
@@ -177,7 +190,13 @@ export class RunBlocksEditorComponent implements OnInit, OnChanges {
 
   private normalize(list: RunBlock[]): RunBlock[] {
     return [...list]
-      .map((b, i) => ({ ...b, order: b.order ?? i }))
+      .map((b, i) => {
+        const block = { ...b, order: b.order ?? i };
+        if (block.children?.length) {
+          block.children = block.children.map((c, ci) => ({ ...c, order: c.order ?? ci }));
+        }
+        return block;
+      })
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   }
 
@@ -186,6 +205,9 @@ export class RunBlocksEditorComponent implements OnInit, OnChanges {
   cooldownBlock = computed(() => this.internal().find(b => b.role === 'cooldown') || null);
 
   private emit() {
+    // Rafraîchit la référence du tableau pour que les consommateurs liés à
+    // internal() (profil, total) se recalculent même après une mutation en place.
+    this.internal.update(list => [...list]);
     this.blocksChange.emit(this.internal());
   }
 
@@ -203,6 +225,7 @@ export class RunBlocksEditorComponent implements OnInit, OnChanges {
       { role: 'warmup', mode: 'duration', duration: 15, pace: '', repetitions: 1, description: '', order: -1 },
       ...list
     ]);
+    this.expandLast('warmup');
   }
 
   addMain() {
@@ -222,6 +245,7 @@ export class RunBlocksEditorComponent implements OnInit, OnChanges {
       copy.splice(insertAt, 0, block);
       return copy;
     });
+    this.expandLast('main');
   }
 
   addCooldown() {
@@ -230,6 +254,7 @@ export class RunBlocksEditorComponent implements OnInit, OnChanges {
       ...list,
       { role: 'cooldown', mode: 'duration', duration: 10, pace: '', repetitions: 1, description: '', order: 999 }
     ]);
+    this.expandLast('cooldown');
   }
 
   removeBlock(block: RunBlock) {
@@ -330,6 +355,11 @@ export class RunBlocksEditorComponent implements OnInit, OnChanges {
 
   blockDistanceKm(block: RunBlock): number {
     const reps = Math.max(1, block.repetitions || 1);
+    // Groupe « Répéter » : somme des enfants × répétitions du groupe.
+    if (this.isGroup(block)) {
+      const inner = (block.children || []).reduce((acc, c) => acc + this.blockDistanceKm(c), 0);
+      return inner * reps;
+    }
     let main = 0;
     if (block.mode === 'distance') {
       main = (block.distance || 0) * reps;
@@ -360,20 +390,237 @@ export class RunBlocksEditorComponent implements OnInit, OnChanges {
     return block.order;
   }
 
-  // ---- Mode compact / pencil edit ----
+  // ============= Garmin-style step helpers =============
+
+  /** Ancien bloc « Répéter » à étape unique (effort + récup ×N), sans `children`. Rétro-compat. */
+  isRepeat(block: RunBlock): boolean {
+    return !this.isGroup(block) && block.role === 'main' && Math.max(1, block.repetitions || 1) > 1;
+  }
+
+  stepType(role: RunBlockRole): StepType {
+    if (role === 'warmup') return 'warm';
+    if (role === 'cooldown') return 'cool';
+    return 'run';
+  }
+
+  stepIcon(type: StepType): string {
+    return STEP_META[type].icon;
+  }
+
+  stepTypeLabel(block: RunBlock): string {
+    if (block.role === 'warmup') return 'Échauffement';
+    if (block.role === 'cooldown') return 'Retour au calme';
+    return (block.description || '').trim() || 'Course';
+  }
+
+  /** Valeur principale d'une étape (effort) : distance ou durée. */
+  stepValue(block: RunBlock): string {
+    if (block.mode === 'distance') {
+      return block.distance ? `${Math.round(block.distance * 1000)} m` : '—';
+    }
+    return block.duration ? `${block.duration} min` : '—';
+  }
+
+  /** Ligne « Cible · 4:00 /km · Z… ». */
+  stepTarget(block: RunBlock): string {
+    const parts: string[] = [];
+    if (block.pace) parts.push(`${block.pace} /km`);
+    const zone = block.paceSource?.zone;
+    if (zone) parts.push(this.zoneShort(zone));
+    if (!parts.length) return '';
+    return `Cible · ${parts.join(' · ')}`;
+  }
+
+  recoveryValue(block: RunBlock): string {
+    if (block.recoveryMode === 'distance') {
+      return block.recoveryDistance ? `${Math.round(block.recoveryDistance * 1000)} m` : '—';
+    }
+    return block.recoveryDuration ? `${block.recoveryDuration}` : '—';
+  }
+
+  recoveryTarget(block: RunBlock): string {
+    const parts: string[] = [];
+    if (block.recoveryDescription) parts.push(block.recoveryDescription);
+    if (block.recoveryPace) parts.push(`${block.recoveryPace} /km`);
+    return parts.length ? `Récup · ${parts.join(' · ')}` : 'Récup';
+  }
+
+  private zoneShort(zone: string): string {
+    const z = this.zones().find(x => x.key === zone);
+    return z ? z.label : zone;
+  }
+
+  // ---- Compare (prévu → réalisé) sur la valeur d'étape ----
+  stepValueChanged(block: RunBlock): boolean {
+    const orig = this.findOriginal(block);
+    return !!orig && this.stepValue(orig) !== this.stepValue(block);
+  }
+
+  origStepValue(block: RunBlock): string {
+    const orig = this.findOriginal(block);
+    return orig ? this.stepValue(orig) : '';
+  }
+
+  recoveryValueChanged(block: RunBlock): boolean {
+    const orig = this.findOriginal(block);
+    return !!orig && this.recoveryValue(orig) !== this.recoveryValue(block);
+  }
+
+  origRecoveryValue(block: RunBlock): string {
+    const orig = this.findOriginal(block);
+    return orig ? this.recoveryValue(orig) : '';
+  }
+
+  // ============= Repeat stepper =============
+
+  incRepeat(block: RunBlock) {
+    if (this.readonly) return;
+    const v = Math.max(1, block.repetitions || 1);
+    block.repetitions = Math.min(30, v + 1);
+    this.emit();
+  }
+
+  decRepeat(block: RunBlock) {
+    if (this.readonly) return;
+    const v = Math.max(1, block.repetitions || 1);
+    block.repetitions = Math.max(1, v - 1);
+    this.emit();
+  }
+
+  private newChildStep(): RunBlock {
+    return {
+      role: 'main',
+      mode: 'distance',
+      distance: 0.4,
+      pace: '',
+      repetitions: 1,
+      description: '',
+      recoveryMode: 'duration',
+      recoveryDuration: '1min',
+      recoveryPace: null
+    };
+  }
+
+  /** Insère un GROUPE « à répéter » (conteneur d'étapes), répété 8×. */
+  addRepeat() {
+    this.commit(list => {
+      const insertAt = list.findIndex(b => b.role === 'cooldown');
+      const block: RunBlock = {
+        role: 'main',
+        mode: 'distance',
+        distance: null,
+        pace: '',
+        repetitions: 8,
+        description: '',
+        recoveryMode: null,
+        children: [this.newChildStep()]
+      };
+      if (insertAt < 0) return [...list, block];
+      const copy = [...list];
+      copy.splice(insertAt, 0, block);
+      return copy;
+    });
+  }
+
+  /** Ajoute une étape enfant à un groupe « Répéter ». */
+  addChild(group: RunBlock) {
+    if (this.readonly) return;
+    if (!group.children) group.children = [];
+    group.children.push(this.newChildStep());
+    this.reindexChildren(group);
+    this.open(this.childKey(group, group.children.length - 1));
+    this.emit();
+  }
+
+  /** Supprime une étape enfant ; si le groupe se vide, retire le groupe entier. */
+  removeChild(group: RunBlock, child: RunBlock) {
+    if (this.readonly) return;
+    group.children = (group.children || []).filter(c => c !== child);
+    if (group.children.length === 0) {
+      this.removeBlock(group);
+      return;
+    }
+    this.reindexChildren(group);
+    this.emit();
+  }
+
+  moveChildUp(group: RunBlock, index: number) {
+    if (this.readonly || !group.children || index <= 0) return;
+    const c = group.children;
+    [c[index - 1], c[index]] = [c[index], c[index - 1]];
+    this.reindexChildren(group);
+    this.emit();
+  }
+
+  moveChildDown(group: RunBlock, index: number) {
+    if (this.readonly || !group.children || index >= group.children.length - 1) return;
+    const c = group.children;
+    [c[index + 1], c[index]] = [c[index], c[index + 1]];
+    this.reindexChildren(group);
+    this.emit();
+  }
+
+  private reindexChildren(group: RunBlock) {
+    (group.children || []).forEach((c, i) => (c.order = i));
+  }
+
+  isGroup(block: RunBlock): boolean {
+    return !!(block.children && block.children.length > 0);
+  }
+
+  childTypeLabel(child: RunBlock): string {
+    return (child.description || '').trim() || 'Course';
+  }
+
+  /** Ouvre (déplie) le dernier bloc d'un rôle donné — utilisé après un ajout. */
+  private expandLast(role: RunBlockRole) {
+    const list = this.internal();
+    const target = role === 'main'
+      ? [...list].reverse().find(b => b.role === 'main')
+      : list.find(b => b.role === role);
+    if (target) this.open(this.keyFor(target));
+  }
+
+  // ---- Édition inline (déplier / replier) ----
+  private keyFor(block: RunBlock): string {
+    return 'b' + (block.order ?? 0);
+  }
+
+  childKey(parent: RunBlock, index: number): string {
+    return 'c' + (parent.order ?? 0) + '-' + index;
+  }
+
+  private open(key: string) {
+    const keys = new Set(this.expandedKeys());
+    keys.add(key);
+    this.expandedKeys.set(keys);
+  }
+
+  private toggle(key: string) {
+    const keys = new Set(this.expandedKeys());
+    if (keys.has(key)) keys.delete(key);
+    else keys.add(key);
+    this.expandedKeys.set(keys);
+  }
+
   isExpanded(block: RunBlock): boolean {
-    if (!this.compact) return true;
-    if (block.order == null) return false;
-    return this.expandedKeys().has(block.order);
+    if (this.readonly) return false;
+    return this.expandedKeys().has(this.keyFor(block));
   }
 
   toggleExpand(block: RunBlock) {
     if (this.readonly) return;
-    if (block.order == null) return;
-    const keys = new Set(this.expandedKeys());
-    if (keys.has(block.order)) keys.delete(block.order);
-    else keys.add(block.order);
-    this.expandedKeys.set(keys);
+    this.toggle(this.keyFor(block));
+  }
+
+  isChildOpen(parent: RunBlock, index: number): boolean {
+    if (this.readonly) return false;
+    return this.expandedKeys().has(this.childKey(parent, index));
+  }
+
+  toggleChild(parent: RunBlock, index: number) {
+    if (this.readonly) return;
+    this.toggle(this.childKey(parent, index));
   }
 
   collapseAll() {

@@ -33,6 +33,9 @@ export interface RunBlock {
   order?: number;
   paceSource?: RunBlockPaceSource;
   recoveryPaceSource?: RunBlockPaceSource;
+  // Étapes enfants d'un bloc « Répéter » multi-étapes (ex: 3×(400/500/600/500/400)).
+  // Si présent et non vide, le bloc est un groupe : ces étapes sont répétées `repetitions` fois.
+  children?: RunBlock[];
 }
 
 export interface PlannedSnapshot {

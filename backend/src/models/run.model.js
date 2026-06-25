@@ -1,5 +1,24 @@
 const mongoose = require('mongoose');
 
+// Champs d'une étape running réalisée (réutilisés pour les blocs de 1er niveau
+// ET les enfants d'un bloc « Répéter » multi-étapes via `children`).
+const runBlockStepFields = {
+  role: { type: String, enum: ['warmup', 'main', 'cooldown'], default: 'main' },
+  mode: { type: String, enum: ['distance', 'duration'], default: 'distance' },
+  distance: { type: Number, default: null },
+  duration: { type: Number, default: null },
+  pace: { type: String, default: null },
+  repetitions: { type: Number, default: 1, min: 1 },
+  description: { type: String, default: '' },
+  recoveryMode: { type: String, enum: ['distance', 'duration', null], default: null },
+  recoveryDistance: { type: Number, default: null },
+  recoveryDuration: { type: String, default: null },
+  recoveryPace: { type: String, default: null },
+  recoveryDescription: { type: String, default: '' },
+  notes: { type: String, default: '' },
+  order: { type: Number, default: 0 }
+};
+
 const runSchema = new mongoose.Schema({
   // Utilisateur
   user: {
@@ -74,20 +93,8 @@ const runSchema = new mongoose.Schema({
   // Blocs réalisés par l'athlète (saisis lors du retour ou a posteriori)
   // Mêmes champs que la séance planifiée mais reflétant ce qui a été fait
   runBlocks: [{
-    role: { type: String, enum: ['warmup', 'main', 'cooldown'], default: 'main' },
-    mode: { type: String, enum: ['distance', 'duration'], default: 'distance' },
-    distance: { type: Number, default: null },
-    duration: { type: Number, default: null },
-    pace: { type: String, default: null },
-    repetitions: { type: Number, default: 1, min: 1 },
-    description: { type: String, default: '' },
-    recoveryMode: { type: String, enum: ['distance', 'duration', null], default: null },
-    recoveryDistance: { type: Number, default: null },
-    recoveryDuration: { type: String, default: null },
-    recoveryPace: { type: String, default: null },
-    recoveryDescription: { type: String, default: '' },
-    notes: { type: String, default: '' },
-    order: { type: Number, default: 0 }
+    ...runBlockStepFields,
+    children: { type: [runBlockStepFields], default: undefined }
   }],
 
   // Snapshot figé de ce que le coach avait prévu (copié à la complétion d'une séance planifiée)
@@ -110,7 +117,8 @@ const runSchema = new mongoose.Schema({
       recoveryDuration: String,
       recoveryPace: String,
       recoveryDescription: String,
-      order: Number
+      order: Number,
+      children: { type: mongoose.Schema.Types.Mixed, default: undefined }
     }],
     coach: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }
   }

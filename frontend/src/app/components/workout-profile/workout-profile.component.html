@@ -1,0 +1,28 @@
+@if (hasData) {
+  <div class="wp-card">
+    <div class="wp-timeline">
+      @for (seg of segments; track $index) {
+        <div class="wp-seg" [class]="'t-' + seg.type" [style.flex]="seg.flex"></div>
+      }
+    </div>
+    <div class="wp-labels">
+      @for (lab of labels; track $index) {
+        <div class="wp-label" [style.flex]="lab.flex">{{ lab.text }}</div>
+      }
+    </div>
+    <div class="wp-stats">
+      <div class="wp-stat">
+        <div class="wp-v">{{ distanceLabel }}<span class="wp-u"> km</span></div>
+        <div class="wp-l">Distance</div>
+      </div>
+      <div class="wp-stat">
+        <div class="wp-v">{{ durationLabel }}<span class="wp-u"> min</span></div>
+        <div class="wp-l">Durée</div>
+      </div>
+      <div class="wp-stat">
+        <div class="wp-v">{{ stepsCount }}</div>
+        <div class="wp-l">{{ stepsCount > 1 ? 'Étapes' : 'Étape' }}</div>
+      </div>
+    </div>
+  </div>
+}

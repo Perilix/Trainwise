@@ -184,7 +184,7 @@ exports.createTemplateFromPlanning = async (req, res) => {
     });
     if (!relationship) return res.status(403).json({ error: 'Accès refusé' });
 
-    const runBlocks = (planned.runBlocks || []).map(b => {
+    const toTemplateBlock = (b) => {
       const pace = b.paceSource && b.paceSource.mode
         ? {
             mode: b.paceSource.mode,
@@ -205,7 +205,7 @@ exports.createTemplateFromPlanning = async (req, res) => {
             : { mode: 'absolute', absolute: b.recoveryPace })
         : null;
 
-      return {
+      const out = {
         role: b.role,
         mode: b.mode,
         distance: b.distance,
@@ -220,7 +220,11 @@ exports.createTemplateFromPlanning = async (req, res) => {
         recoveryDescription: b.recoveryDescription,
         order: b.order
       };
-    });
+      if (b.children && b.children.length) out.children = b.children.map(toTemplateBlock);
+      return out;
+    };
+
+    const runBlocks = (planned.runBlocks || []).map(toTemplateBlock);
 
     const template = await SessionTemplate.create({
       name: name.trim(),
@@ -283,8 +287,10 @@ exports.assignTemplate = async (req, res) => {
 
       const overrides = assign.paceOverrides || {};
 
-      const runBlocks = (template.runBlocks || []).map((block, index) => {
-        const blockOverride = overrides[index] || {};
+      // override : surcharge d'allure manuelle (uniquement pour les blocs de 1er niveau ;
+      // les enfants d'un groupe résolvent leur allure sans surcharge).
+      const toPlannedBlock = (block, blockOverride) => {
+        blockOverride = blockOverride || {};
         const resolved = resolveBlockPace(block.pace, athlete.vma);
         const finalPace = blockOverride.pace !== undefined ? blockOverride.pace : resolved;
         const overriddenPace = blockOverride.pace !== undefined && blockOverride.pace !== resolved;
@@ -298,7 +304,7 @@ exports.assignTemplate = async (req, res) => {
         const overriddenRecovery = blockOverride.recoveryPace !== undefined
           && blockOverride.recoveryPace !== resolvedRecovery;
 
-        return {
+        const out = {
           role: block.role,
           mode: block.mode,
           distance: block.distance,
@@ -327,7 +333,13 @@ exports.assignTemplate = async (req, res) => {
             overridden: overriddenRecovery
           } : undefined
         };
-      });
+        if (block.children && block.children.length) {
+          out.children = block.children.map(c => toPlannedBlock(c, {}));
+        }
+        return out;
+      };
+
+      const runBlocks = (template.runBlocks || []).map((block, index) => toPlannedBlock(block, overrides[index]));
 
       const mainBlock = runBlocks.find(b => b.role === 'main');
       const targetPace = mainBlock ? mainBlock.pace : null;

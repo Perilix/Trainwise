@@ -1,0 +1,93 @@
+:host {
+  --tw-amber: #f5a623;
+  --tw-cyan: #00a6fb;
+  --tw-teal: #37bd9c;
+  --tw-violet: #9159f1;
+  --tw-muted-2: #8a94a1;
+  --tw-line: #e8e4db;
+  --tw-ink: #051923;
+  --tw-muted: #5a6878;
+  display: block;
+}
+
+.wp-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 2px 14px -8px rgba(0, 53, 84, 0.18);
+}
+
+.wp-timeline {
+  display: flex;
+  gap: 2px;
+  height: 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.wp-seg {
+  height: 100%;
+  min-width: 3px;
+
+  &.t-warm { background: var(--tw-amber); }
+  &.t-run { background: var(--tw-cyan); }
+  &.t-rec { background: var(--tw-teal); }
+  &.t-cool { background: var(--tw-violet); }
+  &.t-rest { background: var(--tw-muted-2); }
+}
+
+.wp-labels {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 14px;
+}
+
+.wp-label {
+  font-size: 8.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--tw-muted-2);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.wp-stats {
+  display: flex;
+}
+
+.wp-stat {
+  flex: 1;
+  text-align: center;
+  border-right: 1px solid var(--tw-line);
+
+  &:last-child { border-right: none; }
+}
+
+.wp-v {
+  font-family: 'GulfsDisplay', serif;
+  font-style: italic;
+  font-size: 20px;
+  color: var(--tw-ink);
+  line-height: 1;
+
+  .wp-u {
+    font-size: 12px;
+    font-style: normal;
+    font-family: 'Poppins', sans-serif;
+    color: var(--tw-muted);
+  }
+}
+
+.wp-l {
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tw-muted);
+  font-weight: 700;
+  margin-top: 5px;
+}
