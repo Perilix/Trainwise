@@ -43,12 +43,17 @@ export class WorkoutProfileComponent {
     return this._blocks;
   }
 
+  // Distance totale fournie par l'éditeur (source unique = même valeur que le footer).
+  // Si non fournie, on retombe sur le calcul interne.
+  @Input() totalKm: number | null = null;
+
   get hasData(): boolean {
     return this.segments.length > 0;
   }
 
   get distanceLabel(): string {
-    return this.totalDistanceKm > 0 ? this.fr(this.totalDistanceKm) : '—';
+    const km = this.totalKm != null ? this.totalKm : this.totalDistanceKm;
+    return km > 0 ? this.fr(km) : '—';
   }
 
   get durationLabel(): string {

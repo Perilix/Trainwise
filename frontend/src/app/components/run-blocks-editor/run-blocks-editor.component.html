@@ -8,7 +8,7 @@
 
   <!-- PROFIL DE LA SÉANCE -->
   @if (showProfile) {
-    <app-workout-profile [blocks]="internal()"></app-workout-profile>
+    <app-workout-profile [blocks]="internal()" [totalKm]="totalDistance()"></app-workout-profile>
   }
 
   <!-- ÉCHAUFFEMENT -->
