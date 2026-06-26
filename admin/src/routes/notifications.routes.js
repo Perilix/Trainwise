@@ -28,44 +28,62 @@ function initFirebase() {
 }
 initFirebase();
 
-router.get('/', requireAuth, async (req, res) => {
-  const [total, withToken, logs] = await Promise.all([
+// Charge les données communes de la page (stats, historique, liste des appareils ciblables)
+async function loadPageData() {
+  const [total, withToken, logs, tokenUsers] = await Promise.all([
     User.countDocuments(),
     User.countDocuments({ pushToken: { $ne: null } }),
-    NotificationLog.find().sort({ sentAt: -1 }).limit(20)
+    NotificationLog.find().sort({ sentAt: -1 }).limit(20),
+    User.find({ pushToken: { $ne: null } })
+      .select('_id email firstName lastName subscriptionStatus')
+      .sort({ firstName: 1 })
+      .lean()
   ]);
-  res.render('notifications', { stats: { total, withToken }, logs, success: null, error: null });
+  return { stats: { total, withToken }, logs, tokenUsers };
+}
+
+router.get('/', requireAuth, async (req, res) => {
+  const data = await loadPageData();
+  res.render('notifications', { ...data, success: null, error: null });
 });
 
 router.post('/', requireAuth, async (req, res) => {
   const { title, body, segment } = req.body;
+  // Les checkboxes renvoient soit une string (1 sélectionné) soit un array
+  let userIds = req.body.userIds || [];
+  if (!Array.isArray(userIds)) userIds = [userIds];
 
-  const [total, withToken, logs] = await Promise.all([
-    User.countDocuments(),
-    User.countDocuments({ pushToken: { $ne: null } }),
-    NotificationLog.find().sort({ sentAt: -1 }).limit(20)
-  ]);
+  const data = await loadPageData();
 
   if (!title || !body) {
-    return res.render('notifications', { stats: { total, withToken }, logs, success: null, error: 'Titre et message requis.' });
+    return res.render('notifications', { ...data, success: null, error: 'Titre et message requis.' });
   }
 
   if (!jwtClient || !projectId) {
-    return res.render('notifications', { stats: { total, withToken }, logs, success: null, error: 'Firebase non configuré (FIREBASE_SERVICE_ACCOUNT manquant).' });
+    return res.render('notifications', { ...data, success: null, error: 'Firebase non configuré (FIREBASE_SERVICE_ACCOUNT manquant).' });
   }
 
   const filter = { pushToken: { $ne: null } };
   if (segment === 'pro') filter.subscriptionStatus = 'pro';
   if (segment === 'free') filter.subscriptionStatus = 'free';
+  if (segment === 'custom') {
+    const validIds = userIds.filter(id => /^[0-9a-fA-F]{24}$/.test(id));
+    if (!validIds.length) {
+      return res.render('notifications', { ...data, success: null, error: 'Sélectionnez au moins un utilisateur.' });
+    }
+    filter._id = { $in: validIds };
+  }
 
-  const users = await User.find(filter).select('pushToken _id');
+  const users = await User.find(filter).select('pushToken _id email firstName');
   let successCount = 0;
   let failCount = 0;
+  const recipients = [];
 
   const tokenData = await jwtClient.getAccessToken();
   const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
 
   await Promise.all(users.map(async (u) => {
+    let status = 'sent';
     try {
       await axios.post(fcmUrl, {
         message: {
@@ -77,19 +95,32 @@ router.post('/', requireAuth, async (req, res) => {
       }, { headers: { Authorization: `Bearer ${tokenData.token}`, 'Content-Type': 'application/json' } });
       successCount++;
     } catch (e) {
+      status = 'failed';
       failCount++;
       if (e.response?.data?.error?.details?.some(d => d.errorCode === 'UNREGISTERED')) {
         await User.findByIdAndUpdate(u._id, { pushToken: null });
       }
     }
+    recipients.push({ user: u._id, email: u.email, firstName: u.firstName, status });
   }));
 
-  await NotificationLog.create({ title, body, segment: segment || 'all', sent: successCount, failed: failCount });
+  await NotificationLog.create({
+    title,
+    body,
+    segment: segment || 'all',
+    sent: successCount,
+    failed: failCount,
+    createdBy: req.session.adminId,
+    createdByName: req.session.adminName,
+    targetCount: users.length,
+    recipients
+  });
 
   const freshLogs = await NotificationLog.find().sort({ sentAt: -1 }).limit(20);
 
   res.render('notifications', {
-    stats: { total, withToken },
+    stats: data.stats,
+    tokenUsers: data.tokenUsers,
     logs: freshLogs,
     success: `Envoyée à ${successCount} appareil${successCount > 1 ? 's' : ''}${failCount > 0 ? ` (${failCount} échec${failCount > 1 ? 's' : ''})` : ''}.`,
     error: null
@@ -120,6 +151,16 @@ router.get('/reengagement', requireAuth, async (req, res) => {
     byType,
     filters: { type: type || '', status: status || '', q: q || '' }
   });
+});
+
+// ── Détail d'une campagne manuelle (destinataires, contenu, créateur) ──────
+router.get('/:id', requireAuth, async (req, res) => {
+  if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) return res.redirect('/notifications');
+
+  const log = await NotificationLog.findById(req.params.id).lean();
+  if (!log) return res.redirect('/notifications');
+
+  res.render('notification-detail', { log });
 });
 
 module.exports = router;

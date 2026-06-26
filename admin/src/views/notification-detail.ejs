@@ -1,0 +1,149 @@
+<%- include('_header', { title: 'Détail campagne', page: 'notifications' }) %>
+
+<%
+  const segLabel = log.segment === 'pro' ? '✦ Abonnés Pro' : log.segment === 'free' ? 'Utilisateurs Free' : log.segment === 'custom' ? '🎯 Sélection précise' : 'Tous les appareils';
+  const recipients = log.recipients || [];
+  const sentList   = recipients.filter(r => r.status === 'sent');
+  const failedList = recipients.filter(r => r.status === 'failed');
+%>
+
+<div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
+  <div>
+    <h1>Détail de la campagne</h1>
+    <p>Envoyée le
+      <%= new Date(log.sentAt).toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' }) %>
+      à <%= new Date(log.sentAt).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }) %>
+    </p>
+  </div>
+  <a href="/notifications" class="btn" style="padding:10px 18px;color:var(--text-muted);">
+    <i class="fa-solid fa-arrow-left" style="margin-right:6px;"></i>Retour
+  </a>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px;">
+  <div class="stat-card">
+    <div class="stat-card-top">
+      <div class="stat-label">Ciblés</div>
+      <div class="stat-icon blue"><i class="fa-solid fa-bullseye"></i></div>
+    </div>
+    <div class="stat-value"><%= log.targetCount || recipients.length %></div>
+    <div class="stat-sub">appareils</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-top">
+      <div class="stat-label">Reçus</div>
+      <div class="stat-icon green"><i class="fa-solid fa-circle-check"></i></div>
+    </div>
+    <div class="stat-value"><%= log.sent %></div>
+    <div class="stat-sub">livraisons réussies</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-top">
+      <div class="stat-label">Échecs</div>
+      <div class="stat-icon" style="background:rgba(239,68,68,0.1);color:var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i></div>
+    </div>
+    <div class="stat-value"><%= log.failed %></div>
+    <div class="stat-sub">non livrées</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-top">
+      <div class="stat-label">Segment</div>
+      <div class="stat-icon navy"><i class="fa-solid fa-users"></i></div>
+    </div>
+    <div class="stat-value" style="font-size:1.1rem;"><%= segLabel %></div>
+    <div class="stat-sub">destinataires</div>
+  </div>
+</div>
+
+<div class="two-cols" style="align-items:start;">
+  <!-- Contenu -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="fa-solid fa-file-lines" style="color:var(--text-muted);margin-right:6px;"></i>Contenu</span>
+    </div>
+    <div class="card-body">
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label">Titre</label>
+        <div style="font-weight:600;font-size:0.95rem;"><%= log.title %></div>
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label">Message</label>
+        <div style="font-size:0.9rem;color:var(--text-muted);line-height:1.5;"><%= log.body %></div>
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">Créé par</label>
+        <div style="font-size:0.9rem;">
+          <% if (log.createdByName) { %>
+            <i class="fa-solid fa-user-shield" style="color:var(--blue);margin-right:6px;"></i><%= log.createdByName %>
+          <% } else { %>
+            <span class="text-muted">Inconnu (campagne antérieure au suivi)</span>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Aperçu iOS -->
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 0;">
+    <div style="background:#1c1c1e;border-radius:28px;padding:24px 20px;width:260px;box-shadow:0 20px 60px rgba(0,0,0,0.25);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#00a6fb,#0582ca);display:flex;align-items:center;justify-content:center;">
+          <i class="fa-solid fa-person-running" style="color:#fff;font-size:0.9rem;"></i>
+        </div>
+        <div>
+          <div style="font-size:0.7rem;font-weight:600;color:#fff;">Trainwise</div>
+          <div style="font-size:0.65rem;color:#8e8e93;">maintenant</div>
+        </div>
+      </div>
+      <div style="font-size:0.82rem;font-weight:600;color:#fff;margin-bottom:4px;"><%= log.title %></div>
+      <div style="font-size:0.76rem;color:#ebebf599;line-height:1.4;"><%= log.body %></div>
+    </div>
+    <p style="font-size:0.74rem;color:var(--text-muted);margin-top:14px;text-align:center;">Aperçu iOS</p>
+  </div>
+</div>
+
+<!-- Destinataires -->
+<div class="card">
+  <div class="card-header">
+    <span class="card-title"><i class="fa-solid fa-users" style="color:var(--text-muted);margin-right:6px;"></i>Destinataires (<%= recipients.length %>)</span>
+  </div>
+
+  <% if (!recipients.length) { %>
+    <div class="card-body">
+      <div class="empty-state">
+        <i class="fa-solid fa-user-slash"></i>
+        <p>Liste des destinataires non disponible pour cette campagne (envoyée avant l'ajout du suivi détaillé).</p>
+      </div>
+    </div>
+  <% } else { %>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Utilisateur</th>
+            <th>Email</th>
+            <th>Statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% recipients.forEach(r => { %>
+          <tr>
+            <td style="font-weight:600;font-size:0.85rem;"><%= r.firstName || '—' %></td>
+            <td style="font-size:0.82rem;color:var(--text-muted);"><%= r.email || '—' %></td>
+            <td>
+              <% if (r.status === 'sent') { %>
+                <span style="color:var(--success);font-weight:600;"><i class="fa-solid fa-circle-check" style="font-size:0.7rem;margin-right:4px;"></i>Reçu</span>
+              <% } else { %>
+                <span style="color:var(--danger);font-weight:600;"><i class="fa-solid fa-triangle-exclamation" style="font-size:0.7rem;margin-right:4px;"></i>Échec</span>
+              <% } %>
+            </td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<%- include('_footer') %>

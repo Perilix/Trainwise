@@ -60,13 +60,47 @@
           <textarea name="body" class="form-control" rows="4" placeholder="Votre message…" required maxlength="300" style="resize:vertical;"></textarea>
         </div>
 
-        <div class="form-group" style="margin-bottom:24px;">
+        <div class="form-group" style="margin-bottom:16px;">
           <label class="form-label">Destinataires</label>
-          <select name="segment" class="form-control">
+          <select name="segment" id="segment-select" class="form-control">
             <option value="all">🌍 Tous les appareils (<%= stats.withToken %> tokens)</option>
             <option value="pro">✦ Abonnés Pro uniquement</option>
             <option value="free">Utilisateurs Free uniquement</option>
+            <option value="custom">🎯 Sélection précise d'utilisateurs</option>
           </select>
+        </div>
+
+        <!-- Sélecteur d'utilisateurs précis -->
+        <div class="form-group" id="custom-picker" style="margin-bottom:24px;display:none;">
+          <label class="form-label" style="display:flex;justify-content:space-between;align-items:center;">
+            <span>Choisir les utilisateurs</span>
+            <span style="font-weight:600;color:var(--blue);"><span id="picker-count">0</span> sélectionné(s)</span>
+          </label>
+          <input type="text" id="picker-search" class="form-control" placeholder="Rechercher par nom ou email…" style="margin-bottom:8px;">
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <button type="button" id="picker-all" class="btn" style="padding:4px 10px;font-size:0.75rem;color:var(--blue);">Tout cocher</button>
+            <button type="button" id="picker-none" class="btn" style="padding:4px 10px;font-size:0.75rem;color:var(--text-muted);">Tout décocher</button>
+          </div>
+          <div id="picker-list" style="max-height:240px;overflow-y:auto;border:1px solid var(--border, #e2e8f0);border-radius:10px;padding:4px;">
+            <% (tokenUsers || []).forEach(u => {
+              const full = ((u.firstName || '') + ' ' + (u.lastName || '')).trim() || u.email || 'Utilisateur';
+            %>
+            <label class="picker-row" data-search="<%= (full + ' ' + (u.email || '')).toLowerCase() %>"
+                   style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:0.85rem;">
+              <input type="checkbox" name="userIds" value="<%= u._id %>" class="picker-cb" style="width:16px;height:16px;flex-shrink:0;">
+              <span style="flex:1;min-width:0;">
+                <span style="font-weight:600;"><%= full %></span>
+                <span style="color:var(--text-muted);"> · <%= u.email || '—' %></span>
+              </span>
+              <% if (u.subscriptionStatus === 'pro') { %>
+                <span class="badge" style="background:rgba(16,185,129,0.1);color:#059669;flex-shrink:0;">✦ Pro</span>
+              <% } %>
+            </label>
+            <% }); %>
+            <% if (!(tokenUsers && tokenUsers.length)) { %>
+              <div class="text-muted text-small" style="padding:12px;text-align:center;">Aucun appareil enregistré.</div>
+            <% } %>
+          </div>
         </div>
 
         <button type="submit" class="btn btn-save" style="width:100%;justify-content:center;display:flex;align-items:center;gap:8px;padding:12px;font-size:0.9rem;">
@@ -110,7 +144,9 @@
           <th>Segment</th>
           <th>Envoyés</th>
           <th>Échecs</th>
+          <th>Créé par</th>
           <th>Date</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -119,8 +155,8 @@
           <td style="font-weight:600;font-size:0.85rem;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><%= log.title %></td>
           <td style="font-size:0.8rem;color:var(--text-muted);max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><%= log.body %></td>
           <td>
-            <span class="badge" style="background:<%= log.segment === 'pro' ? 'rgba(16,185,129,0.1)' : log.segment === 'free' ? 'rgba(0,166,251,0.1)' : 'rgba(0,53,84,0.08)' %>;color:<%= log.segment === 'pro' ? '#059669' : log.segment === 'free' ? '#0582ca' : 'var(--navy)' %>;">
-              <%= log.segment === 'pro' ? '✦ Pro' : log.segment === 'free' ? 'Free' : 'Tous' %>
+            <span class="badge" style="background:<%= log.segment === 'pro' ? 'rgba(16,185,129,0.1)' : log.segment === 'free' ? 'rgba(0,166,251,0.1)' : log.segment === 'custom' ? 'rgba(124,58,237,0.1)' : 'rgba(0,53,84,0.08)' %>;color:<%= log.segment === 'pro' ? '#059669' : log.segment === 'free' ? '#0582ca' : log.segment === 'custom' ? '#7c3aed' : 'var(--navy)' %>;">
+              <%= log.segment === 'pro' ? '✦ Pro' : log.segment === 'free' ? 'Free' : log.segment === 'custom' ? '🎯 Ciblé' : 'Tous' %>
             </span>
           </td>
           <td style="font-weight:700;color:var(--success);"><i class="fa-solid fa-circle-check" style="font-size:0.7rem;margin-right:4px;"></i><%= log.sent %></td>
@@ -131,16 +167,22 @@
               <span class="text-muted">—</span>
             <% } %>
           </td>
+          <td class="text-small"><% if (log.createdByName) { %><%= log.createdByName %><% } else { %><span class="text-muted">—</span><% } %></td>
           <td class="text-muted text-small">
             <%= new Date(log.sentAt).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' }) %>
             <span style="color:#cbd5e1;margin:0 2px;">·</span>
             <%= new Date(log.sentAt).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }) %>
           </td>
+          <td>
+            <a href="/notifications/<%= log._id %>" class="btn" style="padding:6px 12px;font-size:0.78rem;color:var(--blue);white-space:nowrap;">
+              <i class="fa-solid fa-eye" style="margin-right:4px;"></i>Détails
+            </a>
+          </td>
         </tr>
         <% }); %>
         <% if (!logs.length) { %>
         <tr>
-          <td colspan="6">
+          <td colspan="9">
             <div class="empty-state">
               <i class="fa-solid fa-bell-slash"></i>
               <p>Aucune notification envoyée pour l'instant</p>
@@ -165,6 +207,41 @@
   bodyInput.addEventListener('input', () => {
     previewBody.textContent = bodyInput.value || 'Votre message apparaîtra ici…';
   });
+
+  // ── Sélecteur d'utilisateurs précis ──────────────────────────────
+  const segmentSelect = document.getElementById('segment-select');
+  const customPicker   = document.getElementById('custom-picker');
+  const pickerSearch   = document.getElementById('picker-search');
+  const pickerCount    = document.getElementById('picker-count');
+  const checkboxes     = () => Array.from(document.querySelectorAll('.picker-cb'));
+
+  function updateCount() {
+    pickerCount.textContent = checkboxes().filter(cb => cb.checked).length;
+  }
+
+  segmentSelect.addEventListener('change', () => {
+    customPicker.style.display = segmentSelect.value === 'custom' ? 'block' : 'none';
+  });
+
+  pickerSearch?.addEventListener('input', () => {
+    const q = pickerSearch.value.toLowerCase().trim();
+    document.querySelectorAll('.picker-row').forEach(row => {
+      row.style.display = !q || row.dataset.search.includes(q) ? 'flex' : 'none';
+    });
+  });
+
+  document.getElementById('picker-all')?.addEventListener('click', () => {
+    document.querySelectorAll('.picker-row').forEach(row => {
+      if (row.style.display !== 'none') row.querySelector('.picker-cb').checked = true;
+    });
+    updateCount();
+  });
+  document.getElementById('picker-none')?.addEventListener('click', () => {
+    checkboxes().forEach(cb => { cb.checked = false; });
+    updateCount();
+  });
+
+  document.getElementById('picker-list')?.addEventListener('change', updateCount);
 </script>
 
 <%- include('_footer') %>
