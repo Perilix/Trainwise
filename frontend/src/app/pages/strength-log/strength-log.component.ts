@@ -20,6 +20,7 @@ import {
   SESSION_TYPE_LABELS
 } from '../../interfaces/strength.interfaces';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
+import { parseDecimalInput } from '../../utils/decimal.util';
 
 type EntryOrigin =
   | { kind: 'single'; index: number }
@@ -499,6 +500,11 @@ export class StrengthLogComponent implements OnInit {
       }
       return updated;
     });
+  }
+
+  // Poids décimal : accepte "10,5" comme "10.5" (clavier iOS français)
+  parseWeight(raw: string): number | undefined {
+    return parseDecimalInput(raw);
   }
 
   updateSet(exerciseIndex: number, setIndex: number, field: keyof ExerciseSet, value: number | undefined) {

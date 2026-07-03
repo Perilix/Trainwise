@@ -215,7 +215,7 @@
                   </div>
                   <div class="field">
                     <label>Charge (kg)</label>
-                    <input type="number" min="0" step="any" [ngModel]="exo.targetWeight" (ngModelChange)="updateStrengthEntry(i, 'targetWeight', $event)">
+                    <input type="text" inputmode="decimal" [value]="exo.targetWeight ?? ''" (change)="updateStrengthEntry(i, 'targetWeight', parseWeight($any($event.target).value))" placeholder="ex: 10,5">
                   </div>
                   <div class="field">
                     <label>Repos</label>
@@ -287,7 +287,7 @@
                     </div>
                     <div class="field">
                       <label>Charge (kg)</label>
-                      <input type="number" min="0" step="any" [ngModel]="exo.targetWeight" (ngModelChange)="updateCircuitExercise(i, 'targetWeight', $event)">
+                      <input type="text" inputmode="decimal" [value]="exo.targetWeight ?? ''" (change)="updateCircuitExercise(i, 'targetWeight', parseWeight($any($event.target).value))" placeholder="ex: 10,5">
                     </div>
                   </div>
                 </div>
@@ -404,7 +404,7 @@
                     </div>
                     <div class="field">
                       <label>Charge (kg)</label>
-                      <input type="number" min="0" step="any" [ngModel]="pair.a.targetWeight" (ngModelChange)="updateSupersetPairSlot(i, 'a', 'targetWeight', $event)">
+                      <input type="text" inputmode="decimal" [value]="pair.a.targetWeight ?? ''" (change)="updateSupersetPairSlot(i, 'a', 'targetWeight', parseWeight($any($event.target).value))" placeholder="ex: 10,5">
                     </div>
                   </div>
                 </div>
@@ -433,7 +433,7 @@
                     </div>
                     <div class="field">
                       <label>Charge (kg)</label>
-                      <input type="number" min="0" step="any" [ngModel]="pair.b.targetWeight" (ngModelChange)="updateSupersetPairSlot(i, 'b', 'targetWeight', $event)">
+                      <input type="text" inputmode="decimal" [value]="pair.b.targetWeight ?? ''" (change)="updateSupersetPairSlot(i, 'b', 'targetWeight', parseWeight($any($event.target).value))" placeholder="ex: 10,5">
                     </div>
                   </div>
                 </div>

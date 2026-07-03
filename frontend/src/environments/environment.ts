@@ -1,7 +1,7 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:3000',
-  socketUrl: 'http://localhost:3000',
+  apiUrl: 'https://trainwise-backend-rnd4.onrender.com',
+  socketUrl: 'https://trainwise-backend-rnd4.onrender.com',
   revenueCatAppleApiKey: 'appl_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
   revenueCatGoogleApiKey: 'goog_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
   mapboxToken: ''

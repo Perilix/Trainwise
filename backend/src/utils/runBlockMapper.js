@@ -1,6 +1,3 @@
-// Mappe un bloc running (séance planifiée / réalisée) vers un objet plat,
-// en préservant les étapes enfants d'un bloc « Répéter » multi-étapes (`children`).
-// L'allure est ici une chaîne "mm:ss" (modèles plannedRun / run), pas un paceConfig.
 function mapRunBlockPlain(b) {
   const out = {
     role: b.role,

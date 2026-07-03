@@ -11,6 +11,7 @@ import {
   PaceZone, StrengthExerciseEntry, StrengthCircuit, StrengthSuperset
 } from '../../../interfaces/session-template.interfaces';
 import { Exercise } from '../../../interfaces/strength.interfaces';
+import { parseDecimalInput } from '../../../utils/decimal.util';
 
 @Component({
   selector: 'app-session-template-editor',
@@ -272,6 +273,11 @@ export class SessionTemplateEditorComponent implements OnInit {
 
   removeStrengthExercise(index: number) {
     this.strengthExercises.set(this.strengthExercises().filter((_, i) => i !== index));
+  }
+
+  // Charge décimale : accepte "10,5" comme "10.5" (clavier iOS français)
+  parseWeight(raw: string): number | undefined {
+    return parseDecimalInput(raw);
   }
 
   updateStrengthEntry(index: number, field: keyof StrengthExerciseEntry, value: any) {

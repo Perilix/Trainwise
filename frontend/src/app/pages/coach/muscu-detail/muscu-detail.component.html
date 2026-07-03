@@ -62,6 +62,45 @@
         <h2>Exercices planifiés</h2>
       </div>
 
+      <!-- Comparateur : perfs d'une séance précédente pour doser les charges -->
+      @if (canEdit() && strengthHistory().length > 0) {
+        <div class="comparison-card">
+          <div class="comparison-row">
+            <label for="comparison-select">Comparer avec</label>
+            <select id="comparison-select" (change)="selectComparison($any($event.target).value)">
+              @for (h of strengthHistory(); track h._id) {
+                <option [value]="h._id" [selected]="h._id === comparisonSessionId()">{{ formatHistoryOption(h) }}</option>
+              }
+            </select>
+            @if (comparisonSession()) {
+              <button type="button" class="btn-link" (click)="showComparisonDetail.set(!showComparisonDetail())">
+                {{ showComparisonDetail() ? 'Masquer le détail' : 'Voir le détail' }}
+              </button>
+            }
+          </div>
+          @if (isLoadingComparison()) {
+            <p class="comparison-hint">Chargement…</p>
+          } @else if (comparisonSession()) {
+            @if (showComparisonDetail()) {
+              <div class="comparison-detail">
+                @for (entry of comparisonSession().exercises; track $index) {
+                  <div class="comparison-line">
+                    <span class="comparison-exo">{{ entry.exercise?.name || 'Exercice' }}</span>
+                    <span class="comparison-sets">{{ formatPerfSets(entry.sets || []) }}</span>
+                  </div>
+                }
+                @if (comparisonSession().feeling) {
+                  <div class="comparison-line">
+                    <span class="comparison-exo">Ressenti</span>
+                    <span class="comparison-sets">{{ comparisonSession().feeling }}/10</span>
+                  </div>
+                }
+              </div>
+            }
+          }
+        </div>
+      }
+
       <!-- Mode tabs -->
       <div class="mode-tabs" role="tablist">
         <button type="button" role="tab" class="mode-tab" [class.active]="activeMode() === 'single'" (click)="activeMode.set('single')">Exercices</button>
@@ -92,6 +131,9 @@
                       <button class="remove-btn" (click)="removePlanExercise($index)">×</button>
                     }
                   </div>
+                  @if (comparisonPerfFor(ex); as perf) {
+                    <div class="prev-perf">{{ comparisonDate() }} : {{ perf }}</div>
+                  }
                   @if (canEdit()) {
                     <div class="exercise-fields">
                       <div class="field">
@@ -104,7 +146,7 @@
                       </div>
                       <div class="field">
                         <label>Charge (kg)</label>
-                        <input type="number" [value]="ex.targetWeight ?? ''" (input)="updatePlanExercise($index, 'targetWeight', +$any($event.target).value || undefined)" min="0" step="any">
+                        <input type="text" inputmode="decimal" [value]="ex.targetWeight ?? ''" (change)="updatePlanExercise($index, 'targetWeight', parseWeight($any($event.target).value))" placeholder="ex: 10,5">
                       </div>
                       <div class="field">
                         <label>Repos</label>
@@ -168,6 +210,9 @@
                 <div class="flow-num">{{ $index + 1 }}</div>
                 <div class="flow-body">
                   <div class="flow-name">{{ getExerciseName(ex) }}</div>
+                  @if (comparisonPerfFor(ex); as perf) {
+                    <div class="prev-perf">{{ comparisonDate() }} : {{ perf }}</div>
+                  }
                   @if (canEdit()) {
                     <div class="flow-fields">
                       <div class="field">
@@ -176,7 +221,7 @@
                       </div>
                       <div class="field">
                         <label>Charge (kg)</label>
-                        <input type="number" [value]="ex.targetWeight ?? ''" (input)="updateCircuitExercise($index, 'targetWeight', +$any($event.target).value || undefined)" min="0" step="any">
+                        <input type="text" inputmode="decimal" [value]="ex.targetWeight ?? ''" (change)="updateCircuitExercise($index, 'targetWeight', parseWeight($any($event.target).value))" placeholder="ex: 10,5">
                       </div>
                     </div>
                   } @else {
@@ -305,6 +350,9 @@
                   <div class="flow-num flow-num-violet">A</div>
                   <div class="flow-body">
                     <div class="flow-name">{{ getExerciseName(pair.a) }}</div>
+                    @if (comparisonPerfFor(pair.a); as perf) {
+                      <div class="prev-perf">{{ comparisonDate() }} : {{ perf }}</div>
+                    }
                     @if (canEdit()) {
                       <div class="flow-fields">
                         <div class="field">
@@ -313,7 +361,7 @@
                         </div>
                         <div class="field">
                           <label>Charge (kg)</label>
-                          <input type="number" [value]="pair.a.targetWeight ?? ''" (input)="updateSupersetSlot($index, 'a', 'targetWeight', +$any($event.target).value || undefined)" min="0" step="any">
+                          <input type="text" inputmode="decimal" [value]="pair.a.targetWeight ?? ''" (change)="updateSupersetSlot($index, 'a', 'targetWeight', parseWeight($any($event.target).value))" placeholder="ex: 10,5">
                         </div>
                       </div>
                     } @else {
@@ -343,6 +391,9 @@
                   <div class="flow-num flow-num-violet">B</div>
                   <div class="flow-body">
                     <div class="flow-name">{{ getExerciseName(pair.b) }}</div>
+                    @if (comparisonPerfFor(pair.b); as perf) {
+                      <div class="prev-perf">{{ comparisonDate() }} : {{ perf }}</div>
+                    }
                     @if (canEdit()) {
                       <div class="flow-fields">
                         <div class="field">
@@ -351,7 +402,7 @@
                         </div>
                         <div class="field">
                           <label>Charge (kg)</label>
-                          <input type="number" [value]="pair.b.targetWeight ?? ''" (input)="updateSupersetSlot($index, 'b', 'targetWeight', +$any($event.target).value || undefined)" min="0" step="any">
+                          <input type="text" inputmode="decimal" [value]="pair.b.targetWeight ?? ''" (change)="updateSupersetSlot($index, 'b', 'targetWeight', parseWeight($any($event.target).value))" placeholder="ex: 10,5">
                         </div>
                       </div>
                     } @else {

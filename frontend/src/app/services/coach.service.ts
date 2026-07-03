@@ -12,6 +12,16 @@ import {
 } from '../interfaces/coach.interfaces';
 import { PlannedSession } from './planning.service';
 
+// Résumé d'une séance muscu passée (comparateur de la fiche séance coach)
+export interface StrengthHistoryItem {
+  _id: string;
+  date: Date | string;
+  sessionType: string;
+  exerciseCount: number;
+  exerciseIds: string[];
+  exerciseNames: string[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -120,5 +130,10 @@ export class CoachService {
 
   getAthleteStrengthSessionById(athleteId: string, sessionId: string): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/athletes/${athleteId}/strength-session-by-id/${sessionId}`);
+  }
+
+  // Historique des séances muscu réalisées (comparateur de la fiche séance)
+  getAthleteStrengthHistory(athleteId: string): Observable<StrengthHistoryItem[]> {
+    return this.http.get<StrengthHistoryItem[]>(`${this.API_URL}/athletes/${athleteId}/strength-history`);
   }
 }

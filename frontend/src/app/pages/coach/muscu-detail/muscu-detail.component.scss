@@ -1290,3 +1290,94 @@ $display-font: 'GulfsDisplay', 'Archivo Black', serif;
   }
   &:disabled { opacity: 0.6; cursor: not-allowed; }
 }
+
+// ── Comparateur de séances passées ──────────────────────────────────────────
+.comparison-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1rem;
+
+  .comparison-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+
+    label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #475569;
+      white-space: nowrap;
+    }
+
+    select {
+      flex: 1;
+      min-width: 180px;
+      padding: 0.45rem 0.6rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      color: #051923;
+      background: #fff;
+    }
+
+    .btn-link {
+      background: none;
+      border: none;
+      color: #0582ca;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0.25rem 0;
+      white-space: nowrap;
+
+      &:hover { text-decoration: underline; }
+    }
+  }
+
+  .comparison-hint {
+    margin: 0.5rem 0 0;
+    font-size: 0.78rem;
+    color: #94a3b8;
+  }
+
+  .comparison-detail {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+
+    .comparison-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      font-size: 0.82rem;
+
+      .comparison-exo {
+        font-weight: 600;
+        color: #051923;
+      }
+
+      .comparison-sets {
+        color: #475569;
+        text-align: right;
+      }
+    }
+  }
+}
+
+// Ligne "perf précédente" sous un exercice
+.prev-perf {
+  display: inline-block;
+  margin: 0.35rem 0 0.5rem;
+  padding: 0.3rem 0.6rem;
+  background: rgba(5, 130, 202, 0.07);
+  border-radius: 8px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #0369a1;
+}

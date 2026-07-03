@@ -461,6 +461,9 @@ router.get('/athletes/:athleteId/strength-session/:plannedId', coachController.g
 
 router.get('/athletes/:athleteId/strength-session-by-id/:sessionId', coachController.getAthleteStrengthSessionById);
 
+// Historique des séances muscu (comparateur de la fiche séance)
+router.get('/athletes/:athleteId/strength-history', coachController.getAthleteStrengthHistory);
+
 /**
  * @swagger
  * /api/coach/invite/code:

@@ -430,6 +430,47 @@ exports.getAthleteStrengthSessionById = async (req, res) => {
   }
 };
 
+// Historique des séances muscu réalisées par l'athlète — alimente le
+// comparateur de la fiche séance (le coach choisit sa séance de référence,
+// le détail est ensuite chargé via getAthleteStrengthSessionById)
+exports.getAthleteStrengthHistory = async (req, res) => {
+  try {
+    const { athleteId } = req.params;
+
+    const relationship = await CoachAthlete.findOne({
+      coach: req.user._id,
+      athlete: athleteId,
+      status: 'accepted'
+    });
+    if (!relationship) return res.status(403).json({ error: 'Accès refusé' });
+
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+
+    // Uniquement les séances avec des exercices loggés (les imports Strava
+    // sans détail n'apportent rien au comparateur)
+    const sessions = await StrengthSession.find({
+      user: athleteId,
+      'exercises.0': { $exists: true }
+    })
+      .sort({ date: -1 })
+      .limit(limit)
+      .select('date sessionType exercises.exercise')
+      .populate('exercises.exercise', 'name')
+      .lean();
+
+    res.json(sessions.map(s => ({
+      _id: s._id,
+      date: s.date,
+      sessionType: s.sessionType,
+      exerciseCount: (s.exercises || []).length,
+      exerciseIds: (s.exercises || []).map(e => e.exercise?._id?.toString()).filter(Boolean),
+      exerciseNames: (s.exercises || []).map(e => e.exercise?.name).filter(Boolean)
+    })));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Dupliquer une séance d'un athlète à une autre date
 exports.duplicateAthleteSession = async (req, res) => {
   try {

@@ -243,12 +243,12 @@
                       min="1"
                     >
                     <input
-                      type="number"
+                      type="text"
+                      inputmode="decimal"
                       class="col-weight"
-                      [ngModel]="set.weight"
-                      (ngModelChange)="updateSet(i, j, 'weight', $event)"
-                      min="0"
-                      step="any"
+                      [value]="set.weight ?? ''"
+                      (change)="updateSet(i, j, 'weight', parseWeight($any($event.target).value))"
+                      placeholder="10,5"
                     >
                     <button
                       class="btn-icon small col-action"

@@ -2,10 +2,11 @@ import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CoachService } from '../../../services/coach.service';
+import { CoachService, StrengthHistoryItem } from '../../../services/coach.service';
 import { ExerciseService } from '../../../services/exercise.service';
 import { SessionTemplateService } from '../../../services/session-template.service';
 import { PlannedSession } from '../../../services/planning.service';
+import { parseDecimalInput } from '../../../utils/decimal.util';
 import {
   Exercise, StrengthPlanExercise, CircuitBlock, SupersetBlock, SupersetPair,
   MuscleGroup, StrengthSessionType,
@@ -108,6 +109,13 @@ export class MuscuDetailComponent implements OnInit {
 
   isSavingTemplate = signal(false);
 
+  // ── Comparateur : perfs d'une séance passée affichées sous chaque exercice ──
+  strengthHistory = signal<StrengthHistoryItem[]>([]);
+  comparisonSessionId = signal<string | null>(null);
+  comparisonSession = signal<any | null>(null);
+  isLoadingComparison = signal(false);
+  showComparisonDetail = signal(false);
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -155,6 +163,90 @@ export class MuscuDetailComponent implements OnInit {
     this.description.set(draft.description || '');
     this.planExercises.set([]);
     this.isLoading.set(false);
+    this.loadStrengthHistory();
+  }
+
+  // ── Comparateur de séances passées ─────────────────────────────────────
+
+  loadStrengthHistory() {
+    this.coachService.getAthleteStrengthHistory(this.athleteId).subscribe({
+      next: (history) => {
+        this.strengthHistory.set(history);
+        if (history.length === 0) return;
+        // Par défaut : la séance la plus récente qui partage au moins un
+        // exercice avec le plan en cours, sinon la plus récente tout court
+        const planIds = this.currentPlanExerciseIds();
+        const smart = history.find(h => h.exerciseIds.some(id => planIds.has(id)));
+        this.selectComparison((smart ?? history[0])._id);
+      },
+      error: (err) => console.error('Erreur historique muscu:', err)
+    });
+  }
+
+  selectComparison(sessionId: string) {
+    if (!sessionId || sessionId === this.comparisonSessionId()) return;
+    this.comparisonSessionId.set(sessionId);
+    this.isLoadingComparison.set(true);
+    this.coachService.getAthleteStrengthSessionById(this.athleteId, sessionId).subscribe({
+      next: (session) => {
+        this.comparisonSession.set(session);
+        this.isLoadingComparison.set(false);
+      },
+      error: () => {
+        this.comparisonSession.set(null);
+        this.isLoadingComparison.set(false);
+      }
+    });
+  }
+
+  private currentPlanExerciseIds(): Set<string> {
+    const ids = new Set<string>();
+    const add = (ex: StrengthPlanExercise | null | undefined) => {
+      const id = this.exerciseIdOf(ex);
+      if (id) ids.add(id);
+    };
+    this.planExercises().forEach(add);
+    this.circuit().exercises.forEach(add);
+    this.superset().pairs.forEach(p => { add(p.a); add(p.b); });
+    return ids;
+  }
+
+  private exerciseIdOf(ex: StrengthPlanExercise | null | undefined): string | null {
+    if (!ex?.exercise) return null;
+    return typeof ex.exercise === 'string' ? ex.exercise : ex.exercise._id;
+  }
+
+  // Perfs réalisées pour cet exercice dans la séance de comparaison,
+  // formatées "20kg×10 · 20kg×8" (null si l'exercice n'y figure pas)
+  comparisonPerfFor(ex: StrengthPlanExercise): string | null {
+    const session = this.comparisonSession();
+    const exId = this.exerciseIdOf(ex);
+    if (!session || !exId) return null;
+    const entries = (session.exercises || []).filter((e: any) =>
+      (e.exercise?._id ?? e.exercise)?.toString() === exId
+    );
+    if (entries.length === 0) return null;
+    const sets = entries.flatMap((e: any) => e.sets || []);
+    if (sets.length === 0) return null;
+    return this.formatPerfSets(sets);
+  }
+
+  formatPerfSets(sets: { reps?: number; weight?: number | null }[]): string {
+    return sets
+      .map(s => s.weight ? `${s.weight}kg×${s.reps ?? '?'}` : `${s.reps ?? '?'} reps`)
+      .join(' · ');
+  }
+
+  comparisonDate(): string {
+    const session = this.comparisonSession();
+    if (!session?.date) return '';
+    return new Date(session.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  }
+
+  formatHistoryOption(h: StrengthHistoryItem): string {
+    const date = new Date(h.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+    const type = this.strengthSessionLabels[h.sessionType as keyof typeof this.strengthSessionLabels] || h.sessionType;
+    return `${date} — ${type} (${h.exerciseCount} exo${h.exerciseCount > 1 ? 's' : ''})`;
   }
 
   loadSession() {
@@ -186,6 +278,8 @@ export class MuscuDetailComponent implements OnInit {
         this.isLoading.set(false);
         if (session.status === 'completed') {
           this.loadCompletedSession();
+        } else {
+          this.loadStrengthHistory();
         }
       },
       error: (err) => {
@@ -418,6 +512,11 @@ export class MuscuDetailComponent implements OnInit {
 
   removePlanExercise(index: number) {
     this.planExercises.update(list => list.filter((_, i) => i !== index));
+  }
+
+  // Charge décimale : accepte "10,5" comme "10.5" (clavier iOS français)
+  parseWeight(raw: string): number | undefined {
+    return parseDecimalInput(raw);
   }
 
   updatePlanExercise(index: number, field: keyof StrengthPlanExercise, value: any) {
