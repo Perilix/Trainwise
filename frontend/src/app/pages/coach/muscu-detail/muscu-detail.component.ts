@@ -216,9 +216,9 @@ export class MuscuDetailComponent implements OnInit {
     return typeof ex.exercise === 'string' ? ex.exercise : ex.exercise._id;
   }
 
-  // Perfs réalisées pour cet exercice dans la séance de comparaison,
-  // formatées "20kg×10 · 20kg×8" (null si l'exercice n'y figure pas)
-  comparisonPerfFor(ex: StrengthPlanExercise): string | null {
+  // Séries réalisées pour cet exercice dans la séance de comparaison
+  // (null si l'exercice n'y figure pas → la pastille ne s'affiche pas)
+  comparisonSetsFor(ex: StrengthPlanExercise): { reps?: number; weight?: number | null }[] | null {
     const session = this.comparisonSession();
     const exId = this.exerciseIdOf(ex);
     if (!session || !exId) return null;
@@ -227,14 +227,11 @@ export class MuscuDetailComponent implements OnInit {
     );
     if (entries.length === 0) return null;
     const sets = entries.flatMap((e: any) => e.sets || []);
-    if (sets.length === 0) return null;
-    return this.formatPerfSets(sets);
+    return sets.length > 0 ? sets : null;
   }
 
-  formatPerfSets(sets: { reps?: number; weight?: number | null }[]): string {
-    return sets
-      .map(s => s.weight ? `${s.weight}kg×${s.reps ?? '?'}` : `${s.reps ?? '?'} reps`)
-      .join(' · ');
+  formatSet(set: { reps?: number; weight?: number | null }): string {
+    return set.weight ? `${set.weight}kg × ${set.reps ?? '?'}` : `${set.reps ?? '?'} reps`;
   }
 
   comparisonDate(): string {
@@ -243,10 +240,12 @@ export class MuscuDetailComponent implements OnInit {
     return new Date(session.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
   }
 
-  formatHistoryOption(h: StrengthHistoryItem): string {
-    const date = new Date(h.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
-    const type = this.strengthSessionLabels[h.sessionType as keyof typeof this.strengthSessionLabels] || h.sessionType;
-    return `${date} — ${type} (${h.exerciseCount} exo${h.exerciseCount > 1 ? 's' : ''})`;
+  historyDate(h: StrengthHistoryItem): string {
+    return new Date(h.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  }
+
+  historyType(h: StrengthHistoryItem): string {
+    return this.strengthSessionLabels[h.sessionType as keyof typeof this.strengthSessionLabels] || h.sessionType;
   }
 
   loadSession() {
