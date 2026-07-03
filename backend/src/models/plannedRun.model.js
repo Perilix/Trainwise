@@ -162,6 +162,12 @@ const plannedRunSchema = new mongoose.Schema({
     enum: ['planned', 'completed', 'skipped'],
     default: 'planned'
   },
+  // true si la séance a été marquée sautée automatiquement par le job quotidien
+  // (date passée sans activité). Un import tardif peut encore la matcher.
+  autoSkipped: {
+    type: Boolean,
+    default: false
+  },
   linkedRun: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Run',

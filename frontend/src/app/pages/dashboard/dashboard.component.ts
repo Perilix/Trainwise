@@ -175,6 +175,7 @@ export class DashboardComponent implements OnInit {
     this.loadPartnerCoach();
     this.loadStravaStatus();
     this.handleStravaCallback();
+    this.checkStravaPendingReview();
 
     // Écouter les événements d'acceptation/rejet d'invitations
     this.invitationModalService.invitationAccepted$.subscribe(() => {
@@ -949,6 +950,61 @@ export class DashboardComponent implements OnInit {
     });
   }
 
+  // Activités importées automatiquement par le webhook Strava pendant que
+  // l'app était fermée → ouvre la popup ressenti/match existante au lancement.
+  checkStravaPendingReview() {
+    this.stravaService.getPendingReview().subscribe({
+      next: (pending) => {
+        if (pending.runs.length === 0 && pending.strength.length === 0) return;
+        // La popup est déjà ouverte (sync manuelle en cours) → on ne l'écrase pas
+        if (this.stravaFeelingModal().open) return;
+
+        const items: StravaFeelingItem[] = [
+          ...pending.runs.map(r => ({
+            kind: 'run' as const,
+            id: r.id,
+            date: r.date,
+            distance: r.distance,
+            duration: r.duration,
+            sessionType: r.sessionType,
+            feeling: 5,
+            pendingMatch: r.pendingPlannedMatch ?? null,
+            matchDecision: 'pending' as const,
+            showPicker: false,
+            candidates: [] as PlannedMatchSummary[],
+            loadingMatch: false
+          })),
+          ...pending.strength.map(s => ({
+            kind: 'strength' as const,
+            id: s.id,
+            date: s.date,
+            duration: s.duration,
+            sessionType: s.sessionType,
+            feeling: 5,
+            pendingMatch: s.pendingPlannedMatch ?? null,
+            matchDecision: 'pending' as const,
+            showPicker: false,
+            candidates: [] as PlannedMatchSummary[],
+            loadingMatch: false
+          }))
+        ];
+
+        this.stravaFeelingModal.set({ open: true, items });
+      },
+      error: (err) => console.error('Erreur pending-review Strava:', err)
+    });
+  }
+
+  // Marque les activités comme relues côté serveur (sinon la popup reviendrait
+  // à chaque lancement). Inoffensif pour les imports issus de la sync manuelle.
+  private clearPendingReviewFlags(items: StravaFeelingItem[]) {
+    const runIds = items.filter(i => i.kind === 'run').map(i => i.id);
+    const strengthIds = items.filter(i => i.kind === 'strength').map(i => i.id);
+    if (runIds.length || strengthIds.length) {
+      this.stravaService.clearPendingReview(runIds, strengthIds).subscribe();
+    }
+  }
+
   saveStravaFeelings() {
     const items = this.stravaFeelingModal().items;
     this.stravaFeelingModal.set({ open: false, items: [] });
@@ -960,14 +1016,16 @@ export class DashboardComponent implements OnInit {
         this.strengthService.updateSession(item.id, { feeling: item.feeling }).subscribe();
       }
     });
+    this.clearPendingReviewFlags(items);
     this.stravaMessage.set(`${items.length} séance${items.length > 1 ? 's' : ''} importée${items.length > 1 ? 's' : ''} !`);
     setTimeout(() => this.stravaMessage.set(null), 4000);
   }
 
   skipStravaFeelings() {
-    const count = this.stravaFeelingModal().items.length;
+    const items = this.stravaFeelingModal().items;
     this.stravaFeelingModal.set({ open: false, items: [] });
-    this.stravaMessage.set(`${count} séance${count > 1 ? 's' : ''} importée${count > 1 ? 's' : ''} !`);
+    this.clearPendingReviewFlags(items);
+    this.stravaMessage.set(`${items.length} séance${items.length > 1 ? 's' : ''} importée${items.length > 1 ? 's' : ''} !`);
     setTimeout(() => this.stravaMessage.set(null), 4000);
   }
 

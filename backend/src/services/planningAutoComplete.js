@@ -14,6 +14,13 @@ function activityTypeFilter(activityType) {
     : [{ activityType }];
 }
 
+// Une séance est encore "matchable" si elle est planifiée, ou si elle a été
+// marquée sautée automatiquement par le job quotidien (import tardif possible).
+const matchableStatusFilter = [
+  { status: 'planned' },
+  { status: 'skipped', autoSkipped: true }
+];
+
 /**
  * Marks planned sessions on the same day as 'completed' when a real session is logged.
  * Prevents duplicates when an athlete imports or manually adds a session that matches a plan.
@@ -25,8 +32,10 @@ async function autoCompletePlannedSessions(userId, date, activityType = 'running
   const query = {
     user: userId,
     date: { $gte: dayStart, $lte: dayEnd },
-    $or: activityTypeFilter(activityType),
-    status: 'planned',
+    $and: [
+      { $or: activityTypeFilter(activityType) },
+      { $or: matchableStatusFilter }
+    ],
     generatedBy: { $in: ['ai', 'coach'] }
   };
 
@@ -52,8 +61,10 @@ async function findPlannedMatches(userId, date, activityType = 'running') {
   return PlannedRun.find({
     user: userId,
     date: { $gte: dayStart, $lte: dayEnd },
-    $or: activityTypeFilter(activityType),
-    status: 'planned'
+    $and: [
+      { $or: activityTypeFilter(activityType) },
+      { $or: matchableStatusFilter }
+    ]
   }).sort({ date: 1 }).lean();
 }
 

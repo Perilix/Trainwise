@@ -60,8 +60,11 @@ function candidateQuery(userId, activityDate, activityType) {
   return {
     user: userId,
     date: { $gte: from, $lte: to },
-    $or: typeConditions,
-    status: 'planned'
+    $and: [
+      { $or: typeConditions },
+      // Une séance sautée automatiquement (job quotidien) reste rattrapable
+      { $or: [{ status: 'planned' }, { status: 'skipped', autoSkipped: true }] }
+    ]
   };
 }
 

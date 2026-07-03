@@ -116,6 +116,13 @@ const strengthSessionSchema = new mongoose.Schema({
     default: null
   },
 
+  // true si importée automatiquement (webhook Strava) et pas encore relue par
+  // l'athlète (popup ressenti/match au prochain lancement de l'app)
+  needsReview: {
+    type: Boolean,
+    default: false
+  },
+
   // Analyse IA
   analysis: { type: String },
   analyzedAt: { type: Date }

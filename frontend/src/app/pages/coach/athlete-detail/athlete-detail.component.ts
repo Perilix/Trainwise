@@ -79,6 +79,19 @@ export class AthleteDetailComponent implements OnInit {
     });
   }
 
+  getStatusLabel(status: string | undefined): string {
+    if (status === 'green') return 'Top';
+    if (status === 'orange') return 'À surveiller';
+    return 'Alerte';
+  }
+
+  formatShortDate(date: Date | string): string {
+    return new Date(date).toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'short'
+    });
+  }
+
   formatDate(date: Date | string): string {
     return new Date(date).toLocaleDateString('fr-FR', {
       day: 'numeric',

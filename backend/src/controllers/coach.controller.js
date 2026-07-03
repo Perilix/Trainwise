@@ -6,67 +6,11 @@ const StrengthSession = require('../models/strengthSession.model');
 const Competition = require('../models/competition.model');
 const crypto = require('crypto');
 const { createNotification } = require('./notification.controller');
+const { computeAthleteStatus, isWorse } = require('../services/athleteStatus.service');
 
 // Générer un code d'invitation unique
 const generateUniqueCode = () => {
   return crypto.randomBytes(12).toString('hex').toUpperCase();
-};
-
-// Calculer le statut d'un athlète (vert / orange / rouge)
-const computeAthleteStatus = async (athleteId) => {
-  const fourteenDaysAgo = new Date();
-  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 28);
-
-  const [lastRun, lastStrength, skippedCount, recentRunsWithFeeling] = await Promise.all([
-    Run.findOne({ user: athleteId }).sort({ date: -1 }).select('date').lean(),
-    StrengthSession.findOne({ user: athleteId }).sort({ date: -1 }).select('date').lean(),
-    PlannedRun.countDocuments({
-      user: athleteId,
-      status: 'skipped',
-      date: { $gte: fourteenDaysAgo }
-    }),
-    Run.find({
-      user: athleteId,
-      date: { $gte: fourteenDaysAgo },
-      feeling: { $exists: true, $ne: null }
-    }).select('feeling').lean()
-  ]);
-
-  // Dernière activité
-  const dates = [lastRun?.date, lastStrength?.date].filter(Boolean);
-  const lastActivityDate = dates.length > 0
-    ? new Date(Math.max(...dates.map(d => new Date(d).getTime())))
-    : null;
-
-  const daysSince = lastActivityDate
-    ? (Date.now() - new Date(lastActivityDate).getTime()) / (1000 * 60 * 60 * 24)
-    : Infinity;
-
-  // Ressenti moyen sur 14 jours
-  const avgFeeling = recentRunsWithFeeling.length > 0
-    ? recentRunsWithFeeling.reduce((sum, r) => sum + r.feeling, 0) / recentRunsWithFeeling.length
-    : null;
-
-  // Statut par critère
-  const statusOrder = { green: 0, orange: 1, red: 2 };
-
-  const inactivityStatus = daysSince > 14 ? 'red' : daysSince > 7 ? 'orange' : 'green';
-  const skipStatus = skippedCount >= 3 ? 'red' : skippedCount >= 1 ? 'orange' : 'green';
-  const feelingStatus = avgFeeling !== null
-    ? (avgFeeling < 4 ? 'red' : avgFeeling < 7 ? 'orange' : 'green')
-    : 'green';
-
-  // Statut global = le pire des 3
-  const status = [inactivityStatus, skipStatus, feelingStatus]
-    .sort((a, b) => statusOrder[b] - statusOrder[a])[0];
-
-  return {
-    status,
-    lastActivityDate,
-    daysSinceActivity: isFinite(daysSince) ? Math.floor(daysSince) : null,
-    skippedCount,
-    avgFeeling: avgFeeling !== null ? Math.round(avgFeeling * 10) / 10 : null
-  };
 };
 
 // Obtenir la liste des athlètes du coach
@@ -213,8 +157,23 @@ exports.getAthleteById = async (req, res) => {
       }))
     ].sort((a, b) => new Date(b.date) - new Date(a.date));
 
+    // Statut courant (calcul à la volée) + évolution (historique persisté par le job)
+    const statusData = await computeAthleteStatus(athleteId);
+    const statusHistory = relationship.statusHistory || [];
+    const lastChange = statusHistory[statusHistory.length - 1] || null;
+    const previousEntry = statusHistory[statusHistory.length - 2] || null;
+    const statusTrend = lastChange && previousEntry
+      ? (isWorse(lastChange.status, previousEntry.status) ? 'declining'
+        : isWorse(previousEntry.status, lastChange.status) ? 'improving'
+        : 'stable')
+      : 'stable';
+
     res.json({
       ...athlete.toObject(),
+      ...statusData,
+      statusTrend,
+      statusChangedAt: lastChange ? lastChange.date : null,
+      statusHistory,
       recentStats: {
         weeklyDistance: Math.round(weeklyDistance * 10) / 10,
         weeklyRuns,
