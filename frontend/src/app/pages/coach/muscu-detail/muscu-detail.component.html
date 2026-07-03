@@ -83,14 +83,14 @@
             <div class="history-detail">
               @for (entry of comparisonSession().exercises; track $index) {
                 <div class="history-line">
-                  <span class="hl-exo">{{ entry.exercise?.name || 'Exercice' }}</span>
-                  <span class="hl-sets">{{ formatSets(entry.sets || []) }}</span>
+                  <div class="hl-exo">{{ entry.exercise?.name || 'Exercice' }}</div>
+                  <div class="hl-sets">{{ formatSets(entry.sets || []) }}</div>
                 </div>
               }
               @if (comparisonSession().feeling) {
                 <div class="history-line">
-                  <span class="hl-exo">Ressenti</span>
-                  <span class="hl-sets">{{ comparisonSession().feeling }}/10</span>
+                  <div class="hl-exo">Ressenti</div>
+                  <div class="hl-sets">{{ comparisonSession().feeling }}/10</div>
                 </div>
               }
             </div>

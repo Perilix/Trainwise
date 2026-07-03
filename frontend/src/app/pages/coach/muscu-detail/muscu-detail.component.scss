@@ -1344,19 +1344,22 @@ $display-font: 'GulfsDisplay', 'Archivo Black', serif;
     border-top: 1px solid $line;
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.55rem;
 
     .history-line {
-      display: flex;
-      justify-content: space-between;
-      gap: 1rem;
-      font-size: 0.78rem;
-
-      .hl-exo { color: $navy-ink; font-weight: 500; }
+      .hl-exo {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: $navy-ink;
+      }
       .hl-sets {
+        margin-top: 1px;
+        font-size: 0.8rem;
         color: $muted;
-        text-align: right;
         font-variant-numeric: tabular-nums;
+        white-space: pre-wrap;
       }
     }
   }

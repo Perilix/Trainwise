@@ -230,12 +230,13 @@ export class MuscuDetailComponent implements OnInit {
     return sets.length > 0 ? sets : null;
   }
 
+  // Format "8×12kg" (reps × charge), ou "8 reps" au poids du corps
   formatSet(set: { reps?: number; weight?: number | null }): string {
-    return set.weight ? `${set.weight}kg × ${set.reps ?? '?'}` : `${set.reps ?? '?'} reps`;
+    return set.weight ? `${set.reps ?? '?'}×${set.weight}kg` : `${set.reps ?? '?'} reps`;
   }
 
   formatSets(sets: { reps?: number; weight?: number | null }[]): string {
-    return sets.map(s => this.formatSet(s)).join(' · ');
+    return sets.map(s => this.formatSet(s)).join('  ');
   }
 
   formatHistoryOption(h: StrengthHistoryItem): string {
