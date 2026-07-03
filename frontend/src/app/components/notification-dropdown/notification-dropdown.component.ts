@@ -128,6 +128,8 @@ export class NotificationDropdownComponent implements OnInit {
         return 'M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4L12 14.01l-3-3';
       case 'session':
         return 'M8 2v4M16 2v4M3 10h18M21 8v13H3V8M12 14h.01';
+      case 'athlete_alert':
+        return 'M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01';
       default:
         return 'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0';
     }

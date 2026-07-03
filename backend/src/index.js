@@ -141,6 +141,9 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/trainwise
     // Jobs planifiés (relances de ré-engagement)
     require('./jobs/reengagement.job').start();
 
+    // Jobs planifiés (séances manquées + alertes coach sur statut athlète)
+    require('./jobs/athleteAlert.job').start();
+
     httpServer.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });

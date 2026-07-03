@@ -7,7 +7,7 @@ export interface Notification {
     lastName: string;
     profilePicture?: string;
   };
-  type: 'invitation' | 'invitation_response' | 'session' | 'message';
+  type: 'invitation' | 'invitation_response' | 'session' | 'message' | 'friend' | 'reengagement' | 'athlete_alert';
   action: string;
   title: string;
   message: string;

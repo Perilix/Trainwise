@@ -245,6 +245,9 @@ export class CoachDashboardComponent implements OnInit {
     if (athlete.avgFeeling !== null && athlete.avgFeeling !== undefined) {
       parts.push(`Ressenti moyen : ${athlete.avgFeeling}/10 (4 sem.)`);
     }
+    if (athlete.volumeDrop) {
+      parts.push(`Volume en baisse : ${athlete.weeklyVolume} km cette sem. (habituel : ${athlete.baselineWeeklyVolume} km/sem)`);
+    }
     return parts.join(' · ');
   }
 

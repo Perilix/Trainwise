@@ -14,12 +14,14 @@ export interface Athlete {
   nextCompetition?: Competition | null;
   joinedAt: Date;
   packageType?: PackageType;
-  // Statut calculé côté backend
   status?: 'green' | 'orange' | 'red';
   lastActivityDate?: Date | null;
   daysSinceActivity?: number | null;
   skippedCount?: number;
   avgFeeling?: number | null;
+  weeklyVolume?: number;
+  baselineWeeklyVolume?: number;
+  volumeDrop?: boolean;
 }
 
 export interface RecentActivity {
@@ -38,7 +40,15 @@ export interface RecentActivity {
   exercises?: { name: string; sets: number }[];
 }
 
+export interface StatusHistoryEntry {
+  status: 'green' | 'orange' | 'red';
+  date: Date | string;
+}
+
 export interface AthleteDetail extends Athlete {
+  statusTrend?: 'improving' | 'declining' | 'stable';
+  statusChangedAt?: Date | string | null;
+  statusHistory?: StatusHistoryEntry[];
   weeklyFrequency?: number;
   injuries?: string;
   availableDays?: string[];
