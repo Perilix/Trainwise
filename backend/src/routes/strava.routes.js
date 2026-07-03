@@ -36,6 +36,12 @@ const { protect } = require('../middleware/auth.middleware');
  */
 router.get('/callback', stravaController.handleCallback);
 
+// Webhook Strava (routes publiques : appelées par les serveurs Strava)
+// GET  = handshake de validation à la création de l'abonnement
+// POST = réception des événements (nouvelle activité, modif, suppression, révocation)
+router.get('/webhook', stravaController.webhookVerify);
+router.post('/webhook', stravaController.webhookEvent);
+
 // Routes protégées
 router.use(protect);
 
@@ -142,6 +148,11 @@ router.post('/sync', stravaController.syncActivities);
 router.post('/resync', stravaController.resyncActivities);
 
 router.post('/rematch', stravaController.rematchExistingActivities);
+
+// Activités auto-importées (webhook) en attente de relecture — alimente la
+// popup ressenti/match du dashboard au lancement de l'app
+router.get('/pending-review', stravaController.getPendingReview);
+router.post('/pending-review/clear', stravaController.clearPendingReview);
 
 /**
  * @swagger

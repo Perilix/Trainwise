@@ -1,5 +1,6 @@
 const User = require('../models/user.model');
 const Run = require('../models/run.model');
+const StrengthSession = require('../models/strengthSession.model');
 const Notification = require('../models/notification.model');
 const ReengagementLog = require('../models/reengagementLog.model');
 const { getIO, isUserOnline } = require('../socket/index');
@@ -87,24 +88,37 @@ async function findWeeklyRecap(now) {
     lastActivityAt: { $gte: weekAgo }
   }).select('_id email firstName').lean();
 
-  // Total de km sur les 7 derniers jours, par utilisateur
+  // Totaux sur les 7 derniers jours, par utilisateur : km/sorties (Run) + séances muscu
   const userIds = users.map(u => u._id);
-  const agg = await Run.aggregate([
-    { $match: { user: { $in: userIds }, date: { $gte: weekAgo } } },
-    { $group: { _id: '$user', km: { $sum: '$distance' }, sessions: { $sum: 1 } } }
+  const [runAgg, strengthAgg] = await Promise.all([
+    Run.aggregate([
+      { $match: { user: { $in: userIds }, date: { $gte: weekAgo } } },
+      { $group: { _id: '$user', km: { $sum: '$distance' }, sessions: { $sum: 1 } } }
+    ]),
+    StrengthSession.aggregate([
+      { $match: { user: { $in: userIds }, date: { $gte: weekAgo } } },
+      { $group: { _id: '$user', sessions: { $sum: 1 } } }
+    ])
   ]);
-  const statsByUser = new Map(agg.map(a => [a._id.toString(), a]));
+  const runsByUser = new Map(runAgg.map(a => [a._id.toString(), a]));
+  const strengthByUser = new Map(strengthAgg.map(a => [a._id.toString(), a]));
 
   return users.map(u => {
-    const s = statsByUser.get(u._id.toString());
-    const km = Math.round((s?.km || 0) * 10) / 10;
-    const sessions = s?.sessions || 0;
+    const r = runsByUser.get(u._id.toString());
+    const km = Math.round((r?.km || 0) * 10) / 10;
+    const sessions = r?.sessions || 0;
+    const strengthCount = strengthByUser.get(u._id.toString())?.sessions || 0;
+
+    const parts = [];
+    if (km > 0) parts.push(`${km} km parcourus en ${sessions} sortie${sessions > 1 ? 's' : ''}`);
+    if (strengthCount > 0) parts.push(`${strengthCount} séance${strengthCount > 1 ? 's' : ''} de muscu`);
+
     return {
       user: u,
       type: 'recap',
       title: 'Ton récap de la semaine 📊',
-      body: km > 0
-        ? `${km} km parcourus en ${sessions} sortie${sessions > 1 ? 's' : ''}. Bravo, on continue ! 💪`
+      body: parts.length > 0
+        ? `${parts.join(' et ')}. Bravo, on continue ! 💪`
         : 'Une nouvelle semaine commence — fixe-toi un objectif 🎯',
       actionUrl: '/dashboard'
     };

@@ -59,6 +59,13 @@ const runSchema = new mongoose.Schema({
   analyzedAt: { type: Date },
 
   // Strava
+  // true si importée automatiquement (webhook Strava) et pas encore relue par
+  // l'athlète (popup ressenti/match au prochain lancement de l'app)
+  needsReview: {
+    type: Boolean,
+    default: false
+  },
+
   stravaActivityId: {
     type: Number,
     default: null,

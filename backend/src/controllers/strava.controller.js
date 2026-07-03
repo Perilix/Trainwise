@@ -3,6 +3,7 @@ const User = require('../models/user.model');
 const Run = require('../models/run.model');
 const StrengthSession = require('../models/strengthSession.model');
 const { emitTrainCoinsUpdate } = require('../socket/index');
+const { createNotification } = require('./notification.controller');
 const { findPlannedMatches } = require('../services/planningAutoComplete');
 const { athleteHasCoach } = require('../services/coachRelation.service');
 const { getUpcomingCompetitionsForContext } = require('../utils/competitions');
@@ -181,6 +182,160 @@ const refreshTokenIfNeeded = async (user) => {
   return response.data.access_token;
 };
 
+// ── Import d'une activité course (utilisé par la sync manuelle ET le webhook) ──
+// `activity` peut être un summary (liste d'activités) ou un détail complet ;
+// si `prefetchedDetail` n'est pas fourni, le détail est récupéré auprès de l'API.
+const importRunActivity = async (userId, activity, accessToken, fullUser, prefetchedDetail = null) => {
+  const existing = await Run.findOne({ user: userId, stravaActivityId: activity.id });
+  if (existing) return { status: 'skipped', run: existing };
+
+  let description = '';
+  let polyline = activity.map?.summary_polyline || null;
+  let startLatLng = activity.start_latlng || null;
+  let endLatLng = activity.end_latlng || null;
+  let stravaData = null;
+  let detailLaps = null;
+
+  let detail = prefetchedDetail;
+  if (!detail) {
+    try {
+      const detailResponse = await axios.get(`${STRAVA_API_URL}/activities/${activity.id}`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      detail = detailResponse.data;
+    } catch (e) {
+      console.error(`Failed to fetch details for activity ${activity.id}`);
+    }
+  }
+
+  if (detail) {
+    // Métriques détaillées (laps, splits, zones, chaussures…)
+    stravaData = buildStravaData(detail);
+    detailLaps = detail.laps;
+    description = detail.description || '';
+    if (detail.map?.polyline) polyline = detail.map.polyline;
+    if (detail.start_latlng) startLatLng = detail.start_latlng;
+    if (detail.end_latlng) endLatLng = detail.end_latlng;
+  }
+
+  let notes = activity.name;
+  if (description) {
+    notes += `\n\n${description}`;
+  }
+
+  // Suggestion de match avec une séance planifiée (l'athlète confirmera via la popup UI)
+  const plannedCandidates = await findPlannedMatches(userId, new Date(activity.start_date), 'running');
+
+  // Reconstruction des blocs réalisés : si une séance coach matche ce jour-là, on
+  // CALE les laps sur son squelette (10×500 prévu → rempli avec 10×550 réels) ;
+  // sinon détection autonome de la structure.
+  const reconstructedBlocks = reconstructBlocksFromLaps(detailLaps, plannedCandidates[0]?.runBlocks);
+
+  const run = new Run({
+    user: userId,
+    stravaActivityId: activity.id,
+    date: new Date(activity.start_date),
+    distance: Math.round(activity.distance / 1000 * 100) / 100,
+    duration: secondsToMinutes(activity.moving_time),
+    averagePace: speedToPace(activity.average_speed),
+    averageHeartRate: activity.average_heartrate || null,
+    maxHeartRate: activity.max_heartrate || null,
+    averageCadence: activity.average_cadence ? Math.round(activity.average_cadence * 2) : null,
+    elevationGain: activity.total_elevation_gain || null,
+    sessionType: mapStravaType(getActivityType(activity)),
+    notes,
+    polyline,
+    startLatLng,
+    endLatLng,
+    pendingPlannedMatch: plannedCandidates[0]?._id || null,
+    stravaData: stravaData || undefined,
+    runBlocks: reconstructedBlocks.length ? reconstructedBlocks : undefined,
+    blocksAutoReconstructed: reconstructedBlocks.length > 0
+  });
+
+  await run.save();
+  analyzeRunInBackground(run, fullUser);
+
+  if (run.maxHeartRate) {
+    await User.updateOne(
+      { _id: userId, $or: [{ fcmax: null }, { fcmax: { $lt: run.maxHeartRate } }] },
+      { $set: { fcmax: run.maxHeartRate } }
+    );
+  }
+
+  return { status: 'imported', run, plannedCandidate: plannedCandidates[0] || null };
+};
+
+// ── Import d'une activité muscu (sync manuelle + webhook) ──
+const importStrengthActivity = async (userId, activity, accessToken, prefetchedDetail = null) => {
+  const existing = await StrengthSession.findOne({ user: userId, stravaActivityId: activity.id });
+  if (existing) return { status: 'skipped', session: existing };
+
+  let description = prefetchedDetail?.description || '';
+  if (!prefetchedDetail) {
+    try {
+      const detailResponse = await axios.get(`${STRAVA_API_URL}/activities/${activity.id}`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      description = detailResponse.data.description || '';
+    } catch (e) {
+      console.error(`Failed to fetch strength details for activity ${activity.id}`);
+    }
+  }
+
+  let notes = activity.name;
+  if (description) notes += `\n\n${description}`;
+
+  const strengthCandidates = await findPlannedMatches(userId, new Date(activity.start_date), 'strength');
+
+  const session = new StrengthSession({
+    user: userId,
+    stravaActivityId: activity.id,
+    date: new Date(activity.start_date),
+    duration: secondsToMinutes(activity.moving_time || activity.elapsed_time),
+    sessionType: mapStravaStrengthType(getActivityType(activity)),
+    notes,
+    exercises: [],
+    pendingPlannedMatch: strengthCandidates[0]?._id || null
+  });
+
+  await session.save();
+
+  return { status: 'imported', session, plannedCandidate: strengthCandidates[0] || null };
+};
+
+// ── Mise à jour d'un Run existant depuis le détail Strava (resync + webhook update) ──
+const applyRunUpdateFromStrava = async (run, activity) => {
+  let notes = activity.name;
+  if (activity.description) {
+    notes += `\n\n${activity.description}`;
+  }
+
+  const update = {
+    notes,
+    distance: Math.round(activity.distance / 1000 * 100) / 100,
+    duration: secondsToMinutes(activity.moving_time),
+    averagePace: speedToPace(activity.average_speed),
+    averageHeartRate: activity.average_heartrate || null,
+    maxHeartRate: activity.max_heartrate || null,
+    averageCadence: activity.average_cadence ? Math.round(activity.average_cadence * 2) : null,
+    elevationGain: activity.total_elevation_gain || null,
+    polyline: activity.map?.polyline || activity.map?.summary_polyline || null,
+    startLatLng: activity.start_latlng || null,
+    endLatLng: activity.end_latlng || null,
+    stravaData: buildStravaData(activity)
+  };
+
+  // Re-reconstruire les blocs UNIQUEMENT s'ils sont encore auto (athlète n'a rien édité)
+  if (run.blocksAutoReconstructed) {
+    // Si la course est liée à un plan coach figé, on reste aligné dessus
+    const blocks = reconstructBlocksFromLaps(activity.laps, run.plannedSnapshot?.runBlocks);
+    if (blocks.length) update.runBlocks = blocks;
+  }
+
+  await Run.findByIdAndUpdate(run._id, update);
+};
+
 // Générer l'URL d'autorisation Strava
 exports.getAuthUrl = async (req, res) => {
   try {
@@ -312,95 +467,22 @@ exports.syncActivities = async (req, res) => {
     const skippedStrength = [];
 
     for (const activity of runActivities) {
-      const existing = await Run.findOne({
-        user: req.user._id,
-        stravaActivityId: activity.id
-      });
+      const result = await importRunActivity(req.user._id, activity, accessToken, fullUser);
 
-      if (existing) {
+      if (result.status === 'skipped') {
         skipped.push(activity.id);
         continue;
       }
 
-      let description = '';
-      let polyline = activity.map?.summary_polyline || null;
-      let startLatLng = activity.start_latlng || null;
-      let endLatLng = activity.end_latlng || null;
-      let stravaData = null;
-      let detailLaps = null;
-
-      try {
-        const detailResponse = await axios.get(`${STRAVA_API_URL}/activities/${activity.id}`, {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        });
-        const detail = detailResponse.data;
-
-        // Métriques détaillées (laps, splits, zones, chaussures…)
-        stravaData = buildStravaData(detail);
-        detailLaps = detail.laps;
-
-        description = detail.description || '';
-        if (detail.map?.polyline) polyline = detail.map.polyline;
-        if (detail.start_latlng) startLatLng = detail.start_latlng;
-        if (detail.end_latlng) endLatLng = detail.end_latlng;
-      } catch (e) {
-        console.error(`Failed to fetch details for activity ${activity.id}`);
-      }
-
-      let notes = activity.name;
-      if (description) {
-        notes += `\n\n${description}`;
-      }
-
-      // Suggestion de match avec une séance planifiée (l'athlète confirmera via la popup UI)
-      const plannedCandidates = await findPlannedMatches(req.user._id, new Date(activity.start_date), 'running');
-
-      // Reconstruction des blocs réalisés : si une séance coach matche ce jour-là, on
-      // CALE les laps sur son squelette (10×500 prévu → rempli avec 10×550 réels) ;
-      // sinon détection autonome de la structure.
-      const reconstructedBlocks = reconstructBlocksFromLaps(detailLaps, plannedCandidates[0]?.runBlocks);
-
-      const run = new Run({
-        user: req.user._id,
-        stravaActivityId: activity.id,
-        date: new Date(activity.start_date),
-        distance: Math.round(activity.distance / 1000 * 100) / 100,
-        duration: secondsToMinutes(activity.moving_time),
-        averagePace: speedToPace(activity.average_speed),
-        averageHeartRate: activity.average_heartrate || null,
-        maxHeartRate: activity.max_heartrate || null,
-        averageCadence: activity.average_cadence ? Math.round(activity.average_cadence * 2) : null,
-        elevationGain: activity.total_elevation_gain || null,
-        sessionType: mapStravaType(getActivityType(activity)),
-        notes,
-        polyline,
-        startLatLng,
-        endLatLng,
-        pendingPlannedMatch: plannedCandidates[0]?._id || null,
-        stravaData: stravaData || undefined,
-        runBlocks: reconstructedBlocks.length ? reconstructedBlocks : undefined,
-        blocksAutoReconstructed: reconstructedBlocks.length > 0
-      });
-
-      await run.save();
-      analyzeRunInBackground(run, fullUser);
-
-      if (run.maxHeartRate) {
-        await User.updateOne(
-          { _id: req.user._id, $or: [{ fcmax: null }, { fcmax: { $lt: run.maxHeartRate } }] },
-          { $set: { fcmax: run.maxHeartRate } }
-        );
-      }
-
       imported.push({
-        id: run._id,
+        id: result.run._id,
         stravaId: activity.id,
         name: activity.name,
-        date: run.date,
-        distance: run.distance,
-        duration: run.duration,
-        sessionType: run.sessionType,
-        pendingPlannedMatch: plannedCandidates[0] || null
+        date: result.run.date,
+        distance: result.run.distance,
+        duration: result.run.duration,
+        sessionType: result.run.sessionType,
+        pendingPlannedMatch: result.plannedCandidate
       });
     }
 
@@ -408,53 +490,21 @@ exports.syncActivities = async (req, res) => {
     const importedStrength = [];
 
     for (const activity of strengthActivities) {
-      const existing = await StrengthSession.findOne({
-        user: req.user._id,
-        stravaActivityId: activity.id
-      });
+      const result = await importStrengthActivity(req.user._id, activity, accessToken);
 
-      if (existing) {
+      if (result.status === 'skipped') {
         skippedStrength.push(activity.id);
         continue;
       }
 
-      let description = '';
-      try {
-        const detailResponse = await axios.get(`${STRAVA_API_URL}/activities/${activity.id}`, {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        });
-
-        description = detailResponse.data.description || '';
-      } catch (e) {
-        console.error(`Failed to fetch strength details for activity ${activity.id}`);
-      }
-
-      let notes = activity.name;
-      if (description) notes += `\n\n${description}`;
-
-      const strengthCandidates = await findPlannedMatches(req.user._id, new Date(activity.start_date), 'strength');
-
-      const session = new StrengthSession({
-        user: req.user._id,
-        stravaActivityId: activity.id,
-        date: new Date(activity.start_date),
-        duration: secondsToMinutes(activity.moving_time || activity.elapsed_time),
-        sessionType: mapStravaStrengthType(getActivityType(activity)),
-        notes,
-        exercises: [],
-        pendingPlannedMatch: strengthCandidates[0]?._id || null
-      });
-
-      await session.save();
-
       importedStrength.push({
-        id: session._id,
+        id: result.session._id,
         stravaId: activity.id,
         name: activity.name,
-        date: session.date,
-        duration: session.duration,
-        sessionType: session.sessionType,
-        pendingPlannedMatch: strengthCandidates[0] || null
+        date: result.session.date,
+        duration: result.session.duration,
+        sessionType: result.session.sessionType,
+        pendingPlannedMatch: result.plannedCandidate
       });
     }
 
@@ -505,42 +555,7 @@ exports.resyncActivities = async (req, res) => {
           headers: { Authorization: `Bearer ${accessToken}` }
         });
 
-        const activity = detailResponse.data;
-
-        // Construire les notes avec titre et description
-        let notes = activity.name;
-        if (activity.description) {
-          notes += `\n\n${activity.description}`;
-        }
-
-        // Récupérer la polyline
-        const polyline = activity.map?.polyline || activity.map?.summary_polyline || null;
-        const startLatLng = activity.start_latlng || null;
-        const endLatLng = activity.end_latlng || null;
-
-        const update = {
-          notes,
-          distance: Math.round(activity.distance / 1000 * 100) / 100,
-          duration: secondsToMinutes(activity.moving_time),
-          averagePace: speedToPace(activity.average_speed),
-          averageHeartRate: activity.average_heartrate || null,
-          maxHeartRate: activity.max_heartrate || null,
-          averageCadence: activity.average_cadence ? Math.round(activity.average_cadence * 2) : null,
-          elevationGain: activity.total_elevation_gain || null,
-          polyline,
-          startLatLng,
-          endLatLng,
-          stravaData: buildStravaData(activity)
-        };
-
-        // Re-reconstruire les blocs UNIQUEMENT s'ils sont encore auto (athlète n'a rien édité)
-        if (run.blocksAutoReconstructed) {
-          // Si la course est liée à un plan coach figé, on reste aligné dessus
-          const blocks = reconstructBlocksFromLaps(activity.laps, run.plannedSnapshot?.runBlocks);
-          if (blocks.length) update.runBlocks = blocks;
-        }
-
-        await Run.findByIdAndUpdate(run._id, update);
+        await applyRunUpdateFromStrava(run, detailResponse.data);
 
         updated++;
       } catch (e) {
@@ -642,6 +657,209 @@ exports.disconnect = async (req, res) => {
     });
 
     res.json({ message: 'Compte Strava déconnecté' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// ═══════════════════════════ Webhook Strava ═══════════════════════════
+// Doc : https://developers.strava.com/docs/webhooks/
+// Strava pousse un événement à chaque création/modif/suppression d'activité,
+// ce qui rend l'import automatique (plus besoin du bouton "Synchroniser").
+
+// GET /api/strava/webhook — handshake de validation lors de la création de l'abonnement
+exports.webhookVerify = (req, res) => {
+  const mode = req.query['hub.mode'];
+  const verifyToken = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
+
+  if (mode === 'subscribe' && verifyToken && verifyToken === process.env.STRAVA_WEBHOOK_VERIFY_TOKEN) {
+    console.log('[Strava webhook] handshake validé');
+    return res.json({ 'hub.challenge': challenge });
+  }
+
+  console.warn('[Strava webhook] handshake refusé (verify_token invalide)');
+  res.status(403).json({ error: 'Verify token invalide' });
+};
+
+// POST /api/strava/webhook — réception des événements
+// Strava exige une réponse 200 en moins de 2 secondes : on répond immédiatement
+// et on traite l'événement en asynchrone.
+exports.webhookEvent = (req, res) => {
+  res.status(200).json({ received: true });
+
+  processWebhookEvent(req.body).catch(e => {
+    console.error('[Strava webhook] erreur de traitement:', e.message);
+  });
+};
+
+const processWebhookEvent = async (event) => {
+  const { object_type, object_id, aspect_type, owner_id, updates } = event || {};
+  console.log(`[Strava webhook] ${object_type}/${aspect_type} — activité ${object_id}, athlète ${owner_id}`);
+
+  // L'athlète a révoqué l'accès depuis Strava → on nettoie ses tokens
+  if (object_type === 'athlete') {
+    if (updates?.authorized === 'false') {
+      const result = await User.updateOne(
+        { 'strava.athleteId': owner_id },
+        {
+          $unset: {
+            'strava.athleteId': 1,
+            'strava.accessToken': 1,
+            'strava.refreshToken': 1,
+            'strava.expiresAt': 1,
+            'strava.connectedAt': 1
+          }
+        }
+      );
+      console.log(`[Strava webhook] athlète ${owner_id} a révoqué l'accès (${result.modifiedCount} user nettoyé)`);
+    }
+    return;
+  }
+
+  if (object_type !== 'activity') return;
+
+  const user = await User.findOne({ 'strava.athleteId': owner_id })
+    .select('+strava.accessToken +strava.refreshToken');
+
+  if (!user) {
+    console.warn(`[Strava webhook] aucun utilisateur pour l'athlète Strava ${owner_id}`);
+    return;
+  }
+
+  // Activité supprimée sur Strava → on supprime le miroir chez nous
+  if (aspect_type === 'delete') {
+    const run = await Run.findOneAndDelete({ user: user._id, stravaActivityId: object_id });
+    const session = run ? null : await StrengthSession.findOneAndDelete({ user: user._id, stravaActivityId: object_id });
+    console.log(`[Strava webhook] delete ${object_id} → ${run ? 'run supprimé' : session ? 'séance muscu supprimée' : 'rien à supprimer'}`);
+    return;
+  }
+
+  // create / update → récupérer le détail de l'activité
+  const accessToken = await refreshTokenIfNeeded(user);
+
+  let detail;
+  try {
+    const detailResponse = await axios.get(`${STRAVA_API_URL}/activities/${object_id}`, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    detail = detailResponse.data;
+  } catch (e) {
+    console.error(`[Strava webhook] impossible de récupérer l'activité ${object_id}:`, e.response?.status || e.message);
+    return;
+  }
+
+  const activityType = getActivityType(detail);
+
+  if (STRAVA_RUN_TYPES.includes(activityType)) {
+    const existing = await Run.findOne({ user: user._id, stravaActivityId: object_id });
+
+    if (existing) {
+      // Modif sur Strava (titre, description, correction de distance…) → on répercute
+      if (aspect_type === 'update') {
+        await applyRunUpdateFromStrava(existing, detail);
+        console.log(`[Strava webhook] run ${existing._id} mis à jour`);
+      }
+      return;
+    }
+
+    const fullUser = await User.findById(user._id);
+    const { run } = await importRunActivity(user._id, detail, accessToken, fullUser, detail);
+    // À relire par l'athlète : la popup ressenti/match s'ouvrira au prochain
+    // lancement du dashboard (GET /api/strava/pending-review)
+    await Run.updateOne({ _id: run._id }, { $set: { needsReview: true } });
+    console.log(`[Strava webhook] run ${run._id} importé (${run.distance} km)`);
+
+    await createNotification({
+      recipient: user._id,
+      sender: null,
+      type: 'session',
+      action: 'strava_auto_import',
+      title: 'Activité Strava synchronisée 🏃',
+      message: `${detail.name} (${run.distance} km) a été synchronisée — viens la détailler !`,
+      actionUrl: '/dashboard'
+    });
+  } else if (STRAVA_STRENGTH_TYPES.includes(activityType)) {
+    const result = await importStrengthActivity(user._id, detail, accessToken, detail);
+    if (result.status === 'imported') {
+      await StrengthSession.updateOne({ _id: result.session._id }, { $set: { needsReview: true } });
+      console.log(`[Strava webhook] séance muscu ${result.session._id} importée`);
+
+      await createNotification({
+        recipient: user._id,
+        sender: null,
+        type: 'session',
+        action: 'strava_auto_import',
+        title: 'Activité Strava synchronisée 💪',
+        message: `${detail.name} a été synchronisée — viens la détailler !`,
+        actionUrl: '/dashboard'
+      });
+    }
+  } else {
+    console.log(`[Strava webhook] type d'activité ignoré: ${activityType}`);
+  }
+};
+
+// Exporté pour les tests / déclenchement manuel
+exports.processWebhookEvent = processWebhookEvent;
+
+// Même forme allégée que le populate des Run/StrengthSession côté athlète
+const PENDING_MATCH_FIELDS = 'date activityType sessionType targetDistance targetDuration targetPace description generatedBy';
+
+// Activités importées par le webhook et pas encore relues par l'athlète.
+// Le dashboard les récupère au chargement pour ouvrir la popup ressenti/match.
+exports.getPendingReview = async (req, res) => {
+  try {
+    const [runs, sessions] = await Promise.all([
+      Run.find({ user: req.user._id, needsReview: true })
+        .sort({ date: -1 })
+        .select('date distance duration sessionType pendingPlannedMatch')
+        .populate('pendingPlannedMatch', PENDING_MATCH_FIELDS)
+        .lean(),
+      StrengthSession.find({ user: req.user._id, needsReview: true })
+        .sort({ date: -1 })
+        .select('date duration sessionType pendingPlannedMatch')
+        .populate('pendingPlannedMatch', PENDING_MATCH_FIELDS)
+        .lean()
+    ]);
+
+    res.json({
+      runs: runs.map(r => ({
+        id: r._id,
+        date: r.date,
+        distance: r.distance,
+        duration: r.duration,
+        sessionType: r.sessionType,
+        pendingPlannedMatch: r.pendingPlannedMatch || null
+      })),
+      strength: sessions.map(s => ({
+        id: s._id,
+        date: s.date,
+        duration: s.duration,
+        sessionType: s.sessionType,
+        pendingPlannedMatch: s.pendingPlannedMatch || null
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Marquer les activités comme relues (appelé à la fermeture de la popup)
+exports.clearPendingReview = async (req, res) => {
+  try {
+    const { runIds = [], strengthIds = [] } = req.body;
+
+    await Promise.all([
+      runIds.length
+        ? Run.updateMany({ user: req.user._id, _id: { $in: runIds } }, { $set: { needsReview: false } })
+        : Promise.resolve(),
+      strengthIds.length
+        ? StrengthSession.updateMany({ user: req.user._id, _id: { $in: strengthIds } }, { $set: { needsReview: false } })
+        : Promise.resolve()
+    ]);
+
+    res.json({ message: 'Activités marquées comme relues' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

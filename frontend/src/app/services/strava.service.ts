@@ -42,6 +42,25 @@ export interface StravaSyncResult {
   skipped: number[];
 }
 
+// Activités auto-importées par le webhook, en attente de relecture (popup dashboard)
+export interface StravaPendingReview {
+  runs: {
+    id: string;
+    date: Date;
+    distance?: number;
+    duration?: number;
+    sessionType?: string;
+    pendingPlannedMatch?: PlannedMatchSummary | null;
+  }[];
+  strength: {
+    id: string;
+    date: Date;
+    duration?: number;
+    sessionType?: string;
+    pendingPlannedMatch?: PlannedMatchSummary | null;
+  }[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -73,5 +92,13 @@ export class StravaService {
 
   disconnect(): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${this.apiUrl}/disconnect`);
+  }
+
+  getPendingReview(): Observable<StravaPendingReview> {
+    return this.http.get<StravaPendingReview>(`${this.apiUrl}/pending-review`);
+  }
+
+  clearPendingReview(runIds: string[], strengthIds: string[]): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/pending-review/clear`, { runIds, strengthIds });
   }
 }
