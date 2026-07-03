@@ -239,6 +239,13 @@ export class MuscuDetailComponent implements OnInit {
     return sets.map(s => this.formatSet(s)).join('  ');
   }
 
+  // Couleur du ressenti, alignée sur les seuils du statut athlète
+  feelingClass(feeling: number): string {
+    if (feeling >= 7) return 'good';
+    if (feeling >= 4) return 'mid';
+    return 'low';
+  }
+
   formatHistoryOption(h: StrengthHistoryItem): string {
     return `${this.historyDate(h)} — ${this.historyType(h)} (${h.exerciseCount} exo${h.exerciseCount > 1 ? 's' : ''})`;
   }

@@ -1355,11 +1355,10 @@ $display-font: 'GulfsDisplay', 'Archivo Black', serif;
         color: $navy-ink;
       }
       .hl-sets {
-        margin-top: 1px;
-        font-size: 0.8rem;
-        color: $muted;
-        font-variant-numeric: tabular-nums;
-        white-space: pre-wrap;
+        margin-top: 3px;
+        display: flex;
+        gap: 0.3rem;
+        flex-wrap: wrap;
       }
     }
   }
@@ -1367,8 +1366,42 @@ $display-font: 'GulfsDisplay', 'Archivo Black', serif;
 
 // Ligne "dernière perf" sous un exercice du plan
 .prev-perf {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
   margin: 0.35rem 0 0.5rem;
-  font-size: 0.73rem;
-  color: $muted;
+
+  .prev-perf-label {
+    font-size: 0.7rem;
+    color: $muted;
+    margin-right: 0.15rem;
+  }
+}
+
+// Petit bloc d'une série ("8×12kg")
+.set-chip {
+  display: inline-block;
+  padding: 0.18rem 0.45rem;
+  background: $ivory;
+  border: 1px solid $line;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: $navy-ink;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+// Ressenti coloré (seuils alignés sur le statut athlète)
+.feeling-chip {
+  display: inline-block;
+  padding: 0.18rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+
+  &.good { background: rgba(22, 163, 74, 0.1); color: #15803d; }
+  &.mid { background: rgba(249, 115, 22, 0.12); color: #c2410c; }
+  &.low { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
 }

@@ -84,13 +84,19 @@
               @for (entry of comparisonSession().exercises; track $index) {
                 <div class="history-line">
                   <div class="hl-exo">{{ entry.exercise?.name || 'Exercice' }}</div>
-                  <div class="hl-sets">{{ formatSets(entry.sets || []) }}</div>
+                  <div class="hl-sets">
+                    @for (set of entry.sets || []; track $index) {
+                      <span class="set-chip">{{ formatSet(set) }}</span>
+                    }
+                  </div>
                 </div>
               }
               @if (comparisonSession().feeling) {
                 <div class="history-line">
                   <div class="hl-exo">Ressenti</div>
-                  <div class="hl-sets">{{ comparisonSession().feeling }}/10</div>
+                  <div class="hl-sets">
+                    <span class="feeling-chip" [class]="'feeling-chip ' + feelingClass(comparisonSession().feeling)">{{ comparisonSession().feeling }}/10</span>
+                  </div>
                 </div>
               }
             </div>
@@ -129,7 +135,12 @@
                     }
                   </div>
                   @if (comparisonSetsFor(ex); as sets) {
-                    <div class="prev-perf">Dernière fois ({{ comparisonDate() }}) : {{ formatSets(sets) }}</div>
+                    <div class="prev-perf">
+                      <span class="prev-perf-label">Dernière fois ({{ comparisonDate() }})</span>
+                      @for (set of sets; track $index) {
+                        <span class="set-chip">{{ formatSet(set) }}</span>
+                      }
+                    </div>
                   }
                   @if (canEdit()) {
                     <div class="exercise-fields">
@@ -208,7 +219,12 @@
                 <div class="flow-body">
                   <div class="flow-name">{{ getExerciseName(ex) }}</div>
                   @if (comparisonSetsFor(ex); as sets) {
-                    <div class="prev-perf">Dernière fois ({{ comparisonDate() }}) : {{ formatSets(sets) }}</div>
+                    <div class="prev-perf">
+                      <span class="prev-perf-label">Dernière fois ({{ comparisonDate() }})</span>
+                      @for (set of sets; track $index) {
+                        <span class="set-chip">{{ formatSet(set) }}</span>
+                      }
+                    </div>
                   }
                   @if (canEdit()) {
                     <div class="flow-fields">
@@ -348,7 +364,12 @@
                   <div class="flow-body">
                     <div class="flow-name">{{ getExerciseName(pair.a) }}</div>
                     @if (comparisonSetsFor(pair.a); as sets) {
-                      <div class="prev-perf">Dernière fois ({{ comparisonDate() }}) : {{ formatSets(sets) }}</div>
+                      <div class="prev-perf">
+                        <span class="prev-perf-label">Dernière fois ({{ comparisonDate() }})</span>
+                        @for (set of sets; track $index) {
+                          <span class="set-chip">{{ formatSet(set) }}</span>
+                        }
+                      </div>
                     }
                     @if (canEdit()) {
                       <div class="flow-fields">
@@ -389,7 +410,12 @@
                   <div class="flow-body">
                     <div class="flow-name">{{ getExerciseName(pair.b) }}</div>
                     @if (comparisonSetsFor(pair.b); as sets) {
-                      <div class="prev-perf">Dernière fois ({{ comparisonDate() }}) : {{ formatSets(sets) }}</div>
+                      <div class="prev-perf">
+                        <span class="prev-perf-label">Dernière fois ({{ comparisonDate() }})</span>
+                        @for (set of sets; track $index) {
+                          <span class="set-chip">{{ formatSet(set) }}</span>
+                        }
+                      </div>
                     }
                     @if (canEdit()) {
                       <div class="flow-fields">
