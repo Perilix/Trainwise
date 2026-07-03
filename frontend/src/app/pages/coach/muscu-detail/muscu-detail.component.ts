@@ -234,6 +234,14 @@ export class MuscuDetailComponent implements OnInit {
     return set.weight ? `${set.weight}kg × ${set.reps ?? '?'}` : `${set.reps ?? '?'} reps`;
   }
 
+  formatSets(sets: { reps?: number; weight?: number | null }[]): string {
+    return sets.map(s => this.formatSet(s)).join(' · ');
+  }
+
+  formatHistoryOption(h: StrengthHistoryItem): string {
+    return `${this.historyDate(h)} — ${this.historyType(h)} (${h.exerciseCount} exo${h.exerciseCount > 1 ? 's' : ''})`;
+  }
+
   comparisonDate(): string {
     const session = this.comparisonSession();
     if (!session?.date) return '';
