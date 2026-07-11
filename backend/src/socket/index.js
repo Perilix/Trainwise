@@ -14,7 +14,14 @@ const connectedUsers = new Map();
 const initializeSocket = (httpServer) => {
   io = new Server(httpServer, {
     cors: {
-      origin: process.env.FRONTEND_URL || 'http://localhost:4200',
+      origin: [
+        'http://localhost:4200',
+        'capacitor://localhost',
+        'ionic://localhost',
+        'http://localhost',
+        'https://localhost', // WebView Capacitor Android
+        process.env.FRONTEND_URL,
+      ].filter(Boolean),
       methods: ['GET', 'POST'],
       credentials: true
     }
