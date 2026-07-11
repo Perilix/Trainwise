@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Trainwise</string>
+    <string name="title_activity_main">Trainwise</string>
+    <string name="package_name">com.trainwise.appli</string>
+    <string name="custom_url_scheme">com.trainwise.appli</string>
+</resources>

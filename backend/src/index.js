@@ -38,6 +38,7 @@ const allowedOrigins = [
   'capacitor://localhost',
   'ionic://localhost',
   'http://localhost',
+  'https://localhost', // WebView Capacitor Android
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
