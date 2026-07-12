@@ -1,20 +1,21 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnDestroy, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ChatService, Conversation, UserPreview } from '../../../services/chat.service';
 import { AuthService } from '../../../services/auth.service';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
+import { ConversationDetailComponent } from '../conversation-detail/conversation-detail.component';
 import { debounceTime, Subject } from 'rxjs';
 
 @Component({
   selector: 'app-conversations-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavbarComponent, RouterLink],
+  imports: [CommonModule, FormsModule, NavbarComponent, RouterLink, ConversationDetailComponent],
   templateUrl: './conversations-list.component.html',
   styleUrl: './conversations-list.component.scss'
 })
-export class ConversationsListComponent implements OnInit {
+export class ConversationsListComponent implements OnInit, OnDestroy {
   // State
   isLoading = signal(true);
   searchQuery = signal('');
@@ -22,13 +23,20 @@ export class ConversationsListComponent implements OnInit {
   isSearching = signal(false);
   showNewConversation = signal(false);
 
+  // Desktop 2 panneaux : conversation ouverte dans le panneau droit
+  isDesktop = signal(false);
+  selectedConversationId = signal<string | null>(null);
+  private desktopQuery = window.matchMedia('(min-width: 1024px)');
+  private onDesktopChange = (e: MediaQueryListEvent) => this.isDesktop.set(e.matches);
+
   // Search debounce
   private searchSubject = new Subject<string>();
 
   constructor(
     public chatService: ChatService,
     public authService: AuthService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {
     // Setup search debounce
     this.searchSubject.pipe(
@@ -44,11 +52,30 @@ export class ConversationsListComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.isDesktop.set(this.desktopQuery.matches);
+    this.desktopQuery.addEventListener('change', this.onDesktopChange);
+
+    // Deep-link ?c=<id> : ouvre la conversation dans le panneau droit (desktop)
+    // ou redirige vers la page plein écran (mobile)
+    this.route.queryParams.subscribe(params => {
+      const id = params['c'];
+      if (!id) return;
+      if (this.isDesktop()) {
+        this.selectedConversationId.set(id);
+      } else {
+        this.router.navigate(['/chat', id], { replaceUrl: true });
+      }
+    });
+
     this.loadConversations();
     // Ensure socket is connected
     if (!this.chatService.isConnected()) {
       this.chatService.connect();
     }
+  }
+
+  ngOnDestroy() {
+    this.desktopQuery.removeEventListener('change', this.onDesktopChange);
   }
 
   loadConversations() {
@@ -90,7 +117,7 @@ export class ConversationsListComponent implements OnInit {
         this.showNewConversation.set(false);
         this.searchQuery.set('');
         this.searchResults.set([]);
-        this.router.navigate(['/chat', conversation._id]);
+        this.selectConversation(conversation._id);
       },
       error: (err) => {
         console.error('Error creating conversation:', err);
@@ -99,7 +126,16 @@ export class ConversationsListComponent implements OnInit {
   }
 
   openConversation(conversation: Conversation) {
-    this.router.navigate(['/chat', conversation._id]);
+    this.selectConversation(conversation._id);
+  }
+
+  private selectConversation(id: string) {
+    if (this.isDesktop()) {
+      this.selectedConversationId.set(id);
+      this.router.navigate([], { relativeTo: this.route, queryParams: { c: id }, replaceUrl: true });
+    } else {
+      this.router.navigate(['/chat', id]);
+    }
   }
 
   toggleNewConversation() {

@@ -123,6 +123,44 @@ input, select, textarea, button {
   --bottom-nav-height: calc(60px + var(--safe-bottom));
   --safe-area-top: env(safe-area-inset-top, 0px);
   --safe-area-bottom: var(--safe-bottom);
+
+  // Tokens design (utilisés par le nouveau code desktop uniquement)
+  --color-navy: #003554;
+  --color-beige: #F6F4F0;
+  --color-accent: #00A6FB;
+  --color-danger: #ff4757;
+  --sidebar-width: 0px;
+}
+
+// Desktop ≥1024px : shell en ligne avec sidebar à gauche, navbar masquée
+// (--navbar-height: 0 fait retomber tous les padding-top des pages).
+// Les bottom-navs sont déjà en display:none à partir de 769px.
+@media (min-width: 1024px) {
+  :root {
+    --sidebar-width: 240px;
+    --navbar-height: 0px;
+  }
+
+  app-root {
+    flex-direction: row;
+  }
+
+  // La cloche de notifications vit dans le pied de la sidebar : son panneau
+  // s'ouvre en position fixe à côté de la sidebar (sinon il serait rogné par
+  // l'overflow de celle-ci).
+  app-sidebar .notification-wrapper .notification-dropdown {
+    position: fixed;
+    left: calc(var(--sidebar-width) + 10px);
+    right: auto;
+    top: auto;
+    bottom: 12px;
+    max-height: min(480px, calc(100vh - 24px));
+  }
+}
+
+app-sidebar {
+  display: block;
+  flex-shrink: 0;
 }
 
 @media (max-width: 768px) {

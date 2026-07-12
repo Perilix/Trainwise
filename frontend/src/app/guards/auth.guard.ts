@@ -1,6 +1,5 @@
 import { inject } from '@angular/core';
 import { Router, CanActivateFn } from '@angular/router';
-import { Capacitor } from '@capacitor/core';
 import { AuthService } from '../services/auth.service';
 
 export const authGuard: CanActivateFn = (_route, state) => {
@@ -24,7 +23,6 @@ export const guestGuard: CanActivateFn = (_route, state) => {
   }
 
   const returnUrl = state.root.queryParamMap.get('returnUrl');
-  const fallback = Capacitor.isNativePlatform() ? '/' : '/beta/feedback';
-  router.navigateByUrl(returnUrl || fallback);
+  router.navigateByUrl(returnUrl || '/');
   return false;
 };

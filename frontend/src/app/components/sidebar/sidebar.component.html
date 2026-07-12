@@ -1,0 +1,97 @@
+<nav class="sidebar">
+  <a class="sidebar-logo" [routerLink]="authService.isCoach() ? '/coach' : '/'">
+    <span class="logo-text">
+      <span class="logo-train">Train</span>
+      <span class="logo-wise">wise</span>
+    </span>
+  </a>
+
+  <div class="sidebar-nav">
+    @if (authService.isCoach()) {
+      <a routerLink="/coach" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="side-item">
+        <i class="fa-solid fa-house"></i>
+        <span class="label">Accueil</span>
+      </a>
+      <a routerLink="/coach/exercises" routerLinkActive="active" class="side-item">
+        <i class="fa-solid fa-dumbbell"></i>
+        <span class="label">Exercices</span>
+      </a>
+      <a routerLink="/chat" routerLinkActive="active" class="side-item">
+        <span class="icon-wrapper">
+          <i class="fa-solid fa-message"></i>
+          @if (chatService.totalUnread() > 0) {
+            <span class="badge">{{ chatService.totalUnread() > 99 ? '99+' : chatService.totalUnread() }}</span>
+          }
+        </span>
+        <span class="label">Messages</span>
+      </a>
+    } @else {
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="side-item">
+        <i class="fa-solid fa-house"></i>
+        <span class="label">Accueil</span>
+      </a>
+      <a routerLink="/planning" routerLinkActive="active" class="side-item">
+        <i class="fa-solid fa-calendar-days"></i>
+        <span class="label">Planning</span>
+      </a>
+      <a routerLink="/analyse" routerLinkActive="active" class="side-item">
+        <i class="fa-solid fa-chart-line"></i>
+        <span class="label">Analyse</span>
+      </a>
+      <a routerLink="/sorties" routerLinkActive="active" class="side-item">
+        <i class="fa-solid fa-route"></i>
+        <span class="label">Sorties</span>
+      </a>
+      <a routerLink="/friends" routerLinkActive="active" class="side-item">
+        <span class="icon-wrapper">
+          <i class="fa-solid fa-user-group"></i>
+          @if (friendService.pendingCount() > 0) {
+            <span class="badge">{{ friendService.pendingCount() }}</span>
+          }
+        </span>
+        <span class="label">Amis</span>
+      </a>
+      @if (!coachNav.isLoadingCoach()) {
+        <button (click)="coachNav.navigateToCoach()" class="side-item" [class.active]="coachNav.isCoachPageActive()">
+          @if (coachNav.currentCoach()) {
+            <span class="icon-wrapper">
+              <i class="fa-solid fa-message"></i>
+              @if (coachNav.getCoachUnreadCount() > 0) {
+                <span class="badge">{{ coachNav.getCoachUnreadCount() > 99 ? '99+' : coachNav.getCoachUnreadCount() }}</span>
+              }
+            </span>
+          } @else {
+            <i class="fa-solid fa-user-tie"></i>
+          }
+          <span class="label">Coach</span>
+        </button>
+      }
+      <a routerLink="/shop" routerLinkActive="active" class="side-item">
+        <i class="fa-solid fa-store"></i>
+        <span class="label">Boutique</span>
+      </a>
+    }
+
+    <div class="nav-spacer"></div>
+
+    <a routerLink="/settings" routerLinkActive="active" class="side-item">
+      <i class="fa-solid fa-gear"></i>
+      <span class="label">Paramètres</span>
+    </a>
+  </div>
+
+  <div class="sidebar-footer">
+    <a [routerLink]="authService.isCoach() ? '/coach/profile' : '/profile'" class="footer-user">
+      @if (authService.currentUser()?.profilePicture) {
+        <img [src]="authService.currentUser()?.profilePicture" alt="Avatar" class="footer-avatar">
+      } @else {
+        <span class="footer-avatar placeholder">{{ getUserInitial() }}</span>
+      }
+      <span class="footer-name">{{ authService.currentUser()?.firstName }} {{ authService.currentUser()?.lastName }}</span>
+    </a>
+    <app-notification-dropdown class="footer-notif"></app-notification-dropdown>
+    <button class="footer-logout" (click)="logout()" title="Déconnexion">
+      <i class="fa-solid fa-arrow-right-from-bracket"></i>
+    </button>
+  </div>
+</nav>
