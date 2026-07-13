@@ -6,6 +6,7 @@ import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Keyboard } from '@capacitor/keyboard';
 import { BottomNavComponent } from './components/bottom-nav/bottom-nav.component';
+import { SidebarComponent } from './components/sidebar/sidebar.component';
 import { CoachBottomNavComponent } from './components/coach-bottom-nav/coach-bottom-nav.component';
 import { CoachInvitationModalComponent } from './components/coach-invitation-modal/coach-invitation-modal.component';
 import { OnboardingComponent } from './components/onboarding/onboarding.component';
@@ -19,7 +20,7 @@ import { PushNotificationService } from './services/push-notification.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, BottomNavComponent, CoachBottomNavComponent, CoachInvitationModalComponent, OnboardingComponent, PaywallComponent],
+  imports: [RouterOutlet, SidebarComponent, BottomNavComponent, CoachBottomNavComponent, CoachInvitationModalComponent, OnboardingComponent, PaywallComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
@@ -66,6 +67,10 @@ export class App {
         revenueCatInitialized = true;
         this.pushNotificationService.initializePushNotifications().catch(() => {});
         this.subscriptionService.initRevenueCat(user.id);
+        if (!Capacitor.isNativePlatform()) {
+          // Sur web, pas de RevenueCat : rafraîchir l'état d'abonnement/coins depuis le backend
+          this.subscriptionService.refreshStatus();
+        }
       }
       if (!user) {
         revenueCatInitialized = false;

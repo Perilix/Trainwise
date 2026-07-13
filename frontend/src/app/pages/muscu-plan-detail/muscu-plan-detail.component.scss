@@ -1175,3 +1175,10 @@ $display-font: 'GulfsDisplay', 'Archivo Black', serif;
     .pair-connector-pill { background: $cyan-line; }
   }
 }
+
+// Desktop ≥1024px : élargir le contenu (sidebar active)
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1000px;
+  }
+}

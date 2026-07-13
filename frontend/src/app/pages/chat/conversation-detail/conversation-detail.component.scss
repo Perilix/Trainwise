@@ -569,3 +569,13 @@
     }
   }
 }
+
+// Mode intégré (panneau droit de /chat sur desktop) : le conteneur remplit son panneau
+// au lieu d'occuper tout le viewport.
+.chat-container.embedded {
+  position: absolute;
+  top: var(--navbar-height, 100px);
+  left: 0;
+  right: 0;
+  bottom: 0;
+}

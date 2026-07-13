@@ -408,3 +408,11 @@
   background-size: 800px 100%;
   animation: shimmer 1.4s ease infinite;
 }
+
+// Desktop ≥1024px : centrer et élargir la page (sidebar active)
+@media (min-width: 1024px) {
+  .sorties-page {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+}

@@ -1405,3 +1405,10 @@ $display-font: 'GulfsDisplay', 'Archivo Black', serif;
   &.mid { background: rgba(249, 115, 22, 0.12); color: #c2410c; }
   &.low { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
 }
+
+// Desktop ≥1024px : élargir le contenu (sidebar active)
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1000px;
+  }
+}

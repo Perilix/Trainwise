@@ -368,3 +368,10 @@ main {
   i { font-size: 0.9rem; color: #00a6fb; }
   &:active { transform: scale(0.98); box-shadow: 0 4px 16px rgba(0, 53, 84, 0.12); }
 }
+
+// Desktop ≥1024px : élargir le contenu (sidebar active)
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1000px;
+  }
+}

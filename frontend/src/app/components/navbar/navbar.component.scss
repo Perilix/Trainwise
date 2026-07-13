@@ -366,3 +366,12 @@
   }
 }
 
+
+// Desktop ≥1024px : la sidebar est le seul chrome de l'app (logo, notifications,
+// profil et déconnexion y sont intégrés) — la navbar disparaît complètement.
+@media (min-width: 1024px) {
+  .navbar,
+  .navbar-backdrop {
+    display: none;
+  }
+}

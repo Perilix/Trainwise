@@ -1,3 +1,6 @@
+@if (authService.isAuthenticated() && !isOnChatDetail() && !isOnBetaFeedback()) {
+  <app-sidebar></app-sidebar>
+}
 <div class="page-scroll">
   <router-outlet></router-outlet>
 </div>

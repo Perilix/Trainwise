@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, computed, ViewChild, ElementRef, AfterViewChecked, ViewEncapsulation } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, signal, computed, ViewChild, ElementRef, AfterViewChecked, ViewEncapsulation } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -19,6 +19,15 @@ export class ConversationDetailComponent implements OnInit, OnDestroy, AfterView
   @ViewChild('messagesContainer') messagesContainer!: ElementRef;
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   @ViewChild('messageTextarea') messageTextarea?: ElementRef<HTMLTextAreaElement>;
+
+  // Mode intégré : rendu dans le panneau droit de la liste de conversations (desktop),
+  // piloté par [conversationId] au lieu de la route /chat/:id
+  @Input() embedded = false;
+  @Input() set conversationId(id: string | null) {
+    if (id) {
+      this.loadConversation(id);
+    }
+  }
 
   // State
   isLoading = signal(true);
@@ -57,14 +66,23 @@ export class ConversationDetailComponent implements OnInit, OnDestroy, AfterView
   }
 
   ngOnInit() {
-    document.body.classList.add('chat-detail-active');
-
-    this.route.params.subscribe(params => {
-      const conversationId = params['id'];
-      if (conversationId) {
-        this.loadConversation(conversationId);
+    if (!this.embedded) {
+      // Desktop : la conversation s'affiche dans la vue 2 panneaux de /chat
+      const routeId = this.route.snapshot.params['id'];
+      if (routeId && window.matchMedia('(min-width: 1024px)').matches) {
+        this.router.navigate(['/chat'], { queryParams: { c: routeId }, replaceUrl: true });
+        return;
       }
-    });
+
+      document.body.classList.add('chat-detail-active');
+
+      this.route.params.subscribe(params => {
+        const conversationId = params['id'];
+        if (conversationId) {
+          this.loadConversation(conversationId);
+        }
+      });
+    }
 
     if (!this.chatService.isConnected()) {
       this.chatService.connect();
@@ -72,7 +90,9 @@ export class ConversationDetailComponent implements OnInit, OnDestroy, AfterView
   }
 
   ngOnDestroy() {
-    document.body.classList.remove('chat-detail-active');
+    if (!this.embedded) {
+      document.body.classList.remove('chat-detail-active');
+    }
     this.destroy$.next();
     this.destroy$.complete();
     this.chatService.clearCurrentConversation();
