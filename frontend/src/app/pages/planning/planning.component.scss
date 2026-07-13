@@ -1615,6 +1615,25 @@
     line-height: 1.4;
   }
 
+  .preview-card-blocks {
+    margin: 0.5rem 0 0;
+    padding: 0.5rem 0.75rem;
+    background: #fff;
+    border-radius: 8px;
+    border-left: 3px solid #00a6fb;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    li {
+      font-size: 0.78rem;
+      color: #333;
+      line-height: 1.4;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
   .confirm-spinner {
     width: 14px;
     height: 14px;

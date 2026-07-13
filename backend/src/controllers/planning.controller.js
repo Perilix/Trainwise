@@ -4,7 +4,9 @@ const Run = require('../models/run.model');
 const User = require('../models/user.model');
 const StrengthSession = require('../models/strengthSession.model');
 const Competition = require('../models/competition.model');
+const Exercise = require('../models/exercise.model');
 const { getUpcomingCompetitionsForContext } = require('../utils/competitions');
+const aiPlanning = require('../services/aiPlanning.service');
 
 // Récupérer toutes les séances planifiées de l'utilisateur
 exports.getPlannedRuns = async (req, res) => {
@@ -354,10 +356,25 @@ exports.generatePlan = async (req, res) => {
       today: new Date().toISOString().split('T')[0]
     };
 
-    // Appeler le webhook n8n pour la génération du plan
+    // Génération : API Claude en direct (prioritaire), fallback webhook n8n legacy
+    if (aiPlanning.isConfigured()) {
+      // Catalogue d'exercices pour les séances muscu éventuelles
+      const exerciseCatalog = availableStrengthDates.length > 0
+        ? await Exercise.find({}).select('name primaryMuscle equipment difficulty').limit(120)
+        : [];
+
+      const sessions = await aiPlanning.generateTrainingPlan(planningContext, exerciseCatalog);
+
+      if (!sessions.length) {
+        return res.status(500).json({ error: 'Erreur lors de la génération du plan' });
+      }
+
+      return res.json({ message: 'Plan généré', sessions });
+    }
+
     if (!process.env.N8N_PLANNING_WEBHOOK_URL) {
       return res.status(500).json({
-        error: 'Webhook de planification non configuré'
+        error: 'Génération IA non configurée (ANTHROPIC_API_KEY manquante)'
       });
     }
 
@@ -393,14 +410,21 @@ exports.confirmPlan = async (req, res) => {
       return res.status(400).json({ error: 'Aucune séance à sauvegarder' });
     }
 
+    const STRENGTH_TYPES = ['upper_body', 'lower_body', 'full_body', 'push', 'pull', 'legs', 'core', 'hiit'];
+
     const createdSessions = [];
     for (const session of sessions) {
-      const isStrength = session.sessionType === 'strength' || session.activityType === 'strength';
+      const isStrength = session.activityType === 'strength'
+        || session.sessionType === 'strength'
+        || STRENGTH_TYPES.includes(session.sessionType);
+
       const plannedRun = new PlannedRun({
         user: req.user._id,
         date: parseDateUTC(session.date),
         activityType: isStrength ? 'strength' : 'running',
-        sessionType: isStrength ? 'full_body' : session.sessionType,
+        sessionType: isStrength
+          ? (STRENGTH_TYPES.includes(session.sessionType) ? session.sessionType : 'full_body')
+          : session.sessionType,
         targetDistance: session.targetDistance,
         targetDuration: session.targetDuration,
         targetPace: session.targetPace,
@@ -411,6 +435,25 @@ exports.confirmPlan = async (req, res) => {
         weekNumber: session.weekNumber,
         generatedBy: 'ai'
       });
+
+      // Blocs running structurés (générés par l'IA)
+      if (!isStrength && Array.isArray(session.runBlocks) && session.runBlocks.length > 0) {
+        plannedRun.runBlocks = session.runBlocks;
+      }
+
+      // Plan muscu structuré (exercices choisis par l'IA dans le catalogue)
+      if (isStrength && Array.isArray(session.strengthExercises) && session.strengthExercises.length > 0) {
+        plannedRun.strengthPlan = {
+          exercises: session.strengthExercises.map(e => ({
+            exercise: e.exerciseId || e.exercise,
+            targetSets: e.targetSets,
+            targetReps: e.targetReps,
+            targetRest: e.targetRest,
+            notes: e.notes || ''
+          })),
+          estimatedDuration: session.targetDuration || undefined
+        };
+      }
 
       await plannedRun.save();
       createdSessions.push(plannedRun);

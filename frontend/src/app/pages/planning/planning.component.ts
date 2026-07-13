@@ -1035,4 +1035,30 @@ export class PlanningComponent implements OnInit {
     const total = blocks.reduce((acc, b) => acc + this.blockDistanceKm(b), 0);
     return Math.round(total * 100) / 100;
   }
+
+  // Résumé compact des blocs générés par l'IA pour la modale de preview
+  private stepLabel(b: RunBlock): string {
+    const main = b.mode === 'distance'
+      ? (b.distance ? (b.distance < 1 ? `${Math.round(b.distance * 1000)}m` : `${b.distance}km`) : '')
+      : (b.duration ? `${b.duration} min` : '');
+    const pace = b.pace ? ` @ ${b.pace}/km` : '';
+    return `${main}${pace}`;
+  }
+
+  previewBlockLines(session: Partial<PlannedSession>): string[] {
+    const blocks = session.runBlocks;
+    if (!blocks?.length) return [];
+    const roleLabels: Record<string, string> = { warmup: 'Échauffement', main: 'Corps', cooldown: 'Retour au calme' };
+    return blocks.map(b => {
+      const role = roleLabels[b.role] || 'Bloc';
+      const reps = Math.max(1, b.repetitions || 1);
+      if (b.children?.length) {
+        return `${role} — ${reps}× (${b.children.map(c => this.stepLabel(c)).join(' / ')})`;
+      }
+      const rec = b.recoveryMode
+        ? ` · récup ${b.recoveryMode === 'distance' ? Math.round((b.recoveryDistance || 0) * 1000) + 'm' : b.recoveryDuration}`
+        : '';
+      return `${role} — ${reps > 1 ? reps + '× ' : ''}${this.stepLabel(b)}${rec}`;
+    });
+  }
 }

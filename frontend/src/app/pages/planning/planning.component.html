@@ -647,7 +647,13 @@
               @if (session.description) {
                 <p class="preview-card-desc">{{ session.description }}</p>
               }
-              @if (session.mainWorkout) {
+              @if (previewBlockLines(session).length > 0) {
+                <ul class="preview-card-blocks">
+                  @for (line of previewBlockLines(session); track $index) {
+                    <li>{{ line }}</li>
+                  }
+                </ul>
+              } @else if (session.mainWorkout) {
                 <p class="preview-card-workout">{{ session.mainWorkout }}</p>
               }
             </div>
@@ -681,7 +687,7 @@
         <div class="gen-loader-icon"><i class="fa-solid fa-wand-magic-sparkles genFa"></i></div>
       </div>
       <h3 class="gen-loader-title">Génération en cours</h3>
-      <p class="gen-loader-subtitle">L'IA analyse ton profil et crée ton programme personnalisé, ça peut prendre quelques secondes...</p>
+      <p class="gen-loader-subtitle">Ton coach IA analyse ton profil, ton historique et tes objectifs pour construire un programme sur mesure — ça peut prendre une à deux minutes...</p>
     </div>
   </div>
 }

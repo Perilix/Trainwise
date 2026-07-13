@@ -30,3 +30,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 backend/.env
+
+# Android signing (ne jamais committer)
+frontend/android/keystore.properties
+frontend/android/*.keystore
+frontend/android/*.jks
