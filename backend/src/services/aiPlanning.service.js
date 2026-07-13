@@ -75,13 +75,14 @@ const planSchema = {
         type: 'object',
         additionalProperties: false,
         required: [
-          'date', 'activityType', 'sessionType', 'description',
+          'date', 'activityType', 'sessionType', 'title', 'description',
           'targetDistance', 'targetDuration', 'weekNumber',
           'runBlocks', 'strengthExercises'
         ],
         properties: {
           date: { type: 'string', description: 'Date YYYY-MM-DD, obligatoirement une des dates fournies' },
           activityType: { type: 'string', enum: ['running', 'strength'] },
+          title: { type: 'string', description: 'Titre court de la séance, 2 à 5 mots (ex: "Fractionné court 8×400m", "Endurance fondamentale", "Renfo jambes & gainage")' },
           sessionType: {
             type: 'string',
             enum: [
@@ -213,7 +214,7 @@ Séances de musculation (si des dates strength sont fournies) :
 Règles impératives :
 - Utilise UNIQUEMENT les dates fournies (runningDates pour le running, strengthDates pour la muscu). Une séance par date fournie, aucune date inventée.
 - Varie les séances d'une semaine à l'autre.
-- Format STRICT de la description d'une séance : un intitulé court (3-5 mots, ex: "Fractionné court 8×400m", "Endurance fondamentale", "Sortie longue progressive", "Tempo au seuil"), puis " — ", puis 1 à 2 phrases de conseils concrets et personnels (tutoiement). 250 caractères maximum au total.
+- Le "title" est le nom court de la séance (2-5 mots, ex: "Fractionné court 8×400m", "Sortie longue progressive", "Tempo au seuil"). La "description" contient UNIQUEMENT 1 à 2 phrases de conseils concrets et personnels (tutoiement), 200 caractères maximum — sans répéter le titre.
 - INTERDIT dans les descriptions : narration ou mise en scène ("On commence la semaine tranquille...", "Cette semaine on attaque..."), remplissage, et allures chiffrées (indique la zone, le serveur affiche l'allure exacte).
 - Les descriptions de blocs sont des consignes très courtes (ex: "Relâché, cadence haute") ou vides.`;
 
@@ -290,6 +291,7 @@ const generateTrainingPlan = async (planningContext, exerciseCatalog = []) => {
         date: s.date,
         activityType: s.activityType,
         sessionType: s.sessionType,
+        title: s.title,
         description: s.description,
         targetDistance: isStrength || !s.targetDistance ? null : s.targetDistance,
         targetDuration: s.targetDuration || null,

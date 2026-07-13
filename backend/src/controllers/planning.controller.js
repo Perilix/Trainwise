@@ -425,6 +425,7 @@ exports.confirmPlan = async (req, res) => {
         sessionType: isStrength
           ? (STRENGTH_TYPES.includes(session.sessionType) ? session.sessionType : 'full_body')
           : session.sessionType,
+        title: session.title || null,
         targetDistance: session.targetDistance,
         targetDuration: session.targetDuration,
         targetPace: session.targetPace,

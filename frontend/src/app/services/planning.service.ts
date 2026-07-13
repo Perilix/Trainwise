@@ -27,6 +27,7 @@ export interface PlannedSession {
   targetDistance?: number;
   targetDuration?: number;
   targetPace?: string;
+  title?: string;
   description?: string;
   warmup?: string;
   mainWorkout?: string;

@@ -27,7 +27,7 @@
       <div class="session-info-header">
         <span class="activity-icon">💪</span>
         <div>
-          <h1>{{ getSessionTypeLabel(currentSessionType()) }}</h1>
+          <h1>{{ session()?.title || getSessionTypeLabel(currentSessionType()) }}</h1>
           <p class="session-date">{{ currentDate() ? formatDate(currentDate()!) : '' }}</p>
         </div>
         @if (isNew()) {

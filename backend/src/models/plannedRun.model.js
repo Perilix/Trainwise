@@ -70,6 +70,12 @@ const plannedRunSchema = new mongoose.Schema({
     type: String, // format "5:30"
     default: null
   },
+  // Titre court de la séance (ex: "Fractionné court 8×400m")
+  title: {
+    type: String,
+    trim: true,
+    default: null
+  },
   description: {
     type: String, // conseils IA pour la séance
     trim: true

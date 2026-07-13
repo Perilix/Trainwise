@@ -370,8 +370,11 @@
               }
             </div>
 
+            @if (planned.title) {
+              <p class="event-title">{{ planned.title }}</p>
+            }
             @if (planned.description) {
-              <p class="event-description">{{ planned.description }}</p>
+              <p class="event-description" [class.event-description-small]="planned.title">{{ planned.description }}</p>
             }
 
             @if (planned.mainWorkout) {
@@ -637,6 +640,9 @@
                 <span class="preview-card-date">{{ formatPreviewDate(session.date!) }}</span>
                 <span class="preview-card-type">{{ getActivityIcon(session.activityType) }} {{ getSessionTypeLabel(session.sessionType!) }}</span>
               </div>
+              @if (session.title) {
+                <p class="preview-card-title">{{ session.title }}</p>
+              }
               @if (session.targetDistance || session.targetDuration || session.targetPace) {
                 <div class="preview-card-stats">
                   @if (session.targetDistance) { <span>{{ session.targetDistance }} km</span> }

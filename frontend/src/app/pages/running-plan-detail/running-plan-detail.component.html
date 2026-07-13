@@ -26,7 +26,7 @@
     <div class="session-summary">
       <div class="summary-icon">🏃</div>
       <div class="summary-info">
-        <h1>{{ getSessionTypeLabel(sessionType()) }}</h1>
+        <h1>{{ session()?.title || getSessionTypeLabel(sessionType()) }}</h1>
         <p class="summary-date">{{ formatDate(date()) }}</p>
       </div>
       @if (isNew()) {
