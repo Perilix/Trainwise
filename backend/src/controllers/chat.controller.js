@@ -381,9 +381,26 @@ exports.requestCoachSubscription = async (req, res) => {
       actionUrl: '/coach/dashboard'
     });
 
+    // Mémorise la demande pour que la page coach partenaire affiche l'état "déjà demandé"
+    await User.findByIdAndUpdate(req.user.id, {
+      pendingCoachRequest: { packageType, requestedAt: new Date() }
+    });
+
     res.json({ success: true });
   } catch (error) {
     console.error('Error requesting coach subscription:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// GET /api/chat/partner-coach/subscription-request — demande en attente de l'utilisateur
+exports.getCoachSubscriptionRequest = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('pendingCoachRequest');
+    const pending = user?.pendingCoachRequest?.packageType ? user.pendingCoachRequest : null;
+    res.json({ pending });
+  } catch (error) {
+    console.error('Error getting coach subscription request:', error);
     res.status(500).json({ error: error.message });
   }
 };

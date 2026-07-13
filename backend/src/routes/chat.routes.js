@@ -265,5 +265,6 @@ router.get('/partner-coach', chatController.getPartnerCoach);
  *         description: Invalid package type
  */
 router.post('/partner-coach/subscription-request', chatController.requestCoachSubscription);
+router.get('/partner-coach/subscription-request', chatController.getCoachSubscriptionRequest);
 
 module.exports = router;

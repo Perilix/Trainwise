@@ -156,6 +156,18 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  // Demande d'abonnement coaching en attente (finalisée via Stripe avec le coach)
+  pendingCoachRequest: {
+    packageType: {
+      type: String,
+      enum: ['bronze', 'silver', 'gold', null],
+      default: null
+    },
+    requestedAt: {
+      type: Date,
+      default: null
+    }
+  },
   // Profil muscu
   strengthLevel: {
     type: String,

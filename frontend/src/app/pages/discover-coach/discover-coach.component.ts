@@ -22,9 +22,16 @@ export class DiscoverCoachComponent implements OnInit {
   showSubscriptionModal = signal(false);
   readonly packages = [COACH_PACKAGES.bronze, COACH_PACKAGES.silver, COACH_PACKAGES.gold];
   selectedPkgType = signal<PackageType>('silver');
+  // Forfait déjà demandé (en attente de contact par le coach)
+  pendingPackage = signal<PackageType | null>(null);
 
   get selectedPkg() {
     return COACH_PACKAGES[this.selectedPkgType()];
+  }
+
+  get pendingPkg() {
+    const type = this.pendingPackage();
+    return type ? COACH_PACKAGES[type] : null;
   }
 
   constructor(
@@ -36,6 +43,31 @@ export class DiscoverCoachComponent implements OnInit {
 
   ngOnInit() {
     this.loadPartnerCoach();
+    this.loadPendingRequest();
+  }
+
+  loadPendingRequest() {
+    this.chatService.getCoachSubscriptionRequest().subscribe({
+      next: (res) => {
+        const type = res.pending?.packageType as PackageType | undefined;
+        if (type) {
+          this.pendingPackage.set(type);
+          this.selectedPkgType.set(type);
+        }
+      },
+      error: () => {}
+    });
+  }
+
+  onRequested(type: PackageType) {
+    this.pendingPackage.set(type);
+    this.selectedPkgType.set(type);
+  }
+
+  selectPkg(type: PackageType) {
+    // Une demande est en cours : on ne change plus de forfait depuis la page
+    if (this.pendingPackage()) return;
+    this.selectedPkgType.set(type);
   }
 
   goBack() {

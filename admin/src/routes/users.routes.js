@@ -145,6 +145,14 @@ router.post('/:id', requireAuth, async (req, res) => {
   res.redirect(`/users/${req.params.id}?success=1`);
 });
 
+// ── Clear pending coaching request ───────────────────────────
+router.post('/:id/clear-coach-request', requireAuth, async (req, res) => {
+  await User.findByIdAndUpdate(req.params.id, {
+    pendingCoachRequest: { packageType: null, requestedAt: null }
+  });
+  res.redirect(`/users/${req.params.id}?success=1`);
+});
+
 // ── Manage onboarding & feature tours ────────────────────────
 router.post('/:id/onboarding', requireAuth, async (req, res) => {
   // Réinitialiser toutes les visites guidées (l'utilisateur les reverra)

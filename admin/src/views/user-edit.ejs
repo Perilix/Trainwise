@@ -190,6 +190,53 @@
     </div>
   </div>
 
+  <!-- Demande de coaching en attente -->
+  <% const COACH_PACKAGES = {
+    bronze: { name: 'Suivi', price: '49,99€', color: '#00A6FB' },
+    silver: { name: 'Perf', price: '79,99€', color: '#003554' },
+    gold:   { name: 'Élite', price: '149,99€', color: '#F59E0B' }
+  };
+  const pendingPkg = user.pendingCoachRequest && user.pendingCoachRequest.packageType
+    ? COACH_PACKAGES[user.pendingCoachRequest.packageType]
+    : null; %>
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="fa-solid fa-user-tie" style="color:var(--blue);margin-right:6px;"></i>Demande de coaching</span>
+      <% if (pendingPkg) { %>
+        <span class="badge" style="background:rgba(245,158,11,0.12);color:#d97706;">En attente</span>
+      <% } %>
+    </div>
+    <div class="card-body">
+      <% if (pendingPkg) { %>
+        <div class="field-list">
+          <div class="field-row">
+            <span class="field-label"><i class="fa-solid fa-medal"></i>Forfait demandé</span>
+            <span class="field-value" style="font-weight:700;color:<%= pendingPkg.color %>;">
+              <%= pendingPkg.name %> · <%= pendingPkg.price %>/mois
+            </span>
+          </div>
+          <div class="field-row">
+            <span class="field-label"><i class="fa-solid fa-calendar"></i>Demandé le</span>
+            <span class="field-value">
+              <%= user.pendingCoachRequest.requestedAt
+                ? new Date(user.pendingCoachRequest.requestedAt).toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' })
+                : '—' %>
+            </span>
+          </div>
+        </div>
+        <form method="POST" action="/users/<%= user._id %>/clear-coach-request" style="margin-top:14px;"
+              onsubmit="return confirm('Effacer la demande de coaching de cet utilisateur ? À faire une fois l’abonnement finalisé (ou abandonné).')">
+          <button type="submit" class="btn"
+                  style="background:rgba(239,68,68,0.08);color:var(--danger);border-color:rgba(239,68,68,0.2);">
+            <i class="fa-solid fa-eraser"></i> Effacer la demande
+          </button>
+        </form>
+      <% } else { %>
+        <p style="color:var(--text-muted);font-size:0.85rem;margin:0;">Aucune demande de coaching en cours.</p>
+      <% } %>
+    </div>
+  </div>
+
   <!-- Profil readonly -->
   <div class="card">
     <div class="card-header">

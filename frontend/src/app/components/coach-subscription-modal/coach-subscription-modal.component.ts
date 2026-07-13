@@ -13,6 +13,7 @@ import { ChatService } from '../../services/chat.service';
 export class CoachSubscriptionModalComponent {
   @Output() close = new EventEmitter<void>();
   @Output() contactCoach = new EventEmitter<void>();
+  @Output() requested = new EventEmitter<PackageType>();
 
   private chatService = inject(ChatService);
 
@@ -40,6 +41,7 @@ export class CoachSubscriptionModalComponent {
       next: () => {
         this.isLoading.set(false);
         this.requestSent.set(true);
+        this.requested.emit(this.selected());
       },
       error: () => {
         this.isLoading.set(false);

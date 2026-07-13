@@ -1,5 +1,5 @@
 <div class="modal-overlay" (click)="close.emit()">
-  <div class="modal-card" (click)="$event.stopPropagation()">
+  <div class="modal-card" [class.modal-compact]="requestSent()" (click)="$event.stopPropagation()">
 
     @if (requestSent()) {
 

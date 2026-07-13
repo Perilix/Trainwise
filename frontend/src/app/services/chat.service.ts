@@ -330,6 +330,10 @@ export class ChatService {
     return this.http.post<{ success: boolean }>(`${this.API_URL}/partner-coach/subscription-request`, { packageType });
   }
 
+  getCoachSubscriptionRequest(): Observable<{ pending: { packageType: string; requestedAt: string } | null }> {
+    return this.http.get<{ pending: { packageType: string; requestedAt: string } | null }>(`${this.API_URL}/partner-coach/subscription-request`);
+  }
+
   private calculateTotalUnread(conversations: Conversation[]): void {
     const total = conversations.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0);
     this.totalUnread.set(total);

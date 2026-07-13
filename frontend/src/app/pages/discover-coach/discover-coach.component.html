@@ -78,14 +78,27 @@
       <!-- Forfaits -->
       <div class="section-title">Nos forfaits</div>
 
+      @if (pendingPkg) {
+        <div class="pending-banner">
+          <i class="fa-solid fa-circle-check"></i>
+          <p>
+            Tu as demandé le forfait <strong [style.color]="pendingPkg!.color">{{ pendingPkg!.name }}</strong>.
+            {{ partnerCoach()?.firstName }} va te contacter dans le chat pour finaliser ensemble.
+          </p>
+        </div>
+      }
+
       <div class="forfait-selector">
         @for (pkg of packages; track pkg.type) {
           <button
             class="forfait-tab"
             [class.tab-active]="selectedPkgType() === pkg.type"
+            [class.tab-locked]="pendingPackage() && pendingPackage() !== pkg.type"
             [style.--pkg-color]="pkg.color"
-            (click)="selectedPkgType.set(pkg.type)">
-            @if (pkg.badge) {
+            (click)="selectPkg(pkg.type)">
+            @if (pendingPackage() === pkg.type) {
+              <span class="tab-badge tab-badge-chosen" [style.background]="pkg.gradient">Ton choix</span>
+            } @else if (pkg.badge && !pendingPackage()) {
               <span class="tab-badge" [style.background]="pkg.gradient">{{ pkg.badge }}</span>
             }
             <i [class]="pkg.icon"></i>
@@ -118,10 +131,17 @@
   <!-- CTA sticky -->
   @if (partnerCoach()) {
     <div class="sticky-cta">
-      <button class="btn-subscribe-cta" (click)="showSubscriptionModal.set(true)">
-        <i class="fa-solid fa-crown"></i>
-        Choisir un abonnement
-      </button>
+      @if (pendingPackage()) {
+        <button class="btn-subscribe-cta" (click)="contactCoach()">
+          <i class="fa-solid fa-message"></i>
+          Ouvrir le chat avec {{ partnerCoach()?.firstName }}
+        </button>
+      } @else {
+        <button class="btn-subscribe-cta" (click)="showSubscriptionModal.set(true)">
+          <i class="fa-solid fa-crown"></i>
+          Choisir un abonnement
+        </button>
+      }
     </div>
   }
 
@@ -132,5 +152,6 @@
   <app-coach-subscription-modal
     (close)="showSubscriptionModal.set(false)"
     (contactCoach)="showSubscriptionModal.set(false); contactCoach()"
+    (requested)="onRequested($event)"
   ></app-coach-subscription-modal>
 }
