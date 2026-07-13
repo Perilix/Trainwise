@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { CoachService } from '../../../services/coach.service';
 import { AuthService } from '../../../services/auth.service';
+import { ChatService } from '../../../services/chat.service';
 import { Athlete, CoachStats, UserSearchResult, PendingInvitation, SubscriptionRequest } from '../../../interfaces/coach.interfaces';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
 import { TourTooltipComponent, TourStep } from '../../../components/tour-tooltip/tour-tooltip.component';
@@ -78,8 +79,17 @@ export class CoachDashboardComponent implements OnInit {
   constructor(
     private coachService: CoachService,
     public authService: AuthService,
+    private chatService: ChatService,
     private router: Router
   ) {}
+
+  openRequestChat(request: SubscriptionRequest) {
+    // La conversation existe déjà (créée à l'envoi de la demande)
+    this.chatService.getOrCreateConversation(request.athlete._id).subscribe({
+      next: (conversation) => this.router.navigate(['/chat', conversation._id]),
+      error: () => this.error.set('Impossible d\'ouvrir le chat')
+    });
+  }
 
   ngOnInit() {
     this.loadDashboard();

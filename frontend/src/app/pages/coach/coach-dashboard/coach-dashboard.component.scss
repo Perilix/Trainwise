@@ -370,6 +370,13 @@
     border: 1.5px solid rgba(239, 68, 68, 0.4);
     &:hover:not(:disabled) { background: rgba(239, 68, 68, 0.06); }
   }
+
+  .btn-chat {
+    background: transparent;
+    color: #00a6fb;
+    border: 1.5px solid rgba(0, 166, 251, 0.4);
+    &:hover:not(:disabled) { background: rgba(0, 166, 251, 0.06); }
+  }
 }
 
 .user-avatar {
