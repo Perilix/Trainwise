@@ -31,7 +31,7 @@ export class PaywallComponent {
   get coinCost(): number {
     if (this.action === 'analyze') return 1;
     if (this.action === 'strava') return 0.5;
-    return 3;
+    return 5;
   }
 
   async buyCoins() {
@@ -42,7 +42,7 @@ export class PaywallComponent {
     this.isLoading.set(true);
     this.errorMessage.set(null);
     try {
-      await this.subscriptionService.purchasePackage('trainwise_coins_20');
+      await this.subscriptionService.purchasePackage('trainwise_coins_10');
       this.subscriptionService.closePaywall();
     } catch (e: any) {
       this.errorMessage.set("Achat annulé ou indisponible.");

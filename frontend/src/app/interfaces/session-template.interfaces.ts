@@ -47,6 +47,8 @@ export interface TemplateRunBlock {
   recoveryPace?: PaceConfig | null;
   recoveryDescription?: string;
   order: number;
+  // Étapes enfants d'un bloc « Répéter » multi-étapes (un niveau d'imbrication)
+  children?: TemplateRunBlock[];
 }
 
 export interface StrengthExerciseEntry {

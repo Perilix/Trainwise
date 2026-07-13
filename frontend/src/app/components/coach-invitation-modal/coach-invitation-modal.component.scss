@@ -274,21 +274,6 @@
   }
 }
 
-// Variations de couleurs selon le package
-.package-badge {
-  &[style*="linear-gradient(135deg, #cd7f32"] {
-    // Bronze
-  }
-
-  &[style*="linear-gradient(135deg, #a8a8a8"] {
-    // Silver
-  }
-
-  &[style*="linear-gradient(135deg, #ffd700"] {
-    // Gold
-  }
-}
-
 @media (max-width: 600px) {
   .modal-footer {
     flex-direction: column;

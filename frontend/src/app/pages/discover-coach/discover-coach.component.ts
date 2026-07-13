@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 import { CoachSubscriptionModalComponent } from '../../components/coach-subscription-modal/coach-subscription-modal.component';
 import { ChatService, PartnerCoachPreview } from '../../services/chat.service';
-import { COACH_PACKAGES } from '../../interfaces/package.interface';
+import { COACH_PACKAGES, PackageType } from '../../interfaces/package.interface';
 import { AthleteService } from '../../services/athlete.service';
 
 @Component({
@@ -21,6 +21,11 @@ export class DiscoverCoachComponent implements OnInit {
   isJoining = signal(false);
   showSubscriptionModal = signal(false);
   readonly packages = [COACH_PACKAGES.bronze, COACH_PACKAGES.silver, COACH_PACKAGES.gold];
+  selectedPkgType = signal<PackageType>('silver');
+
+  get selectedPkg() {
+    return COACH_PACKAGES[this.selectedPkgType()];
+  }
 
   constructor(
     private chatService: ChatService,

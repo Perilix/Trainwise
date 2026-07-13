@@ -21,6 +21,12 @@ export class ShopComponent {
   isLoadingCoins = signal(false);
   errorMessage = signal<string | null>(null);
   successMessage = signal<string | null>(null);
+  proPlan = signal<'monthly' | 'annual'>('annual');
+
+  // Offre fondateurs : passer à false à la fin des 3 mois de lancement.
+  // Le prix réel facturé est celui configuré dans Google Play Console / RevenueCat.
+  readonly launchPromo = true;
+  readonly annualPrice = this.launchPromo ? '59,99€' : '79,99€';
 
   get isPro() { return this.subscriptionService.isPro(); }
   get coins() { return this.subscriptionService.trainCoins(); }
@@ -30,7 +36,8 @@ export class ShopComponent {
     this.isLoadingPro.set(true);
     this.errorMessage.set(null);
     try {
-      await this.subscriptionService.purchasePackage('trainwise_pro_monthly');
+      const packageId = this.proPlan() === 'annual' ? 'trainwise_pro_annual' : 'trainwise_pro_monthly';
+      await this.subscriptionService.purchasePackage(packageId);
       this.successMessage.set('Abonnement Pro activé !');
       setTimeout(() => this.successMessage.set(null), 4000);
     } catch {
@@ -40,13 +47,16 @@ export class ShopComponent {
     }
   }
 
+  coinsPack = signal<10 | 50>(10);
+
   async buyCoins() {
     if (!this.isNative) return;
     this.isLoadingCoins.set(true);
     this.errorMessage.set(null);
     try {
-      await this.subscriptionService.purchasePackage('trainwise_coins_20');
-      this.successMessage.set('+20 TrainCoins ajoutés !');
+      const pack = this.coinsPack();
+      await this.subscriptionService.purchasePackage(`trainwise_coins_${pack}`);
+      this.successMessage.set(`+${pack} TrainCoins ajoutés !`);
       setTimeout(() => this.successMessage.set(null), 4000);
     } catch {
       this.errorMessage.set('Achat annulé ou indisponible.');

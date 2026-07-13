@@ -1,86 +1,109 @@
 <div class="modal-overlay" (click)="close.emit()">
   <div class="modal-card" (click)="$event.stopPropagation()">
 
-    <!-- Header -->
-    <div class="modal-header">
-      <h2 class="modal-title">Choisir un forfait</h2>
-      <p class="modal-sub">Sélectionne ton accompagnement coach</p>
-      <button class="btn-close" (click)="close.emit()">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-    </div>
+    @if (requestSent()) {
 
-    <!-- Package cards -->
-    <div class="packages-list">
-      @for (pkg of packages; track pkg.type) {
-        <button
-          class="pkg-card"
-          [class.pkg-selected]="selected() === pkg.type"
-          [class.pkg-featured]="!!pkg.badge"
-          (click)="select(pkg.type)">
-
-          @if (pkg.badge) {
-            <div class="pkg-badge" [style.background]="pkg.gradient">{{ pkg.badge }}</div>
-          }
-
-          <div class="pkg-left">
-            <div class="pkg-icon" [style.background]="pkg.gradient">
-              <i [class]="pkg.icon"></i>
-            </div>
-            <div>
-              <p class="pkg-name">{{ pkg.name }}</p>
-              <p class="pkg-price">{{ pkg.price }}€<span>/mois</span></p>
-            </div>
-          </div>
-
-          <div class="pkg-radio" [class.checked]="selected() === pkg.type">
-            @if (selected() === pkg.type) {
-              <i class="fa-solid fa-circle-check"></i>
-            } @else {
-              <i class="fa-regular fa-circle"></i>
-            }
-          </div>
-
+      <!-- Confirmation -->
+      <div class="confirm-state">
+        <div class="confirm-icon">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <h2 class="confirm-title">Demande envoyée !</h2>
+        <p class="confirm-text">
+          Ton coach a été prévenu de ton intérêt pour le forfait
+          <strong [style.color]="selectedPackage.color">{{ selectedPackage.name }}</strong>.
+          Il va te contacter très vite dans le chat pour en discuter et finaliser ensemble.
+        </p>
+        <p class="confirm-note">
+          <i class="fa-brands fa-stripe-s"></i>
+          Le paiement se fera de manière sécurisée via Stripe, directement avec ton coach.
+          Rien n'est débité pour l'instant.
+        </p>
+        <button class="btn-subscribe" [style.background]="selectedPackage.gradient" (click)="contactCoach.emit()">
+          <i class="fa-solid fa-message"></i> Ouvrir le chat
         </button>
-      }
-    </div>
+        <button class="btn-later" (click)="close.emit()">Plus tard</button>
+      </div>
 
-    <!-- Features du forfait sélectionné -->
-    <div class="selected-features">
-      <p class="features-label">Inclus dans le forfait {{ selectedPackage.name }} :</p>
-      <ul>
-        @for (feature of selectedPackage.features; track feature) {
-          <li><i class="fa-solid fa-check" [style.color]="selectedPackage.color"></i> {{ feature }}</li>
+    } @else {
+
+      <!-- Header -->
+      <div class="modal-header">
+        <h2 class="modal-title">Choisir un forfait</h2>
+        <p class="modal-sub">Sélectionne ton accompagnement coach</p>
+        <button class="btn-close" (click)="close.emit()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Package cards -->
+      <div class="packages-list">
+        @for (pkg of packages; track pkg.type) {
+          <button
+            class="pkg-card"
+            [class.pkg-selected]="selected() === pkg.type"
+            [class.pkg-featured]="!!pkg.badge"
+            [style.--pkg-color]="pkg.color"
+            (click)="select(pkg.type)">
+
+            @if (pkg.badge) {
+              <div class="pkg-badge" [style.background]="pkg.gradient">{{ pkg.badge }}</div>
+            }
+
+            <div class="pkg-left">
+              <div class="pkg-icon" [style.background]="pkg.gradient">
+                <i [class]="pkg.icon"></i>
+              </div>
+              <div>
+                <p class="pkg-name">{{ pkg.name }}</p>
+                <p class="pkg-price">{{ pkg.price }}€<span>/mois</span></p>
+              </div>
+            </div>
+
+            <div class="pkg-radio" [class.checked]="selected() === pkg.type">
+              @if (selected() === pkg.type) {
+                <i class="fa-solid fa-circle-check"></i>
+              } @else {
+                <i class="fa-regular fa-circle"></i>
+              }
+            </div>
+
+          </button>
         }
-      </ul>
-    </div>
+      </div>
 
-    <!-- Messages -->
-    @if (errorMessage()) {
-      <p class="msg-error"><i class="fa-solid fa-triangle-exclamation"></i> {{ errorMessage() }}</p>
-    }
-    @if (successMessage()) {
-      <p class="msg-success"><i class="fa-solid fa-circle-check"></i> {{ successMessage() }}</p>
-    }
+      <!-- Features du forfait sélectionné -->
+      <div class="selected-features">
+        <p class="features-label">Inclus dans le forfait {{ selectedPackage.name }} :</p>
+        <ul>
+          @for (feature of selectedPackage.features; track feature) {
+            <li><i class="fa-solid fa-check" [style.color]="selectedPackage.color"></i> {{ feature }}</li>
+          }
+        </ul>
+      </div>
 
-    <!-- CTA -->
-    <button class="btn-subscribe" [disabled]="isLoading()" (click)="subscribe()"
-      [style.background]="selectedPackage.gradient">
-      @if (isLoading()) {
-        <i class="fa-solid fa-circle-notch fa-spin"></i>
-      } @else if (!isNative) {
-        <i class="fa-solid fa-message"></i> Contacter le coach
-      } @else {
-        <i class="fa-solid fa-rocket"></i>
-        S'abonner · {{ selectedPackage.price }}€/mois
+      <!-- Messages -->
+      @if (errorMessage()) {
+        <p class="msg-error"><i class="fa-solid fa-triangle-exclamation"></i> {{ errorMessage() }}</p>
       }
-    </button>
 
-    @if (!isNative) {
+      <!-- CTA -->
+      <button class="btn-subscribe" [disabled]="isLoading()" (click)="sendRequest()"
+        [style.background]="selectedPackage.gradient">
+        @if (isLoading()) {
+          <i class="fa-solid fa-circle-notch fa-spin"></i>
+        } @else {
+          <i class="fa-solid fa-paper-plane"></i>
+          Envoyer ma demande · {{ selectedPackage.name }}
+        }
+      </button>
+
       <p class="web-note">
-        <i class="fa-solid fa-mobile-screen"></i>
-        Le paiement s'effectue depuis l'application mobile.
+        <i class="fa-solid fa-lock"></i>
+        Sans engagement — ton coach te contacte pour en discuter.
+        Paiement sécurisé via Stripe, rien n'est débité maintenant.
       </p>
+
     }
 
   </div>

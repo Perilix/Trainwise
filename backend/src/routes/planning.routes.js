@@ -77,7 +77,7 @@ router.get('/calendar', planningController.getCalendarData);
  *       500:
  *         description: Server error
  */
-router.post('/generate', checkAIAccess(3), planningController.generatePlan);
+router.post('/generate', checkAIAccess(5), planningController.generatePlan);
 
 /**
  * @swagger

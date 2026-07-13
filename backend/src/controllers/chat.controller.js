@@ -347,3 +347,43 @@ exports.getPartnerCoach = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+// Demande d'abonnement coaching : notifie le coach partenaire (paiement géré
+// hors app via Stripe, aucun achat in-app dans ce flow)
+const PACKAGE_LABELS = {
+  bronze: { name: 'Suivi', price: '49,99€' },
+  silver: { name: 'Perf', price: '79,99€' },
+  gold: { name: 'Élite', price: '149,99€' }
+};
+
+exports.requestCoachSubscription = async (req, res) => {
+  try {
+    const { packageType } = req.body;
+    const pkg = PACKAGE_LABELS[packageType];
+    if (!pkg) {
+      return res.status(400).json({ error: 'Type d\'abonnement invalide' });
+    }
+
+    const coach = await User.findOne({ email: PARTNER_COACH_EMAIL, role: 'coach' }).select('_id');
+    if (!coach) {
+      return res.status(404).json({ error: 'Coach partenaire non trouvé' });
+    }
+
+    const athlete = await User.findById(req.user.id).select('firstName lastName');
+    const { createNotification } = require('./notification.controller');
+    await createNotification({
+      recipient: coach._id,
+      sender: req.user.id,
+      type: 'subscription_request',
+      action: 'subscription_requested',
+      title: 'Nouvelle demande d\'abonnement',
+      message: `${athlete.firstName} ${athlete.lastName} souhaite l'abonnement ${pkg.name} (${pkg.price}/mois). Contacte-le pour en discuter !`,
+      actionUrl: '/coach/dashboard'
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error requesting coach subscription:', error);
+    res.status(500).json({ error: error.message });
+  }
+};

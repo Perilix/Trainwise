@@ -55,124 +55,13 @@
           </div>
         </div>
 
-        @if (runBlocks().length === 0) {
-          <p class="empty-hint">Aucun bloc — ajoutez-en un ci-dessous.</p>
-        }
-
-        @for (block of runBlocks(); track $index; let i = $index) {
-          <div class="block-card" [class.warmup]="block.role === 'warmup'" [class.cooldown]="block.role === 'cooldown'">
-            <div class="block-header">
-              <span class="block-role">
-                @if (block.role === 'warmup') { Échauffement }
-                @else if (block.role === 'cooldown') { Retour au calme }
-                @else { Bloc principal }
-              </span>
-              <div class="block-header-actions">
-                <button class="btn-icon" (click)="moveRunBlock(i, -1)" [disabled]="!canMoveRunBlock(i, -1)" title="Monter" aria-label="Monter le bloc">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
-                </button>
-                <button class="btn-icon" (click)="moveRunBlock(i, 1)" [disabled]="!canMoveRunBlock(i, 1)" title="Descendre" aria-label="Descendre le bloc">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                </button>
-                <button class="btn-icon danger" (click)="removeRunBlock(i)" title="Supprimer">×</button>
-              </div>
-            </div>
-
-            <div class="block-grid">
-              <div class="form-group">
-                <label>Mode</label>
-                <div class="segmented small">
-                  <button type="button" [class.active]="block.mode === 'distance'" (click)="setRunBlockMode(i, 'distance')">Distance</button>
-                  <button type="button" [class.active]="block.mode === 'duration'" (click)="setRunBlockMode(i, 'duration')">Durée</button>
-                </div>
-              </div>
-              @if (block.mode === 'distance') {
-                @if (block.role === 'main') {
-                  <div class="form-group">
-                    <label>Distance (m)</label>
-                    <input type="number" min="0" step="50" [ngModel]="kmToMeters(block.distance)" (ngModelChange)="setRunBlockDistanceMeters(i, $event)" placeholder="400">
-                  </div>
-                } @else {
-                  <div class="form-group">
-                    <label>Distance (km)</label>
-                    <input type="number" min="0" step="0.05" [ngModel]="block.distance" (ngModelChange)="updateRunBlock(i, 'distance', $event)">
-                  </div>
-                }
-              } @else {
-                <div class="form-group">
-                  <label>Durée (min)</label>
-                  <input type="number" min="0" step="1" [ngModel]="block.duration" (ngModelChange)="updateRunBlock(i, 'duration', $event)">
-                </div>
-              }
-              @if (block.role === 'main') {
-                <div class="form-group">
-                  <label>Répétitions</label>
-                  <input type="number" min="1" step="1" [ngModel]="block.repetitions" (ngModelChange)="updateRunBlock(i, 'repetitions', $event)">
-                </div>
-              }
-            </div>
-
-            <div class="form-group">
-              <label>Allure</label>
-              <app-pace-input
-                [value]="block.pace"
-                [zones]="zones()"
-                [previewVma]="previewVma()"
-                (valueChange)="setPaceConfig(i, $event)"
-              ></app-pace-input>
-            </div>
-
-            <div class="form-group">
-              <label>Description / consignes</label>
-              <input type="text" [ngModel]="block.description" (ngModelChange)="updateRunBlock(i, 'description', $event)" placeholder="Ex: Chercher la régularité">
-            </div>
-
-            @if (block.role === 'main') {
-              <div class="recovery-section">
-                <button type="button" class="btn-link" (click)="toggleRecovery(i)">
-                  {{ block.recoveryMode ? '− Retirer la récup' : '+ Ajouter une récup' }}
-                </button>
-                @if (block.recoveryMode) {
-                  <div class="block-grid">
-                    <div class="form-group">
-                      <label>Mode récup</label>
-                      <div class="segmented small">
-                        <button type="button" [class.active]="block.recoveryMode === 'distance'" (click)="updateRunBlock(i, 'recoveryMode', 'distance')">Distance</button>
-                        <button type="button" [class.active]="block.recoveryMode === 'duration'" (click)="updateRunBlock(i, 'recoveryMode', 'duration')">Durée</button>
-                      </div>
-                    </div>
-                    @if (block.recoveryMode === 'distance') {
-                      <div class="form-group">
-                        <label>Distance récup (m)</label>
-                        <input type="number" min="0" step="50" [ngModel]="kmToMeters(block.recoveryDistance)" (ngModelChange)="setRunBlockRecoveryDistanceMeters(i, $event)" placeholder="200">
-                      </div>
-                    } @else {
-                      <div class="form-group">
-                        <label>Durée récup</label>
-                        <input type="text" placeholder="ex: 1min30" [ngModel]="block.recoveryDuration" (ngModelChange)="updateRunBlock(i, 'recoveryDuration', $event)">
-                      </div>
-                    }
-                  </div>
-                  <div class="form-group">
-                    <label>Allure récup</label>
-                    <app-pace-input
-                      [value]="block.recoveryPace || null"
-                      [zones]="zones()"
-                      [previewVma]="previewVma()"
-                      (valueChange)="setRecoveryPaceConfig(i, $event)"
-                    ></app-pace-input>
-                  </div>
-                }
-              </div>
-            }
-          </div>
-        }
-
-        <div class="block-actions">
-          <button class="btn-secondary" (click)="addRunBlock('warmup')">+ Échauffement</button>
-          <button class="btn-secondary" (click)="addRunBlock('main')">+ Bloc principal</button>
-          <button class="btn-secondary" (click)="addRunBlock('cooldown')">+ Retour au calme</button>
-        </div>
+        <app-run-blocks-editor
+          [blocks]="editorBlocks()"
+          [compact]="true"
+          [enableVmaPaces]="true"
+          [athleteVma]="previewVma()"
+          (blocksChange)="onBlocksChange($event)">
+        </app-run-blocks-editor>
       </section>
     } @else {
       <!-- Exercices simples -->

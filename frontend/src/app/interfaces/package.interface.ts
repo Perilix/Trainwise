@@ -28,11 +28,11 @@ export const COACH_PACKAGES: Record<PackageType, CoachPackage> = {
   },
   bronze: {
     type: 'bronze',
-    name: 'Bronze',
+    name: 'Suivi',
     price: 49.99,
-    color: '#cd7f32',
-    gradient: 'linear-gradient(135deg, #cd7f32 0%, #b8722d 100%)',
-    icon: 'fa-solid fa-medal',
+    color: '#00A6FB',
+    gradient: 'linear-gradient(135deg, #00A6FB 0%, #0582CA 100%)',
+    icon: 'fa-solid fa-chart-line',
     revenueCatId: 'trainwise_coach_bronze_monthly',
     features: [
       'Programme d\'entraînement mensuel',
@@ -43,11 +43,11 @@ export const COACH_PACKAGES: Record<PackageType, CoachPackage> = {
   },
   silver: {
     type: 'silver',
-    name: 'Silver',
+    name: 'Perf',
     price: 79.99,
-    color: '#c0c0c0',
-    gradient: 'linear-gradient(135deg, #d4d4d4 0%, #a8a8a8 100%)',
-    icon: 'fa-solid fa-crown',
+    color: '#003554',
+    gradient: 'linear-gradient(135deg, #00507E 0%, #003554 100%)',
+    icon: 'fa-solid fa-gauge-high',
     revenueCatId: 'trainwise_coach_silver_monthly',
     features: [
       'Programme hebdomadaire personnalisé',
@@ -61,10 +61,10 @@ export const COACH_PACKAGES: Record<PackageType, CoachPackage> = {
   },
   gold: {
     type: 'gold',
-    name: 'Gold',
+    name: 'Élite',
     price: 149.99,
-    color: '#ffd700',
-    gradient: 'linear-gradient(135deg, #ffd700 0%, #ffb700 100%)',
+    color: '#F59E0B',
+    gradient: 'linear-gradient(135deg, #FBBF24 0%, #D97706 100%)',
     icon: 'fa-solid fa-trophy',
     revenueCatId: 'trainwise_coach_gold_monthly',
     features: [

@@ -52,9 +52,42 @@
         <li><i class="fa-solid fa-check"></i> Analyses détaillées</li>
         <li><i class="fa-solid fa-check"></i> Priorité support</li>
       </ul>
+      @if (!isPro) {
+        <div class="plan-toggle">
+          <button
+            class="plan-option"
+            [class.plan-selected]="proPlan() === 'monthly'"
+            (click)="proPlan.set('monthly')">
+            <span class="plan-label">Mensuel</span>
+            <span class="plan-price">9,99€<small>/mois</small></span>
+          </button>
+          <button
+            class="plan-option"
+            [class.plan-selected]="proPlan() === 'annual'"
+            (click)="proPlan.set('annual')">
+            @if (launchPromo) {
+              <span class="plan-save">Offre de lancement</span>
+              <span class="plan-label">Annuel</span>
+              <span class="plan-price"><s class="plan-old">79,99€</s> 59,99€<small>/an</small></span>
+              <span class="plan-sub">soit 5€/mois</span>
+            } @else {
+              <span class="plan-save">-33%</span>
+              <span class="plan-label">Annuel</span>
+              <span class="plan-price">79,99€<small>/an</small></span>
+              <span class="plan-sub">soit 6,67€/mois</span>
+            }
+          </button>
+        </div>
+      }
     </div>
     <div class="card-footer">
-      <div class="card-price">9,99€<span>/mois</span></div>
+      <div class="card-price">
+        @if (proPlan() === 'annual' && !isPro) {
+          {{ annualPrice }}<span>/an</span>
+        } @else {
+          9,99€<span>/mois</span>
+        }
+      </div>
       @if (isPro) {
         <button class="btn-owned" disabled>
           <i class="fa-solid fa-circle-check"></i> Actif
@@ -86,13 +119,30 @@
       </div>
       <p class="card-desc">Recharge ton solde pour utiliser les fonctionnalités IA à la carte — sans abonnement.</p>
       <ul class="card-features">
-        <li><i class="fa-solid fa-bolt"></i> +20 TrainCoins</li>
-        <li><i class="fa-solid fa-magnifying-glass"></i> 1 coin = 1 analyse de run</li>
-        <li><i class="fa-solid fa-wand-magic-sparkles"></i> 3 coins = 1 plan IA</li>
+        <li><i class="fa-solid fa-magnifying-glass"></i> 1 coin = 1 analyse de séance</li>
+        <li><i class="fa-solid fa-wand-magic-sparkles"></i> 5 coins = 1 plan IA</li>
       </ul>
+      <div class="plan-toggle">
+        <button
+          class="plan-option plan-option-coins"
+          [class.plan-selected]="coinsPack() === 10"
+          (click)="coinsPack.set(10)">
+          <span class="plan-label">10 coins</span>
+          <span class="plan-price">2,99€</span>
+        </button>
+        <button
+          class="plan-option plan-option-coins"
+          [class.plan-selected]="coinsPack() === 50"
+          (click)="coinsPack.set(50)">
+          <span class="plan-save">Meilleur prix</span>
+          <span class="plan-label">50 coins</span>
+          <span class="plan-price">9,99€</span>
+          <span class="plan-sub">soit 0,20€/coin</span>
+        </button>
+      </div>
     </div>
     <div class="card-footer">
-      <div class="card-price">2,99€</div>
+      <div class="card-price">{{ coinsPack() === 50 ? '9,99€' : '2,99€' }}</div>
       @if (isNative) {
         <button class="btn-buy btn-buy-coins" [disabled]="isLoadingCoins()" (click)="buyCoins()">
           @if (isLoadingCoins()) {

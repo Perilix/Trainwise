@@ -30,8 +30,11 @@
   border-radius: 24px;
   width: 100%;
   max-width: 500px;
-  max-height: 88vh;
-  overflow-y: auto;
+  // Taille fixe : seul le contenu interne (features) change/scrolle
+  height: min(660px, 88vh);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   padding: 0 20px 28px;
   position: relative;
   animation: popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -110,8 +113,8 @@
   &:active { transform: scale(0.99); }
 
   &.pkg-selected {
-    border-color: #003554;
-    box-shadow: 0 0 0 1px #003554;
+    border-color: var(--pkg-color, #003554);
+    box-shadow: 0 0 0 1px var(--pkg-color, #003554);
     background: #f8fafb;
   }
 
@@ -180,7 +183,7 @@
   font-size: 1.2rem;
   color: #ccc;
 
-  &.checked { color: #003554; }
+  &.checked { color: var(--pkg-color, #003554); }
 }
 
 // -----------------------------------------------
@@ -191,6 +194,10 @@
   border-radius: 16px;
   padding: 14px 16px;
   margin-bottom: 16px;
+  // Zone flexible : absorbe la hauteur restante et scrolle si besoin
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .features-label {
@@ -273,5 +280,71 @@
   font-size: 0.74rem;
   font-family: 'Poppins', sans-serif;
   margin: 0;
+  line-height: 1.5;
   i { margin-right: 4px; }
+}
+
+// -----------------------------------------------
+// Confirmation (demande envoyée)
+// -----------------------------------------------
+.confirm-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px 8px;
+  font-family: 'Poppins', sans-serif;
+}
+
+.confirm-icon {
+  font-size: 3.2rem;
+  color: #16a34a;
+  margin-bottom: 16px;
+  animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.confirm-title {
+  font-family: 'GulfsDisplay', serif;
+  font-size: 1.4rem;
+  color: #003554;
+  margin: 0 0 10px;
+}
+
+.confirm-text {
+  font-size: 0.88rem;
+  color: #555;
+  line-height: 1.6;
+  margin: 0 0 14px;
+  max-width: 340px;
+}
+
+.confirm-note {
+  font-size: 0.76rem;
+  color: #888;
+  line-height: 1.5;
+  margin: 0 0 24px;
+  max-width: 320px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px 14px;
+
+  i { color: #635bff; margin-right: 4px; }
+}
+
+.confirm-state .btn-subscribe {
+  width: 100%;
+  max-width: 320px;
+}
+
+.btn-later {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 0.82rem;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  padding: 8px;
+  &:active { color: #003554; }
 }

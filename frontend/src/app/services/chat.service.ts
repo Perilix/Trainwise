@@ -326,6 +326,10 @@ export class ChatService {
     return this.http.get<PartnerCoachPreview>(`${this.API_URL}/partner-coach`);
   }
 
+  requestCoachSubscription(packageType: string): Observable<{ success: boolean }> {
+    return this.http.post<{ success: boolean }>(`${this.API_URL}/partner-coach/subscription-request`, { packageType });
+  }
+
   private calculateTotalUnread(conversations: Conversation[]): void {
     const total = conversations.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0);
     this.totalUnread.set(total);

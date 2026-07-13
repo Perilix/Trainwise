@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
-import { PaceInputComponent } from '../../../components/pace-input/pace-input.component';
+import { RunBlocksEditorComponent } from '../../../components/run-blocks-editor/run-blocks-editor.component';
+import { RunBlock, RunBlockPaceSource } from '../../../services/run.service';
 import { SessionTemplateService } from '../../../services/session-template.service';
 import { ExerciseService } from '../../../services/exercise.service';
 import {
@@ -16,7 +17,7 @@ import { parseDecimalInput } from '../../../utils/decimal.util';
 @Component({
   selector: 'app-session-template-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavbarComponent, PaceInputComponent],
+  imports: [CommonModule, FormsModule, NavbarComponent, RunBlocksEditorComponent],
   templateUrl: './session-template-editor.component.html',
   styleUrl: './session-template-editor.component.scss'
 })
@@ -40,7 +41,8 @@ export class SessionTemplateEditorComponent implements OnInit {
   mainWorkout = signal('');
   cooldown = signal('');
 
-  runBlocks = signal<TemplateRunBlock[]>([]);
+  // Blocs au format de l'éditeur partagé (même UI que les plannings athlète/coach)
+  editorBlocks = signal<RunBlock[]>([]);
   strengthExercises = signal<StrengthExerciseEntry[]>([]);
   strengthCircuit = signal<StrengthCircuit | null>(null);
   strengthSuperset = signal<StrengthSuperset | null>(null);
@@ -94,11 +96,6 @@ export class SessionTemplateEditorComponent implements OnInit {
     if (id) {
       this.templateId.set(id);
       this.loadTemplate(id);
-    } else {
-      // New template defaults
-      this.addRunBlock('warmup');
-      this.addRunBlock('main');
-      this.addRunBlock('cooldown');
     }
   }
 
@@ -115,7 +112,7 @@ export class SessionTemplateEditorComponent implements OnInit {
         this.warmup.set(tpl.warmup || '');
         this.mainWorkout.set(tpl.mainWorkout || '');
         this.cooldown.set(tpl.cooldown || '');
-        this.runBlocks.set(tpl.runBlocks || []);
+        this.editorBlocks.set(this.templateToRunBlocks(tpl.runBlocks || []));
         const strExos = tpl.strengthPlan?.exercises || [];
         this.strengthExercises.set(strExos.map(e => ({
           ...e,
@@ -150,113 +147,106 @@ export class SessionTemplateEditorComponent implements OnInit {
     });
   }
 
-  // ===== Run blocks =====
-  addRunBlock(role: 'warmup' | 'main' | 'cooldown') {
-    if ((role === 'warmup' || role === 'cooldown') && this.runBlocks().some(b => b.role === role)) return;
-    const defaultZone = role === 'warmup' ? 'endurance'
-                      : role === 'cooldown' ? 'recovery' : 'threshold';
-    const block: TemplateRunBlock = {
-      role,
-      mode: role === 'main' ? 'distance' : 'duration',
-      distance: role === 'main' ? 1 : null,
-      duration: role === 'main' ? null : (role === 'warmup' ? 15 : 10),
-      pace: { mode: 'zone', zone: defaultZone as any, vmaPercent: null },
-      repetitions: 1,
-      description: '',
-      order: this.runBlocks().length,
-      recoveryMode: null
+  // ===== Run blocks (éditeur partagé) =====
+  onBlocksChange(blocks: RunBlock[]) {
+    this.editorBlocks.set(blocks);
+  }
+
+  // --- Conversion template (PaceConfig) → éditeur (pace string + paceSource) ---
+
+  private computePaceString(percent: number | null | undefined): string | null {
+    const vma = this.previewVma();
+    if (!vma || !percent) return null;
+    const speed = vma * (percent / 100);
+    if (speed <= 0) return null;
+    const secPerKm = 3600 / speed;
+    const m = Math.floor(secPerKm / 60);
+    const s = Math.round(secPerKm % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  private paceConfigToEditor(pc: PaceConfig | null | undefined): { pace: string | null; source: RunBlockPaceSource | undefined } {
+    if (!pc) return { pace: null, source: undefined };
+    if (pc.mode === 'absolute') {
+      return { pace: pc.absolute ?? null, source: { mode: 'absolute' } };
+    }
+    const percent = pc.vmaPercent ?? this.zones().find(z => z.key === pc.zone)?.defaultPercent ?? null;
+    return {
+      pace: this.computePaceString(percent),
+      source: {
+        mode: 'zone',
+        zone: pc.zone ?? null,
+        vmaPercent: percent,
+        resolvedFromVma: this.previewVma()
+      }
     };
-    const next = [...this.runBlocks(), block].map((b, i) => ({ ...b, order: i }));
-    this.runBlocks.set(next);
   }
 
-  removeRunBlock(index: number) {
-    const next = this.runBlocks().filter((_, i) => i !== index).map((b, i) => ({ ...b, order: i }));
-    this.runBlocks.set(next);
-  }
-
-  // Réordonne librement n'importe quel bloc (le coach décide de l'ordre)
-  moveRunBlock(index: number, delta: -1 | 1) {
-    const list = this.runBlocks();
-    const target = index + delta;
-    if (target < 0 || target >= list.length) return;
-    const next = [...list];
-    [next[index], next[target]] = [next[target], next[index]];
-    this.runBlocks.set(next.map((b, i) => ({ ...b, order: i })));
-  }
-
-  canMoveRunBlock(index: number, delta: -1 | 1): boolean {
-    const list = this.runBlocks();
-    const target = index + delta;
-    return target >= 0 && target < list.length;
-  }
-
-  // Conversion km <-> m pour les blocs main (saisis en mètres, stockés en km)
-  kmToMeters(km: number | null | undefined): number | null {
-    if (km == null) return null;
-    return Math.round(km * 1000);
-  }
-
-  setRunBlockDistanceMeters(index: number, meters: number | string | null) {
-    const m = typeof meters === 'string' ? parseFloat(meters) : meters;
-    const km = m == null || isNaN(m as number) || (m as number) <= 0 ? null : (m as number) / 1000;
-    this.updateRunBlock(index, 'distance', km);
-  }
-
-  setRunBlockRecoveryDistanceMeters(index: number, meters: number | string | null) {
-    const m = typeof meters === 'string' ? parseFloat(meters) : meters;
-    const km = m == null || isNaN(m as number) || (m as number) <= 0 ? null : (m as number) / 1000;
-    this.updateRunBlock(index, 'recoveryDistance', km);
-  }
-
-  updateRunBlock<K extends keyof TemplateRunBlock>(index: number, field: K, value: TemplateRunBlock[K]) {
-    const next = [...this.runBlocks()];
-    next[index] = { ...next[index], [field]: value };
-    this.runBlocks.set(next);
-  }
-
-  setRunBlockMode(index: number, mode: 'distance' | 'duration') {
-    const next = [...this.runBlocks()];
-    next[index] = {
-      ...next[index],
-      mode,
-      distance: mode === 'distance' ? (next[index].distance ?? 1) : null,
-      duration: mode === 'duration' ? (next[index].duration ?? 10) : null
-    };
-    this.runBlocks.set(next);
-  }
-
-  toggleRecovery(index: number) {
-    const block = this.runBlocks()[index];
-    const next = [...this.runBlocks()];
-    if (block.recoveryMode) {
-      next[index] = {
-        ...block,
-        recoveryMode: null,
-        recoveryDistance: null,
-        recoveryDuration: null,
-        recoveryPace: null
+  private templateToRunBlocks(list: TemplateRunBlock[]): RunBlock[] {
+    return (list || []).map((t, i) => {
+      const main = this.paceConfigToEditor(t.pace);
+      const rec = this.paceConfigToEditor(t.recoveryPace);
+      const block: RunBlock = {
+        role: t.role,
+        mode: t.mode,
+        distance: t.distance ?? null,
+        duration: t.duration ?? null,
+        pace: main.pace,
+        paceSource: main.source,
+        repetitions: t.repetitions ?? 1,
+        description: t.description || '',
+        recoveryMode: t.recoveryMode ?? null,
+        recoveryDistance: t.recoveryDistance ?? null,
+        recoveryDuration: t.recoveryDuration ?? null,
+        recoveryPace: rec.pace,
+        recoveryPaceSource: rec.source,
+        recoveryDescription: t.recoveryDescription || '',
+        order: t.order ?? i
       };
-    } else {
-      next[index] = {
-        ...block,
-        recoveryMode: 'duration',
-        recoveryDuration: '1min',
-        recoveryPace: { mode: 'zone', zone: 'recovery', vmaPercent: null }
+      if (t.children?.length) {
+        block.children = this.templateToRunBlocks(t.children);
+      }
+      return block;
+    });
+  }
+
+  // --- Conversion éditeur → template (on stocke la config zone/%, pas l'allure résolue) ---
+
+  private editorPaceToConfig(pace: string | null | undefined, source: RunBlockPaceSource | undefined): PaceConfig {
+    if (source?.mode === 'zone' || source?.mode === 'vmaPercent') {
+      return {
+        mode: 'zone',
+        zone: (source.zone as PaceConfig['zone']) ?? null,
+        vmaPercent: source.vmaPercent ?? null,
+        absolute: null
       };
     }
-    this.runBlocks.set(next);
+    return { mode: 'absolute', zone: null, vmaPercent: null, absolute: pace || null };
   }
 
-  setPaceConfig(index: number, paceConfig: PaceConfig) {
-    this.updateRunBlock(index, 'pace', paceConfig);
+  private runBlocksToTemplate(list: RunBlock[]): TemplateRunBlock[] {
+    return (list || []).map((b, i) => {
+      const block: TemplateRunBlock = {
+        role: b.role,
+        mode: b.mode,
+        distance: b.distance ?? null,
+        duration: b.duration ?? null,
+        pace: this.editorPaceToConfig(b.pace, b.paceSource),
+        repetitions: Math.max(1, b.repetitions || 1),
+        description: b.description || '',
+        recoveryMode: b.recoveryMode ?? null,
+        recoveryDistance: b.recoveryDistance ?? null,
+        recoveryDuration: b.recoveryDuration ?? null,
+        recoveryPace: b.recoveryMode ? this.editorPaceToConfig(b.recoveryPace, b.recoveryPaceSource) : null,
+        recoveryDescription: b.recoveryDescription || '',
+        order: i
+      };
+      if (b.children?.length) {
+        block.children = this.runBlocksToTemplate(b.children);
+      }
+      return block;
+    });
   }
-
-  setRecoveryPaceConfig(index: number, paceConfig: PaceConfig) {
-    this.updateRunBlock(index, 'recoveryPace', paceConfig);
-  }
-
-  trackByIndex(i: number) { return i; }
 
   // ===== Strength =====
   addStrengthExercise() {
@@ -481,7 +471,7 @@ export class SessionTemplateEditorComponent implements OnInit {
       warmup: this.warmup(),
       mainWorkout: this.mainWorkout(),
       cooldown: this.cooldown(),
-      runBlocks: this.sport() === 'running' ? this.runBlocks() : [],
+      runBlocks: this.sport() === 'running' ? this.runBlocksToTemplate(this.editorBlocks()) : [],
       strengthPlan: this.sport() === 'strength' ? {
         exercises: this.strengthExercises().filter(e => !!e.exercise),
         circuit: this.strengthCircuit() && this.strengthCircuit()!.exercises.some(e => !!e.exercise)

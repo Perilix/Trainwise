@@ -250,4 +250,20 @@ router.get('/unread', chatController.getUnreadCount);
  */
 router.get('/partner-coach', chatController.getPartnerCoach);
 
+/**
+ * @swagger
+ * /api/chat/partner-coach/subscription-request:
+ *   post:
+ *     summary: Send a coaching subscription request to the partner coach
+ *     tags: [Chat]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Request sent, coach notified
+ *       400:
+ *         description: Invalid package type
+ */
+router.post('/partner-coach/subscription-request', chatController.requestCoachSubscription);
+
 module.exports = router;

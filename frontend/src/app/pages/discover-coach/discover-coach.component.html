@@ -78,30 +78,39 @@
       <!-- Forfaits -->
       <div class="section-title">Nos forfaits</div>
 
-      @for (pkg of packages; track pkg.type) {
-        <section class="forfait-card" [class.featured]="!!pkg.badge">
-          @if (pkg.badge) {
-            <div class="featured-badge" [style.background]="pkg.gradient">{{ pkg.badge }}</div>
-          }
-          <div class="forfait-header">
-            <div class="forfait-icon" [style.background]="pkg.gradient">
-              <i [class]="pkg.icon"></i>
-            </div>
-            <div class="forfait-info">
-              <h4>{{ pkg.name }}</h4>
-              <p class="forfait-price">{{ pkg.price }}€<span>/mois</span></p>
-            </div>
-          </div>
-          <ul class="forfait-features">
-            @for (feature of pkg.features; track feature) {
-              <li><i class="fa-solid fa-check"></i> {{ feature }}</li>
+      <div class="forfait-selector">
+        @for (pkg of packages; track pkg.type) {
+          <button
+            class="forfait-tab"
+            [class.tab-active]="selectedPkgType() === pkg.type"
+            [style.--pkg-color]="pkg.color"
+            (click)="selectedPkgType.set(pkg.type)">
+            @if (pkg.badge) {
+              <span class="tab-badge" [style.background]="pkg.gradient">{{ pkg.badge }}</span>
             }
-          </ul>
-        </section>
-      }
+            <i [class]="pkg.icon"></i>
+            <span class="tab-name">{{ pkg.name }}</span>
+            <span class="tab-price">{{ pkg.price }}€<small>/mois</small></span>
+          </button>
+        }
+      </div>
 
-      <!-- Spacer pour le bouton sticky -->
-      <div style="height: 90px;"></div>
+      <section class="forfait-card forfait-detail">
+        <div class="forfait-header">
+          <div class="forfait-icon" [style.background]="selectedPkg.gradient">
+            <i [class]="selectedPkg.icon"></i>
+          </div>
+          <div class="forfait-info">
+            <h4>{{ selectedPkg.name }}</h4>
+            <p class="forfait-price">{{ selectedPkg.price }}€<span>/mois</span></p>
+          </div>
+        </div>
+        <ul class="forfait-features">
+          @for (feature of selectedPkg.features; track feature) {
+            <li><i class="fa-solid fa-check" [style.color]="selectedPkg.color"></i> {{ feature }}</li>
+          }
+        </ul>
+      </section>
 
     }
   </main>

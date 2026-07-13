@@ -3,7 +3,8 @@ const { emitTrainCoinsUpdate } = require('../socket/index');
 
 // Produits RevenueCat → coins offerts
 const COIN_PRODUCTS = {
-  trainwise_coins_20: 20,
+  trainwise_coins_10: 10,
+  trainwise_coins_50: 50,
 };
 
 // Produits RevenueCat → durée abonnement Pro (en jours)

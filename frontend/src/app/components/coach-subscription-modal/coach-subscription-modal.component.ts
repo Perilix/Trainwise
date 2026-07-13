@@ -1,8 +1,7 @@
-import { Component, EventEmitter, inject, Input, Output, signal } from '@angular/core';
+import { Component, EventEmitter, inject, Output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Capacitor } from '@capacitor/core';
 import { CoachPackage, COACH_PACKAGES, PackageType } from '../../interfaces/package.interface';
-import { SubscriptionService } from '../../services/subscription.service';
+import { ChatService } from '../../services/chat.service';
 
 @Component({
   selector: 'app-coach-subscription-modal',
@@ -15,15 +14,14 @@ export class CoachSubscriptionModalComponent {
   @Output() close = new EventEmitter<void>();
   @Output() contactCoach = new EventEmitter<void>();
 
-  private subscriptionService = inject(SubscriptionService);
+  private chatService = inject(ChatService);
 
-  isNative = Capacitor.isNativePlatform();
   readonly packages: CoachPackage[] = [COACH_PACKAGES.bronze, COACH_PACKAGES.silver, COACH_PACKAGES.gold];
 
   selected = signal<PackageType>('silver');
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
-  successMessage = signal<string | null>(null);
+  requestSent = signal(false);
 
   get selectedPackage(): CoachPackage {
     return COACH_PACKAGES[this.selected()];
@@ -34,23 +32,19 @@ export class CoachSubscriptionModalComponent {
     this.errorMessage.set(null);
   }
 
-  async subscribe() {
-    if (!this.isNative) {
-      this.contactCoach.emit();
-      return;
-    }
-
+  sendRequest() {
     this.isLoading.set(true);
     this.errorMessage.set(null);
 
-    try {
-      await this.subscriptionService.purchasePackage(this.selectedPackage.revenueCatId);
-      this.successMessage.set(`Abonnement ${this.selectedPackage.name} activé !`);
-      setTimeout(() => this.close.emit(), 2000);
-    } catch {
-      this.errorMessage.set('Achat annulé ou indisponible.');
-    } finally {
-      this.isLoading.set(false);
-    }
+    this.chatService.requestCoachSubscription(this.selected()).subscribe({
+      next: () => {
+        this.isLoading.set(false);
+        this.requestSent.set(true);
+      },
+      error: () => {
+        this.isLoading.set(false);
+        this.errorMessage.set('Impossible d\'envoyer la demande. Réessaie dans un instant.');
+      }
+    });
   }
 }
