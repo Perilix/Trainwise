@@ -9,24 +9,23 @@ const { PACE_ZONES, ZONE_KEYS } = require('../constants/paceZones');
 const MODEL = 'claude-opus-4-8';
 
 // ---- Schéma de sortie structurée -------------------------------------------
-
-const nullable = (type) => ({ anyOf: [{ type }, { type: 'null' }] });
+// Contrainte API : max 16 champs union/nullable par schéma → on n'utilise AUCUN
+// null. Les valeurs "absentes" sont des sentinelles (0, "", 'none') résolues
+// côté serveur.
 
 // Étape running (bloc de 1er niveau ou enfant d'un bloc « Répéter »)
 const stepProperties = {
   role: { type: 'string', enum: ['warmup', 'main', 'cooldown'] },
   mode: { type: 'string', enum: ['distance', 'duration'] },
-  distance: { ...nullable('number'), description: 'Distance en km si mode=distance (ex: 0.4 pour 400m)' },
-  duration: { ...nullable('number'), description: 'Durée en minutes si mode=duration' },
+  value: { type: 'number', description: 'Distance en km si mode=distance (ex: 0.4 pour 400m), durée en minutes si mode=duration' },
   paceZone: { type: 'string', enum: ZONE_KEYS, description: "Zone d'allure cible" },
-  paceVmaPercent: { ...nullable('number'), description: '% de VMA cible dans la zone (ex: 85). Null = défaut de la zone.' },
-  paceAbsolute: { ...nullable('string'), description: 'Allure "m:ss" par km, UNIQUEMENT si la VMA du coureur est inconnue' },
+  paceVmaPercent: { type: 'number', description: '% de VMA cible, dans la fourchette de la zone choisie (ex: 85)' },
+  paceAbsolute: { type: 'string', description: 'Allure "m:ss" par km si la VMA du coureur est inconnue, sinon chaîne vide ""' },
   repetitions: { type: 'integer', description: 'Nombre de répétitions (1 pour un bloc simple)' },
   description: { type: 'string', description: 'Consigne courte pour ce bloc (peut être vide)' },
-  recoveryMode: { anyOf: [{ type: 'string', enum: ['distance', 'duration'] }, { type: 'null' }] },
-  recoveryDistance: { ...nullable('number'), description: 'Récup en km si recoveryMode=distance' },
-  recoveryDuration: { ...nullable('string'), description: 'Récup en texte si recoveryMode=duration (ex: "1min30")' },
-  recoveryPaceZone: { anyOf: [{ type: 'string', enum: ZONE_KEYS }, { type: 'null' }] }
+  recoveryMode: { type: 'string', enum: ['none', 'distance', 'duration'], description: 'Récupération entre répétitions (none si aucune)' },
+  recoveryValue: { type: 'number', description: 'Récup : km si distance, minutes si duration (ex: 1.5 pour 1min30), 0 si none' },
+  recoveryPaceZone: { type: 'string', enum: [...ZONE_KEYS, 'none'] }
 };
 
 const stepRequired = Object.keys(stepProperties);
@@ -91,8 +90,8 @@ const planSchema = {
             ]
           },
           description: { type: 'string', description: 'Objectif et conseils de la séance, personnalisés (2-3 phrases)' },
-          targetDistance: { ...nullable('number'), description: 'Distance totale estimée en km (running)' },
-          targetDuration: { ...nullable('number'), description: 'Durée totale estimée en minutes' },
+          targetDistance: { type: 'number', description: 'Distance totale estimée en km (0 pour une séance strength)' },
+          targetDuration: { type: 'number', description: 'Durée totale estimée en minutes' },
           weekNumber: { type: 'integer' },
           runBlocks: {
             type: 'array',
@@ -122,38 +121,50 @@ const computePace = (vma, percent) => {
   return `${m}:${String(s).padStart(2, '0')}`;
 };
 
+// Formate des minutes décimales en texte lisible (1.5 → "1min30", 0.5 → "30s")
+const formatRecoveryMinutes = (minutes) => {
+  if (!minutes || minutes <= 0) return null;
+  const totalSec = Math.round(minutes * 60);
+  if (totalSec < 60) return `${totalSec}s`;
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return s === 0 ? `${m}min` : `${m}min${String(s).padStart(2, '0')}`;
+};
+
 const resolveStep = (step, vma, order) => {
   const zone = PACE_ZONES[step.paceZone] || null;
   const percent = step.paceVmaPercent || zone?.defaultPercent || null;
-  const pace = vma ? computePace(vma, percent) : (step.paceAbsolute || null);
+  const absolutePace = step.paceAbsolute && step.paceAbsolute.trim() !== '' ? step.paceAbsolute : null;
+  const pace = vma ? computePace(vma, percent) : absolutePace;
 
-  const recoveryZone = step.recoveryPaceZone ? PACE_ZONES[step.recoveryPaceZone] : null;
-  const recoveryPercent = recoveryZone?.defaultPercent || null;
+  const hasRecovery = step.recoveryMode && step.recoveryMode !== 'none';
+  const recoveryZoneKey = step.recoveryPaceZone && step.recoveryPaceZone !== 'none' ? step.recoveryPaceZone : null;
+  const recoveryPercent = recoveryZoneKey ? (PACE_ZONES[recoveryZoneKey]?.defaultPercent || null) : null;
 
   return {
     role: step.role,
     mode: step.mode,
-    distance: step.mode === 'distance' ? step.distance : null,
-    duration: step.mode === 'duration' ? step.duration : null,
+    distance: step.mode === 'distance' ? step.value : null,
+    duration: step.mode === 'duration' ? step.value : null,
     pace,
     repetitions: Math.max(1, step.repetitions || 1),
     description: step.description || '',
-    recoveryMode: step.recoveryMode || null,
-    recoveryDistance: step.recoveryMode === 'distance' ? step.recoveryDistance : null,
-    recoveryDuration: step.recoveryMode === 'duration' ? step.recoveryDuration : null,
+    recoveryMode: hasRecovery ? step.recoveryMode : null,
+    recoveryDistance: hasRecovery && step.recoveryMode === 'distance' ? step.recoveryValue : null,
+    recoveryDuration: hasRecovery && step.recoveryMode === 'duration' ? formatRecoveryMinutes(step.recoveryValue) : null,
     recoveryPace: vma && recoveryPercent ? computePace(vma, recoveryPercent) : null,
     recoveryDescription: '',
     order,
     paceSource: {
-      mode: vma ? 'zone' : (step.paceAbsolute ? 'absolute' : 'zone'),
+      mode: vma || !absolutePace ? 'zone' : 'absolute',
       zone: step.paceZone || null,
       vmaPercent: percent,
       resolvedFromVma: vma || null,
       overridden: false
     },
-    recoveryPaceSource: step.recoveryPaceZone ? {
+    recoveryPaceSource: recoveryZoneKey ? {
       mode: 'zone',
-      zone: step.recoveryPaceZone,
+      zone: recoveryZoneKey,
       vmaPercent: recoveryPercent,
       resolvedFromVma: vma || null,
       overridden: false
@@ -279,8 +290,8 @@ const generateTrainingPlan = async (planningContext, exerciseCatalog = []) => {
         activityType: s.activityType,
         sessionType: s.sessionType,
         description: s.description,
-        targetDistance: isStrength ? null : s.targetDistance,
-        targetDuration: s.targetDuration,
+        targetDistance: isStrength || !s.targetDistance ? null : s.targetDistance,
+        targetDuration: s.targetDuration || null,
         weekNumber: s.weekNumber,
         runBlocks: isStrength ? [] : resolveRunBlocks(s.runBlocks, vma),
         strengthExercises: isStrength
