@@ -318,6 +318,60 @@
   }
 }
 
+// Demandes d'abonnement (athlète → coach)
+.request-card {
+  flex-wrap: wrap;
+}
+
+.request-package {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  white-space: nowrap;
+
+  i { font-size: 0.7rem; }
+}
+
+.request-actions {
+  display: flex;
+  gap: 0.5rem;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 10px;
+    padding: 0.5rem 1rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+    transition: opacity 0.2s;
+
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+    i { font-size: 0.75rem; }
+  }
+
+  .btn-accept {
+    background: #16a34a;
+    color: #fff;
+    border: none;
+    &:hover:not(:disabled) { background: #15803d; }
+  }
+
+  .btn-decline {
+    background: transparent;
+    color: #ef4444;
+    border: 1.5px solid rgba(239, 68, 68, 0.4);
+    &:hover:not(:disabled) { background: rgba(239, 68, 68, 0.06); }
+  }
+}
+
 .user-avatar {
   width: 40px;
   height: 40px;

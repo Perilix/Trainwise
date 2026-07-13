@@ -13,7 +13,8 @@ const coachAthleteSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'accepted', 'rejected'],
+    // 'pending' = invitation coach → athlète ; 'requested' = demande athlète → coach
+    enum: ['pending', 'requested', 'accepted', 'rejected'],
     default: 'pending'
   },
   invitedAt: {
@@ -26,7 +27,7 @@ const coachAthleteSchema = new mongoose.Schema({
   },
   inviteMethod: {
     type: String,
-    enum: ['code', 'direct'],
+    enum: ['code', 'direct', 'request'],
     required: true
   },
   packageType: {

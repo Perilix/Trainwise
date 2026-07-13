@@ -22,7 +22,8 @@ export class DiscoverCoachComponent implements OnInit {
   showSubscriptionModal = signal(false);
   readonly packages = [COACH_PACKAGES.bronze, COACH_PACKAGES.silver, COACH_PACKAGES.gold];
   selectedPkgType = signal<PackageType>('silver');
-  // Forfait déjà demandé (en attente de contact par le coach)
+  // Demande auprès du coach partenaire : 'requested' (en attente de validation) ou 'accepted' (coaché)
+  requestStatus = signal<'requested' | 'accepted' | null>(null);
   pendingPackage = signal<PackageType | null>(null);
 
   get selectedPkg() {
@@ -49,8 +50,9 @@ export class DiscoverCoachComponent implements OnInit {
   loadPendingRequest() {
     this.chatService.getCoachSubscriptionRequest().subscribe({
       next: (res) => {
-        const type = res.pending?.packageType as PackageType | undefined;
-        if (type) {
+        const type = res.request?.packageType as PackageType | undefined;
+        if (type && res.request) {
+          this.requestStatus.set(res.request.status);
           this.pendingPackage.set(type);
           this.selectedPkgType.set(type);
         }
@@ -60,6 +62,7 @@ export class DiscoverCoachComponent implements OnInit {
   }
 
   onRequested(type: PackageType) {
+    this.requestStatus.set('requested');
     this.pendingPackage.set(type);
     this.selectedPkgType.set(type);
   }

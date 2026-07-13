@@ -330,8 +330,8 @@ export class ChatService {
     return this.http.post<{ success: boolean }>(`${this.API_URL}/partner-coach/subscription-request`, { packageType });
   }
 
-  getCoachSubscriptionRequest(): Observable<{ pending: { packageType: string; requestedAt: string } | null }> {
-    return this.http.get<{ pending: { packageType: string; requestedAt: string } | null }>(`${this.API_URL}/partner-coach/subscription-request`);
+  getCoachSubscriptionRequest(): Observable<{ request: { status: 'requested' | 'accepted'; packageType: string; requestedAt: string } | null }> {
+    return this.http.get<{ request: { status: 'requested' | 'accepted'; packageType: string; requestedAt: string } | null }>(`${this.API_URL}/partner-coach/subscription-request`);
   }
 
   private calculateTotalUnread(conversations: Conversation[]): void {

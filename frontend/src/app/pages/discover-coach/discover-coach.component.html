@@ -79,13 +79,25 @@
       <div class="section-title">Nos forfaits</div>
 
       @if (pendingPkg) {
-        <div class="pending-banner">
-          <i class="fa-solid fa-circle-check"></i>
-          <p>
-            Tu as demandé le forfait <strong [style.color]="pendingPkg!.color">{{ pendingPkg!.name }}</strong>.
-            {{ partnerCoach()?.firstName }} va te contacter dans le chat pour finaliser ensemble.
-          </p>
-        </div>
+        @if (requestStatus() === 'accepted') {
+          <div class="pending-banner banner-accepted">
+            <i class="fa-solid fa-circle-check"></i>
+            <p>
+              {{ partnerCoach()?.firstName }} a accepté ta demande ! Tu es coaché avec le forfait
+              <strong [style.color]="pendingPkg!.color">{{ pendingPkg!.name }}</strong>.
+              Passe par le chat pour finaliser les détails ensemble.
+            </p>
+          </div>
+        } @else {
+          <div class="pending-banner banner-waiting">
+            <i class="fa-solid fa-hourglass-half"></i>
+            <p>
+              Ta demande pour le forfait <strong [style.color]="pendingPkg!.color">{{ pendingPkg!.name }}</strong>
+              est en attente de validation par {{ partnerCoach()?.firstName }}.
+              Tu peux déjà lui écrire dans le chat en attendant.
+            </p>
+          </div>
+        }
       }
 
       <div class="forfait-selector">

@@ -114,6 +114,23 @@ export interface UserSearchResult {
   hasCoach: boolean;
 }
 
+// Demande d'abonnement envoyée par un athlète (statut "requested"), à valider par le coach
+export interface SubscriptionRequest {
+  _id: string;
+  athlete: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    profilePicture?: string;
+    runningLevel?: string;
+    vma?: number;
+  };
+  status: 'requested';
+  packageType: 'bronze' | 'silver' | 'gold';
+  invitedAt: Date;
+}
+
 export interface PendingInvitation {
   _id: string;
   athlete: {

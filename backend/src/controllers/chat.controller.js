@@ -369,7 +369,44 @@ exports.requestCoachSubscription = async (req, res) => {
       return res.status(404).json({ error: 'Coach partenaire non trouvé' });
     }
 
+    // Crée (ou réactive) la relation en statut "requested" — le coach devra accepter ou refuser
+    const existing = await CoachAthlete.findOne({ coach: coach._id, athlete: req.user.id });
+    if (existing && existing.status === 'accepted') {
+      return res.status(400).json({ error: 'Tu es déjà coaché par ce coach' });
+    }
+    if (existing) {
+      existing.status = 'requested';
+      existing.packageType = packageType;
+      existing.inviteMethod = 'request';
+      existing.invitedAt = new Date();
+      existing.respondedAt = null;
+      await existing.save();
+    } else {
+      await CoachAthlete.create({
+        coach: coach._id,
+        athlete: req.user.id,
+        status: 'requested',
+        packageType,
+        inviteMethod: 'request'
+      });
+    }
+
     const athlete = await User.findById(req.user.id).select('firstName lastName');
+
+    // Ouvre (ou récupère) le canal de chat athlète ↔ coach dès la demande,
+    // pour que la notification du coach mène directement à la conversation
+    const conversation = await Conversation.findOrCreateDirect(req.user.id, coach._id);
+    try {
+      const io = getIO();
+      if (io) {
+        io.to(`user:${coach._id.toString()}`).emit('conversation:new', {
+          conversationId: conversation._id.toString()
+        });
+      }
+    } catch (e) {
+      // Socket non initialisé, pas grave
+    }
+
     const { createNotification } = require('./notification.controller');
     await createNotification({
       recipient: coach._id,
@@ -377,13 +414,8 @@ exports.requestCoachSubscription = async (req, res) => {
       type: 'subscription_request',
       action: 'subscription_requested',
       title: 'Nouvelle demande d\'abonnement',
-      message: `${athlete.firstName} ${athlete.lastName} souhaite l'abonnement ${pkg.name} (${pkg.price}/mois). Contacte-le pour en discuter !`,
-      actionUrl: '/coach/dashboard'
-    });
-
-    // Mémorise la demande pour que la page coach partenaire affiche l'état "déjà demandé"
-    await User.findByIdAndUpdate(req.user.id, {
-      pendingCoachRequest: { packageType, requestedAt: new Date() }
+      message: `${athlete.firstName} ${athlete.lastName} souhaite l'abonnement ${pkg.name} (${pkg.price}/mois). Accepte sa demande depuis ton dashboard !`,
+      actionUrl: `/chat/${conversation._id}`
     });
 
     res.json({ success: true });
@@ -393,12 +425,27 @@ exports.requestCoachSubscription = async (req, res) => {
   }
 };
 
-// GET /api/chat/partner-coach/subscription-request — demande en attente de l'utilisateur
+// GET /api/chat/partner-coach/subscription-request — état de la demande de l'utilisateur
+// auprès du coach partenaire : 'requested' (en attente), 'accepted' (coaché) ou null
 exports.getCoachSubscriptionRequest = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('pendingCoachRequest');
-    const pending = user?.pendingCoachRequest?.packageType ? user.pendingCoachRequest : null;
-    res.json({ pending });
+    const coach = await User.findOne({ email: PARTNER_COACH_EMAIL, role: 'coach' }).select('_id');
+    if (!coach) return res.json({ request: null });
+
+    const relation = await CoachAthlete.findOne({
+      coach: coach._id,
+      athlete: req.user.id,
+      status: { $in: ['requested', 'accepted'] }
+    });
+
+    if (!relation) return res.json({ request: null });
+    res.json({
+      request: {
+        status: relation.status,
+        packageType: relation.packageType,
+        requestedAt: relation.invitedAt
+      }
+    });
   } catch (error) {
     console.error('Error getting coach subscription request:', error);
     res.status(500).json({ error: error.message });

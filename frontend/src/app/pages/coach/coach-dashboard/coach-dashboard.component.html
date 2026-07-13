@@ -54,6 +54,49 @@
       </div>
     </div>
 
+    <!-- Demandes d'abonnement à valider -->
+    @if (subscriptionRequests().length > 0) {
+      <section class="section">
+        <h2>Demandes d'abonnement</h2>
+        <div class="invitations-list">
+          @for (req of subscriptionRequests(); track req._id) {
+            <div class="invitation-card request-card">
+              <div class="user-avatar">
+                @if (req.athlete.profilePicture) {
+                  <img [src]="req.athlete.profilePicture" alt="Avatar">
+                } @else {
+                  {{ getInitials(req.athlete.firstName, req.athlete.lastName) }}
+                }
+              </div>
+              <div class="invitation-info">
+                <span class="name">{{ req.athlete.firstName }} {{ req.athlete.lastName }}</span>
+                <span class="email">{{ req.athlete.email }}</span>
+                <span class="date">Demandé le {{ formatDate(req.invitedAt) }}</span>
+              </div>
+              <span class="request-package" [style.background]="getPackageByType(req.packageType).gradient">
+                <i [class]="getPackageByType(req.packageType).icon"></i>
+                {{ getPackageByType(req.packageType).name }} · {{ getPackageByType(req.packageType).price }}€/mois
+              </span>
+              <div class="request-actions">
+                <button
+                  class="btn-accept"
+                  [disabled]="respondingRequestId() === req._id"
+                  (click)="respondRequest(req, 'accept')">
+                  <i class="fa-solid fa-check"></i> Accepter
+                </button>
+                <button
+                  class="btn-decline"
+                  [disabled]="respondingRequestId() === req._id"
+                  (click)="respondRequest(req, 'decline')">
+                  <i class="fa-solid fa-xmark"></i> Refuser
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
     <!-- Invitations en attente -->
     @if (pendingInvitations().length > 0) {
       <section class="section">

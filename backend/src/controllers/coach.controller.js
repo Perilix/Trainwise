@@ -710,6 +710,83 @@ exports.sendDirectInvite = async (req, res) => {
 };
 
 // Obtenir les invitations en attente envoyées par le coach
+// ===== Demandes d'abonnement (athlète → coach) =====
+
+const PACKAGE_LABELS = {
+  bronze: { name: 'Suivi', price: '49,99€' },
+  silver: { name: 'Perf', price: '79,99€' },
+  gold: { name: 'Élite', price: '149,99€' }
+};
+
+// GET /api/coach/subscription-requests — demandes en attente de validation
+exports.getSubscriptionRequests = async (req, res) => {
+  try {
+    const requests = await CoachAthlete.find({
+      coach: req.user._id,
+      status: 'requested'
+    }).populate('athlete', 'firstName lastName email profilePicture runningLevel vma')
+      .sort({ invitedAt: -1 });
+
+    res.json(requests);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// POST /api/coach/subscription-requests/:id/respond — accepter ou refuser une demande
+exports.respondSubscriptionRequest = async (req, res) => {
+  try {
+    const { action } = req.body;
+    if (!['accept', 'decline'].includes(action)) {
+      return res.status(400).json({ error: 'Action invalide' });
+    }
+
+    const request = await CoachAthlete.findOne({
+      _id: req.params.id,
+      coach: req.user._id,
+      status: 'requested'
+    }).populate('athlete', 'firstName lastName');
+    if (!request) {
+      return res.status(404).json({ error: 'Demande introuvable' });
+    }
+
+    request.status = action === 'accept' ? 'accepted' : 'rejected';
+    request.respondedAt = new Date();
+    await request.save();
+
+    // Notifie l'athlète du verdict, avec un lien vers le chat si accepté
+    const coach = await User.findById(req.user._id).select('firstName lastName');
+    const pkg = PACKAGE_LABELS[request.packageType] || { name: request.packageType };
+    if (action === 'accept') {
+      const Conversation = require('../models/conversation.model');
+      const conversation = await Conversation.findOrCreateDirect(request.athlete._id, req.user._id);
+      await createNotification({
+        recipient: request.athlete._id,
+        sender: req.user._id,
+        type: 'subscription_request',
+        action: 'subscription_accepted',
+        title: 'Demande acceptée 🎉',
+        message: `${coach.firstName} a accepté ta demande d'abonnement ${pkg.name}. Ouvre le chat pour finaliser ensemble !`,
+        actionUrl: `/chat/${conversation._id}`
+      });
+    } else {
+      await createNotification({
+        recipient: request.athlete._id,
+        sender: req.user._id,
+        type: 'subscription_request',
+        action: 'subscription_declined',
+        title: 'Demande d\'abonnement',
+        message: `${coach.firstName} ne peut pas donner suite à ta demande ${pkg.name} pour le moment.`,
+        actionUrl: '/discover-coach'
+      });
+    }
+
+    res.json({ success: true, status: request.status });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 exports.getPendingInvitations = async (req, res) => {
   try {
     const invitations = await CoachAthlete.find({

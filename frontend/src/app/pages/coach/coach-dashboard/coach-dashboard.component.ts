@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { CoachService } from '../../../services/coach.service';
 import { AuthService } from '../../../services/auth.service';
-import { Athlete, CoachStats, UserSearchResult, PendingInvitation } from '../../../interfaces/coach.interfaces';
+import { Athlete, CoachStats, UserSearchResult, PendingInvitation, SubscriptionRequest } from '../../../interfaces/coach.interfaces';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
 import { TourTooltipComponent, TourStep } from '../../../components/tour-tooltip/tour-tooltip.component';
 import { COACH_PACKAGES, PackageType } from '../../../interfaces/package.interface';
@@ -42,6 +42,8 @@ export class CoachDashboardComponent implements OnInit {
   athletes = signal<Athlete[]>([]);
   stats = signal<CoachStats | null>(null);
   pendingInvitations = signal<PendingInvitation[]>([]);
+  subscriptionRequests = signal<SubscriptionRequest[]>([]);
+  respondingRequestId = signal<string | null>(null);
   isLoading = signal(true);
   error = signal<string | null>(null);
   successMessage = signal<string | null>(null);
@@ -91,17 +93,44 @@ export class CoachDashboardComponent implements OnInit {
       this.coachService.getStats().toPromise(),
       this.coachService.getAthletes().toPromise(),
       this.coachService.getPendingInvitations().toPromise(),
-      this.coachService.getInviteCode().toPromise()
-    ]).then(([stats, athletes, pending, code]) => {
+      this.coachService.getInviteCode().toPromise(),
+      this.coachService.getSubscriptionRequests().toPromise()
+    ]).then(([stats, athletes, pending, code, requests]) => {
       this.stats.set(stats || null);
       this.athletes.set(athletes || []);
       this.pendingInvitations.set(pending || []);
       this.inviteCode.set(code?.code || null);
+      this.subscriptionRequests.set(requests || []);
       this.isLoading.set(false);
     }).catch(err => {
       this.error.set('Erreur lors du chargement');
       this.isLoading.set(false);
       console.error(err);
+    });
+  }
+
+  respondRequest(request: SubscriptionRequest, action: 'accept' | 'decline') {
+    this.respondingRequestId.set(request._id);
+    this.coachService.respondSubscriptionRequest(request._id, action).subscribe({
+      next: () => {
+        this.subscriptionRequests.set(this.subscriptionRequests().filter(r => r._id !== request._id));
+        this.respondingRequestId.set(null);
+        if (action === 'accept') {
+          this.successMessage.set(`${request.athlete.firstName} rejoint tes athlètes 🎉`);
+          // L'athlète accepté apparaît dans la liste
+          this.coachService.getAthletes().subscribe({
+            next: (athletes) => this.athletes.set(athletes || []),
+            error: () => {}
+          });
+        } else {
+          this.successMessage.set('Demande refusée.');
+        }
+        setTimeout(() => this.successMessage.set(null), 4000);
+      },
+      error: (err) => {
+        this.respondingRequestId.set(null);
+        this.error.set(err.error?.error || 'Erreur lors de la réponse à la demande');
+      }
     });
   }
 
@@ -216,6 +245,10 @@ export class CoachDashboardComponent implements OnInit {
 
   getActivityStatus(athlete: Athlete): 'green' | 'orange' | 'red' {
     return athlete.status ?? 'red';
+  }
+
+  getPackageByType(type: PackageType) {
+    return COACH_PACKAGES[type] ?? COACH_PACKAGES.silver;
   }
 
   getPackageDetails(athlete: Athlete) {

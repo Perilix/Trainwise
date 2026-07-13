@@ -46,6 +46,10 @@ router.get('/stats', coachController.getCoachStats);
  */
 router.get('/athletes', coachController.getAthletes);
 
+// Demandes d'abonnement envoyées par les athlètes (statut "requested")
+router.get('/subscription-requests', coachController.getSubscriptionRequests);
+router.post('/subscription-requests/:id/respond', coachController.respondSubscriptionRequest);
+
 /**
  * @swagger
  * /api/coach/athletes/{athleteId}:

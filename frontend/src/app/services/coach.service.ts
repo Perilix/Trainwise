@@ -8,6 +8,7 @@ import {
   CoachStats,
   UserSearchResult,
   PendingInvitation,
+  SubscriptionRequest,
   CalendarData
 } from '../interfaces/coach.interfaces';
 import { PlannedSession } from './planning.service';
@@ -117,6 +118,14 @@ export class CoachService {
 
   getPendingInvitations(): Observable<PendingInvitation[]> {
     return this.http.get<PendingInvitation[]>(`${this.API_URL}/invitations/pending`);
+  }
+
+  getSubscriptionRequests(): Observable<SubscriptionRequest[]> {
+    return this.http.get<SubscriptionRequest[]>(`${this.API_URL}/subscription-requests`);
+  }
+
+  respondSubscriptionRequest(id: string, action: 'accept' | 'decline'): Observable<{ success: boolean; status: string }> {
+    return this.http.post<{ success: boolean; status: string }>(`${this.API_URL}/subscription-requests/${id}/respond`, { action });
   }
 
   // Recherche d'utilisateurs

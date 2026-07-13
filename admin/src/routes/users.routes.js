@@ -5,6 +5,7 @@ const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const User = require('../models/user.model');
 const Run = require('../models/run.model');
+const CoachAthlete = require('../models/coachAthlete.model');
 
 // Catalogue des visites guidées (feature tours) — doit rester aligné avec les pageId du frontend
 const TOUR_PAGES = [
@@ -100,16 +101,21 @@ router.get('/:id', requireAuth, async (req, res) => {
   const user = await User.findById(req.params.id);
   if (!user) return res.redirect('/users');
 
-  const [runCount, runsAgg] = await Promise.all([
+  const [runCount, runsAgg, coachRelation] = await Promise.all([
     Run.countDocuments({ user: user._id }),
     Run.aggregate([
       { $match: { user: user._id } },
       { $group: { _id: null, totalKm: { $sum: '$distance' }, avgFeeling: { $avg: '$feeling' } } }
-    ])
+    ]),
+    // Relation coaching la plus récente (demande d'abonnement ou invitation)
+    CoachAthlete.findOne({ athlete: user._id })
+      .sort({ updatedAt: -1 })
+      .populate('coach', 'firstName lastName email')
   ]);
 
   res.render('user-edit', {
     user,
+    coachRelation,
     runCount,
     totalKm: Math.round(runsAgg[0]?.totalKm || 0),
     avgFeeling: runsAgg[0]?.avgFeeling ? (Math.round(runsAgg[0].avgFeeling * 10) / 10) : '-',
@@ -142,14 +148,6 @@ router.post('/:id', requireAuth, async (req, res) => {
   }
 
   await User.findByIdAndUpdate(req.params.id, update);
-  res.redirect(`/users/${req.params.id}?success=1`);
-});
-
-// ── Clear pending coaching request ───────────────────────────
-router.post('/:id/clear-coach-request', requireAuth, async (req, res) => {
-  await User.findByIdAndUpdate(req.params.id, {
-    pendingCoachRequest: { packageType: null, requestedAt: null }
-  });
   res.redirect(`/users/${req.params.id}?success=1`);
 });
 

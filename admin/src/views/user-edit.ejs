@@ -190,49 +190,55 @@
     </div>
   </div>
 
-  <!-- Demande de coaching en attente -->
+  <!-- Suivi coaching (demande d'abonnement / relation coach) -->
   <% const COACH_PACKAGES = {
-    bronze: { name: 'Suivi', price: '49,99€', color: '#00A6FB' },
-    silver: { name: 'Perf', price: '79,99€', color: '#003554' },
-    gold:   { name: 'Élite', price: '149,99€', color: '#F59E0B' }
+    invited: { name: 'Invité', price: '0€', color: '#a855f7' },
+    bronze:  { name: 'Suivi', price: '49,99€', color: '#00A6FB' },
+    silver:  { name: 'Perf', price: '79,99€', color: '#003554' },
+    gold:    { name: 'Élite', price: '149,99€', color: '#F59E0B' }
   };
-  const pendingPkg = user.pendingCoachRequest && user.pendingCoachRequest.packageType
-    ? COACH_PACKAGES[user.pendingCoachRequest.packageType]
-    : null; %>
+  const RELATION_STATUS = {
+    requested: { label: 'En attente de validation', bg: 'rgba(245,158,11,0.12)', color: '#d97706' },
+    pending:   { label: 'Invitation envoyée',       bg: 'rgba(59,130,246,0.12)', color: '#2563eb' },
+    accepted:  { label: 'Abonné',                   bg: 'rgba(34,197,94,0.12)',  color: '#16a34a' },
+    rejected:  { label: 'Refusée',                  bg: 'rgba(239,68,68,0.12)',  color: '#dc2626' }
+  };
+  const relPkg = coachRelation ? (COACH_PACKAGES[coachRelation.packageType] || null) : null;
+  const relStatus = coachRelation ? (RELATION_STATUS[coachRelation.status] || null) : null;
+  const fmtDate = d => d ? new Date(d).toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' }) : '—'; %>
   <div class="card">
     <div class="card-header">
-      <span class="card-title"><i class="fa-solid fa-user-tie" style="color:var(--blue);margin-right:6px;"></i>Demande de coaching</span>
-      <% if (pendingPkg) { %>
-        <span class="badge" style="background:rgba(245,158,11,0.12);color:#d97706;">En attente</span>
+      <span class="card-title"><i class="fa-solid fa-user-tie" style="color:var(--blue);margin-right:6px;"></i>Coaching</span>
+      <% if (relStatus) { %>
+        <span class="badge" style="background:<%= relStatus.bg %>;color:<%= relStatus.color %>;"><%= relStatus.label %></span>
       <% } %>
     </div>
     <div class="card-body">
-      <% if (pendingPkg) { %>
+      <% if (coachRelation) { %>
         <div class="field-list">
           <div class="field-row">
-            <span class="field-label"><i class="fa-solid fa-medal"></i>Forfait demandé</span>
-            <span class="field-value" style="font-weight:700;color:<%= pendingPkg.color %>;">
-              <%= pendingPkg.name %> · <%= pendingPkg.price %>/mois
+            <span class="field-label"><i class="fa-solid fa-user"></i>Coach</span>
+            <span class="field-value">
+              <%= coachRelation.coach ? ((coachRelation.coach.firstName || '') + ' ' + (coachRelation.coach.lastName || '')).trim() || coachRelation.coach.email : '—' %>
             </span>
           </div>
           <div class="field-row">
-            <span class="field-label"><i class="fa-solid fa-calendar"></i>Demandé le</span>
-            <span class="field-value">
-              <%= user.pendingCoachRequest.requestedAt
-                ? new Date(user.pendingCoachRequest.requestedAt).toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' })
-                : '—' %>
+            <span class="field-label"><i class="fa-solid fa-medal"></i>Forfait</span>
+            <span class="field-value" style="font-weight:700;<%= relPkg ? 'color:' + relPkg.color + ';' : '' %>">
+              <%= relPkg ? relPkg.name + ' · ' + relPkg.price + '/mois' : coachRelation.packageType %>
             </span>
           </div>
+          <div class="field-row">
+            <span class="field-label"><i class="fa-solid fa-paper-plane"></i><%= coachRelation.status === 'pending' ? 'Invité le' : 'Demandé le' %></span>
+            <span class="field-value"><%= fmtDate(coachRelation.invitedAt) %></span>
+          </div>
+          <div class="field-row">
+            <span class="field-label"><i class="fa-solid fa-reply"></i>Répondu le</span>
+            <span class="field-value"><%= fmtDate(coachRelation.respondedAt) %></span>
+          </div>
         </div>
-        <form method="POST" action="/users/<%= user._id %>/clear-coach-request" style="margin-top:14px;"
-              onsubmit="return confirm('Effacer la demande de coaching de cet utilisateur ? À faire une fois l’abonnement finalisé (ou abandonné).')">
-          <button type="submit" class="btn"
-                  style="background:rgba(239,68,68,0.08);color:var(--danger);border-color:rgba(239,68,68,0.2);">
-            <i class="fa-solid fa-eraser"></i> Effacer la demande
-          </button>
-        </form>
       <% } else { %>
-        <p style="color:var(--text-muted);font-size:0.85rem;margin:0;">Aucune demande de coaching en cours.</p>
+        <p style="color:var(--text-muted);font-size:0.85rem;margin:0;">Aucune demande ni relation de coaching.</p>
       <% } %>
     </div>
   </div>
