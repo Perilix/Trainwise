@@ -199,7 +199,7 @@ Principes de programmation que tu appliques systématiquement :
 - Ressenti : si les dernières séances montrent des ressentis bas (< 5/10), réduis la charge.
 
 Structure des séances running — TOUJOURS en blocs structurés :
-- Un bloc "warmup" (échauffement, généralement 10-20 min en endurance/récupération active).
+- Un bloc "warmup" (échauffement, 20 minutes MINIMUM, en endurance fondamentale ou récupération active).
 - Un ou plusieurs blocs "main". Pour du fractionné, utilise un bloc avec children (ex: 8×400m) ou plusieurs répétitions avec récupération. Les pyramides utilisent children multi-étapes (ex: 2×(400/600/800/600/400)).
 - Un bloc "cooldown" (retour au calme, 5-15 min très facile).
 
@@ -213,8 +213,9 @@ Séances de musculation (si des dates strength sont fournies) :
 Règles impératives :
 - Utilise UNIQUEMENT les dates fournies (runningDates pour le running, strengthDates pour la muscu). Une séance par date fournie, aucune date inventée.
 - Varie les séances d'une semaine à l'autre.
-- Les descriptions sont en français, personnelles et concrètes (tu t'adresses directement au coureur, tutoiement).
-- Ne mets JAMAIS d'allure chiffrée dans les descriptions : indique la zone (le serveur affiche l'allure exacte).`;
+- Format STRICT de la description d'une séance : un intitulé court (3-5 mots, ex: "Fractionné court 8×400m", "Endurance fondamentale", "Sortie longue progressive", "Tempo au seuil"), puis " — ", puis 1 à 2 phrases de conseils concrets et personnels (tutoiement). 250 caractères maximum au total.
+- INTERDIT dans les descriptions : narration ou mise en scène ("On commence la semaine tranquille...", "Cette semaine on attaque..."), remplissage, et allures chiffrées (indique la zone, le serveur affiche l'allure exacte).
+- Les descriptions de blocs sont des consignes très courtes (ex: "Relâché, cadence haute") ou vides.`;
 
 // ---- Appel API ---------------------------------------------------------------
 
