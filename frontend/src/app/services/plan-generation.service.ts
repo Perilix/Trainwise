@@ -20,6 +20,14 @@ export class PlanGenerationService {
   sessions = signal<Partial<PlannedSession>[] | null>(null);
   error = signal<string | null>(null);
 
+  // Demande d'ouverture de la modale de suivi (posée par la pastille flottante,
+  // consommée par le composant planning à l'arrivée sur la page)
+  openTrackingModalRequested = signal(false);
+
+  requestTrackingModal() {
+    this.openTrackingModalRequested.set(true);
+  }
+
   constructor() {
     this.socketService.on<{ percent: number }>('planGeneration:progress').subscribe((data) => {
       this.status.set('running');

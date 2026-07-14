@@ -280,15 +280,29 @@ const generateTrainingPlan = async (planningContext, exerciseCatalog = [], onPro
     messages: [{ role: 'user', content: userContent.join('\n') }]
   });
 
-  // Progression réelle : on compte les séances complétées dans le JSON streamé
+  // Progression réelle et fluide (granularité ~1%) : estimation par caractères
+  // streamés, auto-calibrée sur la taille de la première séance complétée.
   if (onProgress) {
     const expected = Math.max(1, planningContext.totalExpectedSessions || 1);
+    const DEFAULT_CHARS_PER_SESSION = 1800; // estimation avant calibration
     let accumulated = '';
     let lastPercent = 0;
+    let charsPerSession = DEFAULT_CHARS_PER_SESSION;
+
     stream.on('text', (delta) => {
       accumulated += delta;
+
+      // Calibration : dès qu'au moins une séance est entamée, on mesure le
+      // poids moyen réel d'une séance dans ce flux
       const sessionsStarted = (accumulated.match(/"date"/g) || []).length;
-      const percent = Math.min(95, 5 + Math.round((sessionsStarted / expected) * 90));
+      if (sessionsStarted >= 2) {
+        charsPerSession = accumulated.length / sessionsStarted;
+      }
+
+      const estimatedTotal = expected * charsPerSession;
+      const percent = Math.min(95, Math.max(2, Math.round((accumulated.length / estimatedTotal) * 95)));
+
+      // Monotone + granularité 1% : on n'émet que quand ça avance
       if (percent > lastPercent) {
         lastPercent = percent;
         onProgress(percent);

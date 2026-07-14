@@ -234,6 +234,16 @@ export class PlanningComponent implements OnInit {
         this.showGenerationModal.set(false);
       }
     });
+
+    // Ouvre la modale de suivi quand l'utilisateur arrive via la pastille flottante
+    effect(() => {
+      if (this.planGen.openTrackingModalRequested()) {
+        this.planGen.openTrackingModalRequested.set(false);
+        if (this.planGen.status() === 'running') {
+          this.showGenerationModal.set(true);
+        }
+      }
+    });
   }
 
   // Modale de suivi affichée au lancement de la génération

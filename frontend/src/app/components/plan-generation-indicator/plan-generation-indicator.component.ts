@@ -17,13 +17,15 @@ import { PlanGenerationService } from '../../services/plan-generation.service';
       <div class="plan-gen-pill" [class.pill-done]="planGen.status() === 'done'" [class.pill-error]="planGen.status() === 'error'">
 
         @if (planGen.status() === 'running') {
-          <div class="pill-row">
-            <i class="fa-solid fa-wand-magic-sparkles pill-icon spin-pulse"></i>
-            <span class="pill-text">Génération de ton plan… <strong>{{ planGen.progress() }}%</strong></span>
-          </div>
-          <div class="pill-progress">
-            <div class="pill-progress-fill" [style.width.%]="planGen.progress()"></div>
-          </div>
+          <button class="pill-body pill-action" (click)="openTracking()">
+            <div class="pill-row">
+              <i class="fa-solid fa-wand-magic-sparkles pill-icon spin-pulse"></i>
+              <span class="pill-text">Génération de ton plan… <strong>{{ planGen.progress() }}%</strong></span>
+            </div>
+            <div class="pill-progress">
+              <div class="pill-progress-fill" [style.width.%]="planGen.progress()"></div>
+            </div>
+          </button>
         }
 
         @if (planGen.status() === 'done') {
@@ -84,6 +86,17 @@ import { PlanGenerationService } from '../../services/plan-generation.service';
     }
 
     .pill-action { cursor: pointer; }
+
+    .pill-body {
+      display: block;
+      width: 100%;
+      background: none;
+      border: none;
+      color: inherit;
+      font-family: inherit;
+      padding: 0;
+      text-align: left;
+    }
 
     .pill-icon { font-size: 0.9rem; color: #00A6FB; flex-shrink: 0; }
     .pill-done .pill-icon { color: #4ade80; }
@@ -148,5 +161,10 @@ export class PlanGenerationIndicatorComponent {
 
   openPlan() {
     this.router.navigate(['/planning'], { queryParams: { preview: 1 } });
+  }
+
+  openTracking() {
+    this.planGen.requestTrackingModal();
+    this.router.navigate(['/planning']);
   }
 }
