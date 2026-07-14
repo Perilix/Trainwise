@@ -399,10 +399,22 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  private readonly sessionTypeLabels: Record<string, string> = {
+    endurance: 'Endurance', fractionne: 'Fractionné', tempo: 'Tempo',
+    recuperation: 'Récupération', sortie_longue: 'Sortie longue',
+    cotes: 'Côtes', fartlek: 'Fartlek'
+  };
+
   getRunTitle(): string {
-    // Titre de la séance planifiée d'origine (généré par l'IA ou le coach)
+    // 1) Séance planifiée affichée en mode "planned" (avant complétion)
+    const planned = this.plannedSession();
+    if (planned) {
+      return planned.title || this.sessionTypeLabels[planned.sessionType] || 'Séance';
+    }
+    // 2) Run complété issu d'une séance planifiée : titre figé dans le snapshot
     const plannedTitle = this.run()?.plannedSnapshot?.title;
     if (plannedTitle) return plannedTitle;
+    // 3) Sortie libre : première ligne des notes
     const notes = this.run()?.notes;
     if (!notes) return 'Course';
     return notes.split('\n')[0] || 'Course';

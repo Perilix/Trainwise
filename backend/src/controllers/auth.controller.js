@@ -295,7 +295,7 @@ exports.uploadAvatar = async (req, res) => {
       try {
         await cloudinary.uploader.destroy(publicId);
       } catch (e) {
-        console.log('Could not delete old avatar:', e.message);
+        console.error('Could not delete old avatar:', e.message);
       }
     }
 
@@ -361,7 +361,7 @@ exports.deleteAvatar = async (req, res) => {
       try {
         await cloudinary.uploader.destroy(publicId);
       } catch (e) {
-        console.log('Could not delete avatar:', e.message);
+        console.error('Could not delete avatar:', e.message);
       }
     }
 

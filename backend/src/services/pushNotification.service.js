@@ -29,7 +29,6 @@ function initializeFirebase() {
     });
 
     firebaseInitialized = true;
-    console.log('✅ Firebase Admin initialized for push notifications');
   } catch (error) {
     console.error('❌ Error initializing Firebase Admin:', error.message);
   }
@@ -47,7 +46,6 @@ async function sendPushNotification(userId, notification) {
     const user = await User.findById(userId).select('pushToken pushPlatform');
 
     if (!user || !user.pushToken) {
-      console.log(`No push token found for user ${userId}`);
       return { success: false, error: 'No push token' };
     }
 
@@ -86,7 +84,6 @@ async function sendPushNotification(userId, notification) {
       }
     });
 
-    console.log('✅ Push notification sent successfully');
     return { success: true, response: response.data };
 
   } catch (error) {
@@ -97,7 +94,6 @@ async function sendPushNotification(userId, notification) {
       d.errorCode === 'INVALID_ARGUMENT' || d.errorCode === 'UNREGISTERED'
     )) {
       await User.findByIdAndUpdate(userId, { pushToken: null, pushPlatform: null });
-      console.log(`Invalid token removed for user ${userId}`);
     }
 
     return { success: false, error: errData };
@@ -115,7 +111,6 @@ async function sendPushNotificationToMultiple(userIds, notification) {
   );
 
   const successCount = results.filter(r => r.success).length;
-  console.log(`✅ Sent ${successCount}/${userIds.length} notifications`);
   return { success: true, successCount, failureCount: userIds.length - successCount };
 }
 

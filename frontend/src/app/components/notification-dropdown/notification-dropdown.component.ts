@@ -64,18 +64,14 @@ export class NotificationDropdownComponent implements OnInit {
 
     // Gestion spéciale pour les invitations coach
     if (notification.type === 'invitation') {
-      console.log('🔔 Notification clicked:', notification);
       // Charger les invitations et ouvrir la modale pour celle-ci
       this.athleteService.getPendingInvitations().subscribe({
         next: (invitations) => {
-          console.log('📋 Invitations loaded:', invitations);
           // Trouver l'invitation correspondante (on suppose qu'il y a un lien via le sender)
           const invitation = invitations.find(inv =>
             inv.coach._id === notification.sender?._id
           );
-          console.log('🎯 Matching invitation found:', invitation);
           if (invitation) {
-            console.log('✅ Opening modal with invitation');
             this.invitationModalService.open(invitation);
           } else {
             console.warn('⚠️ No matching invitation found for sender:', notification.sender?._id);

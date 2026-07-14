@@ -6,18 +6,13 @@ const TIMEZONE = process.env.REENGAGEMENT_TZ || 'Europe/Paris';
 const SCHEDULE = process.env.ATHLETE_ALERT_CRON || '0 8 * * *';
 
 function start() {
-  // Séances manquées + statuts athlètes + alertes coach
   cron.schedule(SCHEDULE, async () => {
-    console.log('⏰ [athleteAlert] run quotidien…');
     try {
-      const summary = await runDaily();
-      console.log('✅ [athleteAlert] quotidien terminé:', JSON.stringify(summary));
+      await runDaily();
     } catch (e) {
       console.error('❌ [athleteAlert] erreur run quotidien:', e);
     }
   }, { timezone: TIMEZONE });
-
-  console.log(`✅ Job alertes coach planifié (fuseau ${TIMEZONE})`);
 }
 
 module.exports = { start };

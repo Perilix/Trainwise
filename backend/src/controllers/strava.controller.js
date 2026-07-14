@@ -439,13 +439,6 @@ exports.syncActivities = async (req, res) => {
       params
     });
 
-    console.log('[Strava sync] Activities received:', response.data.map(a => ({
-      id: a.id,
-      name: a.name,
-      sport_type: a.sport_type,
-      type: a.type
-    })));
-
     const runActivities = response.data.filter(a =>
       STRAVA_RUN_TYPES.includes(getActivityType(a))
     );
@@ -458,8 +451,6 @@ exports.syncActivities = async (req, res) => {
         !STRAVA_STRENGTH_TYPES.includes(getActivityType(a))
       )
       .map(a => ({ id: a.id, name: a.name, type: getActivityType(a) }));
-
-    console.log(`[Strava sync] Runs: ${runActivities.length}, Strength: ${strengthActivities.length}, Unrecognized: ${unrecognized.length}`);
 
     // --- Importer les courses ---
     const imported = [];
@@ -674,7 +665,6 @@ exports.webhookVerify = (req, res) => {
   const challenge = req.query['hub.challenge'];
 
   if (mode === 'subscribe' && verifyToken && verifyToken === process.env.STRAVA_WEBHOOK_VERIFY_TOKEN) {
-    console.log('[Strava webhook] handshake validé');
     return res.json({ 'hub.challenge': challenge });
   }
 
@@ -695,12 +685,11 @@ exports.webhookEvent = (req, res) => {
 
 const processWebhookEvent = async (event) => {
   const { object_type, object_id, aspect_type, owner_id, updates } = event || {};
-  console.log(`[Strava webhook] ${object_type}/${aspect_type} — activité ${object_id}, athlète ${owner_id}`);
 
   // L'athlète a révoqué l'accès depuis Strava → on nettoie ses tokens
   if (object_type === 'athlete') {
     if (updates?.authorized === 'false') {
-      const result = await User.updateOne(
+      await User.updateOne(
         { 'strava.athleteId': owner_id },
         {
           $unset: {
@@ -712,7 +701,6 @@ const processWebhookEvent = async (event) => {
           }
         }
       );
-      console.log(`[Strava webhook] athlète ${owner_id} a révoqué l'accès (${result.modifiedCount} user nettoyé)`);
     }
     return;
   }
@@ -730,8 +718,9 @@ const processWebhookEvent = async (event) => {
   // Activité supprimée sur Strava → on supprime le miroir chez nous
   if (aspect_type === 'delete') {
     const run = await Run.findOneAndDelete({ user: user._id, stravaActivityId: object_id });
-    const session = run ? null : await StrengthSession.findOneAndDelete({ user: user._id, stravaActivityId: object_id });
-    console.log(`[Strava webhook] delete ${object_id} → ${run ? 'run supprimé' : session ? 'séance muscu supprimée' : 'rien à supprimer'}`);
+    if (!run) {
+      await StrengthSession.findOneAndDelete({ user: user._id, stravaActivityId: object_id });
+    }
     return;
   }
 
@@ -758,7 +747,6 @@ const processWebhookEvent = async (event) => {
       // Modif sur Strava (titre, description, correction de distance…) → on répercute
       if (aspect_type === 'update') {
         await applyRunUpdateFromStrava(existing, detail);
-        console.log(`[Strava webhook] run ${existing._id} mis à jour`);
       }
       return;
     }
@@ -768,7 +756,6 @@ const processWebhookEvent = async (event) => {
     // À relire par l'athlète : la popup ressenti/match s'ouvrira au prochain
     // lancement du dashboard (GET /api/strava/pending-review)
     await Run.updateOne({ _id: run._id }, { $set: { needsReview: true } });
-    console.log(`[Strava webhook] run ${run._id} importé (${run.distance} km)`);
 
     await createNotification({
       recipient: user._id,
@@ -783,7 +770,6 @@ const processWebhookEvent = async (event) => {
     const result = await importStrengthActivity(user._id, detail, accessToken, detail);
     if (result.status === 'imported') {
       await StrengthSession.updateOne({ _id: result.session._id }, { $set: { needsReview: true } });
-      console.log(`[Strava webhook] séance muscu ${result.session._id} importée`);
 
       await createNotification({
         recipient: user._id,
@@ -795,8 +781,6 @@ const processWebhookEvent = async (event) => {
         actionUrl: '/dashboard'
       });
     }
-  } else {
-    console.log(`[Strava webhook] type d'activité ignoré: ${activityType}`);
   }
 };
 
