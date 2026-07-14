@@ -58,7 +58,7 @@ import { PlanGenerationService } from '../../services/plan-generation.service';
       color: #F6F4F0;
       border-radius: 16px;
       padding: 10px 16px 8px;
-      min-width: 240px;
+      min-width: 250px;
       max-width: calc(100vw - 32px);
       box-shadow: 0 8px 28px rgba(0, 53, 84, 0.35);
       font-family: 'Poppins', sans-serif;
