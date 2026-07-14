@@ -9,6 +9,7 @@ const CANDIDATE_WINDOW_DAYS = 3;
 
 function buildPlannedSnapshot(planned) {
   return {
+    title: planned.title || null,
     sessionType: planned.sessionType,
     targetDistance: planned.targetDistance,
     targetDuration: planned.targetDuration,

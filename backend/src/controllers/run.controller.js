@@ -88,6 +88,7 @@ exports.createRun = async (req, res) => {
     if (coachPlanned) {
       // Snapshot figé de ce que le coach avait prévu
       run.plannedSnapshot = {
+        title: coachPlanned.title || null,
         sessionType: coachPlanned.sessionType,
         targetDistance: coachPlanned.targetDistance,
         targetDuration: coachPlanned.targetDuration,

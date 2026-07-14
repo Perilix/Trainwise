@@ -39,6 +39,7 @@ export interface RunBlock {
 }
 
 export interface PlannedSnapshot {
+  title?: string | null;
   sessionType?: string | null;
   targetDistance?: number | null;
   targetDuration?: number | null;

@@ -114,6 +114,7 @@ const runSchema = new mongoose.Schema({
 
   // Snapshot figé de ce que le coach avait prévu (copié à la complétion d'une séance planifiée)
   plannedSnapshot: {
+    title: { type: String, default: null },
     sessionType: { type: String, default: null },
     targetDistance: { type: Number, default: null },
     targetDuration: { type: Number, default: null },

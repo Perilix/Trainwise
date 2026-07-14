@@ -400,6 +400,9 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   getRunTitle(): string {
+    // Titre de la séance planifiée d'origine (généré par l'IA ou le coach)
+    const plannedTitle = this.run()?.plannedSnapshot?.title;
+    if (plannedTitle) return plannedTitle;
     const notes = this.run()?.notes;
     if (!notes) return 'Course';
     return notes.split('\n')[0] || 'Course';
