@@ -221,15 +221,23 @@ export class PlanningComponent implements OnInit {
     private route: ActivatedRoute
   ) {
     // Quand la génération de fond se termine et qu'on est sur le planning,
-    // ouvrir automatiquement la preview du plan
+    // fermer la modale de suivi et ouvrir automatiquement la preview du plan
     effect(() => {
+      const status = this.planGen.status();
       const sessions = this.planGen.sessions();
-      if (this.planGen.status() === 'done' && sessions?.length && !this.showPreview()) {
+      if (status === 'done' && sessions?.length && !this.showPreview()) {
+        this.showGenerationModal.set(false);
         this.previewSessions.set(sessions);
         this.showPreview.set(true);
       }
+      if (status === 'error') {
+        this.showGenerationModal.set(false);
+      }
     });
   }
+
+  // Modale de suivi affichée au lancement de la génération
+  showGenerationModal = signal(false);
 
   private pendingOpenDay: string | null = null;
 
@@ -646,11 +654,10 @@ export class PlanningComponent implements OnInit {
       next: (response) => {
         this.isGenerating.set(false);
         if (response.jobId) {
-          // Génération en tâche de fond : la pastille globale suit la progression,
+          // Génération en tâche de fond : modale de suivi + pastille globale,
           // l'utilisateur peut continuer à naviguer
           this.planGen.start();
-          this.successMessage.set('Génération lancée — tu peux continuer à naviguer, on te prévient dès que ton plan est prêt 👌');
-          setTimeout(() => this.successMessage.set(null), 6000);
+          this.showGenerationModal.set(true);
         } else if (response.sessions) {
           // Fallback legacy (n8n) : réponse synchrone
           this.previewSessions.set(response.sessions);

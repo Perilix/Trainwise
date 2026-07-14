@@ -120,7 +120,11 @@ export class NotificationDropdownComponent implements OnInit {
     return `${firstName[0]}${lastName[0]}`.toUpperCase();
   }
 
-  getNotificationIcon(type: string): string {
+  getNotificationIcon(type: string, action?: string): string {
+    // Plan IA généré : check validé plutôt que l'icône calendrier
+    if (action === 'plan_generated') {
+      return 'M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4L12 14.01l-3-3';
+    }
     switch (type) {
       case 'invitation':
         return 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75';

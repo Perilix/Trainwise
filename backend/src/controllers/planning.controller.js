@@ -458,8 +458,8 @@ exports.generatePlan = async (req, res) => {
             sender: null,
             type: 'session',
             action: 'plan_generated',
-            title: 'Ton plan est prêt ! 🎉',
-            message: `${sessions.length} séance${sessions.length > 1 ? 's' : ''} t'attend${sessions.length > 1 ? 'ent' : ''} — ouvre le planning pour les valider.`,
+            title: 'Tes séances sont planifiées ✅',
+            message: `On a planifié ${sessions.length} séance${sessions.length > 1 ? 's' : ''} pour toi — viens les valider et les ajouter à ton planning.`,
             actionUrl: '/planning'
           });
         } catch (err) {

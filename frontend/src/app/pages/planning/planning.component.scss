@@ -1629,6 +1629,100 @@
     line-height: 1.4;
   }
 
+  .gen-tracking-modal {
+    max-width: 400px;
+    text-align: center;
+    padding: 2rem 1.5rem 1.5rem;
+  }
+
+  .gen-tracking-icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 1rem;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #00a6fb 0%, #0582ca 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    i { color: #fff; font-size: 1.4rem; }
+  }
+
+  .gen-tracking-title {
+    font-family: 'GulfsDisplay', serif;
+    font-size: 1.3rem;
+    color: #051923;
+    margin: 0 0 0.5rem;
+  }
+
+  .gen-tracking-subtitle {
+    font-size: 0.85rem;
+    color: #666;
+    line-height: 1.5;
+    margin: 0 0 1.25rem;
+  }
+
+  .gen-tracking-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+
+    .gen-tracking-bar {
+      flex: 1;
+      height: 8px;
+      border-radius: 4px;
+      background: #e8e6e0;
+      overflow: hidden;
+    }
+
+    .gen-tracking-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #00a6fb, #4ade80);
+      transition: width 0.4s ease;
+    }
+
+    .gen-tracking-percent {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #003554;
+      font-variant-numeric: tabular-nums;
+      min-width: 38px;
+      text-align: right;
+    }
+  }
+
+  .gen-tracking-hint {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    text-align: left;
+    background: #eff8ff;
+    border-radius: 10px;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.78rem;
+    color: #0582ca;
+    line-height: 1.45;
+    margin: 0 0 1.25rem;
+
+    i { margin-top: 2px; flex-shrink: 0; }
+  }
+
+  .gen-tracking-btn {
+    width: 100%;
+    padding: 0.85rem;
+    background: #003554;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+    &:active { opacity: 0.9; }
+  }
+
   .preview-card-title {
     margin: 0.5rem 0 0;
     font-size: 0.9rem;

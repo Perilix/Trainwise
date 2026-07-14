@@ -682,6 +682,39 @@
   </div>
 }
 
+<!-- Modale de suivi : génération en tâche de fond -->
+@if (showGenerationModal()) {
+  <div class="modal-overlay" (click)="showGenerationModal.set(false)">
+    <div class="modal gen-tracking-modal" (click)="$event.stopPropagation()">
+      <div class="gen-tracking-icon">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+      </div>
+      <h2 class="gen-tracking-title">On planifie tes séances</h2>
+      <p class="gen-tracking-subtitle">
+        Ton coach IA construit ton programme sur mesure à partir de ton profil,
+        ton historique et tes objectifs.
+      </p>
+
+      <div class="gen-tracking-progress">
+        <div class="gen-tracking-bar">
+          <div class="gen-tracking-fill" [style.width.%]="planGen.progress()"></div>
+        </div>
+        <span class="gen-tracking-percent">{{ planGen.progress() }}%</span>
+      </div>
+
+      <p class="gen-tracking-hint">
+        <i class="fa-solid fa-circle-info"></i>
+        Tu peux continuer à naviguer : la progression reste visible en bas de
+        l'écran et on te notifie dès que ton plan est prêt.
+      </p>
+
+      <button class="gen-tracking-btn" (click)="showGenerationModal.set(false)">
+        Continuer à naviguer
+      </button>
+    </div>
+  </div>
+}
+
 @if (isGenerating()) {
   <div class="gen-loader-overlay">
     <div class="gen-loader-card">
