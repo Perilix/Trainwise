@@ -7,6 +7,35 @@ const Competition = require('../models/competition.model');
 const Exercise = require('../models/exercise.model');
 const { getUpcomingCompetitionsForContext } = require('../utils/competitions');
 const aiPlanning = require('../services/aiPlanning.service');
+const { getIO, emitTrainCoinsUpdate } = require('../socket/index');
+const { createNotification } = require('./notification.controller');
+
+// Jobs de génération en cours (un par utilisateur, en mémoire)
+const generationJobs = new Map();
+
+const emitToUser = (userId, event, data) => {
+  const io = getIO();
+  if (io) io.to(`user:${userId}`).emit(event, data);
+};
+
+// Coût en coins d'une génération (doit rester aligné avec checkAIAccess(5) dans les routes)
+const PLAN_GENERATION_COIN_COST = 5;
+
+// Rembourse les coins si la génération échoue (uniquement si l'utilisateur n'est pas Pro)
+const refundGenerationCoins = async (userId) => {
+  try {
+    const user = await User.findById(userId);
+    if (!user) return;
+    const isPro = user.subscriptionStatus === 'pro' &&
+      user.subscriptionExpiry && new Date(user.subscriptionExpiry) > new Date();
+    if (isPro) return;
+    user.trainCoins += PLAN_GENERATION_COIN_COST;
+    await user.save();
+    emitTrainCoinsUpdate(user._id, { trainCoins: user.trainCoins });
+  } catch (e) {
+    console.error('Coin refund error:', e.message);
+  }
+};
 
 // Récupérer toutes les séances planifiées de l'utilisateur
 exports.getPlannedRuns = async (req, res) => {
@@ -385,18 +414,64 @@ exports.generatePlan = async (req, res) => {
 
     // Génération : API Claude en direct (prioritaire), fallback webhook n8n legacy
     if (aiPlanning.isConfigured()) {
-      // Catalogue d'exercices pour les séances muscu éventuelles
-      const exerciseCatalog = availableStrengthDates.length > 0
-        ? await Exercise.find({}).select('name primaryMuscle equipment difficulty').limit(120)
-        : [];
+      const userId = String(req.user._id);
 
-      const sessions = await aiPlanning.generateTrainingPlan(planningContext, exerciseCatalog);
-
-      if (!sessions.length) {
-        return res.status(500).json({ error: 'Erreur lors de la génération du plan' });
+      const existing = generationJobs.get(userId);
+      if (existing && existing.status === 'running') {
+        return res.status(409).json({ error: 'Une génération est déjà en cours' });
       }
 
-      return res.json({ message: 'Plan généré', sessions });
+      const job = {
+        id: Date.now().toString(36),
+        status: 'running',
+        progress: 2,
+        sessions: null,
+        error: null,
+        startedAt: new Date()
+      };
+      generationJobs.set(userId, job);
+
+      // Réponse immédiate : la génération tourne en tâche de fond,
+      // la progression et le résultat arrivent par socket (+ endpoint status)
+      res.status(202).json({ jobId: job.id, message: 'Génération lancée' });
+
+      (async () => {
+        try {
+          const exerciseCatalog = availableStrengthDates.length > 0
+            ? await Exercise.find({}).select('name primaryMuscle equipment difficulty').limit(120)
+            : [];
+
+          const sessions = await aiPlanning.generateTrainingPlan(planningContext, exerciseCatalog, (percent) => {
+            job.progress = percent;
+            emitToUser(userId, 'planGeneration:progress', { jobId: job.id, percent });
+          });
+
+          if (!sessions.length) throw new Error('Aucune séance générée');
+
+          job.status = 'done';
+          job.progress = 100;
+          job.sessions = sessions;
+          emitToUser(userId, 'planGeneration:done', { jobId: job.id, sessions });
+
+          await createNotification({
+            recipient: req.user._id,
+            sender: null,
+            type: 'session',
+            action: 'plan_generated',
+            title: 'Ton plan est prêt ! 🎉',
+            message: `${sessions.length} séance${sessions.length > 1 ? 's' : ''} t'attend${sessions.length > 1 ? 'ent' : ''} — ouvre le planning pour les valider.`,
+            actionUrl: '/planning'
+          });
+        } catch (err) {
+          console.error('Background plan generation error:', err.message);
+          job.status = 'error';
+          job.error = 'La génération a échoué. Tes TrainCoins ont été remboursés.';
+          await refundGenerationCoins(req.user._id);
+          emitToUser(userId, 'planGeneration:error', { jobId: job.id, error: job.error });
+        }
+      })();
+
+      return;
     }
 
     if (!process.env.N8N_PLANNING_WEBHOOK_URL) {
@@ -426,6 +501,18 @@ exports.generatePlan = async (req, res) => {
 const parseDateUTC = (dateStr) => {
   const [year, month, day] = dateStr.split('-').map(Number);
   return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+};
+
+// Statut du job de génération en cours (pour reprendre l'affichage après un reload)
+exports.getGenerationStatus = (req, res) => {
+  const job = generationJobs.get(String(req.user._id)) || null;
+  res.json({ job });
+};
+
+// Abandonner / nettoyer le job de génération courant
+exports.dismissGeneration = (req, res) => {
+  generationJobs.delete(String(req.user._id));
+  res.json({ success: true });
 };
 
 // Confirmer et sauvegarder les séances générées
@@ -486,6 +573,9 @@ exports.confirmPlan = async (req, res) => {
       await plannedRun.save();
       createdSessions.push(plannedRun);
     }
+
+    // Le plan est confirmé : le job de génération n'a plus de raison d'exister
+    generationJobs.delete(String(req.user._id));
 
     res.status(201).json({
       message: `${createdSessions.length} séances ajoutées au planning`,

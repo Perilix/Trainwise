@@ -246,9 +246,10 @@ const isConfigured = () => !!process.env.ANTHROPIC_API_KEY;
  * Génère un plan d'entraînement structuré.
  * @param {object} planningContext - contexte coureur (profil, historique, dates, compétitions)
  * @param {Array} exerciseCatalog - [{ _id, name, primaryMuscle, equipment, difficulty }]
+ * @param {Function} [onProgress] - callback(percent) appelé au fil du streaming (progression réelle : séances générées / attendues)
  * @returns {Array} sessions prêtes pour la preview (runBlocks résolus avec allures)
  */
-const generateTrainingPlan = async (planningContext, exerciseCatalog = []) => {
+const generateTrainingPlan = async (planningContext, exerciseCatalog = [], onProgress = null) => {
   const userContent = [
     'Voici le contexte complet du coureur. Génère son plan d\'entraînement.',
     '',
@@ -278,6 +279,22 @@ const generateTrainingPlan = async (planningContext, exerciseCatalog = []) => {
     output_config: { format: { type: 'json_schema', schema: planSchema } },
     messages: [{ role: 'user', content: userContent.join('\n') }]
   });
+
+  // Progression réelle : on compte les séances complétées dans le JSON streamé
+  if (onProgress) {
+    const expected = Math.max(1, planningContext.totalExpectedSessions || 1);
+    let accumulated = '';
+    let lastPercent = 0;
+    stream.on('text', (delta) => {
+      accumulated += delta;
+      const sessionsStarted = (accumulated.match(/"date"/g) || []).length;
+      const percent = Math.min(95, 5 + Math.round((sessionsStarted / expected) * 90));
+      if (percent > lastPercent) {
+        lastPercent = percent;
+        onProgress(percent);
+      }
+    });
+  }
 
   const message = await stream.finalMessage();
 

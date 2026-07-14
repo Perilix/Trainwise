@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed, ElementRef, ViewChild } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, effect, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -10,6 +10,7 @@ import { AthleteService } from '../../services/athlete.service';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 import { TourTooltipComponent, TourStep } from '../../components/tour-tooltip/tour-tooltip.component';
 import { SubscriptionService } from '../../services/subscription.service';
+import { PlanGenerationService } from '../../services/plan-generation.service';
 import { Competition, DISCIPLINE_LABELS } from '../../services/competition.service';
 
 interface CalendarDay {
@@ -209,6 +210,7 @@ export class PlanningComponent implements OnInit {
   weekDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
   private subscriptionService = inject(SubscriptionService);
+  planGen = inject(PlanGenerationService);
 
   constructor(
     private planningService: PlanningService,
@@ -217,7 +219,17 @@ export class PlanningComponent implements OnInit {
     private athleteService: AthleteService,
     private router: Router,
     private route: ActivatedRoute
-  ) {}
+  ) {
+    // Quand la génération de fond se termine et qu'on est sur le planning,
+    // ouvrir automatiquement la preview du plan
+    effect(() => {
+      const sessions = this.planGen.sessions();
+      if (this.planGen.status() === 'done' && sessions?.length && !this.showPreview()) {
+        this.previewSessions.set(sessions);
+        this.showPreview.set(true);
+      }
+    });
+  }
 
   private pendingOpenDay: string | null = null;
 
@@ -633,13 +645,24 @@ export class PlanningComponent implements OnInit {
     this.planningService.generatePlan(weeks, this.generateStartDate, dayConfig, forceOverwrite).subscribe({
       next: (response) => {
         this.isGenerating.set(false);
-        this.previewSessions.set(response.sessions);
-        this.showPreview.set(true);
+        if (response.jobId) {
+          // Génération en tâche de fond : la pastille globale suit la progression,
+          // l'utilisateur peut continuer à naviguer
+          this.planGen.start();
+          this.successMessage.set('Génération lancée — tu peux continuer à naviguer, on te prévient dès que ton plan est prêt 👌');
+          setTimeout(() => this.successMessage.set(null), 6000);
+        } else if (response.sessions) {
+          // Fallback legacy (n8n) : réponse synchrone
+          this.previewSessions.set(response.sessions);
+          this.showPreview.set(true);
+        }
       },
       error: (err) => {
         this.isGenerating.set(false);
         if (err.status === 402) {
           this.subscriptionService.openPaywall('generate');
+        } else if (err.status === 409) {
+          this.error.set('Une génération est déjà en cours — regarde la pastille en bas de l\'écran');
         } else {
           this.error.set(err.error?.error || 'Erreur lors de la génération');
         }
@@ -656,6 +679,7 @@ export class PlanningComponent implements OnInit {
         this.isConfirming.set(false);
         this.showPreview.set(false);
         this.previewSessions.set([]);
+        this.planGen.clear();
         this.successMessage.set(response.message);
         this.loadCalendar();
         setTimeout(() => this.successMessage.set(null), 5000);
@@ -671,6 +695,7 @@ export class PlanningComponent implements OnInit {
   cancelPreview() {
     this.showPreview.set(false);
     this.previewSessions.set([]);
+    this.planGen.clear();
   }
 
   formatPreviewDate(date: string | Date): string {

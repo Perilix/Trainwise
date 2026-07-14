@@ -68,7 +68,17 @@ export const RUNNING_SESSION_LABELS: Record<RunningSessionType, string> = {
 
 export interface GeneratePlanResponse {
   message: string;
-  sessions: PlannedSession[];
+  sessions?: PlannedSession[];
+  // Présent quand la génération tourne en tâche de fond (réponse 202)
+  jobId?: string;
+}
+
+export interface GenerationJob {
+  id: string;
+  status: 'running' | 'done' | 'error';
+  progress: number;
+  sessions: Partial<PlannedSession>[] | null;
+  error: string | null;
 }
 
 @Injectable({
@@ -119,6 +129,14 @@ export class PlanningService {
       dayConfig,
       forceOverwrite
     });
+  }
+
+  getGenerationStatus(): Observable<{ job: GenerationJob | null }> {
+    return this.http.get<{ job: GenerationJob | null }>(`${this.apiUrl}/generate/status`);
+  }
+
+  dismissGeneration(): Observable<{ success: boolean }> {
+    return this.http.delete<{ success: boolean }>(`${this.apiUrl}/generate/status`);
   }
 
   confirmPlan(sessions: Partial<PlannedSession>[]): Observable<GeneratePlanResponse> {

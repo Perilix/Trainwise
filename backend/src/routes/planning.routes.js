@@ -78,6 +78,8 @@ router.get('/calendar', planningController.getCalendarData);
  *         description: Server error
  */
 router.post('/generate', checkAIAccess(5), planningController.generatePlan);
+router.get('/generate/status', planningController.getGenerationStatus);
+router.delete('/generate/status', planningController.dismissGeneration);
 
 /**
  * @swagger

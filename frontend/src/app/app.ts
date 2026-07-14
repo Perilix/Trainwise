@@ -11,6 +11,8 @@ import { CoachBottomNavComponent } from './components/coach-bottom-nav/coach-bot
 import { CoachInvitationModalComponent } from './components/coach-invitation-modal/coach-invitation-modal.component';
 import { OnboardingComponent } from './components/onboarding/onboarding.component';
 import { PaywallComponent } from './components/paywall/paywall.component';
+import { PlanGenerationIndicatorComponent } from './components/plan-generation-indicator/plan-generation-indicator.component';
+import { PlanGenerationService } from './services/plan-generation.service';
 import { AuthService } from './services/auth.service';
 import { CoachInvitationModalService } from './services/coach-invitation-modal.service';
 import { OnboardingService } from './services/onboarding.service';
@@ -20,7 +22,7 @@ import { PushNotificationService } from './services/push-notification.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, SidebarComponent, BottomNavComponent, CoachBottomNavComponent, CoachInvitationModalComponent, OnboardingComponent, PaywallComponent],
+  imports: [RouterOutlet, SidebarComponent, BottomNavComponent, CoachBottomNavComponent, CoachInvitationModalComponent, OnboardingComponent, PaywallComponent, PlanGenerationIndicatorComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
@@ -32,6 +34,7 @@ export class App {
   private athleteService = inject(AthleteService);
   private router = inject(Router);
   private pushNotificationService = inject(PushNotificationService);
+  private planGenerationService = inject(PlanGenerationService);
 
   isKeyboardOpen = signal(false);
 
@@ -67,6 +70,8 @@ export class App {
         revenueCatInitialized = true;
         this.pushNotificationService.initializePushNotifications().catch(() => {});
         this.subscriptionService.initRevenueCat(user.id);
+        // Reprendre l'affichage d'une génération de plan en cours (après reload/relogin)
+        this.planGenerationService.resume();
         if (!Capacitor.isNativePlatform()) {
           // Sur web, pas de RevenueCat : rafraîchir l'état d'abonnement/coins depuis le backend
           this.subscriptionService.refreshStatus();

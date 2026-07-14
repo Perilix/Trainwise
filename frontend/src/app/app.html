@@ -33,4 +33,7 @@
 
 @if (subscriptionService.showPaywall()) {
   <app-paywall></app-paywall>
+
+  <!-- Suivi global de la génération de plan IA (tâche de fond) -->
+  <app-plan-generation-indicator></app-plan-generation-indicator>
 }
