@@ -1,5 +1,6 @@
 const Anthropic = require('@anthropic-ai/sdk');
 const { PACE_ZONES, ZONE_KEYS } = require('../constants/paceZones');
+const { renderLibraryForPrompt } = require('../constants/workoutLibrary');
 
 // Génération de plan d'entraînement par appel direct à l'API Claude.
 // Le modèle raisonne comme un coach : il choisit des zones d'allure (%VMA),
@@ -192,7 +193,11 @@ const zoneDoc = ZONE_KEYS
 const SYSTEM_PROMPT = `Tu es un coach expert en course à pied et préparation physique (diplômé STAPS, spécialiste de l'entraînement structuré). Tu conçois des plans d'entraînement personnalisés pour l'application Trainwise.
 
 Principes de programmation que tu appliques systématiquement :
-- Périodisation : si une compétition approche, oriente le plan vers elle (spécificité croissante, affûtage la dernière semaine avant la course).
+- Périodisation : le contexte fournit "preparation" (phase calculée + semaines avant l'objectif principal). Applique strictement :
+  · generale (>12 semaines ou pas d'objectif) : construis la base — volume, VMA courte, côtes, seuil ; sortie longue simple.
+  · specifique (4-12 semaines) : c'est LA fenêtre des [SÉANCE CLÉ] de l'objectif (utilise celles taguées avec la distance de la course) — allures cibles, sorties longues spécifiques.
+  · affutage (<4 semaines) : réduis le volume de 30 à 50%, garde de l'intensité courte (rappel allure course), AUCUNE séance épuisante à moins de 10 jours de la course.
+  · entretien (pas d'objectif) : varie les stimuli, développe la base.
 - Progressivité : le volume hebdomadaire ne doit pas dépasser ~+10% par rapport à la moyenne récente du coureur. Ne surestime jamais le niveau.
 - Polarisation : la majorité du volume en endurance fondamentale ; 1 à 2 séances de qualité par semaine maximum selon le niveau et la fréquence.
 - Récupération : jamais deux séances de qualité consécutives ; après une sortie longue, séance facile ou repos.
@@ -206,6 +211,15 @@ Structure des séances running — TOUJOURS en blocs structurés :
 
 Zones d'allure disponibles (tu choisis la zone et un % VMA précis, le serveur calcule l'allure exacte) :
 ${zoneDoc}
+
+${renderLibraryForPrompt()}
+
+Utilisation de la bibliothèque :
+- Compose chaque séance de qualité à partir d'une entrée de la bibliothèque, adaptée au niveau et au volume du coureur. Tu peux ajuster répétitions et durées, pas la nature de la séance.
+- REPORT EXACT DES INTENSITÉS : quand une séance indique un %VMA (ex: "à 95% VMA"), reporte EXACTEMENT ce pourcentage dans paceVmaPercent du bloc correspondant, et choisis la zone qui englobe ce pourcentage. Pour une fourchette (ex: "90-95%"), choisis un pourcentage précis dans la fourchette selon le niveau du coureur. Le serveur calcule l'allure réelle depuis la VMA du profil — tu ne calcules JAMAIS d'allure toi-même.
+- Les récupérations indiquées en mètres (ex: "100m trot") deviennent des blocs recovery en mode distance.
+- Respecte les tags : une séance taguée "specifique" pour marathon ne se place pas en phase générale d'une prépa 5K.
+- Variété OBLIGATOIRE : le contexte liste les séances récentes (recentSessions). Ne reprends jamais la même structure de séance de qualité deux semaines de suite — fais tourner la bibliothèque.
 
 Séances de musculation (si des dates strength sont fournies) :
 - Choisis 4 à 7 exercices dans le catalogue fourni (utilise les IDs exacts), cohérents avec le sessionType, le niveau et l'objectif du pratiquant.

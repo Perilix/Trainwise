@@ -317,6 +317,26 @@ exports.generatePlan = async (req, res) => {
 
     const upcomingCompetitions = await getUpcomingCompetitionsForContext(req.user._id);
 
+    // Phase de préparation calculée côté serveur (l'IA ne la déduit pas elle-même).
+    // Objectif de référence : la compétition priorité A la plus proche, sinon la plus proche.
+    const mainRace = upcomingCompetitions.find(c => c.priority === 'A') || upcomingCompetitions[0] || null;
+    let preparation = { phase: 'entretien', weeksToRace: null, mainRace: null };
+    if (mainRace) {
+      const weeksToRace = Math.max(0, Math.ceil((new Date(mainRace.date) - new Date()) / (7 * 24 * 3600 * 1000)));
+      let phase = 'generale';
+      if (weeksToRace < 4) phase = 'affutage';
+      else if (weeksToRace <= 12) phase = 'specifique';
+      preparation = { phase, weeksToRace, mainRace: { name: mainRace.name, date: mainRace.date, discipline: mainRace.discipline, distance: mainRace.distance, targetTime: mainRace.targetTime } };
+    }
+
+    // Séances des 4 dernières semaines (planifiées et réalisées) pour éviter les répétitions
+    const fourWeeksAgoPlanned = new Date();
+    fourWeeksAgoPlanned.setDate(fourWeeksAgoPlanned.getDate() - 28);
+    const recentPlanned = await PlannedRun.find({
+      user: req.user._id,
+      date: { $gte: fourWeeksAgoPlanned }
+    }).select('date sessionType title status').sort({ date: -1 }).limit(20);
+
     // Construire le contexte pour l'IA
     const planningContext = {
       runner: {
@@ -333,6 +353,13 @@ exports.generatePlan = async (req, res) => {
         strengthType: user.strengthType || null
       },
       upcomingCompetitions,
+      preparation,
+      recentSessions: recentPlanned.map(p => ({
+        date: p.date.toISOString().split('T')[0],
+        sessionType: p.sessionType,
+        title: p.title || null,
+        status: p.status
+      })),
       paceTargets,
       // Dates séparées par type
       runningDates: availableRunningDates,
