@@ -33,7 +33,9 @@
 
 @if (subscriptionService.showPaywall()) {
   <app-paywall></app-paywall>
+}
 
-  <!-- Suivi global de la génération de plan IA (tâche de fond) -->
+<!-- Suivi global de la génération de plan IA (tâche de fond) — visible partout -->
+@if (authService.isAuthenticated()) {
   <app-plan-generation-indicator></app-plan-generation-indicator>
 }

@@ -644,34 +644,43 @@ export class PlanningComponent implements OnInit {
       }
     }
 
-    this.isGenerating.set(true);
     this.error.set(null);
     this.successMessage.set(null);
     this.showGenerateOptions.set(false);
     this.showOverwriteConfirm.set(false);
 
+    // Ouvrir immédiatement la modale de suivi (pas de loader plein écran)
+    this.planGen.start();
+    this.showGenerationModal.set(true);
+
     this.planningService.generatePlan(weeks, this.generateStartDate, dayConfig, forceOverwrite).subscribe({
       next: (response) => {
-        this.isGenerating.set(false);
         if (response.jobId) {
-          // Génération en tâche de fond : modale de suivi + pastille globale,
-          // l'utilisateur peut continuer à naviguer
-          this.planGen.start();
-          this.showGenerationModal.set(true);
-        } else if (response.sessions) {
+          // Génération en tâche de fond : la modale et la pastille globale
+          // suivent la progression envoyée par socket
+          return;
+        }
+        if (response.sessions) {
           // Fallback legacy (n8n) : réponse synchrone
+          this.showGenerationModal.set(false);
+          this.planGen.clear();
           this.previewSessions.set(response.sessions);
           this.showPreview.set(true);
         }
       },
       error: (err) => {
-        this.isGenerating.set(false);
-        if (err.status === 402) {
-          this.subscriptionService.openPaywall('generate');
-        } else if (err.status === 409) {
+        this.showGenerationModal.set(false);
+        if (err.status === 409) {
+          // Une génération tourne déjà : on se recale sur son état réel
+          this.planGen.resume();
           this.error.set('Une génération est déjà en cours — regarde la pastille en bas de l\'écran');
         } else {
-          this.error.set(err.error?.error || 'Erreur lors de la génération');
+          this.planGen.clear();
+          if (err.status === 402) {
+            this.subscriptionService.openPaywall('generate');
+          } else {
+            this.error.set(err.error?.error || 'Erreur lors de la génération');
+          }
         }
         console.error(err);
       }
