@@ -220,11 +220,36 @@
                 Analyser avec l'IA
               }
             </button>
+          } @else {
+            <button
+              class="btn-analyze btn-reanalyze"
+              (click)="analyzeRun()"
+              [disabled]="isAnalyzing()"
+              title="Relancer une analyse IA (1 TrainCoin)">
+              @if (isAnalyzing()) {
+                Analyse en cours...
+              } @else {
+                <i class="fa-solid fa-arrow-rotate-right"></i> Relancer l'analyse
+              }
+            </button>
           }
         </div>
 
         @if (analyzeSuccess()) {
           <div class="success-message">Analyse terminée !</div>
+        }
+
+        @if (isAnalyzing()) {
+          <div class="analysis-loading">
+            <div class="analysis-loading-row">
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+              <span>Ton coach IA analyse ta séance…</span>
+              <strong>{{ analysisProgress() }}%</strong>
+            </div>
+            <div class="analysis-progress-bar">
+              <div class="analysis-progress-fill" [style.width.%]="analysisProgress()"></div>
+            </div>
+          </div>
         }
 
         @if (run()?.analysis) {

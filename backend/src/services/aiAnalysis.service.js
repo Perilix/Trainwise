@@ -41,7 +41,7 @@ Format IMPÉRATIF :
 - 3 courts paragraphes maximum, séparés par des sauts de ligne. 180 mots maximum au total.
 - Pas de formule d'introduction : entre directement dans le vif.`;
 
-const callAnalysis = async (systemPrompt, context) => {
+const callAnalysis = async (systemPrompt, context, onProgress = null) => {
   const stream = getClient().messages.stream({
     model: MODEL,
     max_tokens: 2000,
@@ -52,6 +52,21 @@ const callAnalysis = async (systemPrompt, context) => {
       content: `Voici les données de la séance et le contexte complet. Analyse la séance.\n\n${JSON.stringify(context, null, 2)}`
     }]
   });
+
+  // Progression réelle : caractères générés vs longueur cible (~180 mots ≈ 1100 car.)
+  if (onProgress) {
+    const EXPECTED_CHARS = 1100;
+    let chars = 0;
+    let lastPercent = 0;
+    stream.on('text', (delta) => {
+      chars += delta.length;
+      const percent = Math.min(95, Math.max(3, Math.round((chars / EXPECTED_CHARS) * 95)));
+      if (percent > lastPercent) {
+        lastPercent = percent;
+        onProgress(percent);
+      }
+    });
+  }
 
   const message = await stream.finalMessage();
 
@@ -65,9 +80,9 @@ const callAnalysis = async (systemPrompt, context) => {
 };
 
 /** Analyse d'une course (contexte = enrichedContext ou blocksContext existants) */
-const analyzeRun = (context) => callAnalysis(RUN_SYSTEM_PROMPT, context);
+const analyzeRun = (context, onProgress = null) => callAnalysis(RUN_SYSTEM_PROMPT, context, onProgress);
 
 /** Analyse d'une séance de musculation */
-const analyzeStrengthSession = (context) => callAnalysis(STRENGTH_SYSTEM_PROMPT, context);
+const analyzeStrengthSession = (context, onProgress = null) => callAnalysis(STRENGTH_SYSTEM_PROMPT, context, onProgress);
 
 module.exports = { analyzeRun, analyzeStrengthSession, isConfigured };

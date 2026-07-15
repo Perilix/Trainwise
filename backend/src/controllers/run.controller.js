@@ -8,6 +8,7 @@ const { athleteHasCoach } = require('../services/coachRelation.service');
 const { getUpcomingCompetitionsForContext } = require('../utils/competitions');
 const { mapRunBlockPlain } = require('../utils/runBlockMapper');
 const aiAnalysis = require('../services/aiAnalysis.service');
+const { getIO } = require('../socket/index');
 
 // Helper: Calculer les statistiques des courses récentes
 const calculateStats = (runs) => {
@@ -462,7 +463,11 @@ exports.analyzeRun = async (req, res) => {
 
     // API Claude en direct (prioritaire), fallback webhook n8n legacy
     if (aiAnalysis.isConfigured()) {
-      const analysis = await aiAnalysis.analyzeRun(enrichedContext);
+      const userId = String(req.user._id);
+      const analysis = await aiAnalysis.analyzeRun(enrichedContext, (percent) => {
+        const io = getIO();
+        if (io) io.to(`user:${userId}`).emit('analysis:progress', { targetId: String(run._id), percent });
+      });
       run.analysis = analysis;
       run.analyzedAt = new Date();
       await run.save();

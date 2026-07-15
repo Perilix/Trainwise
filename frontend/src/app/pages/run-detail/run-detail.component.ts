@@ -10,6 +10,7 @@ import { StravaInsightsComponent } from '../../components/strava-insights/strava
 import { TourTooltipComponent, TourStep } from '../../components/tour-tooltip/tour-tooltip.component';
 import { SubscriptionService } from '../../services/subscription.service';
 import { AthleteService } from '../../services/athlete.service';
+import { SocketService } from '../../services/socket.service';
 import * as L from 'leaflet';
 
 // Fix Leaflet default icon issue
@@ -88,6 +89,10 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   private map: L.Map | null = null;
   private feelingTimer: ReturnType<typeof setTimeout> | null = null;
   private subscriptionService = inject(SubscriptionService);
+  private socketService = inject(SocketService);
+
+  // Progression réelle de l'analyse IA en cours (streaming côté backend)
+  analysisProgress = signal(0);
 
   constructor(
     private route: ActivatedRoute,
@@ -99,6 +104,13 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   ) {}
 
   ngOnInit() {
+    // Progression de l'analyse IA poussée par socket pendant le streaming
+    this.socketService.on<{ targetId: string; percent: number }>('analysis:progress').subscribe((data) => {
+      if (this.isAnalyzing() && data.targetId === this.run()?._id) {
+        this.analysisProgress.set(data.percent);
+      }
+    });
+
     this.athleteService.getCurrentCoach().subscribe({
       next: (coach) => this.hasCoach.set(!!coach),
       error: () => this.hasCoach.set(false)
@@ -380,8 +392,10 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!run?._id) return;
 
     this.isAnalyzing.set(true);
+    this.analysisProgress.set(3);
     this.runService.analyzeRun(run._id).subscribe({
       next: (updatedRun) => {
+        this.analysisProgress.set(100);
         this.run.set(updatedRun);
         this.isAnalyzing.set(false);
         this.analyzeSuccess.set(true);
