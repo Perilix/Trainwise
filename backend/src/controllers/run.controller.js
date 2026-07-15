@@ -7,6 +7,7 @@ const { createNotification } = require('./notification.controller');
 const { athleteHasCoach } = require('../services/coachRelation.service');
 const { getUpcomingCompetitionsForContext } = require('../utils/competitions');
 const { mapRunBlockPlain } = require('../utils/runBlockMapper');
+const aiAnalysis = require('../services/aiAnalysis.service');
 
 // Helper: Calculer les statistiques des courses récentes
 const calculateStats = (runs) => {
@@ -224,9 +225,9 @@ exports.createRun = async (req, res) => {
       }
     }
 
-    // Nouveau webhook : analyse qualitative basée sur les blocs (si présents)
+    // Analyse qualitative basée sur les blocs (si présents) : API Claude en direct, fallback n8n
     const hasBlocks = (run.runBlocks?.length || run.plannedSnapshot?.runBlocks?.length);
-    if (!skipAI && process.env.N8N_BLOCKS_WEBHOOK_URL && hasBlocks) {
+    if (!skipAI && (aiAnalysis.isConfigured() || process.env.N8N_BLOCKS_WEBHOOK_URL) && hasBlocks) {
       try {
         const user = await User.findById(req.user._id);
 
@@ -311,15 +312,21 @@ exports.createRun = async (req, res) => {
           }
         };
 
-        const blocksResponse = await axios.post(process.env.N8N_BLOCKS_WEBHOOK_URL, blocksContext);
-
-        if (blocksResponse.data && blocksResponse.data.analysis) {
-          run.analysis = blocksResponse.data.analysis;
+        if (aiAnalysis.isConfigured()) {
+          const analysis = await aiAnalysis.analyzeRun(blocksContext);
+          run.analysis = analysis;
           run.analyzedAt = new Date();
           await run.save();
+        } else {
+          const blocksResponse = await axios.post(process.env.N8N_BLOCKS_WEBHOOK_URL, blocksContext);
+          if (blocksResponse.data && blocksResponse.data.analysis) {
+            run.analysis = blocksResponse.data.analysis;
+            run.analyzedAt = new Date();
+            await run.save();
+          }
         }
       } catch (blocksWebhookError) {
-        console.error('N8N blocks webhook error:', blocksWebhookError.message);
+        console.error('Blocks analysis error:', blocksWebhookError.message);
       }
     }
 
@@ -370,8 +377,8 @@ exports.analyzeRun = async (req, res) => {
       return res.json(run);
     }
 
-    if (!process.env.N8N_WEBHOOK_URL) {
-      return res.status(400).json({ error: 'Webhook IA non configuré' });
+    if (!aiAnalysis.isConfigured() && !process.env.N8N_WEBHOOK_URL) {
+      return res.status(400).json({ error: 'Analyse IA non configurée' });
     }
 
     // Récupérer les données utilisateur complètes
@@ -453,12 +460,19 @@ exports.analyzeRun = async (req, res) => {
       }
     };
 
-    const response = await axios.post(process.env.N8N_WEBHOOK_URL, enrichedContext);
-
-    if (response.data && response.data.analysis) {
-      run.analysis = response.data.analysis;
+    // API Claude en direct (prioritaire), fallback webhook n8n legacy
+    if (aiAnalysis.isConfigured()) {
+      const analysis = await aiAnalysis.analyzeRun(enrichedContext);
+      run.analysis = analysis;
       run.analyzedAt = new Date();
       await run.save();
+    } else {
+      const response = await axios.post(process.env.N8N_WEBHOOK_URL, enrichedContext);
+      if (response.data && response.data.analysis) {
+        run.analysis = response.data.analysis;
+        run.analyzedAt = new Date();
+        await run.save();
+      }
     }
 
     res.json(run);

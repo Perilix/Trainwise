@@ -6,6 +6,7 @@ const { autoCompletePlannedSessions } = require('../services/planningAutoComplet
 const { createNotification } = require('./notification.controller');
 const { athleteHasCoach } = require('../services/coachRelation.service');
 const { getUpcomingCompetitionsForContext } = require('../utils/competitions');
+const aiAnalysis = require('../services/aiAnalysis.service');
 
 // Créer une séance de muscu
 exports.createSession = async (req, res) => {
@@ -181,8 +182,8 @@ exports.analyzeSession = async (req, res) => {
     }
 
     const webhookUrl = process.env.N8N_STRENGTH_WEBHOOK_URL || process.env.N8N_WEBHOOK_URL;
-    if (!webhookUrl) {
-      return res.status(400).json({ error: 'Webhook IA non configuré' });
+    if (!aiAnalysis.isConfigured() && !webhookUrl) {
+      return res.status(400).json({ error: 'Analyse IA non configurée' });
     }
 
     const user = await User.findById(req.user._id);
@@ -254,12 +255,19 @@ exports.analyzeSession = async (req, res) => {
       } : null
     };
 
-    const response = await axios.post(webhookUrl, enrichedContext);
-
-    if (response.data && response.data.analysis) {
-      session.analysis = response.data.analysis;
+    // API Claude en direct (prioritaire), fallback webhook n8n legacy
+    if (aiAnalysis.isConfigured()) {
+      const analysis = await aiAnalysis.analyzeStrengthSession(enrichedContext);
+      session.analysis = analysis;
       session.analyzedAt = new Date();
       await session.save();
+    } else {
+      const response = await axios.post(webhookUrl, enrichedContext);
+      if (response.data && response.data.analysis) {
+        session.analysis = response.data.analysis;
+        session.analyzedAt = new Date();
+        await session.save();
+      }
     }
 
     res.json(session);
