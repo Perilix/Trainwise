@@ -874,3 +874,30 @@
   background: linear-gradient(90deg, #00a6fb, #4ade80);
   transition: width 0.4s ease;
 }
+
+// Texte de l'analyse qui s'écrit en direct pendant le streaming
+.analysis-stream {
+  margin: 0.75rem 0 0;
+  color: #333;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.stream-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: #00a6fb;
+  animation: streamCaretBlink 0.9s steps(2, start) infinite;
+}
+
+@keyframes streamCaretBlink {
+  to { visibility: hidden; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stream-caret { animation: none; }
+}

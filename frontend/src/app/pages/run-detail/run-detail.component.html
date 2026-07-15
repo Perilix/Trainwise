@@ -249,6 +249,9 @@
             <div class="analysis-progress-bar">
               <div class="analysis-progress-fill" [style.width.%]="analysisProgress()"></div>
             </div>
+            @if (analysisStreamText()) {
+              <p class="analysis-stream">{{ analysisStreamText() }}<span class="stream-caret"></span></p>
+            }
           </div>
         }
 
