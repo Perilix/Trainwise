@@ -54,17 +54,15 @@ const callAnalysis = async (systemPrompt, context, onProgress = null) => {
   });
 
   // Progression réelle : caractères générés vs longueur cible (~180 mots ≈ 1100 car.)
+  // On transmet aussi le texte accumulé à chaque delta pour l'affichage en direct
+  // (texte complet plutôt que delta : robuste si un événement socket se perd).
   if (onProgress) {
     const EXPECTED_CHARS = 1100;
-    let chars = 0;
-    let lastPercent = 0;
+    let text = '';
     stream.on('text', (delta) => {
-      chars += delta.length;
-      const percent = Math.min(95, Math.max(3, Math.round((chars / EXPECTED_CHARS) * 95)));
-      if (percent > lastPercent) {
-        lastPercent = percent;
-        onProgress(percent);
-      }
+      text += delta;
+      const percent = Math.min(95, Math.max(3, Math.round((text.length / EXPECTED_CHARS) * 95)));
+      onProgress(percent, text);
     });
   }
 

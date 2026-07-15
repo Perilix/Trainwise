@@ -464,9 +464,9 @@ exports.analyzeRun = async (req, res) => {
     // API Claude en direct (prioritaire), fallback webhook n8n legacy
     if (aiAnalysis.isConfigured()) {
       const userId = String(req.user._id);
-      const analysis = await aiAnalysis.analyzeRun(enrichedContext, (percent) => {
+      const analysis = await aiAnalysis.analyzeRun(enrichedContext, (percent, text) => {
         const io = getIO();
-        if (io) io.to(`user:${userId}`).emit('analysis:progress', { targetId: String(run._id), percent });
+        if (io) io.to(`user:${userId}`).emit('analysis:progress', { targetId: String(run._id), percent, text });
       });
       run.analysis = analysis;
       run.analyzedAt = new Date();

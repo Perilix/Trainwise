@@ -93,6 +93,8 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Progression réelle de l'analyse IA en cours (streaming côté backend)
   analysisProgress = signal(0);
+  // Texte de l'analyse affiché en direct au fil du streaming
+  analysisStreamText = signal('');
 
   constructor(
     private route: ActivatedRoute,
@@ -105,9 +107,10 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit() {
     // Progression de l'analyse IA poussée par socket pendant le streaming
-    this.socketService.on<{ targetId: string; percent: number }>('analysis:progress').subscribe((data) => {
+    this.socketService.on<{ targetId: string; percent: number; text?: string }>('analysis:progress').subscribe((data) => {
       if (this.isAnalyzing() && data.targetId === this.run()?._id) {
         this.analysisProgress.set(data.percent);
+        if (data.text) this.analysisStreamText.set(data.text);
       }
     });
 
@@ -393,6 +396,7 @@ export class RunDetailComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.isAnalyzing.set(true);
     this.analysisProgress.set(3);
+    this.analysisStreamText.set('');
     this.runService.analyzeRun(run._id).subscribe({
       next: (updatedRun) => {
         this.analysisProgress.set(100);
