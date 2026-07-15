@@ -4,7 +4,7 @@ const Anthropic = require('@anthropic-ai/sdk');
 // Remplace les webhooks n8n. La sortie est du texte brut (affiché tel quel
 // dans l'app, pas de markdown).
 
-const MODEL = 'claude-opus-4-8';
+const MODEL = 'claude-sonnet-5';
 
 let client = null;
 const getClient = () => {
@@ -46,6 +46,7 @@ const callAnalysis = async (systemPrompt, context, onProgress = null) => {
     model: MODEL,
     max_tokens: 2000,
     thinking: { type: 'adaptive' },
+    output_config: { effort: 'medium' },
     system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
     messages: [{
       role: 'user',

@@ -7,7 +7,7 @@ const { renderLibraryForPrompt } = require('../constants/workoutLibrary');
 // et le backend résout les allures exactes depuis la VMA de l'athlète —
 // le modèle ne fait jamais l'arithmétique lui-même.
 
-const MODEL = 'claude-opus-4-8';
+const MODEL = 'claude-sonnet-5';
 
 // ---- Schéma de sortie structurée -------------------------------------------
 // Contrainte API : max 16 champs union/nullable par schéma → on n'utilise AUCUN
@@ -276,7 +276,7 @@ const generateTrainingPlan = async (planningContext, exerciseCatalog = [], onPro
     max_tokens: 32000,
     thinking: { type: 'adaptive' },
     system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
-    output_config: { format: { type: 'json_schema', schema: planSchema } },
+    output_config: { effort: 'high', format: { type: 'json_schema', schema: planSchema } },
     messages: [{ role: 'user', content: userContent.join('\n') }]
   });
 
