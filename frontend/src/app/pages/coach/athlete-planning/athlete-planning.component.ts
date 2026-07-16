@@ -214,6 +214,7 @@ export class AthletePlanningComponent implements OnInit {
     this.coachService.getAthleteCalendar(this.athleteId, this.currentMonth(), this.currentYear()).subscribe({
       next: (data) => {
         this.buildCalendar(data);
+        this.syncSelectedDay();
       },
       error: (err) => {
         this.error.set('Erreur lors du chargement du calendrier');
@@ -514,8 +515,8 @@ export class AthletePlanningComponent implements OnInit {
         this.isAssigningTemplate.set(null);
         this.isAddingSession.set(false);
         this.successMessage.set(`« ${template.name} » planifiée`);
+        // loadCalendar() resynchronise la modale du jour une fois les données reçues
         this.loadCalendar();
-        this.refreshSelectedDay();
         setTimeout(() => this.successMessage.set(null), 3000);
       },
       error: (err) => {
@@ -592,7 +593,6 @@ export class AthletePlanningComponent implements OnInit {
         this.resetNewSession();
         this.successMessage.set('Séance créée avec succès');
         this.loadCalendar();
-        this.refreshSelectedDay();
         setTimeout(() => this.successMessage.set(null), 3000);
       },
       error: (err) => {
@@ -607,11 +607,20 @@ export class AthletePlanningComponent implements OnInit {
     if (!plannedRun._id) return;
     if (!confirm('Supprimer cette séance ?')) return;
 
+    // Retrait optimiste : la séance disparaît tout de suite, le reload confirme derrière
+    const sessionId = plannedRun._id;
+    const day = this.selectedDay();
+    if (day) {
+      this.selectedDay.set({ ...day, plannedRuns: day.plannedRuns.filter(p => p._id !== sessionId) });
+    }
+    this.calendarDays.update(days => days.map(d =>
+      ({ ...d, plannedRuns: d.plannedRuns.filter(p => p._id !== sessionId) })
+    ));
+
     this.coachService.deleteAthleteSession(this.athleteId, plannedRun._id).subscribe({
       next: () => {
         this.successMessage.set('Séance supprimée');
         this.loadCalendar();
-        this.refreshSelectedDay();
         setTimeout(() => this.successMessage.set(null), 3000);
       },
       error: (err) => {
@@ -621,21 +630,17 @@ export class AthletePlanningComponent implements OnInit {
     });
   }
 
-  refreshSelectedDay() {
+  // Resynchronise la modale du jour ouvert avec les données fraîches du calendrier.
+  // Appelé depuis le callback de loadCalendar() : pas de setTimeout, donc pas de
+  // course entre le rechargement réseau et le rafraîchissement de la modale.
+  private syncSelectedDay() {
     const day = this.selectedDay();
     if (!day) return;
-
-    setTimeout(() => {
-      const updatedDays = this.calendarDays();
-      const refreshedDay = updatedDays.find(d =>
-        d.date.toISOString().split('T')[0] === day.date.toISOString().split('T')[0]
-      );
-      if (refreshedDay) {
-        this.selectedDay.set(refreshedDay);
-      } else {
-        this.closeDetail();
-      }
-    }, 300);
+    const key = this.dateKey(day.date);
+    const refreshedDay = this.calendarDays().find(d => this.dateKey(d.date) === key);
+    if (refreshedDay) {
+      this.selectedDay.set(refreshedDay);
+    }
   }
 
   getSessionTypeLabel(type: string): string {

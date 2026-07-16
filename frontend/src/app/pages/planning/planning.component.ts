@@ -309,14 +309,17 @@ export class PlanningComponent implements OnInit {
     });
   }
 
-  loadCalendar() {
-    this.isLoading.set(true);
+  // silent = true : recharge les données sans afficher le loader plein grille
+  // (utilisé après une mise à jour optimiste pour éviter le flash "Chargement...")
+  loadCalendar(silent = false) {
+    if (!silent) this.isLoading.set(true);
     this.error.set(null);
 
     this.planningService.getCalendarData(this.currentMonth(), this.currentYear()).subscribe({
       next: (data) => {
         this.buildCalendar(data);
         this.isLoading.set(false);
+        this.syncSelectedDay();
         if (this.pendingOpenDay) {
           const target = this.pendingOpenDay;
           this.pendingOpenDay = null;
@@ -781,12 +784,19 @@ export class PlanningComponent implements OnInit {
     if (!session?._id) return;
     this.sessionToDelete.set(null);
 
+    // Retrait optimiste : la séance disparaît tout de suite, le reload confirme derrière
+    this.removeFromSelectedDay(day => ({
+      ...day,
+      plannedRuns: day.plannedRuns.filter(p => p._id !== session._id)
+    }));
+
     this.planningService.deletePlannedSession(session._id).subscribe({
-      next: () => {
+      next: () => this.loadCalendar(true),
+      error: (err) => {
+        console.error(err);
+        this.error.set('Erreur lors de la suppression de la séance');
         this.loadCalendar();
-        this.refreshSelectedDay();
-      },
-      error: (err) => console.error(err)
+      }
     });
   }
 
@@ -799,12 +809,18 @@ export class PlanningComponent implements OnInit {
     if (!run?._id) return;
     this.runToDelete.set(null);
 
+    this.removeFromSelectedDay(day => ({
+      ...day,
+      runs: day.runs.filter(r => r._id !== run._id)
+    }));
+
     this.runService.deleteRun(run._id).subscribe({
-      next: () => {
+      next: () => this.loadCalendar(true),
+      error: (err) => {
+        console.error(err);
+        this.error.set('Erreur lors de la suppression de la course');
         this.loadCalendar();
-        this.refreshSelectedDay();
-      },
-      error: (err) => console.error(err)
+      }
     });
   }
 
@@ -817,30 +833,42 @@ export class PlanningComponent implements OnInit {
     if (!session?._id) return;
     this.strengthSessionToDelete.set(null);
 
+    this.removeFromSelectedDay(day => ({
+      ...day,
+      strengthSessions: day.strengthSessions.filter(s => s._id !== session._id)
+    }));
+
     this.strengthService.deleteSession(session._id).subscribe({
-      next: () => {
+      next: () => this.loadCalendar(true),
+      error: (err) => {
+        console.error(err);
+        this.error.set('Erreur lors de la suppression de la séance');
         this.loadCalendar();
-        this.refreshSelectedDay();
-      },
-      error: (err) => console.error(err)
+      }
     });
   }
 
-  refreshSelectedDay() {
+  // Resynchronise la modale du jour ouvert avec les données fraîches du calendrier.
+  // Appelé depuis le callback de loadCalendar() : pas de setTimeout, donc pas de
+  // course entre le rechargement réseau et le rafraîchissement de la modale.
+  private syncSelectedDay() {
     const day = this.selectedDay();
     if (!day) return;
+    const key = this.dateKey(day.date);
+    const refreshedDay = this.calendarDays().find(d => this.dateKey(d.date) === key);
+    if (refreshedDay) {
+      this.selectedDay.set(refreshedDay);
+    }
+  }
 
-    setTimeout(() => {
-      const updatedDays = this.calendarDays();
-      const refreshedDay = updatedDays.find(d =>
-        d.date.toISOString().split('T')[0] === day.date.toISOString().split('T')[0]
-      );
-      if (refreshedDay) {
-        this.selectedDay.set(refreshedDay);
-      } else {
-        this.closeDetail();
-      }
-    }, 300);
+  // Retire immédiatement un élément supprimé de la modale du jour et du calendrier,
+  // sans attendre le rechargement réseau (fluidité sur mobile).
+  private removeFromSelectedDay(patch: (day: CalendarDay) => CalendarDay) {
+    const day = this.selectedDay();
+    if (day) {
+      this.selectedDay.set(patch(day));
+    }
+    this.calendarDays.update(days => days.map(d => patch(d)));
   }
 
   getSessionTypeLabel(type: string): string {
@@ -946,17 +974,8 @@ export class PlanningComponent implements OnInit {
         this.isSaving.set(false);
         this.isAddingSession.set(false);
         this.resetNewSession();
+        // loadCalendar() resynchronise la modale du jour une fois les données reçues
         this.loadCalendar();
-        // Refresh the selected day data
-        setTimeout(() => {
-          const updatedDays = this.calendarDays();
-          const refreshedDay = updatedDays.find(d =>
-            d.date.toISOString().split('T')[0] === day.date.toISOString().split('T')[0]
-          );
-          if (refreshedDay) {
-            this.selectedDay.set(refreshedDay);
-          }
-        }, 300);
       },
       error: (err) => {
         this.isSaving.set(false);

@@ -4,6 +4,16 @@ import { coachGuard } from './guards/coach.guard';
 import { athleteGuard } from './guards/athlete.guard';
 
 export const routes: Routes = [
+  // Pages publiques (exigées par les stores — accessibles sans connexion)
+  {
+    path: 'privacy',
+    loadComponent: () => import('./pages/legal/privacy.component').then(m => m.PrivacyComponent)
+  },
+  {
+    path: 'support',
+    loadComponent: () => import('./pages/legal/support.component').then(m => m.SupportComponent)
+  },
+
   // Routes Athlète (bloquées pour les coachs)
   {
     path: '',
