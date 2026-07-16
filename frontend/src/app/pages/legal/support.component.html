@@ -1,0 +1,58 @@
+@if (authService.isAuthenticated()) {
+  <app-navbar></app-navbar>
+} @else {
+  <nav class="public-navbar">
+    <a href="/" class="navbar-logo">
+      <span class="logo-text">
+        <span class="logo-train">Train</span>
+        <span class="logo-wise">wise</span>
+      </span>
+    </a>
+  </nav>
+}
+
+<div class="container">
+  <div class="page-header">
+    <button class="btn-back" (click)="goBack()">
+      <span class="icon">←</span>
+    </button>
+    <div class="header-content">
+      <h1>Support</h1>
+      <p class="subtitle">On te répond en général sous 24h ouvrées</p>
+    </div>
+  </div>
+
+  <section class="legal-card">
+    <h2>Une question, un bug, une idée ?</h2>
+    <a class="support-cta" href="mailto:contact&#64;trainwise-app.com?subject=Support%20Trainwise">
+      <i class="fa-solid fa-envelope"></i>
+      Écrire au support
+    </a>
+  </section>
+
+  <section class="legal-card">
+    <h2>Questions fréquentes</h2>
+
+    <h3>Comment générer mon plan d'entraînement ?</h3>
+    <p>Ouvre l'onglet Planning → « Générer » → choisis tes jours d'entraînement (course et/ou renfo) → l'IA construit ton programme en une à deux minutes. Tu valides ensuite les séances proposées avant qu'elles rejoignent ton calendrier.</p>
+
+    <h3>Que sont les TrainCoins ?</h3>
+    <p>Des crédits qui te permettent d'utiliser les fonctionnalités IA sans abonnement : 1 coin = 1 analyse de séance, 5 coins = 1 plan généré. Des coins sont offerts à l'inscription, et l'abonnement Pro rend l'IA illimitée.</p>
+
+    <h3>Comment connecter Strava ?</h3>
+    <p>Réglages → Connexions → Strava. Tes sorties s'importeront automatiquement et se rattacheront à tes séances planifiées.</p>
+
+    <h3>Comment gérer mon abonnement ?</h3>
+    <p>Ton abonnement Pro est géré par l'App Store (iOS) ou Google Play (Android) : Réglages de ton téléphone → ton compte → Abonnements. Tu peux le résilier à tout moment ; il reste actif jusqu'à la fin de la période en cours.</p>
+
+    <h3>Comment supprimer mon compte ?</h3>
+    <p>Dans l'app : Réglages → Supprimer mon compte. La suppression est immédiate et définitive (voir notre <a routerLink="/privacy">politique de confidentialité</a>).</p>
+
+    <h3>Je suis coach, comment inviter mes athlètes ?</h3>
+    <p>Depuis ton espace coach : génère ton code d'invitation ou recherche directement tes athlètes par nom. Une fois l'invitation acceptée, tu les suis depuis ton dashboard.</p>
+  </section>
+
+  <footer class="legal-footer">
+    <p>© {{ currentYear }} Trainwise - Tous droits réservés</p>
+  </footer>
+</div>

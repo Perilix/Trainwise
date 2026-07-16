@@ -1206,6 +1206,41 @@
 }
 
 // Logout section
+.about-section {
+  margin-top: 2rem;
+  background: #F6F4F0;
+  border-radius: 16px;
+  padding: 0.5rem 1.25rem;
+  box-shadow: 0 0 10px 4px rgba(0, 53, 84, 0.15);
+  border: 1px solid rgba(0, 53, 84, 0.2);
+
+  .about-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 4px;
+    text-decoration: none;
+    color: #333;
+    font-size: 0.9rem;
+    border-bottom: 1px solid rgba(0, 53, 84, 0.08);
+
+    &:last-child { border-bottom: none; }
+
+    i:first-child {
+      color: #0582ca;
+      font-size: 0.95rem;
+      width: 22px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    span { flex: 1; }
+
+    .about-chevron { color: #bbb; font-size: 0.7rem; }
+    &:active { opacity: 0.7; }
+  }
+}
+
 .logout-section {
   margin-top: 2rem;
   padding-top: 1.5rem;

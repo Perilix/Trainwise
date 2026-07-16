@@ -1,0 +1,173 @@
+// Styles partagés des pages légales — même design que le reste de l'app
+// (container beige, header avec flèche retour, cartes ombrées, titres GulfsDisplay)
+
+// Bandeau du haut pour les visiteurs non connectés — même look que la navbar de l'app
+.public-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: calc(20px + env(safe-area-inset-top));
+  padding-top: env(safe-area-inset-top);
+  background: #003554;
+  border-bottom: 1px solid #003554;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .navbar-logo {
+    text-decoration: none;
+
+    .logo-text {
+      display: flex;
+      flex-direction: column;
+      font-family: 'GulfsDisplayExpanded', serif;
+      font-style: italic;
+      line-height: 0.85;
+      font-size: 2rem;
+
+      .logo-train { color: #F6F4F0; }
+      .logo-wise { color: #00A6FB; }
+    }
+  }
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  padding-top: calc(var(--navbar-height, 120px) + 2rem);
+  font-family: 'Poppins', sans-serif;
+  min-height: 100vh;
+  background: #F6F4F0;
+
+  @media (max-width: 500px) {
+    padding-top: calc(var(--navbar-height, 85px) + 1rem);
+  }
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 2rem;
+
+  .btn-back {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: #F6F4F0;
+    box-shadow: 0 0 10px 4px rgba(0, 53, 84, 0.15);
+    border: 1px solid rgba(0, 53, 84, 0.2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: #051923;
+    transition: all 0.2s;
+    flex-shrink: 0;
+
+    &:hover {
+      background: #00a6fb;
+      color: #fff;
+    }
+  }
+
+  .header-content {
+    h1 {
+      font-family: 'GulfsDisplay', serif;
+      font-size: 1.75rem;
+      color: #051923;
+      margin: 0 0 0.25rem;
+    }
+
+    .subtitle {
+      color: #666;
+      margin: 0;
+      font-size: 0.9rem;
+    }
+  }
+}
+
+.legal-card {
+  background: #F6F4F0;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 0 10px 4px rgba(0, 53, 84, 0.15);
+  border: 1px solid rgba(0, 53, 84, 0.2);
+  margin-bottom: 1.5rem;
+
+  h2 {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #003554;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 1rem;
+  }
+
+  h3 {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #051923;
+    margin: 1.25rem 0 0.35rem;
+  }
+
+  p, li {
+    font-size: 0.88rem;
+    line-height: 1.65;
+    color: #444;
+  }
+
+  p { margin: 0 0 0.75rem; }
+  p:last-child { margin-bottom: 0; }
+
+  ul {
+    padding-left: 18px;
+    margin: 0 0 0.75rem;
+  }
+
+  li { margin-bottom: 6px; }
+
+  a { color: #0582ca; }
+}
+
+.support-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  background: #00a6fb;
+  color: #fff !important;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.875rem 1.5rem;
+  border-radius: 10px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #0582ca;
+  }
+}
+
+.support-mail {
+  text-align: center;
+  color: #888;
+  font-size: 0.8rem;
+  margin: 0.75rem 0 0;
+}
+
+.legal-footer {
+  text-align: center;
+  padding: 1rem 0 0.5rem;
+
+  p {
+    color: #888;
+    font-size: 0.78rem;
+    margin: 0;
+  }
+}

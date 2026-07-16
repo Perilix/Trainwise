@@ -1,0 +1,126 @@
+@if (authService.isAuthenticated()) {
+  <app-navbar></app-navbar>
+} @else {
+  <nav class="public-navbar">
+    <a href="/" class="navbar-logo">
+      <span class="logo-text">
+        <span class="logo-train">Train</span>
+        <span class="logo-wise">wise</span>
+      </span>
+    </a>
+  </nav>
+}
+
+<div class="container">
+  <div class="page-header">
+    <button class="btn-back" (click)="goBack()">
+      <span class="icon">←</span>
+    </button>
+    <div class="header-content">
+      <h1>Politique de confidentialité</h1>
+      <p class="subtitle">Dernière mise à jour : 16 juillet 2026</p>
+    </div>
+  </div>
+
+  <section class="legal-card">
+    <p>
+      Trainwise exploite l'application mobile et le site Trainwise, une plateforme de coaching
+      sportif. La protection de tes données personnelles est une priorité. Cette politique explique
+      quelles données nous collectons, pourquoi, et quels sont tes droits, conformément au Règlement
+      Général sur la Protection des Données (RGPD).
+    </p>
+    <p>
+      Responsable du traitement : Trainwise —
+      <a href="mailto:contact&#64;trainwise-app.com">contact&#64;trainwise-app.com</a>
+    </p>
+  </section>
+
+  <section class="legal-card">
+    <h2>Données que nous collectons</h2>
+    <ul>
+      <li><strong>Données de compte</strong> : prénom, nom, adresse e-mail, mot de passe (chiffré), photo de profil (optionnelle).</li>
+      <li><strong>Profil sportif</strong> : niveau, fréquence d'entraînement, VMA, fréquence cardiaque maximale, taille, poids, blessures déclarées, objectifs de compétition. Ces données relèvent des données de santé au sens du RGPD : elles ne sont collectées qu'avec ton consentement explicite (renseignement volontaire du profil) et servent exclusivement à personnaliser ton entraînement.</li>
+      <li><strong>Données d'activité</strong> : séances de course et de musculation (distance, durée, allures, fréquence cardiaque, ressenti, notes), séances planifiées, analyses générées.</li>
+      <li><strong>Données Strava</strong> (uniquement si tu connectes ton compte) : activités importées, tracés GPS, laps. La connexion est optionnelle et révocable à tout moment.</li>
+      <li><strong>Messages</strong> : contenus échangés dans le chat (avec ton coach ou tes amis), y compris images et documents partagés.</li>
+      <li><strong>Données techniques</strong> : jeton de notification push, plateforme (iOS/Android), horodatages de connexion.</li>
+      <li><strong>Achats</strong> : les paiements in-app sont traités par Apple ou Google — nous ne voyons ni ne stockons aucune donnée bancaire. Nous conservons uniquement l'état de ton abonnement et ton solde de TrainCoins.</li>
+    </ul>
+  </section>
+
+  <section class="legal-card">
+    <h2>Pourquoi nous utilisons tes données</h2>
+    <ul>
+      <li>Fournir le service : génération de plans d'entraînement, analyses de séances, suivi de progression (exécution du contrat).</li>
+      <li>Permettre la relation avec ton coach si tu y souscris : ton coach accède à ton profil sportif, tes séances et ton état de forme (exécution du contrat).</li>
+      <li>Envoyer des notifications liées au service (séances, messages, rappels) — désactivables dans les réglages.</li>
+      <li>Améliorer le service et assurer sa sécurité (intérêt légitime).</li>
+    </ul>
+  </section>
+
+  <section class="legal-card">
+    <h2>Intelligence artificielle</h2>
+    <p>
+      Les plans d'entraînement et analyses de séances sont générés par un modèle d'intelligence
+      artificielle (Anthropic Claude). Pour cela, les données pertinentes de ton profil sportif et de
+      tes séances sont transmises à l'API d'Anthropic, qui ne les utilise pas pour entraîner ses
+      modèles. Aucune décision produisant des effets juridiques n'est prise de manière automatisée.
+    </p>
+  </section>
+
+  <section class="legal-card">
+    <h2>Avec qui nous partageons tes données</h2>
+    <p>Nous ne vendons jamais tes données. Elles sont traitées par nos sous-traitants techniques, uniquement pour les besoins du service :</p>
+    <ul>
+      <li><strong>Render</strong> (hébergement) et <strong>MongoDB</strong> (base de données)</li>
+      <li><strong>Anthropic</strong> (génération IA des plans et analyses)</li>
+      <li><strong>RevenueCat</strong> (gestion des abonnements et achats)</li>
+      <li><strong>Google Firebase</strong> (notifications push)</li>
+      <li><strong>Cloudinary</strong> (stockage des images)</li>
+      <li><strong>Strava</strong> (uniquement si tu connectes ton compte, à ta demande)</li>
+    </ul>
+    <p>Si tu es accompagné par un coach via Trainwise, celui-ci accède aux données nécessaires à ton suivi (profil sportif, séances, ressentis, état de forme).</p>
+  </section>
+
+  <section class="legal-card">
+    <h2>Durées de conservation</h2>
+    <ul>
+      <li>Données de compte et d'activité : tant que ton compte est actif.</li>
+      <li>En cas de suppression de compte : suppression définitive de l'ensemble de tes données dans un délai de 30 jours.</li>
+    </ul>
+  </section>
+
+  <section class="legal-card">
+    <h2>Tes droits</h2>
+    <p>
+      Conformément au RGPD, tu disposes des droits d'accès, de rectification, d'effacement, de
+      portabilité, de limitation et d'opposition sur tes données, ainsi que du droit de retirer ton
+      consentement à tout moment.
+    </p>
+    <ul>
+      <li><strong>Supprimer ton compte</strong> : directement dans l'app (Réglages → Supprimer mon compte) — suppression immédiate et définitive.</li>
+      <li><strong>Exercer tes autres droits</strong> : écris-nous à <a href="mailto:contact&#64;trainwise-app.com">contact&#64;trainwise-app.com</a> — réponse sous 30 jours.</li>
+      <li>Tu peux également introduire une réclamation auprès de la CNIL (cnil.fr).</li>
+    </ul>
+  </section>
+
+  <section class="legal-card">
+    <h2>Sécurité, mineurs et évolutions</h2>
+    <p>
+      Les échanges sont chiffrés (HTTPS), les mots de passe sont hachés et les accès aux données sont
+      limités au strict nécessaire.
+    </p>
+    <p>
+      Trainwise n'est pas destiné aux enfants de moins de 15 ans. Si tu penses qu'un mineur nous a
+      fourni des données sans autorisation, contacte-nous pour leur suppression.
+    </p>
+    <p>
+      Cette politique peut évoluer. En cas de changement significatif, nous t'en informerons dans
+      l'app. La version en vigueur est toujours disponible à cette adresse.
+    </p>
+  </section>
+
+  <footer class="legal-footer">
+    <p>© {{ currentYear }} Trainwise - Tous droits réservés</p>
+  </footer>
+</div>
