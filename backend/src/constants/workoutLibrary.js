@@ -81,6 +81,11 @@ const WORKOUT_LIBRARY = [
   { id: 'semi-sl-blocs', name: 'Sortie longue avec blocs semi', type: 'sortie_longue', structure: '1h15 à 1h30 dont 2×15min zone semi en fin de sortie, le reste en endurance', races: ['semi'], phases: ['specifique'], levels: ['intermediaire', 'avance'], key: true },
   { id: 'semi-progressif', name: '12K progressif vers allure semi', type: 'tempo', structure: '12km : 4km endurance / 4km zone marathon / 4km zone semi', races: ['semi'], phases: ['specifique'], levels: ['avance'], key: false },
 
+  // ===== Prépa marathon (séances Hugo/Julien) =====
+  { id: 'marathon-vo2-600', name: 'VO2max 8-12×600m', type: 'fractionne', structure: 'Échauffement 20min endurance, puis 8 à 12×(600m à 100-105% VMA / 1min15 trot), retour au calme 15min endurance — développement de la VO2max', races: ['marathon'], phases: ['generale'], levels: ['intermediaire', 'avance'], key: false },
+  { id: 'marathon-seuil-3x15', name: 'Seuil 3×15min', type: 'tempo', structure: 'Échauffement 20min endurance, puis 3×(15min à 88-92% VMA / 3min footing), retour au calme 10min endurance — apprendre à maintenir des allures soutenues plus longtemps', races: ['marathon'], phases: ['generale', 'specifique'], levels: ['intermediaire', 'avance'], key: true },
+  { id: 'marathon-sl-3x5000', name: 'Sortie longue spé 30-34km', type: 'sortie_longue', structure: '12 à 16km en endurance fondamentale, puis 3×(5km à l\'allure cible du marathon (zone marathon) / 1km endurance), puis retour en endurance — 30 à 34km au total', races: ['marathon'], phases: ['specifique'], levels: ['avance'], key: true },
+
   // ===== Séances clés marathon =====
   { id: 'marathon-sl-blocs', name: 'Sortie longue avec blocs marathon', type: 'sortie_longue', structure: '2h à 2h30 dont 2 à 3×20min zone marathon, le reste en endurance', races: ['marathon'], phases: ['specifique'], levels: ['intermediaire', 'avance'], key: true },
   { id: 'marathon-continu', name: 'Bloc allure marathon continu', type: 'tempo', structure: '12 à 16km en continu zone marathon (séance clé à placer 4-6 semaines avant la course)', races: ['marathon'], phases: ['specifique'], levels: ['avance'], key: true },
