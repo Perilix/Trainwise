@@ -2,20 +2,59 @@
   <app-navbar></app-navbar>
 } @else {
   <nav class="public-navbar">
-    <a href="/" class="navbar-logo">
+    <div class="public-navbar-container">
+      <a href="/" class="navbar-logo">
+        <span class="logo-text">
+          <span class="logo-train">Train</span>
+          <span class="logo-wise">wise</span>
+        </span>
+      </a>
+      <span class="navbar-spacer"></span>
+      <a routerLink="/login" class="nav-login">Se connecter</a>
+    </div>
+  </nav>
+
+  <!-- Sidebar desktop (>=1024px) — même chrome que l'app connectée -->
+  <nav class="public-sidebar">
+    <a href="/" class="sidebar-logo">
       <span class="logo-text">
         <span class="logo-train">Train</span>
         <span class="logo-wise">wise</span>
       </span>
     </a>
+    <div class="sidebar-nav">
+      <a routerLink="/about" routerLinkActive="active" class="side-item">
+        <i class="fa-solid fa-circle-info"></i>
+        <span class="label">À propos</span>
+      </a>
+      <a routerLink="/support" routerLinkActive="active" class="side-item">
+        <i class="fa-solid fa-circle-question"></i>
+        <span class="label">Support</span>
+      </a>
+      <a routerLink="/privacy" routerLinkActive="active" class="side-item">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span class="label">Confidentialité</span>
+      </a>
+      <div class="nav-spacer"></div>
+      <a routerLink="/login" class="side-item">
+        <i class="fa-solid fa-right-to-bracket"></i>
+        <span class="label">Se connecter</span>
+      </a>
+      <a routerLink="/register" class="side-item side-item-cta">
+        <i class="fa-solid fa-user-plus"></i>
+        <span class="label">Créer un compte</span>
+      </a>
+    </div>
   </nav>
 }
 
 <div class="container">
   <div class="page-header">
-    <button class="btn-back" (click)="goBack()">
-      <span class="icon">←</span>
-    </button>
+    @if (authService.isAuthenticated()) {
+      <button class="btn-back" (click)="goBack()">
+        <span class="icon">←</span>
+      </button>
+    }
     <div class="header-content">
       <h1>Support</h1>
       <p class="subtitle">On te répond en général sous 24h ouvrées</p>

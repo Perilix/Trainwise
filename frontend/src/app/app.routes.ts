@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, guestGuard } from './guards/auth.guard';
+import { authGuard, guestGuard, homeGuard } from './guards/auth.guard';
 import { coachGuard } from './guards/coach.guard';
 import { athleteGuard } from './guards/athlete.guard';
 
@@ -13,12 +13,16 @@ export const routes: Routes = [
     path: 'support',
     loadComponent: () => import('./pages/legal/support.component').then(m => m.SupportComponent)
   },
+  {
+    path: 'about',
+    loadComponent: () => import('./pages/about/about.component').then(m => m.AboutComponent)
+  },
 
   // Routes Athlète (bloquées pour les coachs)
   {
     path: '',
     loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent),
-    canActivate: [authGuard, athleteGuard]
+    canActivate: [homeGuard, athleteGuard]
   },
   {
     path: 'analyse',

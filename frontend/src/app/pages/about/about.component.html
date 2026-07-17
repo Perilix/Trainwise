@@ -1,0 +1,105 @@
+@if (authService.isAuthenticated()) {
+  <app-navbar></app-navbar>
+} @else {
+  <nav class="public-navbar">
+    <div class="public-navbar-container">
+      <a href="/" class="navbar-logo">
+        <span class="logo-text">
+          <span class="logo-train">Train</span>
+          <span class="logo-wise">wise</span>
+        </span>
+      </a>
+      <span class="navbar-spacer"></span>
+      <a routerLink="/login" class="nav-login">Se connecter</a>
+    </div>
+  </nav>
+
+  <!-- Sidebar desktop (>=1024px) — même chrome que l'app connectée -->
+  <nav class="public-sidebar">
+    <a href="/" class="sidebar-logo">
+      <span class="logo-text">
+        <span class="logo-train">Train</span>
+        <span class="logo-wise">wise</span>
+      </span>
+    </a>
+    <div class="sidebar-nav">
+      <a routerLink="/about" routerLinkActive="active" class="side-item">
+        <i class="fa-solid fa-circle-info"></i>
+        <span class="label">À propos</span>
+      </a>
+      <a routerLink="/support" routerLinkActive="active" class="side-item">
+        <i class="fa-solid fa-circle-question"></i>
+        <span class="label">Support</span>
+      </a>
+      <a routerLink="/privacy" routerLinkActive="active" class="side-item">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span class="label">Confidentialité</span>
+      </a>
+      <div class="nav-spacer"></div>
+      <a routerLink="/login" class="side-item">
+        <i class="fa-solid fa-right-to-bracket"></i>
+        <span class="label">Se connecter</span>
+      </a>
+      <a routerLink="/register" class="side-item side-item-cta">
+        <i class="fa-solid fa-user-plus"></i>
+        <span class="label">Créer un compte</span>
+      </a>
+    </div>
+  </nav>
+}
+
+<div class="container">
+  <div class="page-header">
+    @if (authService.isAuthenticated()) {
+      <button class="btn-back" (click)="goBack()">
+        <span class="icon">←</span>
+      </button>
+    }
+    <div class="header-content">
+      <h1>À propos</h1>
+      <p class="subtitle">Trainwise — plateforme de coaching sportif</p>
+    </div>
+  </div>
+
+  <section class="legal-card">
+    <p>Trainwise, c'est la première app qui te laisse choisir&nbsp;: un plan d'entraînement généré par l'IA, ou un accompagnement sur mesure par un coach diplômé. Deux formules pour t'entraîner, un dashboard pour coacher — une seule app.</p>
+  </section>
+
+  <section class="legal-card">
+    <h2>Le coach IA</h2>
+    <p>Ton plan d'entraînement généré en 60 secondes à partir de <strong>ton</strong> profil&nbsp;: VMA, historique, jours disponibles, objectif (5&nbsp;km → marathon). Des séances structurées comme un vrai coach les écrit — échauffement, fractionné, allures précises calculées pour toi — issues de la méthode d'un coach diplômé STAPS.</p>
+    <p>Et après chaque sortie, une analyse concrète de tes données avec un conseil pour la suite.</p>
+  </section>
+
+  <section class="legal-card">
+    <h2>Le coach humain</h2>
+    <p>Envie d'un accompagnement sur mesure&nbsp;? Un coach diplômé construit ton programme, l'ajuste en continu, et échange avec toi par chat et visio. Un vrai suivi d'athlète, dans ta poche.</p>
+  </section>
+
+  <section class="legal-card">
+    <h2>Course, muscu… et bientôt plus</h2>
+    <p>La muscu a son suivi complet, comme la course&nbsp;: planifie tes séances, enregistre exercices, séries, reps et charges, visualise ta progression et reçois une analyse IA après chaque séance.</p>
+    <p>Que tu coures, que tu soulèves ou les deux&nbsp;: tout ton entraînement au même endroit. Et d'autres sports arrivent bientôt.</p>
+  </section>
+
+  <section class="legal-card">
+    <h2>Ton suivi complet</h2>
+    <p>Calendrier d'entraînement, séances prévues vs réalisées, ressenti après chaque séance, objectifs chrono et synchronisation Strava automatique.</p>
+  </section>
+
+  <section class="legal-card">
+    <h2>Vous êtes coach ?</h2>
+    <p>Invitez vos athlètes et suivez-les depuis un seul dashboard&nbsp;: progression, état de forme au quotidien (indicateur vert/orange/rouge avec alertes), planification aux allures individualisées, bibliothèque de séances réutilisables et chat intégré.</p>
+    <p>Fini les tableurs et les allers-retours WhatsApp.</p>
+  </section>
+
+  <section class="legal-card">
+    <h2>Comment ça marche ?</h2>
+    <p>Gratuit au téléchargement. Les fonctionnalités IA utilisent des TrainCoins (crédits offerts à l'inscription, rechargeables sans abonnement) ou l'abonnement Pro illimité. Pas d'abonnement forcé&nbsp;: tu choisis.</p>
+    <p>Une question&nbsp;? Direction le <a routerLink="/support">support</a> — on te répond en général sous 24h ouvrées. Tes données sont protégées&nbsp;: voir notre <a routerLink="/privacy">politique de confidentialité</a>.</p>
+  </section>
+
+  <footer class="legal-footer">
+    <p>© {{ currentYear }} Trainwise - Tous droits réservés</p>
+  </footer>
+</div>

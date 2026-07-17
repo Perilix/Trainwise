@@ -1,27 +1,31 @@
 <div class="paywall-overlay" (click)="close()">
   <div class="paywall-card" (click)="$event.stopPropagation()">
 
-    <!-- Coin animé -->
-    <div class="coin-hero">
-      <div class="coin-ring">
-        <div class="coin">
-          <i class="fa-solid fa-bolt"></i>
-        </div>
+    <button class="btn-close" (click)="close()">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+
+    <!-- Header -->
+    <div class="paywall-header">
+      <div class="coin-badge">
+        <i class="fa-solid fa-bolt"></i>
       </div>
-      <div class="coin-sparkles">
-        <span class="sparkle s1"><i class="fa-solid fa-star"></i></span>
-        <span class="sparkle s2"><i class="fa-solid fa-star"></i></span>
-        <span class="sparkle s3"><i class="fa-solid fa-star"></i></span>
-      </div>
+      <h2 class="paywall-title">Plus assez de TrainCoins</h2>
+      <p class="paywall-sub">Pour {{ actionLabel }}, il te manque quelques coins.</p>
     </div>
 
-    <!-- Header texte -->
-    <h2 class="paywall-title">Il te faut des TrainCoins</h2>
-    <p class="paywall-sub">
-      Pour {{ actionLabel }}, tu as besoin de
-      <strong>{{ coinCost }} TrainCoin{{ coinCost > 1 ? 's' : '' }}</strong>.
-      <br>Tu en as actuellement <strong>{{ coins }}</strong>.
-    </p>
+    <!-- Solde -->
+    <div class="balance-row">
+      <div class="balance-chip">
+        <span class="chip-label">Coût</span>
+        <span class="chip-value">{{ coinCost }} <i class="fa-solid fa-bolt"></i></span>
+      </div>
+      <i class="fa-solid fa-arrow-right balance-arrow"></i>
+      <div class="balance-chip chip-missing">
+        <span class="chip-label">Ton solde</span>
+        <span class="chip-value">{{ coins }} <i class="fa-solid fa-bolt"></i></span>
+      </div>
+    </div>
 
     <!-- Options -->
     <div class="paywall-options">
@@ -29,43 +33,55 @@
       <!-- Option Pro -->
       <div class="option-card option-pro">
         <div class="option-badge">Recommandé</div>
-        <div class="option-header">
-          <i class="fa-solid fa-crown option-icon"></i>
-          <div>
+        <div class="option-main">
+          <div class="option-icon-wrap pro">
+            <i class="fa-solid fa-crown"></i>
+          </div>
+          <div class="option-info">
             <p class="option-name">Trainwise Pro</p>
-            <p class="option-desc">IA illimitée, plans premium</p>
+            <p class="option-desc">Plans et analyses IA en illimité</p>
+          </div>
+          <div class="option-price">
+            9,99€<span>/mois</span>
           </div>
         </div>
-        <div class="option-price">9,99€<span>/mois</span></div>
-        <button class="btn-pro" [disabled]="isLoading()" (click)="subscribePro()">
+        <button class="btn-option btn-pro" [disabled]="isLoading()" (click)="subscribePro()">
           @if (isLoading()) {
             <i class="fa-solid fa-circle-notch fa-spin"></i>
           } @else {
-            <i class="fa-solid fa-rocket"></i> S'abonner
+            Passer Pro
           }
         </button>
       </div>
 
       <!-- Option Coins -->
-      <div class="option-card option-coins">
-        <div class="option-header">
-          <i class="fa-solid fa-bolt option-icon"></i>
-          <div>
-            <p class="option-name">Pack TrainCoins</p>
-            <p class="option-desc">+10 TrainCoins</p>
+      <div class="option-card">
+        <div class="option-main">
+          <div class="option-icon-wrap coins">
+            <i class="fa-solid fa-bolt"></i>
           </div>
+          <div class="option-info">
+            <p class="option-name">10 TrainCoins</p>
+            <p class="option-desc">Sans abonnement, à ton rythme</p>
+          </div>
+          <div class="option-price">2,99€</div>
         </div>
-        <div class="option-price">2,99€</div>
-        <button class="btn-coins" [disabled]="isLoading()" (click)="buyCoins()">
-          @if (isNative) {
-            <i class="fa-solid fa-bolt"></i> Acheter
+        <button class="btn-option btn-coins" [disabled]="isLoading()" (click)="buyCoins()">
+          @if (isLoading()) {
+            <i class="fa-solid fa-circle-notch fa-spin"></i>
+          } @else if (isNative) {
+            Acheter
           } @else {
-            <i class="fa-solid fa-arrow-right"></i> Voir la boutique
+            Voir la boutique
           }
         </button>
       </div>
 
     </div>
+
+    <button class="link-shop" (click)="goToShop()">
+      Voir toutes les offres <i class="fa-solid fa-chevron-right"></i>
+    </button>
 
     @if (errorMessage()) {
       <p class="paywall-error"><i class="fa-solid fa-triangle-exclamation"></i> {{ errorMessage() }}</p>
@@ -77,10 +93,6 @@
         Les achats s'effectuent depuis l'application mobile.
       </p>
     }
-
-    <button class="btn-close" (click)="close()">
-      <i class="fa-solid fa-xmark"></i>
-    </button>
 
   </div>
 </div>

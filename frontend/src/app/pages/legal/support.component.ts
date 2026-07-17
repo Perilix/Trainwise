@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { Location } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 import { AuthService } from '../../services/auth.service';
 
@@ -11,7 +11,7 @@ import { AuthService } from '../../services/auth.service';
 @Component({
   selector: 'app-support',
   standalone: true,
-  imports: [RouterLink, NavbarComponent],
+  imports: [RouterLink, RouterLinkActive, NavbarComponent],
   templateUrl: './support.component.html',
   styleUrls: ['./legal-pages.scss']
 })

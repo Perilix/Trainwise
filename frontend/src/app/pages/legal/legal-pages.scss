@@ -1,7 +1,8 @@
 // Styles partagés des pages légales — même design que le reste de l'app
 // (container beige, header avec flèche retour, cartes ombrées, titres GulfsDisplay)
 
-// Bandeau du haut pour les visiteurs non connectés — même look que la navbar de l'app
+// Bandeau du haut pour les visiteurs non connectés — même layout que la navbar de l'app
+// (logo à gauche, actions à droite)
 .public-navbar {
   position: fixed;
   top: 0;
@@ -12,12 +13,25 @@
   background: #003554;
   border-bottom: 1px solid #003554;
   z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+
+  .public-navbar-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0 2rem;
+
+    @media (max-width: 500px) {
+      padding: 0 1rem;
+    }
+  }
 
   .navbar-logo {
     text-decoration: none;
+    transition: opacity 0.2s;
+
+    &:hover { opacity: 0.9; }
 
     .logo-text {
       display: flex;
@@ -29,6 +43,127 @@
 
       .logo-train { color: #F6F4F0; }
       .logo-wise { color: #00A6FB; }
+    }
+  }
+
+  .navbar-spacer { flex: 1; }
+
+  .nav-login {
+    font-family: 'GulfsDisplay', serif;
+    padding: 0.6rem 1.25rem;
+    color: white;
+    text-decoration: none;
+    font-size: 1.4rem;
+    border-radius: 8px;
+    transition: all 0.2s;
+
+    &:hover { color: #00a6fb; }
+  }
+}
+
+// Sidebar desktop pour les visiteurs non connectés — même chrome que la
+// sidebar de l'app connectée (navy à gauche, 240px, logo en haut).
+.public-sidebar {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  // À partir de 1024px le bandeau du haut laisse place à la sidebar,
+  // comme la navbar de l'app connectée.
+  .public-navbar {
+    display: none;
+  }
+
+  .public-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    width: var(--sidebar-width);
+    background: var(--color-navy);
+    padding: 1.5rem 0.85rem 1rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 100;
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      padding: 0 0.9rem 1.75rem;
+      text-decoration: none;
+
+      .logo-text {
+        display: flex;
+        flex-direction: column;
+        font-family: 'GulfsDisplayExpanded', serif;
+        font-style: italic;
+        line-height: 0.85;
+        font-size: 1.7rem;
+
+        .logo-train { color: var(--color-beige); }
+        .logo-wise { color: var(--color-accent); }
+      }
+    }
+
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .nav-spacer {
+      flex: 1;
+      min-height: 1rem;
+    }
+
+    .side-item {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      width: 100%;
+      padding: 0.7rem 0.9rem;
+      border: none;
+      border-radius: 12px;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.55);
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 500;
+      text-decoration: none;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-sizing: border-box;
+
+      i {
+        font-size: 1.1rem;
+        width: 22px;
+        text-align: center;
+      }
+
+      &:hover {
+        color: rgba(255, 255, 255, 0.95);
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      &.active {
+        color: var(--color-accent);
+        background: rgba(0, 166, 251, 0.12);
+      }
+    }
+
+    .side-item-cta {
+      color: #fff;
+      background: var(--color-accent);
+
+      &:hover {
+        color: #fff;
+        background: #0582ca;
+      }
     }
   }
 }
@@ -44,6 +179,16 @@
 
   @media (max-width: 500px) {
     padding-top: calc(var(--navbar-height, 85px) + 1rem);
+  }
+}
+
+// Desktop visiteur : le contenu se centre dans l'espace restant à droite de la
+// sidebar publique (fixed, hors flux). Ne s'applique pas aux connectés : leur
+// app-sidebar décale déjà le page-scroll.
+@media (min-width: 1024px) {
+  .public-sidebar ~ .container {
+    margin-left: max(calc(50% - 400px + var(--sidebar-width) / 2), calc(var(--sidebar-width) + 2rem));
+    margin-right: 2rem;
   }
 }
 
