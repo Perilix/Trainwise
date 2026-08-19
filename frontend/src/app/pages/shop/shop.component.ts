@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Capacitor } from '@capacitor/core';
@@ -12,7 +12,7 @@ import { SubscriptionService } from '../../services/subscription.service';
   templateUrl: './shop.component.html',
   styleUrl: './shop.component.scss'
 })
-export class ShopComponent {
+export class ShopComponent implements OnInit {
   subscriptionService = inject(SubscriptionService);
   private router = inject(Router);
 
@@ -24,9 +24,19 @@ export class ShopComponent {
   proPlan = signal<'monthly' | 'annual'>('annual');
 
   // Offre fondateurs : passer à false à la fin des 3 mois de lancement.
-  // Le prix réel facturé est celui configuré dans Google Play Console / RevenueCat.
   readonly launchPromo = true;
-  readonly annualPrice = this.launchPromo ? '59,99€' : '79,99€';
+
+  // Prix affichés : on privilégie le prix réel de l'App Store (via RevenueCat) ;
+  // à défaut (web, offering pas encore chargé) on retombe sur les prix par défaut.
+  get monthlyPrice() { return this.subscriptionService.prices()['trainwise_pro_monthly'] ?? '9,99€'; }
+  get annualPrice() { return this.subscriptionService.prices()['trainwise_pro_annual'] ?? (this.launchPromo ? '59,99€' : '79,99€'); }
+  get coins10Price() { return this.subscriptionService.prices()['trainwise_coins_10'] ?? '2,99€'; }
+  get coins50Price() { return this.subscriptionService.prices()['trainwise_coins_50'] ?? '9,99€'; }
+
+  ngOnInit() {
+    // Rafraîchit les prix réels au cas où la boutique est ouverte directement.
+    this.subscriptionService.loadOfferings();
+  }
 
   get isPro() { return this.subscriptionService.isPro(); }
   get coins() { return this.subscriptionService.trainCoins(); }

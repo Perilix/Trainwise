@@ -18,6 +18,10 @@ export class SubscriptionService {
   showPaywall = signal(false);
   paywallAction = signal<PaywallAction | null>(null);
 
+  // Prix localisés récupérés depuis RevenueCat (clé = product id, ex: 'trainwise_pro_annual')
+  // Vide tant que l'offering n'est pas chargé → l'UI retombe sur ses prix par défaut.
+  prices = signal<Record<string, string>>({});
+
   constructor() {
     this.socketService.on<{ trainCoins?: number; subscriptionStatus?: string; subscriptionExpiry?: string | null }>('traincoin:update')
       .subscribe(data => {
@@ -78,8 +82,34 @@ export class SubscriptionService {
 
       // Lier l'userId RevenueCat au backend
       this.http.post(`${this.API}/link-revenuecat`, { revenueCatUserId: userId }).subscribe();
+
+      // Charger les prix réels de la boutique (App Store) pour l'affichage
+      this.loadOfferings();
     } catch (e) {
       console.warn('RevenueCat init failed', e);
+    }
+  }
+
+  /**
+   * Récupère les prix localisés facturés par l'App Store (via l'offering courant)
+   * et les stocke dans `prices` (clé = identifiant du package = product id).
+   * L'affichage doit toujours prévoir un repli : sur le web, ou tant que ce chargement
+   * n'a pas abouti, la map reste vide.
+   */
+  async loadOfferings(): Promise<void> {
+    if (!Capacitor.isNativePlatform()) return;
+    try {
+      const { Purchases } = await import('@revenuecat/purchases-capacitor');
+      const offerings = await Purchases.getOfferings();
+      const packages = offerings.current?.availablePackages ?? [];
+      const map: Record<string, string> = {};
+      for (const p of packages as any[]) {
+        const price = p?.product?.priceString;
+        if (p?.identifier && price) map[p.identifier] = price;
+      }
+      this.prices.set(map);
+    } catch (e) {
+      console.warn('Load offerings failed', e);
     }
   }
 

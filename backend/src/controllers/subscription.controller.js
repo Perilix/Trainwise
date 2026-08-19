@@ -1,4 +1,5 @@
 const User = require('../models/user.model');
+const ProcessedWebhookEvent = require('../models/processedWebhookEvent.model');
 const { emitTrainCoinsUpdate } = require('../socket/index');
 
 // Produits RevenueCat → coins offerts
@@ -49,7 +50,14 @@ exports.revenueCatWebhook = async (req, res) => {
     const { event } = req.body;
     if (!event) return res.status(400).json({ error: 'No event' });
 
-    const { type, app_user_id, product_id, expiration_at_ms } = event;
+    const { id: eventId, type, app_user_id, product_id, expiration_at_ms } = event;
+
+    // Idempotence : si RevenueCat relivre le même event, on ne le traite pas 2 fois
+    // (sinon un pack de coins pourrait être crédité en double).
+    if (eventId && await ProcessedWebhookEvent.exists({ eventId })) {
+      return res.status(200).json({ received: true, duplicate: true });
+    }
+
     const user = await User.findOne({
       $or: [
         { revenueCatUserId: app_user_id },
@@ -96,6 +104,16 @@ exports.revenueCatWebhook = async (req, res) => {
           emitTrainCoinsUpdate(user._id, { trainCoins: user.trainCoins });
         }
         break;
+      }
+    }
+
+    // Marque l'event comme traité (après application) pour bloquer les relivraisons.
+    if (eventId) {
+      try {
+        await ProcessedWebhookEvent.create({ eventId, type });
+      } catch (e) {
+        // Course rare : un autre process l'a inséré entre-temps → sans gravité.
+        if (e.code !== 11000) throw e;
       }
     }
 
