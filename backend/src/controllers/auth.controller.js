@@ -452,6 +452,11 @@ exports.deleteAccount = async (req, res) => {
     const Notification   = require('../models/notification.model');
     const Friendship     = require('../models/friendship.model');
     const CoachAthlete   = require('../models/coachAthlete.model');
+    const Competition    = require('../models/competition.model');
+    const SessionTemplate = require('../models/sessionTemplate.model');
+    const Exercise       = require('../models/exercise.model');
+    const BetaFeedback   = require('../models/betaFeedback.model');
+    const ReengagementLog = require('../models/reengagementLog.model');
 
     await Promise.all([
       Run.deleteMany({ user: userId }),
@@ -465,6 +470,11 @@ exports.deleteAccount = async (req, res) => {
         { participants: userId },
         { $pull: { participants: userId } }
       ),
+      Competition.deleteMany({ user: userId }),
+      SessionTemplate.deleteMany({ coach: userId }),
+      Exercise.deleteMany({ createdBy: userId }),
+      BetaFeedback.deleteMany({ user: userId }),
+      ReengagementLog.deleteMany({ recipient: userId }),
     ]);
 
     await User.findByIdAndDelete(userId);

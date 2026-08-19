@@ -177,6 +177,10 @@ export class AuthService {
 
   async deleteAccount(): Promise<void> {
     await this.http.delete(`${this.API_URL}/account`).toPromise();
+    // Désenregistrer les notifications push (comme au logout)
+    await this.pushNotificationService.unregister().catch(err => {
+      console.error('Failed to unregister push notifications:', err);
+    });
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
     this.currentUser.set(null);

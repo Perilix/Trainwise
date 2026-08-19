@@ -40,6 +40,8 @@ const allowedOrigins = [
   'http://localhost',
   'https://localhost', // WebView Capacitor Android
   process.env.FRONTEND_URL,
+  // Origines supplémentaires séparées par des virgules (ex: URL Render brute)
+  ...(process.env.FRONTEND_URLS ? process.env.FRONTEND_URLS.split(',').map(s => s.trim()) : []),
 ].filter(Boolean);
 
 const corsOptions = {

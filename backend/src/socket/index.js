@@ -21,6 +21,7 @@ const initializeSocket = (httpServer) => {
         'http://localhost',
         'https://localhost', // WebView Capacitor Android
         process.env.FRONTEND_URL,
+        ...(process.env.FRONTEND_URLS ? process.env.FRONTEND_URLS.split(',').map(s => s.trim()) : []),
       ].filter(Boolean),
       methods: ['GET', 'POST'],
       credentials: true

@@ -36,7 +36,13 @@ exports.getStatus = async (req, res) => {
 exports.revenueCatWebhook = async (req, res) => {
   try {
     const secret = process.env.REVENUECAT_WEBHOOK_SECRET;
-    if (secret && req.headers['authorization'] !== `Bearer ${secret}`) {
+    // Fail closed : sans secret configuré, on refuse tout (sinon n'importe qui
+    // pourrait s'auto-créditer coins/Pro en appelant ce endpoint).
+    if (!secret) {
+      console.error('REVENUECAT_WEBHOOK_SECRET manquant — webhook refusé.');
+      return res.status(503).json({ error: 'Webhook not configured' });
+    }
+    if (req.headers['authorization'] !== `Bearer ${secret}`) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
