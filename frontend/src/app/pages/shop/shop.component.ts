@@ -31,7 +31,7 @@ export class ShopComponent implements OnInit {
   get monthlyPrice() { return this.subscriptionService.prices()['trainwise_pro_monthly'] ?? '9,99€'; }
   get annualPrice() { return this.subscriptionService.prices()['trainwise_pro_annual'] ?? (this.launchPromo ? '59,99€' : '79,99€'); }
   get coins10Price() { return this.subscriptionService.prices()['trainwise_coins_10'] ?? '2,99€'; }
-  get coins50Price() { return this.subscriptionService.prices()['trainwise_coins_50'] ?? '9,99€'; }
+  get coins50Price() { return this.subscriptionService.prices()['trainwise_coins_50b'] ?? '9,99€'; }
 
   ngOnInit() {
     // Rafraîchit les prix réels au cas où la boutique est ouverte directement.
@@ -65,7 +65,9 @@ export class ShopComponent implements OnInit {
     this.errorMessage.set(null);
     try {
       const pack = this.coinsPack();
-      await this.subscriptionService.purchasePackage(`trainwise_coins_${pack}`);
+      // Le pack 50 utilise l'ID `_50b` (l'ancien `trainwise_coins_50` a été supprimé sur l'App Store).
+      const productId = pack === 50 ? 'trainwise_coins_50b' : 'trainwise_coins_10';
+      await this.subscriptionService.purchasePackage(productId);
       this.successMessage.set(`+${pack} TrainCoins ajoutés !`);
       setTimeout(() => this.successMessage.set(null), 4000);
     } catch {

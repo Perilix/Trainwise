@@ -5,7 +5,9 @@ const { emitTrainCoinsUpdate } = require('../socket/index');
 // Produits RevenueCat → coins offerts
 const COIN_PRODUCTS = {
   trainwise_coins_10: 10,
-  trainwise_coins_50: 50,
+  // Ancien ID `trainwise_coins_50` supprimé côté App Store (Product ID réservé à vie)
+  // → recréé sous `trainwise_coins_50b`.
+  trainwise_coins_50b: 50,
 };
 
 // Produits RevenueCat → durée abonnement Pro (en jours)
