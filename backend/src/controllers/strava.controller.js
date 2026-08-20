@@ -182,6 +182,107 @@ const refreshTokenIfNeeded = async (user) => {
   return response.data.access_token;
 };
 
+// ── Écriture de la séance programmée dans la description de l'activité Strava ──
+// Nécessite le scope `activity:write` : les utilisateurs connectés AVANT l'ajout
+// de ce scope devront reconnecter leur Strava (sinon le PUT renvoie 401 → ignoré).
+
+// Ligne promo ajoutée en pied de description (sert aussi de marqueur d'idempotence).
+// Reste sobre : Strava interdit le contenu promotionnel intrusif dans son API Agreement.
+const TRAINWISE_URL = 'https://www.trainwise-app.com';
+const TRAINWISE_CTA = `Planifié avec Trainwise 🏃 ${TRAINWISE_URL}`;
+
+const SESSION_TYPE_LABELS = {
+  endurance: 'Endurance',
+  fractionne: 'Fractionné',
+  tempo: 'Tempo',
+  recuperation: 'Récupération',
+  sortie_longue: 'Sortie longue',
+  cotes: 'Côtes',
+  fartlek: 'Fartlek'
+};
+
+// Formate une distance en km → "400 m" (< 1 km) ou "6 km".
+const formatDist = (km) => {
+  if (km == null) return '';
+  return km < 1 ? `${Math.round(km * 1000)} m` : `${km} km`;
+};
+
+// Formate une étape (bloc simple) : "8 × 400 m @ 4:10/km (récup 200 m)".
+const formatStepInline = (s) => {
+  if (!s) return '';
+  const reps = s.repetitions > 1 ? `${s.repetitions} × ` : '';
+  let core = '';
+  if (s.mode === 'duration' && s.duration) core = `${s.duration} min`;
+  else if (s.distance) core = formatDist(s.distance);
+  else if (s.duration) core = `${s.duration} min`;
+  const pace = s.pace ? ` @ ${s.pace}/km` : '';
+  let rec = '';
+  if (s.recoveryMode === 'distance' && s.recoveryDistance) rec = ` (récup ${formatDist(s.recoveryDistance)})`;
+  else if (s.recoveryMode === 'duration' && s.recoveryDuration) rec = ` (récup ${s.recoveryDuration})`;
+  return `${reps}${core}${pace}${rec}`.trim();
+};
+
+// Formate un bloc : groupe « Répéter » (children) → "3 × (400 m + 200 m)", sinon étape simple.
+const formatBlock = (block) => {
+  if (block?.children && block.children.length) {
+    const inner = block.children.map(formatStepInline).filter(Boolean).join(' + ');
+    const reps = block.repetitions > 1 ? `${block.repetitions} × ` : '';
+    return inner ? `${reps}(${inner})` : '';
+  }
+  return formatStepInline(block);
+};
+
+// Construit le texte à écrire dans la description Strava à partir d'une séance planifiée.
+const buildPlannedStravaDescription = (planned) => {
+  if (!planned) return null;
+  const lines = [];
+  const label = SESSION_TYPE_LABELS[planned.sessionType] || 'Séance';
+  lines.push(`🏃 Séance Trainwise — ${planned.title || label}`);
+
+  if (planned.runBlocks && planned.runBlocks.length) {
+    const struct = planned.runBlocks
+      .map((b) => formatBlock(b))
+      .filter(Boolean)
+      .map((l) => `• ${l}`)
+      .join('\n');
+    if (struct) { lines.push(''); lines.push(struct); }
+  } else {
+    const seg = [];
+    if (planned.warmup) seg.push(`• Échauffement : ${planned.warmup}`);
+    if (planned.mainWorkout) seg.push(`• Séance : ${planned.mainWorkout}`);
+    if (planned.cooldown) seg.push(`• Retour au calme : ${planned.cooldown}`);
+    if (seg.length) { lines.push(''); lines.push(seg.join('\n')); }
+  }
+
+  lines.push('');
+  lines.push(TRAINWISE_CTA);
+  return lines.join('\n');
+};
+
+// Écrit (une seule fois) la séance programmée dans la description de l'activité Strava.
+// `existingDescription` = description actuelle côté Strava, pour ne pas l'écraser.
+const writePlannedSessionToStrava = async (activityId, accessToken, planned, existingDescription = '') => {
+  const block = buildPlannedStravaDescription(planned);
+  if (!block) return;
+
+  // Idempotence : si l'activité est déjà annotée par Trainwise, on n'y touche plus
+  // (évite aussi une boucle : notre PUT redéclenche un webhook 'update').
+  if (existingDescription && existingDescription.includes(TRAINWISE_URL)) return;
+
+  const description = (existingDescription ? `${existingDescription}\n\n${block}` : block).slice(0, 4000);
+
+  try {
+    await axios.put(
+      `${STRAVA_API_URL}/activities/${activityId}`,
+      { description },
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+  } catch (e) {
+    // 401/403 = l'utilisateur n'a pas (encore) accordé le scope activity:write → on ignore
+    console.error(`[Strava] écriture description activité ${activityId} échouée:`, e.response?.status || e.message);
+  }
+};
+
 // ── Import d'une activité course (utilisé par la sync manuelle ET le webhook) ──
 // `activity` peut être un summary (liste d'activités) ou un détail complet ;
 // si `prefetchedDetail` n'est pas fourni, le détail est récupéré auprès de l'API.
@@ -345,7 +446,7 @@ exports.getAuthUrl = async (req, res) => {
       client_id: process.env.STRAVA_CLIENT_ID,
       redirect_uri: redirectUri,
       response_type: 'code',
-      scope: 'read,activity:read_all',
+      scope: 'read,activity:read_all,activity:write',
       state: req.user._id.toString()
     });
 
@@ -752,10 +853,16 @@ const processWebhookEvent = async (event) => {
     }
 
     const fullUser = await User.findById(user._id);
-    const { run } = await importRunActivity(user._id, detail, accessToken, fullUser, detail);
+    const { run, plannedCandidate } = await importRunActivity(user._id, detail, accessToken, fullUser, detail);
     // À relire par l'athlète : la popup ressenti/match s'ouvrira au prochain
     // lancement du dashboard (GET /api/strava/pending-review)
     await Run.updateOne({ _id: run._id }, { $set: { needsReview: true } });
+
+    // Annoter l'activité Strava avec la séance programmée du jour (si match trouvé).
+    // Sans effet pour les comptes connectés avant le scope activity:write (PUT ignoré).
+    if (plannedCandidate) {
+      await writePlannedSessionToStrava(object_id, accessToken, plannedCandidate, detail.description || '');
+    }
 
     await createNotification({
       recipient: user._id,

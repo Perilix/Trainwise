@@ -165,6 +165,54 @@
         background: #0582ca;
       }
     }
+
+    // Badge de téléchargement App Store (au-dessus des CTA connexion/inscription)
+    .side-download {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      margin-bottom: 0.6rem;
+      padding: 0.55rem 0.9rem;
+      border-radius: 12px;
+      background: #051923;
+      color: #fff;
+      text-decoration: none;
+      transition: all 0.2s ease;
+
+      .apple-logo {
+        width: 24px;
+        height: 24px;
+        fill: #fff;
+        flex-shrink: 0;
+      }
+
+      .badge-text {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.15;
+
+        small {
+          font-size: 0.6rem;
+          text-transform: uppercase;
+          letter-spacing: 0.4px;
+          opacity: 0.85;
+        }
+
+        strong {
+          font-size: 1.05rem;
+          font-weight: 600;
+        }
+      }
+
+      &:hover { background: #0a2836; }
+
+      &.is-soon {
+        opacity: 0.6;
+        cursor: default;
+
+        &:hover { background: #051923; }
+      }
+    }
   }
 }
 

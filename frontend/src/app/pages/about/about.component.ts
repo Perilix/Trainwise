@@ -22,6 +22,11 @@ export class AboutComponent {
 
   currentYear = new Date().getFullYear();
 
+  // Lien App Store — à renseigner une fois l'app approuvée :
+  // 'https://apps.apple.com/app/id<APP_STORE_ID>' (ID dans App Store Connect → App Information).
+  // Tant que c'est null, le badge affiche "Bientôt sur l'App Store".
+  appStoreUrl: string | null = null;
+
   goBack() {
     if (window.history.length > 1) {
       this.location.back();
