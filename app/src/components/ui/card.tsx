@@ -15,7 +15,8 @@ type Props = {
 // Carte blanche, bordure 1 px, sans ombre.
 export function Card({ children, padding = 16, onPress, accessibilityLabel, style }: Props) {
   const { colors } = useTheme();
-  const base = [styles.card, { backgroundColor: colors.surface, borderColor: colors.border, padding }, style];
+  // Côtés explicites plutôt que `padding` : un paddingHorizontal passé en style doit pouvoir le remplacer sur le web.
+  const base = [styles.card, { backgroundColor: colors.surface, borderColor: colors.border, paddingHorizontal: padding, paddingVertical: padding }, style];
 
   if (onPress) {
     return (

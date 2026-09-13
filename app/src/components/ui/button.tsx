@@ -6,7 +6,8 @@ import { radius } from '@/theme/tokens';
 import { Icon, type IconName } from './icon';
 import { Text } from './text';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'tonal' | 'ghost' | 'danger';
+// `inverse` : bouton blanc posé sur une surface de marque (carte du jour).
+export type ButtonVariant = 'primary' | 'secondary' | 'tonal' | 'ghost' | 'danger' | 'inverse';
 
 type Props = {
   label: string;
@@ -28,6 +29,7 @@ export function Button({ label, onPress, variant = 'primary', size = 'md', icon,
     tonal: { bg: colors.accentSoft, border: colors.accentSoft, fg: colors.accentInk },
     ghost: { bg: 'transparent', border: 'transparent', fg: colors.accentInk },
     danger: { bg: 'transparent', border: 'transparent', fg: colors.danger },
+    inverse: { bg: '#FFFFFF', border: '#FFFFFF', fg: '#003554' },
   }[variant];
   const small = size === 'sm';
 

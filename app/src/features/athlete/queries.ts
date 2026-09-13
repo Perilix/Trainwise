@@ -1,0 +1,159 @@
+// Accès aux données de la partie athlète. En mode démo, les données d'exemple remplacent l'API.
+import { useSession } from '@/features/auth/session';
+import { api, cachedGet, invalidateApiCache } from '@/lib/api';
+import type {
+  ApiCalendarData,
+  ApiCoach,
+  ApiCompetition,
+  ApiConversation,
+  ApiMessage,
+  ApiNotification,
+  ApiRun,
+  ApiStrengthSession,
+  ApiStravaStatus,
+  ApiUser,
+} from '@/lib/api-types';
+import { startOfWeek } from '@/lib/dates';
+import { useQuery, type QueryResult } from '@/lib/use-query';
+
+import { buildHome, buildPlanning, buildProfile, buildRunsOverview, mapMessages, mapNotification, mapRunDetail } from './mappers';
+import { sampleCoachThread, sampleHome, sampleNotifications, samplePlanning, sampleProfile, sampleRuns, sampleRunsOverview } from './sample-data';
+import type { RunsPeriod } from './types';
+
+const noop = () => {};
+
+function useAthleteQuery<T>(key: string, fetcher: (user: ApiUser) => Promise<T>, demo: () => T | undefined): QueryResult<T> {
+  const { status, user } = useSession();
+  const query = useQuery(`${user?.id ?? 'anonyme'}:${key}`, () => fetcher(user as ApiUser), { enabled: status === 'signedIn' && user !== null });
+  if (status === 'demo') return { data: demo(), loading: false, error: null, refetch: noop };
+  return query;
+}
+
+const getRuns = () => cachedGet<ApiRun[]>('/api/runs');
+const getCoach = () => cachedGet<ApiCoach | null>('/api/athlete/coach').catch(() => null);
+const getStravaStatus = () => cachedGet<ApiStravaStatus>('/api/strava/status').catch(() => null);
+const getConversations = () => api<ApiConversation[]>('/api/chat/conversations').catch((): ApiConversation[] => []);
+const getCalendar = (year: number, monthIndex: number) => api<ApiCalendarData>('/api/planning/calendar', { query: { month: monthIndex + 1, year } });
+
+export function useAthleteHome() {
+  return useAthleteQuery(
+    'home',
+    async (user) => {
+      const now = new Date();
+      // Semaine en cours (qui peut commencer le mois précédent) et mois suivant pour les prochaines séances.
+      const months = new Map<string, Date>();
+      [startOfWeek(now), now, new Date(now.getFullYear(), now.getMonth() + 1, 1)].forEach((date) => months.set(`${date.getFullYear()}-${date.getMonth()}`, date));
+      const [calendars, runs, strength, coach, conversations, strava] = await Promise.all([
+        Promise.all([...months.values()].map((date) => getCalendar(date.getFullYear(), date.getMonth()))),
+        getRuns(),
+        api<{ sessions: ApiStrengthSession[] }>('/api/strength/sessions', { query: { limit: 20 } })
+          .then((response) => response.sessions)
+          .catch((): ApiStrengthSession[] => []),
+        getCoach(),
+        getConversations(),
+        getStravaStatus(),
+      ]);
+      return buildHome({ user, calendars, runs, strength, coach, conversations, strava, now });
+    },
+    () => sampleHome,
+  );
+}
+
+export function usePlanningMonth(year: number, monthIndex: number) {
+  return useAthleteQuery(
+    `planning:${year}-${monthIndex}`,
+    async () => {
+      const [calendar, coach] = await Promise.all([getCalendar(year, monthIndex), getCoach()]);
+      return buildPlanning(calendar, new Date(), coach?.firstName);
+    },
+    () => ({ ...samplePlanning, year, monthIndex }),
+  );
+}
+
+export function useRunsOverview(period: RunsPeriod) {
+  return useAthleteQuery(`runs:${period}`, async () => buildRunsOverview(await getRuns(), period, new Date()), () => sampleRunsOverview);
+}
+
+export function useRunDetail(id: string) {
+  return useAthleteQuery(
+    `run:${id}`,
+    async () => {
+      const [run, coach] = await Promise.all([api<ApiRun>(`/api/runs/${encodeURIComponent(id)}`), getCoach()]);
+      return mapRunDetail(run, coach?.firstName);
+    },
+    () => sampleRuns[id] ?? sampleRuns['run-2026-08-31'],
+  );
+}
+
+export function useAthleteProfile() {
+  return useAthleteQuery(
+    'profile',
+    async (user) => {
+      const [competitions, strava, coach] = await Promise.all([
+        api<ApiCompetition[] | { competitions: ApiCompetition[] }>('/api/competitions')
+          .then((response) => (Array.isArray(response) ? response : (response.competitions ?? [])))
+          .catch((): ApiCompetition[] => []),
+        getStravaStatus(),
+        getCoach(),
+      ]);
+      return buildProfile(user, competitions, strava, coach, new Date());
+    },
+    () => sampleProfile,
+  );
+}
+
+export function useNotifications() {
+  return useAthleteQuery(
+    'notifications',
+    async () => {
+      const { notifications } = await api<{ notifications: ApiNotification[] }>('/api/notifications', { query: { limit: 50 } });
+      const now = new Date();
+      return notifications.map((notification) => mapNotification(notification, now));
+    },
+    () => sampleNotifications,
+  );
+}
+
+export function useUnreadNotificationCount() {
+  return useAthleteQuery('notifications:unread', async () => (await api<{ count: number }>('/api/notifications/unread-count')).count, () => 3);
+}
+
+export function useCoachThread() {
+  return useAthleteQuery(
+    'coach-thread',
+    async (user) => {
+      const [coach, conversations] = await Promise.all([getCoach(), getConversations()]);
+      const conversation = coach ? conversations.find((item) => item.otherParticipant?._id === coach._id) : undefined;
+      if (!conversation) return [];
+      const { messages } = await api<{ messages: ApiMessage[] }>(`/api/chat/conversations/${conversation._id}/messages`, { query: { limit: 50 } });
+      return mapMessages(messages, user.id, new Date());
+    },
+    () => sampleCoachThread,
+  );
+}
+
+/** Écritures. Sans effet en mode démo. */
+export function useAthleteActions() {
+  const { status } = useSession();
+  const live = status === 'signedIn';
+
+  return {
+    async skipSession(id: string) {
+      if (!live) return;
+      await api(`/api/planning/${encodeURIComponent(id)}/status`, { method: 'PATCH', body: { status: 'skipped' } });
+    },
+    async saveRunFeeling(id: string, feeling: number) {
+      if (!live) return;
+      await api(`/api/runs/${encodeURIComponent(id)}`, { method: 'PATCH', body: { feeling } });
+      invalidateApiCache('/api/runs');
+    },
+    async markNotificationRead(id: string) {
+      if (!live) return;
+      await api(`/api/notifications/${encodeURIComponent(id)}/read`, { method: 'PATCH' });
+    },
+    async markAllNotificationsRead() {
+      if (!live) return;
+      await api('/api/notifications/read-all', { method: 'PATCH' });
+    },
+  };
+}
