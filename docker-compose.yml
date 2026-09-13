@@ -27,12 +27,12 @@ services:
     networks:
       - trainwise-network
 
-  # Backend Node.js
-  backend:
+  # API Node.js
+  api:
     build:
-      context: ./backend
+      context: ./api
       dockerfile: Dockerfile
-    container_name: trainwise-backend
+    container_name: trainwise-api
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -77,17 +77,17 @@ services:
     networks:
       - trainwise-network
 
-  # Frontend Angular
-  frontend:
+  # Web app Angular
+  web-app:
     build:
-      context: ./frontend
+      context: ./web-app
       dockerfile: Dockerfile
-    container_name: trainwise-frontend
+    container_name: trainwise-web-app
     restart: unless-stopped
     ports:
       - "4200:80"
     depends_on:
-      - backend
+      - api
     networks:
       - trainwise-network
 
