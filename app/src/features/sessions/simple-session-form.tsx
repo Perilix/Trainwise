@@ -8,7 +8,7 @@ import { useTheme } from '@/theme/theme-provider';
 import { radius } from '@/theme/tokens';
 import { fontFamily } from '@/theme/typography';
 
-const SESSION_TYPES: Record<Sport, readonly (readonly [string, string])[]> = {
+export const SESSION_TYPES: Record<Sport, readonly (readonly [string, string])[]> = {
   running: [
     ['endurance', 'Endurance'],
     ['sortie_longue', 'Sortie longue'],

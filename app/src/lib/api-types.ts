@@ -144,7 +144,17 @@ export type ApiRunBlockStep = {
   recoveryPace?: string | null;
   recoveryDescription?: string;
   order?: number;
-  paceSource?: { mode?: string | null; zone?: string | null; vmaPercent?: number | null } | null;
+  paceSource?: ApiPaceSource | null;
+  recoveryPaceSource?: ApiPaceSource | null;
+};
+
+/** Origine de l'allure d'une étape planifiée : zone VMA, % VMA ou allure fixe. */
+export type ApiPaceSource = {
+  mode?: string | null;
+  zone?: string | null;
+  vmaPercent?: number | null;
+  resolvedFromVma?: number | null;
+  overridden?: boolean;
 };
 
 export type ApiRunBlock = ApiRunBlockStep & { children?: ApiRunBlockStep[] };

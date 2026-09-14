@@ -1,12 +1,12 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { BackBar, Button, FormError, Screen, StateView, Text } from '@/components/ui';
 import { useCoachActions, useCoachPlannedSession } from '@/features/coach/queries';
 import { DateStepper } from '@/features/sessions/date-stepper';
 import { PlannedSessionBody } from '@/features/sessions/planned-session-body';
-import { emitAppEvent } from '@/lib/app-events';
+import { emitAppEvent, onAppEvent } from '@/lib/app-events';
 import { addDays } from '@/lib/dates';
 import { formatDayLong, parseDay, toIsoDay } from '@/lib/format';
 import { layout } from '@/theme/tokens';
@@ -23,6 +23,9 @@ export default function CoachPlannedSessionScreen() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  // Revient de l'éditeur : la séance a pu changer.
+  useEffect(() => onAppEvent('sessions:changed', refetch), [refetch]);
 
   if (!session) {
     return (
@@ -101,6 +104,9 @@ export default function CoachPlannedSessionScreen() {
           <Text variant="small" color="successInk" accessibilityRole="alert">
             {notice}
           </Text>
+        ) : null}
+        {session.sport === 'running' ? (
+          <Button label="Modifier la séance" icon="pen" fullWidth onPress={() => router.push({ pathname: '/pro/athletes/[id]/editeur', params: { id, planId: session.id } })} />
         ) : null}
         <View style={styles.actions}>
           <Button label="Dupliquer" variant="secondary" icon="copy" onPress={() => changeMode('duplicate')} style={styles.flex} />

@@ -17,6 +17,7 @@ import type {
   ApiPackageType,
   ApiPendingInvitation,
   ApiPlannedRunDetail,
+  ApiRunBlock,
   ApiSubscriptionRequest,
   ApiUser,
   ApiUserSearchResult,
@@ -50,6 +51,15 @@ export function useAthletePlanning(athleteId: string, year: number, monthIndex: 
     `coach:planning:${athleteId}:${year}-${monthIndex}`,
     async () => buildPlanning(await api<ApiCalendarData>(`${athletePath(athleteId)}/calendar`, { query: { month: monthIndex + 1, year } }), new Date()),
     () => ({ ...samplePlanning, year, monthIndex }),
+  );
+}
+
+/** Séance planifiée brute (pour l'éditeur) ; null quand on crée une nouvelle séance. */
+export function useCoachPlannedRaw(athleteId: string, planId?: string) {
+  return useSessionQuery<ApiPlannedRunDetail | null>(
+    `coach:planned-raw:${athleteId}:${planId ?? 'nouvelle'}`,
+    async () => (planId ? api<ApiPlannedRunDetail>(`${athletePath(athleteId)}/planning/${encodeURIComponent(planId)}`) : null),
+    () => (planId ? (samplePlannedDetails[planId] ?? samplePlannedDetails['plan-2026-09-15']) : null),
   );
 }
 
@@ -176,9 +186,14 @@ export function useCoachActions() {
       await api('/api/coach/invite/direct', { method: 'POST', body: { athleteId, packageType } });
       invalidateApiCache();
     },
-    async createAthleteSession(athleteId: string, payload: NewPlannedSession) {
+    async createAthleteSession(athleteId: string, payload: NewPlannedSession & { runBlocks?: ApiRunBlock[] }) {
       if (!live) return;
       await api(`${athletePath(athleteId)}/planning`, { method: 'POST', body: { ...payload, date: noonIso(payload.date), status: 'planned' } });
+      invalidateApiCache();
+    },
+    async updateAthleteSession(athleteId: string, planId: string, patch: { sessionType?: string; description?: string; runBlocks?: ApiRunBlock[] }) {
+      if (!live) return;
+      await api(`${athletePath(athleteId)}/planning/${encodeURIComponent(planId)}`, { method: 'PATCH', body: patch });
       invalidateApiCache();
     },
     async duplicateAthleteSession(athleteId: string, planId: string, isoDay: string) {

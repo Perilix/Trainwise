@@ -63,6 +63,16 @@ export default function CoachAddSessionScreen() {
         />
       </Section>
 
+      <Section style={styles.tight}>
+        <Button
+          label="Créer une séance par blocs"
+          variant="secondary"
+          icon="repeat"
+          fullWidth
+          onPress={() => router.replace({ pathname: '/pro/athletes/[id]/editeur', params: { id, date } })}
+        />
+      </Section>
+
       {mode === 'simple' ? (
         <SimpleSessionForm
           date={date}
