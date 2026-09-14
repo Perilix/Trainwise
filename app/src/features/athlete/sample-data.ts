@@ -1,4 +1,6 @@
-// Données d'exemple (celles de la maquette), utilisées tant que les écrans ne sont pas branchés sur l'API.
+// Données d'exemple (celles de la maquette), utilisées par le mode démo.
+import type { ApiPlannedRunDetail } from '@/lib/api-types';
+
 import type {
   Activity,
   AthleteHome,
@@ -14,6 +16,86 @@ import type {
 } from './types';
 
 export const SAMPLE_TODAY = '2026-09-13';
+
+const coachPlanned = {
+  status: 'planned',
+  feeling: null,
+  generatedBy: 'coach',
+  createdBy: 'demo-coach',
+  targetDistance: null,
+  targetDuration: null,
+  targetPace: null,
+} as const;
+
+// Séances planifiées détaillées, au format de GET /api/planning/:id
+export const samplePlannedDetails: Record<string, ApiPlannedRunDetail> = {
+  'plan-2026-09-13': {
+    ...coachPlanned,
+    _id: 'plan-2026-09-13',
+    date: '2026-09-13T00:00:00.000Z',
+    activityType: 'running',
+    sessionType: 'sortie_longue',
+    title: 'Sortie longue',
+    description: 'Endurance fondamentale en aisance respiratoire, relances légères sur les 2 derniers km.',
+    targetDistance: 16,
+    targetDuration: 85,
+    targetPace: '5:20',
+    runBlocks: [
+      { role: 'warmup', mode: 'distance', distance: 2, pace: '6:00', order: 0, description: 'Très progressif, épaules relâchées.' },
+      { role: 'main', mode: 'distance', distance: 12, pace: '5:20', order: 1 },
+      { role: 'main', mode: 'distance', distance: 2, pace: '4:50', order: 2, description: 'Relances sans forcer, comme en fin de marathon.' },
+    ],
+  },
+  'plan-2026-09-15': {
+    ...coachPlanned,
+    _id: 'plan-2026-09-15',
+    date: '2026-09-15T00:00:00.000Z',
+    activityType: 'running',
+    sessionType: 'fractionne',
+    title: 'Fractionné 10 × 400 m',
+    description: 'Récupération complète entre les répétitions : la FC doit redescendre sous 150.',
+    targetDistance: 11,
+    targetPace: '3:32',
+    runBlocks: [
+      { role: 'warmup', mode: 'duration', duration: 20, pace: '6:00', order: 0, description: 'Footing puis 3 lignes droites.' },
+      { role: 'main', mode: 'distance', distance: 0.4, pace: '3:32', repetitions: 10, recoveryMode: 'duration', recoveryDuration: '1min30', recoveryDescription: 'trot', order: 1 },
+      { role: 'cooldown', mode: 'duration', duration: 10, pace: '6:10', order: 2 },
+    ],
+  },
+  'plan-2026-09-17': {
+    ...coachPlanned,
+    _id: 'plan-2026-09-17',
+    date: '2026-09-17T00:00:00.000Z',
+    activityType: 'strength',
+    sessionType: 'lower_body',
+    title: 'Renfo bas du corps',
+    description: 'Charges modérées, priorité à l’amplitude. Stoppe une série si la technique se dégrade.',
+    strengthPlan: {
+      estimatedDuration: 50,
+      exercises: [
+        { exercise: { _id: 'ex-squat', name: 'Squat barre', primaryMuscle: 'quadriceps' }, targetSets: 4, targetReps: '8-10', targetWeight: 60, targetRest: '90 s' },
+        { exercise: { _id: 'ex-bulgarian', name: 'Fente bulgare', primaryMuscle: 'glutes' }, targetSets: 3, targetReps: '10', targetWeight: 12, targetRest: '60 s', notes: 'Par jambe' },
+        { exercise: { _id: 'ex-rdl', name: 'Soulevé de terre roumain', primaryMuscle: 'hamstrings' }, targetSets: 3, targetReps: '10', targetWeight: 50, targetRest: '90 s' },
+      ],
+      superset: {
+        sets: 3,
+        restBetweenSets: 75,
+        pairs: [
+          {
+            a: { exercise: { _id: 'ex-hip-thrust', name: 'Hip thrust', primaryMuscle: 'glutes' }, targetReps: '12', targetWeight: 40 },
+            b: { exercise: { _id: 'ex-calf', name: 'Mollets debout', primaryMuscle: 'calves' }, targetReps: '15' },
+          },
+        ],
+      },
+      circuit: {
+        name: 'Gainage',
+        rounds: 3,
+        restBetweenRounds: 45,
+        exercises: [{ exercise: { _id: 'ex-plank', name: 'Planche', primaryMuscle: 'core' }, targetReps: '40 s' }],
+      },
+    },
+  },
+};
 
 const coachSession = (session: Omit<PlannedSession, 'plannedBy' | 'coachName' | 'status'> & Partial<PlannedSession>): PlannedSession => ({
   plannedBy: 'coach',

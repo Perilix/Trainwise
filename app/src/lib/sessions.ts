@@ -31,6 +31,7 @@ export const formatKm = (meters: number) => `${(meters / 1000).toFixed(1).replac
 export function formatDuration(totalSeconds: number) {
   const sec = Math.round(totalSeconds);
   if (sec >= 3600) return `${Math.floor(sec / 3600)} h ${String(Math.round((sec % 3600) / 60)).padStart(2, '0')}`;
+  if (sec < 60) return `${sec} s`;
   if (sec % 60 === 0 || sec >= 600) return `${Math.round(sec / 60)} min`;
   return `${Math.floor(sec / 60)}′${String(sec % 60).padStart(2, '0')}″`;
 }

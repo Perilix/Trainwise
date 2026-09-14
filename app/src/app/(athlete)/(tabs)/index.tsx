@@ -1,9 +1,11 @@
 import { useRouter } from 'expo-router';
+import { useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Avatar, Button, Card, Chip, Divider, Icon, IconButton, Screen, Section, SectionHeader, Stat, StateView, Text } from '@/components/ui';
 import { AthleteAppBar } from '@/features/athlete/athlete-app-bar';
 import { useAthleteHome } from '@/features/athlete/queries';
+import { onAppEvent } from '@/lib/app-events';
 import type { Activity, PlannedSession, WeekDay } from '@/features/athlete/types';
 import { formatClock, formatDayShort, formatDecimal, formatHoursMinutes, formatPace, formatWeekdayTile, parseDay, WEEKDAY_INITIALS } from '@/lib/format';
 import { useTheme } from '@/theme/theme-provider';
@@ -13,6 +15,8 @@ import { fontFamily } from '@/theme/typography';
 export default function AthleteHomeScreen() {
   const router = useRouter();
   const { data, loading, error, refetch } = useAthleteHome();
+
+  useEffect(() => onAppEvent('sessions:changed', refetch), [refetch]);
 
   if (!data) {
     return (
@@ -37,7 +41,7 @@ export default function AthleteHomeScreen() {
 
       {data.today ? (
         <Section>
-          <TodayCard session={data.today} onOpen={() => router.push('/planning')} />
+          <TodayCard session={data.today} onOpen={() => data.today && router.push({ pathname: '/seance/[id]', params: { id: data.today.id } })} />
         </Section>
       ) : null}
 
@@ -58,7 +62,7 @@ export default function AthleteHomeScreen() {
         <SectionHeader title="Prochains entraînements" actionLabel="Planning" onAction={() => router.push('/planning')} />
         <Card padding={0} style={[styles.sectionCard, styles.listCard]}>
           {data.upcoming.map((session, index) => (
-            <UpcomingRow key={session.id} session={session} first={index === 0} onPress={() => router.push('/planning')} />
+            <UpcomingRow key={session.id} session={session} first={index === 0} onPress={() => router.push({ pathname: '/seance/[id]', params: { id: session.id } })} />
           ))}
         </Card>
       </Section>

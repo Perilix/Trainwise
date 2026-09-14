@@ -49,6 +49,51 @@ export type ApiPlannedRun = {
   createdBy: string | null;
 };
 
+export type ApiRunBlockStep = {
+  role: 'warmup' | 'main' | 'cooldown';
+  mode: 'distance' | 'duration';
+  distance?: number | null; // km
+  duration?: number | null; // min
+  pace?: string | null; // "mm:ss" /km
+  repetitions?: number;
+  description?: string;
+  recoveryMode?: 'distance' | 'duration' | null;
+  recoveryDistance?: number | null; // km
+  recoveryDuration?: string | null; // texte libre : "1min30"
+  recoveryPace?: string | null;
+  recoveryDescription?: string;
+  order?: number;
+  paceSource?: { mode?: string | null; zone?: string | null; vmaPercent?: number | null } | null;
+};
+
+export type ApiRunBlock = ApiRunBlockStep & { children?: ApiRunBlockStep[] };
+
+export type ApiExerciseRef = { _id: string; name: string; imageUrl?: string; primaryMuscle?: string };
+
+export type ApiPlanExercise = {
+  exercise: ApiExerciseRef | string | null;
+  targetSets?: number;
+  targetReps?: string;
+  targetWeight?: number;
+  targetRest?: string;
+  notes?: string;
+};
+
+/** Séance planifiée détaillée (GET /api/planning/:id, exercices peuplés). */
+export type ApiPlannedRunDetail = Omit<ApiPlannedRun, 'strengthPlan'> & {
+  warmup?: string;
+  mainWorkout?: string;
+  cooldown?: string;
+  runBlocks?: ApiRunBlock[];
+  linkedRun?: string | { _id: string } | null;
+  strengthPlan?: {
+    exercises?: ApiPlanExercise[];
+    circuit?: { name?: string; rounds?: number; restBetweenRounds?: number; exercises?: ApiPlanExercise[] };
+    superset?: { name?: string; sets?: number; restBetweenSets?: number; pairs?: { a?: ApiPlanExercise; b?: ApiPlanExercise }[] };
+    estimatedDuration?: number;
+  };
+};
+
 export type ApiSplit = {
   split: number;
   distance: number; // m

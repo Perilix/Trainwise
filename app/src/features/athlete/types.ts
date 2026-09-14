@@ -1,4 +1,5 @@
 // Modèles de vue de la partie athlète : ce que les écrans affichent, indépendamment du format de l'API.
+import type { Segment } from '@/lib/sessions';
 
 export type Sport = 'running' | 'strength';
 export type PlannedBy = 'coach' | 'athlete';
@@ -17,6 +18,57 @@ export type PlannedSession = {
   plannedBy: PlannedBy;
   coachName?: string;
   status: SessionStatus;
+};
+
+export type ExerciseBlockRef = { kind: 'single' | 'circuit' | 'superset'; pairIndex: number | null; slot: 'a' | 'b' | null };
+
+export type PlanExercise = {
+  key: string;
+  exerciseId: string;
+  name: string;
+  muscle?: string;
+  sets?: number;
+  reps?: string; // "8-12"
+  weight?: number; // kg
+  rest?: string; // texte libre du coach
+  notes?: string;
+  block: ExerciseBlockRef;
+};
+
+export type StrengthPlanView = {
+  exercises: PlanExercise[];
+  circuit?: { name?: string; rounds: number; restBetweenRoundsSec: number; exercises: PlanExercise[] };
+  superset?: { name?: string; sets: number; restBetweenSetsSec: number; pairs: { a?: PlanExercise; b?: PlanExercise }[] };
+  estimatedDuration?: number;
+};
+
+export type RunStepView = {
+  key: string;
+  label: string; // "400 m", "20 min"
+  paceLabel?: string; // "3:32 /km"
+  recoveryLabel?: string;
+  note?: string;
+  pct: number; // % VMA estimé
+};
+
+export type RunBlockView = {
+  key: string;
+  role: 'warmup' | 'main' | 'cooldown';
+  roleLabel: string;
+  repetitions: number;
+  steps: RunStepView[];
+  recoveryLabel?: string;
+  note?: string;
+  durationSec: number;
+};
+
+export type PlannedSessionDetail = PlannedSession & {
+  sessionType: string;
+  blocks: RunBlockView[];
+  segments: Segment[];
+  textPlan: { label: string; text: string }[];
+  strength?: StrengthPlanView;
+  linkedRunId?: string;
 };
 
 export type Activity = {

@@ -7,6 +7,7 @@ import type {
   ApiCompetition,
   ApiConversation,
   ApiNotification,
+  ApiPlannedRunDetail,
   ApiRun,
   ApiStrengthSession,
   ApiStravaStatus,
@@ -16,7 +17,9 @@ import { startOfWeek } from '@/lib/dates';
 import { useQuery, type QueryResult } from '@/lib/use-query';
 
 import { buildHome, buildPlanning, buildProfile, buildRunsOverview, mapNotification, mapRunDetail } from './mappers';
-import { sampleHome, sampleNotifications, samplePlanning, sampleProfile, sampleRuns, sampleRunsOverview } from './sample-data';
+import { mapPlannedDetail } from './session-detail';
+import type { StrengthSessionPayload } from './strength-log';
+import { samplePlannedDetails, sampleHome, sampleNotifications, samplePlanning, sampleProfile, sampleRuns, sampleRunsOverview } from './sample-data';
 import type { RunsPeriod } from './types';
 
 const noop = () => {};
@@ -66,6 +69,17 @@ export function usePlanningMonth(year: number, monthIndex: number) {
       return buildPlanning(calendar, new Date(), coach?.firstName);
     },
     () => ({ ...samplePlanning, year, monthIndex }),
+  );
+}
+
+export function usePlannedSession(id: string) {
+  return useAthleteQuery(
+    `planned:${id}`,
+    async (user) => {
+      const [raw, coach] = await Promise.all([api<ApiPlannedRunDetail>(`/api/planning/${encodeURIComponent(id)}`), getCoach()]);
+      return mapPlannedDetail(raw, user.vma, coach?.firstName);
+    },
+    () => mapPlannedDetail(samplePlannedDetails[id] ?? samplePlannedDetails['plan-2026-09-13'], 16.5, 'Camille'),
   );
 }
 
@@ -126,10 +140,26 @@ export function useAthleteActions() {
   const { status } = useSession();
   const live = status === 'signedIn';
 
+  const setSessionStatus = async (id: string, next: 'planned' | 'completed' | 'skipped') => {
+    if (!live) return;
+    await api(`/api/planning/${encodeURIComponent(id)}/status`, { method: 'PATCH', body: { status: next } });
+    invalidateApiCache();
+  };
+
   return {
     async skipSession(id: string) {
+      await setSessionStatus(id, 'skipped');
+    },
+    async completeSession(id: string) {
+      await setSessionStatus(id, 'completed');
+    },
+    async reopenSession(id: string) {
+      await setSessionStatus(id, 'planned');
+    },
+    async saveStrengthSession(payload: StrengthSessionPayload) {
       if (!live) return;
-      await api(`/api/planning/${encodeURIComponent(id)}/status`, { method: 'PATCH', body: { status: 'skipped' } });
+      await api('/api/strength/sessions', { method: 'POST', body: payload });
+      invalidateApiCache();
     },
     async saveRunFeeling(id: string, feeling: number) {
       if (!live) return;

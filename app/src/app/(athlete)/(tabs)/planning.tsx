@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button, Card, Chip, Divider, IconButton, Screen, Section, SectionHeader, Stat, StateView, Text } from '@/components/ui';
 import { AthleteAppBar } from '@/features/athlete/athlete-app-bar';
 import { useAthleteActions, usePlanningMonth } from '@/features/athlete/queries';
+import { SESSION_STATUS_CHIP } from '@/features/athlete/session-status';
+import { emitAppEvent, onAppEvent } from '@/lib/app-events';
 import type { CalendarMarker, PlannedSession, PlanningMonth } from '@/features/athlete/types';
 import { formatDayLong, formatDecimal, formatHoursMinutes, formatMonthYear, formatPace, toIsoDay, WEEKDAY_INITIALS } from '@/lib/format';
 import { useTheme } from '@/theme/theme-provider';
@@ -16,6 +19,9 @@ export default function PlanningScreen() {
   const [selected, setSelected] = useState(today);
   const { data, loading, error, refetch } = usePlanningMonth(month.year, month.monthIndex);
   const { skipSession } = useAthleteActions();
+  const router = useRouter();
+
+  useEffect(() => onAppEvent('sessions:changed', refetch), [refetch]);
 
   const shiftMonth = (delta: number) =>
     setMonth(({ year, monthIndex }) => {
@@ -30,7 +36,7 @@ export default function PlanningScreen() {
 
   const skip = async (id: string) => {
     await skipSession(id).catch(() => undefined);
-    refetch();
+    emitAppEvent('sessions:changed');
   };
 
   const sessions = data?.sessionsByDay[selected] ?? [];
@@ -76,7 +82,12 @@ export default function PlanningScreen() {
             {sessions.length ? (
               <View style={styles.sessionList}>
                 {sessions.map((session) => (
-                  <SessionCard key={session.id} session={session} onSkip={() => skip(session.id)} />
+                  <SessionCard
+                    key={session.id}
+                    session={session}
+                    onSkip={() => skip(session.id)}
+                    onOpen={() => router.push({ pathname: '/seance/[id]', params: { id: session.id } })}
+                  />
                 ))}
               </View>
             ) : (
@@ -181,15 +192,9 @@ function Legend() {
   );
 }
 
-const STATUS_CHIP = {
-  planned: { label: 'À faire', tone: 'neutral', icon: 'clock' },
-  done: { label: 'Effectuée', tone: 'success', icon: 'check' },
-  skipped: { label: 'Passée', tone: 'warning', icon: 'ban' },
-} as const;
-
-function SessionCard({ session, onSkip }: { session: PlannedSession; onSkip: () => void }) {
+function SessionCard({ session, onSkip, onOpen }: { session: PlannedSession; onSkip: () => void; onOpen: () => void }) {
   const byCoach = session.plannedBy === 'coach';
-  const status = STATUS_CHIP[session.status];
+  const status = SESSION_STATUS_CHIP[session.status];
   return (
     <Card>
       <View style={styles.chips}>
@@ -211,9 +216,11 @@ function SessionCard({ session, onSkip }: { session: PlannedSession; onSkip: () 
       {session.status === 'planned' ? (
         <View style={styles.sessionActions}>
           <Button label="Passer" variant="secondary" onPress={onSkip} style={styles.flex} />
-          <Button label="Détailler" style={styles.flex} />
+          <Button label="Détailler" onPress={onOpen} style={styles.flex} />
         </View>
-      ) : null}
+      ) : (
+        <Button label="Voir le détail" variant="secondary" fullWidth onPress={onOpen} style={styles.detailButton} />
+      )}
     </Card>
   );
 }
@@ -241,4 +248,5 @@ const styles = StyleSheet.create({
   sessionStats: { flexDirection: 'row', gap: 8, marginTop: 14 },
   sessionActions: { flexDirection: 'row', gap: 8, marginTop: 16 },
   monthStats: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  detailButton: { marginTop: 16 },
 });
