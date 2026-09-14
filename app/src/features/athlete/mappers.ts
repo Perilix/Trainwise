@@ -257,6 +257,9 @@ export function buildPlanning(calendar: ApiCalendarData, now: Date, coachName?: 
   [...calendar.runs.map(runDay), ...calendar.strengthSessions.map((session) => dayOf(session.date)), ...planned.filter((session) => session.status === 'done').map((session) => session.date)].forEach(
     (day) => (markers[day] = 'done'),
   );
+  const activitiesByDay: Record<string, Activity[]> = {};
+  [...calendar.runs.map(mapRun), ...calendar.strengthSessions.map(mapStrength)].forEach((activity) => (activitiesByDay[activity.date] ??= []).push(activity));
+
   calendar.competitions.forEach((competition) => {
     const day = dayOf(competition.date);
     markers[day] = 'competition';
@@ -270,6 +273,7 @@ export function buildPlanning(calendar: ApiCalendarData, now: Date, coachName?: 
     markers,
     competitionPriority,
     sessionsByDay,
+    activitiesByDay,
     stats: {
       planned: planned.length,
       done: calendar.runs.length + calendar.strengthSessions.length,

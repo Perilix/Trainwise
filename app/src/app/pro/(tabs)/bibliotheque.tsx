@@ -1,13 +1,13 @@
 import { useFocusEffect } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, useWindowDimensions } from 'react-native';
 
-import { Card, Field, Icon, Screen, Section, Segmented, StateView, Text, WorkoutProfile } from '@/components/ui';
-import { useTemplates, type TemplateRow } from '@/features/coach/templates';
+import { Card, Field, Screen, Section, Segmented, StateView, Text } from '@/components/ui';
 import type { Sport } from '@/features/athlete/types';
+import { TemplateItem } from '@/features/coach/template-item';
+import { useTemplates } from '@/features/coach/templates';
 import { MainAppBar } from '@/features/shell/main-app-bar';
-import { useTheme } from '@/theme/theme-provider';
-import { layout, radius } from '@/theme/tokens';
+import { layout } from '@/theme/tokens';
 
 type SportFilter = 'all' | Sport;
 
@@ -78,44 +78,10 @@ export default function LibraryScreen() {
   );
 }
 
-function TemplateItem({ row, divided, profileWidth }: { row: TemplateRow; divided: boolean; profileWidth: number }) {
-  const { colors } = useTheme();
-  const running = row.sport === 'running';
-  return (
-    <View accessible accessibilityLabel={`${row.name}. ${row.meta}`} style={[styles.item, divided && { borderTopWidth: 1, borderTopColor: colors.border }]}>
-      <View style={styles.itemTop}>
-        <View style={[styles.tile, { backgroundColor: running ? colors.accentSoft : colors.subtle }]}>
-          <Icon name={running ? 'route' : 'dumbbell'} size={18} color={running ? colors.accentInk : colors.primary} />
-        </View>
-        <View style={styles.text}>
-          <Text variant="h3" numberOfLines={1}>
-            {row.name}
-          </Text>
-          {row.meta ? (
-            <Text variant="caption" numberOfLines={1}>
-              {row.meta}
-            </Text>
-          ) : null}
-        </View>
-      </View>
-      {row.segments.length ? (
-        <View style={styles.profile}>
-          <WorkoutProfile segments={row.segments} width={profileWidth} height={16} gap={1} />
-        </View>
-      ) : null}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   heading: { gap: 2, paddingTop: 4, paddingBottom: 14 },
   filters: { gap: 10, paddingBottom: 18 },
   group: { paddingBottom: 16 },
   groupLabel: { marginBottom: 8 },
   list: { paddingHorizontal: 16 },
-  item: { paddingVertical: 12 },
-  itemTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  tile: { width: 36, height: 36, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
-  text: { flex: 1, minWidth: 0 },
-  profile: { marginTop: 8, marginLeft: 48 },
 });

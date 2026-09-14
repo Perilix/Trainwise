@@ -164,6 +164,7 @@ export const samplePlanning: PlanningMonth = {
     '2026-09-17': [sampleHome.upcoming[1]],
     '2026-09-18': [{ id: 'plan-2026-09-18', date: '2026-09-18', sport: 'running', title: 'Footing', durationMin: 45, plannedBy: 'athlete', status: 'planned' }],
   },
+  activitiesByDay: Object.fromEntries(sampleHome.recent.map((activity) => [activity.date, [activity]])),
   stats: { planned: 16, done: 6, distanceKm: 58 },
 };
 

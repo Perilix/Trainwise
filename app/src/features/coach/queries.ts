@@ -1,16 +1,22 @@
 // Accès aux données de l'espace coach. En mode démo, les données d'exemple remplacent l'API.
+import { buildPlanning } from '@/features/athlete/mappers';
+import { samplePlannedDetails, samplePlanning } from '@/features/athlete/sample-data';
+import { mapPlannedDetail } from '@/features/athlete/session-detail';
+import type { NewPlannedSession } from '@/features/athlete/types';
 import { useSession } from '@/features/auth/session';
 import { useSessionQuery } from '@/features/auth/use-session-query';
 import { getConversations, mapConversationRows } from '@/features/chat/conversations';
 import { useDirectChat } from '@/features/chat/use-direct-chat';
 import { api, invalidateApiCache } from '@/lib/api';
 import type {
+  ApiCalendarData,
   ApiCoachAthlete,
   ApiCoachAthleteDetail,
   ApiCoachStats,
   ApiCompetition,
   ApiPackageType,
   ApiPendingInvitation,
+  ApiPlannedRunDetail,
   ApiSubscriptionRequest,
   ApiUser,
   ApiUserSearchResult,
@@ -32,6 +38,28 @@ import {
 } from './sample-data';
 
 const athletePath = (id: string) => `/api/coach/athletes/${encodeURIComponent(id)}`;
+
+/** Midi heure locale : la date reste la même quel que soit le fuseau du serveur. */
+const noonIso = (isoDay: string) => {
+  const [year, month, day] = isoDay.split('-').map(Number);
+  return new Date(year, month - 1, day, 12).toISOString();
+};
+
+export function useAthletePlanning(athleteId: string, year: number, monthIndex: number) {
+  return useSessionQuery(
+    `coach:planning:${athleteId}:${year}-${monthIndex}`,
+    async () => buildPlanning(await api<ApiCalendarData>(`${athletePath(athleteId)}/calendar`, { query: { month: monthIndex + 1, year } }), new Date()),
+    () => ({ ...samplePlanning, year, monthIndex }),
+  );
+}
+
+export function useCoachPlannedSession(athleteId: string, planId: string) {
+  return useSessionQuery(
+    `coach:planned:${athleteId}:${planId}`,
+    async () => mapPlannedDetail(await api<ApiPlannedRunDetail>(`${athletePath(athleteId)}/planning/${encodeURIComponent(planId)}`)),
+    () => mapPlannedDetail(samplePlannedDetails[planId] ?? samplePlannedDetails['plan-2026-09-13'], 17),
+  );
+}
 
 export function useCoachHome() {
   return useSessionQuery(
@@ -146,6 +174,30 @@ export function useCoachActions() {
     async inviteAthlete(athleteId: string, packageType: ApiPackageType) {
       if (!live) return;
       await api('/api/coach/invite/direct', { method: 'POST', body: { athleteId, packageType } });
+      invalidateApiCache();
+    },
+    async createAthleteSession(athleteId: string, payload: NewPlannedSession) {
+      if (!live) return;
+      await api(`${athletePath(athleteId)}/planning`, { method: 'POST', body: { ...payload, date: noonIso(payload.date), status: 'planned' } });
+      invalidateApiCache();
+    },
+    async duplicateAthleteSession(athleteId: string, planId: string, isoDay: string) {
+      if (!live) return;
+      await api(`${athletePath(athleteId)}/planning/${encodeURIComponent(planId)}/duplicate`, { method: 'POST', body: { targetDate: noonIso(isoDay) } });
+      invalidateApiCache();
+    },
+    async deleteAthleteSession(athleteId: string, planId: string) {
+      if (!live) return;
+      await api(`${athletePath(athleteId)}/planning/${encodeURIComponent(planId)}`, { method: 'DELETE' });
+      invalidateApiCache();
+    },
+    /** Planifie une séance type : l'API calcule les allures à partir de la VMA de l'athlète. */
+    async assignTemplate(templateId: string, athleteId: string, isoDay: string) {
+      if (!live) return;
+      await api(`/api/coach/session-templates/${encodeURIComponent(templateId)}/assign`, {
+        method: 'POST',
+        body: { assignments: [{ athleteId, date: noonIso(isoDay), paceOverrides: {} }] },
+      });
       invalidateApiCache();
     },
     async updateAthleteVma(athleteId: string, vma: number) {

@@ -1,3 +1,4 @@
+import { View } from 'react-native';
 import Svg, { Rect } from 'react-native-svg';
 
 import { intensityColor, intensityHeight, totals, type Segment } from '@/lib/sessions';
@@ -25,11 +26,14 @@ export function WorkoutProfile({ segments, width, height, gap = 1.5, totalSecond
     return { key: index, x, w, h, color: intensityColor(segment.pct, ramp) };
   });
 
+  // Décoratif : masqué des lecteurs d'écran (aria-hidden fonctionne sur mobile comme sur le web).
   return (
-    <Svg width={width} height={height} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      {bars.map((bar) => (
-        <Rect key={bar.key} x={bar.x} y={height - bar.h} width={bar.w} height={bar.h} rx={Math.min(2, bar.w / 2)} fill={bar.color} />
-      ))}
-    </Svg>
+    <View aria-hidden>
+      <Svg width={width} height={height}>
+        {bars.map((bar) => (
+          <Rect key={bar.key} x={bar.x} y={height - bar.h} width={bar.w} height={bar.h} rx={Math.min(2, bar.w / 2)} fill={bar.color} />
+        ))}
+      </Svg>
+    </View>
   );
 }

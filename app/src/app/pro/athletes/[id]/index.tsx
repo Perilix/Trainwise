@@ -77,7 +77,10 @@ export default function AthleteFicheScreen() {
             {fiche.sinceLabel ? <Text variant="small">{fiche.sinceLabel}</Text> : null}
           </View>
         </View>
-        <Button label="Message" variant="secondary" icon="message" fullWidth onPress={() => router.push({ pathname: '/pro/conversation/[id]', params: { id: fiche.id } })} style={styles.headerAction} />
+        <View style={styles.headerActions}>
+          <Button label="Message" variant="secondary" icon="message" onPress={() => router.push({ pathname: '/pro/conversation/[id]', params: { id: fiche.id } })} style={styles.flex} />
+          <Button label="Planning" icon="calendar" onPress={() => router.push({ pathname: '/pro/athletes/[id]/planning', params: { id: fiche.id, name: fiche.name } })} style={styles.flex} />
+        </View>
       </Section>
 
       <Section style={styles.tight}>
@@ -325,7 +328,7 @@ const styles = StyleSheet.create({
   header: { paddingTop: 4, paddingBottom: 16 },
   identity: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   name: { fontSize: 22, lineHeight: 30 },
-  headerAction: { marginTop: 16 },
+  headerActions: { flexDirection: 'row', gap: 8, marginTop: 16 },
   tight: { paddingBottom: 12 },
   rowBetween: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
   statusLine: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 },

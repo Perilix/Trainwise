@@ -135,6 +135,7 @@ export type PlanningMonth = {
   markers: Record<string, CalendarMarker>;
   competitionPriority: Record<string, 'A' | 'B' | 'C'>;
   sessionsByDay: Record<string, PlannedSession[]>;
+  activitiesByDay: Record<string, Activity[]>;
   stats: { planned: number; done: number; distanceKm: number };
 };
 

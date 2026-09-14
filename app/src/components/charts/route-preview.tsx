@@ -1,3 +1,4 @@
+import { View } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { useTheme } from '@/theme/theme-provider';
@@ -25,15 +26,17 @@ export function RoutePreview({ width, height, seed = 1 }: Props) {
   ];
 
   return (
-    <Svg width={width} height={height} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      <Rect x={0} y={0} width={width} height={height} rx={12} fill={map.bg} />
-      <Rect x={width * 0.62} y={height * 0.08} width={width * 0.22} height={height * 0.3} rx={6} fill={map.park} />
-      {streets.map((street, i) => (
-        <Path key={i} d={street.d} stroke={map.street} strokeWidth={street.w} />
-      ))}
-      <Path d={route} fill="none" stroke={colors.surface} strokeWidth={6} strokeLinejoin="round" />
-      <Path d={route} fill="none" stroke={colors.accent} strokeWidth={3} strokeLinejoin="round" />
-      <Circle cx={points[0][0]} cy={points[0][1]} r={6} fill={colors.primary} stroke={colors.surface} strokeWidth={2} />
-    </Svg>
+    <View aria-hidden>
+      <Svg width={width} height={height}>
+        <Rect x={0} y={0} width={width} height={height} rx={12} fill={map.bg} />
+        <Rect x={width * 0.62} y={height * 0.08} width={width * 0.22} height={height * 0.3} rx={6} fill={map.park} />
+        {streets.map((street, i) => (
+          <Path key={i} d={street.d} stroke={map.street} strokeWidth={street.w} />
+        ))}
+        <Path d={route} fill="none" stroke={colors.surface} strokeWidth={6} strokeLinejoin="round" />
+        <Path d={route} fill="none" stroke={colors.accent} strokeWidth={3} strokeLinejoin="round" />
+        <Circle cx={points[0][0]} cy={points[0][1]} r={6} fill={colors.primary} stroke={colors.surface} strokeWidth={2} />
+      </Svg>
+    </View>
   );
 }

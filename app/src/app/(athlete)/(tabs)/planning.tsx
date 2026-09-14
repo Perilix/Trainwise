@@ -1,16 +1,15 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
-import { Button, Card, Chip, Divider, IconButton, Screen, Section, SectionHeader, Stat, StateView, Text } from '@/components/ui';
+import { Button, Card, Chip, Screen, Section, SectionHeader, Stat, Text } from '@/components/ui';
 import { AthleteAppBar } from '@/features/athlete/athlete-app-bar';
 import { useAthleteActions, usePlanningMonth } from '@/features/athlete/queries';
 import { SESSION_STATUS_CHIP } from '@/features/athlete/session-status';
+import type { PlannedSession } from '@/features/athlete/types';
+import { MonthCalendar } from '@/features/planning/month-calendar';
 import { emitAppEvent, onAppEvent } from '@/lib/app-events';
-import type { CalendarMarker, PlannedSession, PlanningMonth } from '@/features/athlete/types';
-import { formatDayLong, formatDecimal, formatHoursMinutes, formatMonthYear, formatPace, toIsoDay, WEEKDAY_INITIALS } from '@/lib/format';
-import { useTheme } from '@/theme/theme-provider';
-import { fontFamily } from '@/theme/typography';
+import { formatDayLong, formatDecimal, formatHoursMinutes, formatPace, toIsoDay } from '@/lib/format';
 
 export default function PlanningScreen() {
   const [now] = useState(() => new Date());
@@ -51,22 +50,18 @@ export default function PlanningScreen() {
       </Section>
 
       <Section>
-        <Card style={styles.calendarCard}>
-          <View style={styles.monthNav}>
-            <IconButton icon="chevronLeft" size={36} accessibilityLabel="Mois précédent" onPress={() => shiftMonth(-1)} />
-            <Text variant="h2">{formatMonthYear(month.year, month.monthIndex)}</Text>
-            <IconButton icon="chevronRight" size={36} accessibilityLabel="Mois suivant" onPress={() => shiftMonth(1)} />
-          </View>
-          {data ? (
-            <>
-              <MonthGrid month={data} selected={selected} onSelect={setSelected} />
-              <Divider style={styles.divider} />
-              <Legend />
-            </>
-          ) : (
-            <StateView loading={loading} error={error} onRetry={refetch} />
-          )}
-        </Card>
+        <MonthCalendar
+          year={month.year}
+          monthIndex={month.monthIndex}
+          month={data}
+          selected={selected}
+          onSelect={setSelected}
+          onShiftMonth={shiftMonth}
+          labels={{ coach: 'Coach', athlete: 'Par toi' }}
+          loading={loading}
+          error={error}
+          onRetry={refetch}
+        />
       </Section>
 
       {data ? (
@@ -111,87 +106,6 @@ export default function PlanningScreen() {
   );
 }
 
-type Cell = { iso: string; day: number; inMonth: boolean };
-
-function buildCells(year: number, monthIndex: number): Cell[] {
-  const offset = (new Date(year, monthIndex, 1).getDay() + 6) % 7; // lundi en premier
-  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
-  const count = Math.ceil((offset + daysInMonth) / 7) * 7;
-  return Array.from({ length: count }, (_, i) => {
-    const date = new Date(year, monthIndex, 1 - offset + i);
-    return { iso: toIsoDay(date), day: date.getDate(), inMonth: date.getMonth() === monthIndex };
-  });
-}
-
-function MonthGrid({ month, selected, onSelect }: { month: PlanningMonth; selected: string; onSelect: (iso: string) => void }) {
-  const { colors } = useTheme();
-  const markerColor: Record<CalendarMarker, string> = { done: colors.success, coach: colors.violet, athlete: colors.primary, competition: colors.primary };
-
-  return (
-    <View>
-      <View style={styles.gridRow}>
-        {WEEKDAY_INITIALS.map((initial, index) => (
-          <View key={index} style={styles.weekdayCell}>
-            <Text variant="caption" color="text3">
-              {initial}
-            </Text>
-          </View>
-        ))}
-      </View>
-      <View style={styles.grid}>
-        {buildCells(month.year, month.monthIndex).map((cell) => {
-          const marker = month.markers[cell.iso];
-          const isToday = cell.iso === month.today;
-          const isSelected = cell.iso === selected;
-          const priority = month.competitionPriority[cell.iso];
-          const outlined = !isToday && (isSelected || marker === 'competition');
-          return (
-            <Pressable key={cell.iso} accessibilityRole="button" accessibilityState={{ selected: isSelected }} onPress={() => onSelect(cell.iso)} style={styles.cell}>
-              <View style={[styles.dayNumber, isToday && { backgroundColor: colors.primary }, outlined && { borderWidth: 1.5, borderColor: colors.primary }]}>
-                <Text
-                  tabular
-                  style={{ fontSize: 14, fontFamily: isToday ? fontFamily.semibold : fontFamily.medium, color: isToday ? colors.onPrimary : cell.inMonth ? colors.ink : colors.text3 }}>
-                  {cell.day}
-                </Text>
-              </View>
-              <View style={styles.markerSlot}>
-                {priority ? (
-                  <Text style={{ fontSize: 10, lineHeight: 10, fontFamily: fontFamily.bold, color: colors.primary }}>{priority}</Text>
-                ) : marker && cell.inMonth ? (
-                  <View style={[styles.marker, { backgroundColor: markerColor[marker] }]} />
-                ) : null}
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
-  );
-}
-
-function Legend() {
-  const { colors } = useTheme();
-  const items = [
-    { color: colors.success, label: 'Effectuée' },
-    { color: colors.violet, label: 'Coach' },
-    { color: colors.primary, label: 'Par toi' },
-  ];
-  return (
-    <View style={styles.legend}>
-      {items.map((item) => (
-        <View key={item.label} style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: item.color }]} />
-          <Text variant="caption">{item.label}</Text>
-        </View>
-      ))}
-      <View style={styles.legendItem}>
-        <View style={[styles.legendDot, { borderWidth: 1.5, borderColor: colors.primary }]} />
-        <Text variant="caption">Compétition</Text>
-      </View>
-    </View>
-  );
-}
-
 function SessionCard({ session, onSkip, onOpen }: { session: PlannedSession; onSkip: () => void; onOpen: () => void }) {
   const byCoach = session.plannedBy === 'coach';
   const status = SESSION_STATUS_CHIP[session.status];
@@ -228,19 +142,6 @@ function SessionCard({ session, onSkip, onOpen }: { session: PlannedSession; onS
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 4, paddingBottom: 16 },
-  calendarCard: { paddingHorizontal: 14, paddingTop: 12, paddingBottom: 14 },
-  monthNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
-  gridRow: { flexDirection: 'row' },
-  weekdayCell: { width: `${100 / 7}%`, height: 28, alignItems: 'center', justifyContent: 'center' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap' },
-  cell: { width: `${100 / 7}%`, height: 50, alignItems: 'center', justifyContent: 'center', gap: 3 },
-  dayNumber: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  markerSlot: { height: 8, alignItems: 'center', justifyContent: 'center' },
-  marker: { width: 6, height: 6, borderRadius: 3 },
-  divider: { marginTop: 10, marginBottom: 12 },
-  legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 14 },
-  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  legendDot: { width: 9, height: 9, borderRadius: 5 },
   dayHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
   sessionList: { gap: 12 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
