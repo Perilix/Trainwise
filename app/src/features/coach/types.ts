@@ -15,6 +15,8 @@ export type CoachAthleteRow = {
   subtitle: string;
 };
 
+export type CoachAthleteLite = { id: string; name: string; initials: string; vma?: number };
+
 export type SubscriptionRequestRow = {
   id: string;
   athleteId: string;

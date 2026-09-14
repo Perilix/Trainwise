@@ -188,7 +188,7 @@ export type ApiPlannedRunDetail = Omit<ApiPlannedRun, 'strengthPlan'> & {
 /** Allure d'une étape de séance type : zone VMA, % VMA ou allure fixe. */
 export type ApiPaceConfig = { mode?: 'absolute' | 'vmaPercent' | 'zone'; zone?: string | null; vmaPercent?: number | null; absolute?: string | null } | null;
 
-export type ApiTemplateRunBlockStep = Omit<ApiRunBlockStep, 'pace' | 'recoveryPace' | 'paceSource'> & { pace?: ApiPaceConfig; recoveryPace?: ApiPaceConfig };
+export type ApiTemplateRunBlockStep = Omit<ApiRunBlockStep, 'pace' | 'recoveryPace' | 'paceSource' | 'recoveryPaceSource'> & { pace?: ApiPaceConfig; recoveryPace?: ApiPaceConfig };
 
 export type ApiTemplateRunBlock = ApiTemplateRunBlockStep & { children?: ApiTemplateRunBlockStep[] };
 

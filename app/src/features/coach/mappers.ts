@@ -13,7 +13,7 @@ import type {
 import { addDays, startOfWeek } from '@/lib/dates';
 import { formatDayMonthYear, formatDayShort, formatDecimal, formatHoursMinutes, toIsoDay } from '@/lib/format';
 
-import type { AthleteFiche, AthleteSearchRow, AthleteStatus, CoachHome, InviteOverview } from './types';
+import type { AthleteFiche, AthleteSearchRow, AthleteStatus, CoachAthleteLite, CoachHome, InviteOverview } from './types';
 
 export const PACKAGE_LABELS: Record<ApiPackageType, string> = { invited: 'Invité', bronze: 'Suivi', silver: 'Perf', gold: 'Élite' };
 export const PACKAGE_PRICES: Partial<Record<ApiPackageType, string>> = { bronze: '49,99 €', silver: '79,99 €', gold: '149,99 €' };
@@ -162,6 +162,12 @@ export function buildAthleteFiche(detail: ApiCoachAthleteDetail, competitions: A
     },
     activities: detail.recentStats.recentActivities.map(activityRow),
   };
+}
+
+export function mapAthleteList(athletes: ApiCoachAthlete[]): CoachAthleteLite[] {
+  return athletes
+    .map((athlete) => ({ id: athlete._id, name: fullName(athlete), initials: initialsOf(athlete.firstName, athlete.lastName), vma: athlete.vma ?? undefined }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export function buildInviteOverview(code: string | null, pending: ApiPendingInvitation[]): InviteOverview {

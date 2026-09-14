@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon, Text, WorkoutProfile } from '@/components/ui';
 import { useTheme } from '@/theme/theme-provider';
@@ -13,14 +13,17 @@ type Props = {
   profileWidth: number;
   /** Action à droite (ex. « Planifier »). */
   action?: ReactNode;
+  /** Ouvre la séance type (sans action à droite). */
+  onPress?: () => void;
 };
 
 // Ligne de séance type : nom, résumé et profil d'intensité.
-export function TemplateItem({ row, divided, profileWidth, action }: Props) {
+export function TemplateItem({ row, divided, profileWidth, action, onPress }: Props) {
   const { colors } = useTheme();
   const running = row.sport === 'running';
-  return (
-    <View accessible={!action} accessibilityLabel={`${row.name}. ${row.meta}`} style={[styles.item, divided && { borderTopWidth: 1, borderTopColor: colors.border }]}>
+
+  const content = (
+    <>
       <View style={styles.top}>
         <View style={[styles.tile, { backgroundColor: running ? colors.accentSoft : colors.subtle }]}>
           <Icon name={running ? 'route' : 'dumbbell'} size={18} color={running ? colors.accentInk : colors.primary} />
@@ -35,13 +38,29 @@ export function TemplateItem({ row, divided, profileWidth, action }: Props) {
             </Text>
           ) : null}
         </View>
-        {action}
+        {action ?? (onPress ? <Icon name="chevronRight" size={18} color={colors.text3} /> : null)}
       </View>
       {row.segments.length ? (
         <View style={styles.profile}>
           <WorkoutProfile segments={row.segments} width={profileWidth} height={16} gap={1} />
         </View>
       ) : null}
+    </>
+  );
+
+  const style = [styles.item, divided && { borderTopWidth: 1, borderTopColor: colors.border }];
+
+  if (onPress && !action) {
+    return (
+      <Pressable accessibilityRole="button" accessibilityLabel={`${row.name}. ${row.meta}`} onPress={onPress} style={style}>
+        {content}
+      </Pressable>
+    );
+  }
+
+  return (
+    <View accessible={!action} accessibilityLabel={`${row.name}. ${row.meta}`} style={style}>
+      {content}
     </View>
   );
 }

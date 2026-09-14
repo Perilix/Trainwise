@@ -1,5 +1,6 @@
 // Séance planifiée détaillée : blocs de course (profil d'intensité, déroulé) et plan de musculation.
 import type { ApiPlanExercise, ApiPlannedRunDetail, ApiRunBlock, ApiRunBlockStep } from '@/lib/api-types';
+import { PACE_ZONES } from '@/lib/pace-zones';
 import { formatDuration, totals, type Segment } from '@/lib/sessions';
 
 import { mapPlanned, paceToSeconds } from './mappers';
@@ -85,6 +86,14 @@ function recoveryLabel(step: ApiRunBlockStep) {
   return detail ? `Récup · ${detail}` : undefined;
 }
 
+/** Sans allure calculée (séance type, VMA inconnue) : zone et % de VMA. */
+function zoneLabel(step: ApiRunBlockStep) {
+  const source = step.paceSource;
+  const zone = source?.zone ? PACE_ZONES[source.zone] : undefined;
+  const percent = source?.vmaPercent ?? zone?.percent;
+  return [zone?.label, percent ? `${percent} % VMA` : null].filter(Boolean).join(' · ') || undefined;
+}
+
 const orderedBlocks = (blocks: ApiRunBlock[]) => [...blocks].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
 /** Déplie les blocs (répétitions et groupes « Répéter » compris) en segments pour le profil d'intensité. */
@@ -122,7 +131,7 @@ export function describeBlocks(blocks: ApiRunBlock[], vma?: number): RunBlockVie
     const steps = (group ? (block.children ?? []) : [block]).map((step, stepIndex) => ({
       key: `${index}-${stepIndex}`,
       label: step.mode === 'duration' ? formatDuration((step.duration ?? 0) * 60) : formatDistance(step.distance ?? 0),
-      paceLabel: step.pace ? `${step.pace} /km` : undefined,
+      paceLabel: step.pace ? `${step.pace} /km` : zoneLabel(step),
       recoveryLabel: group ? recoveryLabel(step) : undefined,
       note: group ? step.description?.trim() || undefined : undefined,
       pct: stepPct(step, vma, fallbackPct(block.role)),

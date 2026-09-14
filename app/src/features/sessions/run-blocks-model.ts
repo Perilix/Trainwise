@@ -1,9 +1,9 @@
 // Modèle de l'éditeur de séance par blocs : même format que les séances planifiées de l'API
 // (échauffement, étapes, blocs « Répéter » à étapes enfants, retour au calme ; allure en zone VMA ou fixe).
 import { parseDurationText } from '@/features/athlete/session-detail';
-import { PACE_ZONES } from '@/features/coach/pace-zones';
 import type { ApiRunBlock, ApiRunBlockStep } from '@/lib/api-types';
 import { formatDecimal, formatPace } from '@/lib/format';
+import { PACE_ZONES } from '@/lib/pace-zones';
 import { formatDuration } from '@/lib/sessions';
 
 export type EditableStep = ApiRunBlockStep & { key: string };

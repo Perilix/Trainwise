@@ -19,7 +19,10 @@ export default function AthleteFicheScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { data: fiche, loading, error, refetch } = useAthleteFiche(id);
-  const { updateAthleteVma } = useCoachActions();
+  const { updateAthleteVma, removeAthlete } = useCoachActions();
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
   const [vmaDraft, setVmaDraft] = useState<string | null>(null);
   const [vmaError, setVmaError] = useState<string | null>(null);
   const [savingVma, setSavingVma] = useState(false);
@@ -53,6 +56,19 @@ export default function AthleteFicheScreen() {
       setVmaError(reason instanceof Error ? reason.message : 'Modification impossible.');
     } finally {
       setSavingVma(false);
+    }
+  };
+
+  const remove = async () => {
+    setRemoving(true);
+    setRemoveError(null);
+    try {
+      await removeAthlete(fiche.id);
+      emitAppEvent('athletes:changed');
+      router.back();
+    } catch (reason) {
+      setRemoveError(reason instanceof Error ? reason.message : 'Retrait impossible.');
+      setRemoving(false);
     }
   };
 
@@ -211,6 +227,22 @@ export default function AthleteFicheScreen() {
           )}
         </Card>
       </Section>
+
+      <Section>
+        {confirmRemove ? (
+          <Card style={styles.removeCard}>
+            <Text variant="h3">Retirer {fiche.name} de vos athlètes ?</Text>
+            <Text variant="body2">Vous n’aurez plus accès à son planning ni à ses séances. L’athlète garde son compte et son historique.</Text>
+            <FormError message={removeError} />
+            <View style={styles.actions}>
+              <Button label="Annuler" variant="secondary" disabled={removing} onPress={() => setConfirmRemove(false)} style={styles.flex} />
+              <Button label={removing ? 'Retrait…' : 'Retirer'} icon="x" disabled={removing} onPress={remove} style={styles.flex} />
+            </View>
+          </Card>
+        ) : (
+          <Button label="Retirer de mes athlètes" variant="danger" icon="x" fullWidth onPress={() => setConfirmRemove(true)} />
+        )}
+      </Section>
     </Screen>
   );
 }
@@ -361,4 +393,5 @@ const styles = StyleSheet.create({
   tile: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   activityValue: { alignItems: 'flex-end' },
   empty: { marginTop: 8 },
+  removeCard: { gap: 10 },
 });

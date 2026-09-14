@@ -7,7 +7,7 @@ import { useSession } from '@/features/auth/session';
 import { useSessionQuery } from '@/features/auth/use-session-query';
 import { getConversations, mapConversationRows } from '@/features/chat/conversations';
 import { useDirectChat } from '@/features/chat/use-direct-chat';
-import { api, invalidateApiCache } from '@/lib/api';
+import { api, cachedGet, invalidateApiCache } from '@/lib/api';
 import type {
   ApiCalendarData,
   ApiCoachAthlete,
@@ -23,7 +23,7 @@ import type {
   ApiUserSearchResult,
 } from '@/lib/api-types';
 
-import { buildAthleteFiche, buildCoachHome, buildInviteOverview, mapSearchResults } from './mappers';
+import { buildAthleteFiche, buildCoachHome, buildInviteOverview, mapAthleteList, mapSearchResults } from './mappers';
 import {
   COACH_SAMPLE_NOW,
   sampleAthleteCompetitions,
@@ -37,6 +37,7 @@ import {
   sampleSearchResults,
   sampleSubscriptionRequests,
 } from './sample-data';
+import type { TemplatePayload } from './templates';
 
 const athletePath = (id: string) => `/api/coach/athletes/${encodeURIComponent(id)}`;
 
@@ -145,6 +146,11 @@ export function useAthleteConversation(peerId: string) {
   });
 }
 
+/** Athlètes du coach (nom, VMA) pour planifier une séance type. */
+export function useCoachAthleteList() {
+  return useSessionQuery('coach:athlete-list', async () => mapAthleteList(await cachedGet<ApiCoachAthlete[]>('/api/coach/athletes')), () => mapAthleteList(sampleCoachAthletes));
+}
+
 export function useInviteOverview() {
   return useSessionQuery(
     'coach:invite',
@@ -163,6 +169,16 @@ export function useInviteOverview() {
 export function useCoachActions() {
   const { status, user, updateUser } = useSession();
   const live = status === 'signedIn';
+
+  const assignToAthletes = async (templateId: string, athleteIds: string[], isoDay: string) => {
+    if (!live) return athleteIds.length;
+    const response = await api<{ created: number }>(`/api/coach/session-templates/${encodeURIComponent(templateId)}/assign`, {
+      method: 'POST',
+      body: { assignments: athleteIds.map((athleteId) => ({ athleteId, date: noonIso(isoDay), paceOverrides: {} })) },
+    });
+    invalidateApiCache();
+    return response.created;
+  };
 
   return {
     async respondToRequest(id: string, accept: boolean) {
@@ -208,11 +224,27 @@ export function useCoachActions() {
     },
     /** Planifie une séance type : l'API calcule les allures à partir de la VMA de l'athlète. */
     async assignTemplate(templateId: string, athleteId: string, isoDay: string) {
+      await assignToAthletes(templateId, [athleteId], isoDay);
+    },
+    assignTemplateToAthletes: assignToAthletes,
+    async createTemplate(payload: TemplatePayload) {
       if (!live) return;
-      await api(`/api/coach/session-templates/${encodeURIComponent(templateId)}/assign`, {
-        method: 'POST',
-        body: { assignments: [{ athleteId, date: noonIso(isoDay), paceOverrides: {} }] },
-      });
+      await api('/api/coach/session-templates', { method: 'POST', body: payload });
+      invalidateApiCache();
+    },
+    async updateTemplate(templateId: string, payload: TemplatePayload) {
+      if (!live) return;
+      await api(`/api/coach/session-templates/${encodeURIComponent(templateId)}`, { method: 'PATCH', body: payload });
+      invalidateApiCache();
+    },
+    async deleteTemplate(templateId: string) {
+      if (!live) return;
+      await api(`/api/coach/session-templates/${encodeURIComponent(templateId)}`, { method: 'DELETE' });
+      invalidateApiCache();
+    },
+    async removeAthlete(athleteId: string) {
+      if (!live) return;
+      await api(athletePath(athleteId), { method: 'DELETE' });
       invalidateApiCache();
     },
     async updateAthleteVma(athleteId: string, vma: number) {

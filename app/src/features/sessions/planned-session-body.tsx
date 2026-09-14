@@ -12,10 +12,12 @@ type Props = {
   session: PlannedSessionDetail;
   /** « Planifiée par Camille », « Ajoutée par toi », « Planifiée par vous »… */
   plannedByLabel: string;
+  /** Sans date ni statut (séance type de la bibliothèque). */
+  hideHeader?: boolean;
 };
 
 /** Contenu d'une séance planifiée : en-tête, objectifs, consignes, déroulé ou plan de musculation. */
-export function PlannedSessionBody({ session, plannedByLabel }: Props) {
+export function PlannedSessionBody({ session, plannedByLabel, hideHeader }: Props) {
   const { width } = useWindowDimensions();
   const running = session.sport === 'running';
   const byCoach = session.plannedBy === 'coach';
@@ -24,14 +26,16 @@ export function PlannedSessionBody({ session, plannedByLabel }: Props) {
 
   return (
     <>
-      <Section style={styles.titleBlock}>
-        <Text variant="small">{formatDayLong(session.date)}</Text>
-        <Text variant="h1">{session.title}</Text>
-        <View style={styles.chips}>
-          <Chip label={plannedByLabel} tone={byCoach ? 'violet' : 'neutral'} icon={byCoach ? 'user' : 'pen'} />
-          <Chip label={status.label} tone={status.tone} icon={status.icon} />
-        </View>
-      </Section>
+      {hideHeader ? null : (
+        <Section style={styles.titleBlock}>
+          <Text variant="small">{formatDayLong(session.date)}</Text>
+          <Text variant="h1">{session.title}</Text>
+          <View style={styles.chips}>
+            <Chip label={plannedByLabel} tone={byCoach ? 'violet' : 'neutral'} icon={byCoach ? 'user' : 'pen'} />
+            <Chip label={status.label} tone={status.tone} icon={status.icon} />
+          </View>
+        </Section>
+      )}
 
       <Section style={styles.tight}>
         <Card style={styles.stats}>
@@ -39,7 +43,7 @@ export function PlannedSessionBody({ session, plannedByLabel }: Props) {
             <>
               <Stat label="Distance" value={session.distanceKm ? formatDecimal(session.distanceKm, session.distanceKm % 1 ? 1 : 0) : '—'} unit="km" style={styles.flex} />
               <Stat label="Durée" value={session.durationMin ? formatHoursMinutes(session.durationMin * 60) : '—'} style={styles.flex} />
-              <Stat label="Allure" value={session.paceSecPerKm ? formatPace(session.paceSecPerKm) : '—'} unit="/km" style={styles.flex} />
+              {session.paceSecPerKm ? <Stat label="Allure" value={formatPace(session.paceSecPerKm)} unit="/km" style={styles.flex} /> : null}
             </>
           ) : (
             <>

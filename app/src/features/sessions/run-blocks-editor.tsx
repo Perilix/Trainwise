@@ -372,7 +372,7 @@ function DecimalField({ label, value, onChange, unit, integer }: DecimalFieldPro
 
 type StepperProps = { label: string; value: number; min: number; max: number; suffix?: string; onChange: (value: number) => void };
 
-function Stepper({ label, value, min, max, suffix = '', onChange }: StepperProps) {
+export function Stepper({ label, value, min, max, suffix = '', onChange }: StepperProps) {
   const { colors } = useTheme();
   return (
     <View style={styles.stepperRow}>
