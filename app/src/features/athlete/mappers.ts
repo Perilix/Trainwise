@@ -31,7 +31,7 @@ import type {
   RunsPeriod,
 } from './types';
 
-const SESSION_TYPE_LABELS: Record<string, string> = {
+export const SESSION_TYPE_LABELS: Record<string, string> = {
   endurance: 'Endurance',
   fractionne: 'Fractionné',
   tempo: 'Tempo',

@@ -5,7 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { SessionProvider, useSession } from '@/features/auth/session';
+import { isCoach, SessionProvider, useSession } from '@/features/auth/session';
 import { AppThemeProvider, useTheme } from '@/theme/theme-provider';
 
 SplashScreen.preventAutoHideAsync();
@@ -28,7 +28,7 @@ export default function RootLayout() {
 
 function ThemedNavigation() {
   const { scheme, colors } = useTheme();
-  const { status } = useSession();
+  const { status, user } = useSession();
   const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
 
   // L'écran de lancement reste affiché tant que la session n'est pas restaurée.
@@ -38,6 +38,7 @@ function ThemedNavigation() {
 
   if (status === 'loading') return null;
   const signedIn = status === 'signedIn' || status === 'demo';
+  const coach = signedIn && isCoach(user);
 
   return (
     <NavigationThemeProvider
@@ -48,8 +49,11 @@ function ThemedNavigation() {
       }}>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
-        <Stack.Protected guard={signedIn}>
+        <Stack.Protected guard={signedIn && !coach}>
           <Stack.Screen name="(athlete)" />
+        </Stack.Protected>
+        <Stack.Protected guard={coach}>
+          <Stack.Screen name="pro" />
         </Stack.Protected>
         <Stack.Protected guard={!signedIn}>
           <Stack.Screen name="(auth)" />

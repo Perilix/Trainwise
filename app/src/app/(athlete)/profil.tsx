@@ -2,18 +2,19 @@ import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Avatar, BackBar, Button, Card, Chip, Icon, IconButton, Screen, Section, SectionHeader, Segmented, StateView, Text, type IconName } from '@/components/ui';
+import { Avatar, BackBar, Button, Card, Chip, Icon, IconButton, Screen, Section, SectionHeader, StateView, Text, type IconName } from '@/components/ui';
 import { useAthleteProfile } from '@/features/athlete/queries';
 import { useSession } from '@/features/auth/session';
 import { onAppEvent } from '@/lib/app-events';
 import { formatDayShort, formatDecimal } from '@/lib/format';
-import { useTheme, type ThemePreference } from '@/theme/theme-provider';
+import { AppearanceCard } from '@/features/settings/appearance-card';
+import { useTheme } from '@/theme/theme-provider';
 import { radius } from '@/theme/tokens';
 import { fontFamily } from '@/theme/typography';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { colors, preference, setPreference, scheme } = useTheme();
+  const { colors } = useTheme();
   const { signOut } = useSession();
   const { data: profile, loading, error, refetch } = useAthleteProfile();
 
@@ -60,25 +61,7 @@ export default function ProfileScreen() {
       </Section>
 
       <Section style={styles.tight}>
-        <Card>
-          <View style={styles.rowCenter}>
-            <Icon name={scheme === 'dark' ? 'moon' : 'sun'} size={20} color={colors.text2} />
-            <View style={styles.flex}>
-              <Text variant="h3">Apparence</Text>
-              <Text variant="small">Clair, sombre ou automatique</Text>
-            </View>
-          </View>
-          <Segmented<ThemePreference>
-            style={styles.segmented}
-            options={[
-              { value: 'light', label: 'Clair' },
-              { value: 'dark', label: 'Sombre' },
-              { value: 'system', label: 'Auto' },
-            ]}
-            value={preference}
-            onChange={setPreference}
-          />
-        </Card>
+        <AppearanceCard />
       </Section>
 
       <Section style={styles.tight}>
@@ -190,8 +173,6 @@ const styles = StyleSheet.create({
   header: { height: 64, flexDirection: 'row', alignItems: 'center', paddingLeft: 8, paddingRight: 12, gap: 4 },
   tight: { paddingBottom: 12 },
   userCard: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  rowCenter: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  segmented: { marginTop: 12 },
   facts: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 14, marginTop: 14 },
   fact: { width: '50%', gap: 2 },
   competition: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },

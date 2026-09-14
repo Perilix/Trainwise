@@ -83,7 +83,12 @@ export default function LoginScreen() {
         </View>
         <FormError message={error} style={styles.error} />
         <Button label={submitting ? 'Connexion…' : 'Se connecter'} fullWidth disabled={submitting} onPress={submit} style={styles.submit} />
-        {DEMO_ENABLED ? <Button label="Explorer la démo" variant="ghost" fullWidth onPress={enterDemo} style={styles.demo} /> : null}
+        {DEMO_ENABLED ? (
+          <View style={styles.demo}>
+            <Button label="Démo athlète" variant="ghost" onPress={() => enterDemo('athlete')} style={styles.flex} />
+            <Button label="Démo coach" variant="ghost" onPress={() => enterDemo('coach')} style={styles.flex} />
+          </View>
+        ) : null}
         <View style={styles.flex} />
         <View style={styles.signup}>
           <Text variant="body2">Pas encore de compte ?</Text>
@@ -107,6 +112,6 @@ const styles = StyleSheet.create({
   forgot: { alignSelf: 'flex-end' },
   error: { marginTop: 20 },
   submit: { marginTop: 24 },
-  demo: { marginTop: 8 },
+  demo: { flexDirection: 'row', gap: 8, marginTop: 8 },
   signup: { flexDirection: 'row', justifyContent: 'center', gap: 6 },
 });

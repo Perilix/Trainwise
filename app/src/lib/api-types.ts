@@ -15,7 +15,88 @@ export type ApiUser = {
   height?: number;
   weight?: number;
   hasCompletedOnboarding?: boolean;
+  // Profil coach
+  disciplines?: string[];
+  diplomas?: string[];
+  experience?: number;
+  bio?: string;
 };
+
+export type ApiAthleteStatus = 'green' | 'orange' | 'red';
+
+/** Indicateurs de forme calculés par l'API (api/src/services/athleteStatus.service.js). */
+export type ApiStatusData = {
+  status: ApiAthleteStatus;
+  lastActivityDate: string | null;
+  daysSinceActivity: number | null;
+  skippedCount: number;
+  avgFeeling: number | null;
+  weeklyVolume: number; // km, 7 derniers jours
+  baselineWeeklyVolume: number; // km, moyenne des 3 semaines précédentes
+  volumeDrop: boolean;
+};
+
+export type ApiPackageType = 'invited' | 'bronze' | 'silver' | 'gold';
+
+export type ApiCoachStats = {
+  totalAthletes: number;
+  pendingInvitations: number;
+  sessionsCreatedThisWeek: number;
+  sessionsCreatedTotal: number;
+};
+
+export type ApiCoachAthlete = ApiStatusData & {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  runningLevel?: string;
+  vma?: number | null;
+  nextCompetition: ApiCompetition | null;
+  joinedAt: string | null;
+  packageType?: ApiPackageType;
+};
+
+export type ApiRecentActivity = {
+  _id: string;
+  type: 'run' | 'strength';
+  date: string;
+  duration?: number; // min
+  feeling?: number;
+  distance?: number; // km
+  sessionType?: string;
+  exerciseCount?: number;
+};
+
+export type ApiCoachAthleteDetail = ApiStatusData & {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  runningLevel?: string;
+  weeklyFrequency?: number;
+  injuries?: string;
+  availableDays?: string[];
+  preferredTime?: string;
+  height?: number;
+  weight?: number;
+  vma?: number;
+  fcmax?: number;
+  strengthFrequency?: number;
+  strengthGoal?: string;
+  strengthType?: string;
+  statusTrend: 'improving' | 'declining' | 'stable';
+  statusChangedAt: string | null;
+  statusHistory: { status: ApiAthleteStatus; date: string }[];
+  joinedAt: string | null;
+  recentStats: { weeklyDistance: number; weeklyRuns: number; streak: number; weeklyStrengthSessions: number; recentActivities: ApiRecentActivity[] };
+};
+
+export type ApiSubscriptionRequest = { _id: string; athlete: ApiUserRef | null; packageType: ApiPackageType; invitedAt: string };
+
+export type ApiPendingInvitation = { _id: string; athlete: ApiUserRef | null; invitedAt: string; inviteMethod: 'code' | 'direct' };
+
+export type ApiUserSearchResult = ApiUserRef & { relationStatus: 'pending' | 'accepted' | 'rejected' | 'requested' | null; hasCoach: boolean };
 
 export type AuthResponse = { token: string; user: ApiUser };
 
@@ -92,6 +173,28 @@ export type ApiPlannedRunDetail = Omit<ApiPlannedRun, 'strengthPlan'> & {
     superset?: { name?: string; sets?: number; restBetweenSets?: number; pairs?: { a?: ApiPlanExercise; b?: ApiPlanExercise }[] };
     estimatedDuration?: number;
   };
+};
+
+/** Allure d'une étape de séance type : zone VMA, % VMA ou allure fixe. */
+export type ApiPaceConfig = { mode?: 'absolute' | 'vmaPercent' | 'zone'; zone?: string | null; vmaPercent?: number | null; absolute?: string | null } | null;
+
+export type ApiTemplateRunBlockStep = Omit<ApiRunBlockStep, 'pace' | 'recoveryPace' | 'paceSource'> & { pace?: ApiPaceConfig; recoveryPace?: ApiPaceConfig };
+
+export type ApiTemplateRunBlock = ApiTemplateRunBlockStep & { children?: ApiTemplateRunBlockStep[] };
+
+export type ApiSessionTemplate = {
+  _id: string;
+  name: string;
+  description?: string;
+  sport: 'running' | 'strength';
+  sessionType: string;
+  targetDistance: number | null;
+  targetDuration: number | null;
+  runBlocks: ApiTemplateRunBlock[];
+  strengthPlan: ApiPlannedRunDetail['strengthPlan'] | null;
+  usageCount: number;
+  lastUsedAt: string | null;
+  updatedAt: string;
 };
 
 export type ApiSplit = {

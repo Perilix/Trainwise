@@ -1,6 +1,6 @@
 // Événements internes à l'app, pour qu'un écran signale un changement à un autre (ex. pastille des messages).
 
-type AppEvent = 'chat:read' | 'sessions:changed' | 'coach:changed';
+type AppEvent = 'chat:read' | 'sessions:changed' | 'coach:changed' | 'athletes:changed';
 
 const listeners = new Map<AppEvent, Set<() => void>>();
 

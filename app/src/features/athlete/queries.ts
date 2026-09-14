@@ -6,16 +6,15 @@ import type {
   ApiCoach,
   ApiCoachInvitation,
   ApiCompetition,
-  ApiConversation,
   ApiNotification,
   ApiPlannedRunDetail,
   ApiRun,
   ApiStrengthSession,
   ApiStravaStatus,
-  ApiUser,
 } from '@/lib/api-types';
 import { startOfWeek } from '@/lib/dates';
-import { useQuery, type QueryResult } from '@/lib/use-query';
+import { useSessionQuery } from '@/features/auth/use-session-query';
+import { getConversations } from '@/features/chat/conversations';
 
 import { buildHome, buildPlanning, buildProfile, buildRunsOverview, initialsOf, mapNotification, mapRunDetail } from './mappers';
 import { mapPlannedDetail } from './session-detail';
@@ -23,19 +22,11 @@ import type { StrengthSessionPayload } from './strength-log';
 import { samplePlannedDetails, sampleHome, sampleNotifications, samplePlanning, sampleProfile, sampleRuns, sampleRunsOverview } from './sample-data';
 import type { CoachInvitation, NewPlannedSession, RunsPeriod } from './types';
 
-const noop = () => {};
-
-export function useAthleteQuery<T>(key: string, fetcher: (user: ApiUser) => Promise<T>, demo: () => T | undefined): QueryResult<T> {
-  const { status, user } = useSession();
-  const query = useQuery(`${user?.id ?? 'anonyme'}:${key}`, () => fetcher(user as ApiUser), { enabled: status === 'signedIn' && user !== null });
-  if (status === 'demo') return { data: demo(), loading: false, error: null, refetch: noop };
-  return query;
-}
+export const useAthleteQuery = useSessionQuery;
 
 const getRuns = () => cachedGet<ApiRun[]>('/api/runs');
 export const getCoach = () => cachedGet<ApiCoach | null>('/api/athlete/coach').catch(() => null);
 const getStravaStatus = () => cachedGet<ApiStravaStatus>('/api/strava/status').catch(() => null);
-export const getConversations =() => api<ApiConversation[]>('/api/chat/conversations').catch((): ApiConversation[] => []);
 const getCalendar = (year: number, monthIndex: number) => api<ApiCalendarData>('/api/planning/calendar', { query: { month: monthIndex + 1, year } });
 
 export function useAthleteHome() {

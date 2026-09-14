@@ -10,9 +10,25 @@ const USER_KEY = 'trainwise.user';
 /** Mode démo (données d'exemple, sans compte) : développement uniquement ou build explicite. */
 export const DEMO_ENABLED = __DEV__ || process.env.EXPO_PUBLIC_DEMO === '1';
 
-const COACH_NOT_AVAILABLE = 'L’espace coach arrive bientôt dans l’app. Utilise la version web en attendant.';
+export type DemoRole = 'athlete' | 'coach';
 
-const DEMO_USER: ApiUser = { id: 'demo', email: 'thomas.dubois@example.com', firstName: 'Thomas', lastName: 'Dubois', role: 'user' };
+const DEMO_USERS: Record<DemoRole, ApiUser> = {
+  athlete: { id: 'demo', email: 'thomas.dubois@example.com', firstName: 'Thomas', lastName: 'Dubois', role: 'user', vma: 16.5 },
+  coach: {
+    id: 'demo-coach',
+    email: 'camille.roux@example.com',
+    firstName: 'Camille',
+    lastName: 'Roux',
+    role: 'coach',
+    disciplines: ['running', 'marathon', 'trail'],
+    diplomas: ['bpjeps', 'ffa'],
+    experience: 8,
+    bio: 'Coach running depuis 2018, spécialisée marathon et trail. J’accompagne des coureurs de tous niveaux vers leurs objectifs.',
+  },
+};
+
+/** Un compte coach ouvre l'espace coach ; tout autre rôle, l'espace athlète. */
+export const isCoach = (user: ApiUser | null) => user?.role === 'coach';
 
 export type SessionStatus = 'loading' | 'signedOut' | 'signedIn' | 'demo';
 
@@ -24,7 +40,9 @@ type SessionValue = {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (input: SignUpInput) => Promise<void>;
   signOut: () => Promise<void>;
-  enterDemo: () => void;
+  enterDemo: (role?: DemoRole) => void;
+  /** Remplace le profil en mémoire (après une modification du profil). */
+  updateUser: (user: ApiUser) => void;
 };
 
 const SessionContext = createContext<SessionValue | null>(null);
@@ -62,21 +80,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         .catch(() => null);
       try {
         const user = await api<ApiUser>('/api/auth/me');
-        if (user.role === 'coach') return void signOut();
         await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
         if (!cancelled) setState({ status: 'signedIn', user });
       } catch (error) {
         if (error instanceof ApiError && error.status === 401) return; // déconnexion déjà déclenchée
-        if (!cancelled) setState(cached && cached.role !== 'coach' ? { status: 'signedIn', user: cached } : { status: 'signedOut', user: null });
+        if (!cancelled) setState(cached ? { status: 'signedIn', user: cached } : { status: 'signedOut', user: null });
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [signOut]);
+  }, []);
 
   const startSession = useCallback(async ({ token, user }: AuthResponse) => {
-    if (user.role === 'coach') throw new ApiError(403, COACH_NOT_AVAILABLE);
     setAuthToken(token);
     await Promise.all([tokenStorage.set(token), AsyncStorage.setItem(USER_KEY, JSON.stringify(user))]);
     setState({ status: 'signedIn', user });
@@ -99,11 +115,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     [startSession],
   );
 
-  const enterDemo = useCallback(() => {
-    if (DEMO_ENABLED) setState({ status: 'demo', user: DEMO_USER });
+  const enterDemo = useCallback((role: DemoRole = 'athlete') => {
+    if (DEMO_ENABLED) setState({ status: 'demo', user: DEMO_USERS[role] });
   }, []);
 
-  const value = useMemo(() => ({ ...state, signIn, signUp, signOut, enterDemo }), [state, signIn, signUp, signOut, enterDemo]);
+  const updateUser = useCallback((user: ApiUser) => {
+    setState((current) => (current.user ? { ...current, user } : current));
+    if (getAuthToken()) AsyncStorage.setItem(USER_KEY, JSON.stringify(user)).catch(() => undefined);
+  }, []);
+
+  const value = useMemo(() => ({ ...state, signIn, signUp, signOut, enterDemo, updateUser }), [state, signIn, signUp, signOut, enterDemo, updateUser]);
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

@@ -52,11 +52,19 @@ function stepPct(step: ApiRunBlockStep, vma: number | undefined, fallback: numbe
   return pace ? clampPct((3600 / pace / (vma ?? DEFAULT_VMA)) * 100) : fallback;
 }
 
-const stepSeconds = (step: ApiRunBlockStep) =>
-  step.mode === 'duration' ? (step.duration ?? 0) * 60 : (step.distance ?? 0) * (paceToSeconds(step.pace) ?? EASY_PACE_SEC);
+/** Allure de l'étape en s/km : fixe si donnée, sinon déduite du % VMA, sinon footing. */
+function stepPaceSec(step: ApiRunBlockStep, vma: number | undefined) {
+  const fixed = paceToSeconds(step.pace);
+  if (fixed) return fixed;
+  const pct = step.paceSource?.vmaPercent;
+  return pct ? 3600 / (((vma ?? DEFAULT_VMA) * pct) / 100) : EASY_PACE_SEC;
+}
 
-const stepMeters = (step: ApiRunBlockStep) =>
-  step.mode === 'distance' ? (step.distance ?? 0) * 1000 : (((step.duration ?? 0) * 60) / (paceToSeconds(step.pace) ?? EASY_PACE_SEC)) * 1000;
+const stepSeconds = (step: ApiRunBlockStep, vma: number | undefined) =>
+  step.mode === 'duration' ? (step.duration ?? 0) * 60 : (step.distance ?? 0) * stepPaceSec(step, vma);
+
+const stepMeters = (step: ApiRunBlockStep, vma: number | undefined) =>
+  step.mode === 'distance' ? (step.distance ?? 0) * 1000 : (((step.duration ?? 0) * 60) / stepPaceSec(step, vma)) * 1000;
 
 function recoverySeconds(step: ApiRunBlockStep) {
   if (step.recoveryMode === 'duration') return parseDurationText(step.recoveryDuration) ?? 0;
@@ -92,7 +100,7 @@ export function blocksToSegments(blocks: ApiRunBlock[], vma?: number): Segment[]
     for (let rep = 0; rep < reps; rep++) {
       const lastRep = rep === reps - 1;
       steps.forEach((step, stepIndex) => {
-        segments.push({ kind, sec: stepSeconds(step), pct: stepPct(step, vma, fallbackPct(block.role)), dist: stepMeters(step), block: index });
+        segments.push({ kind, sec: stepSeconds(step, vma), pct: stepPct(step, vma, fallbackPct(block.role)), dist: stepMeters(step, vma), block: index });
         const rest = recoverySeconds(step);
         // Pas de récupération après la dernière répétition d'un bloc répété
         const endOfBlock = lastRep && stepIndex === steps.length - 1 && (reps > 1 || group);
