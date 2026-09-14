@@ -16,10 +16,13 @@ const DEMO_USER: ApiUser = { id: 'demo', email: 'thomas.dubois@example.com', fir
 
 export type SessionStatus = 'loading' | 'signedOut' | 'signedIn' | 'demo';
 
+export type SignUpInput = { firstName: string; lastName: string; email: string; password: string };
+
 type SessionValue = {
   status: SessionStatus;
   user: ApiUser | null;
   signIn: (email: string, password: string) => Promise<void>;
+  signUp: (input: SignUpInput) => Promise<void>;
   signOut: () => Promise<void>;
   enterDemo: () => void;
 };
@@ -72,19 +75,35 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     };
   }, [signOut]);
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    const { token, user } = await api<AuthResponse>('/api/auth/login', { method: 'POST', body: { email: email.trim(), password } });
+  const startSession = useCallback(async ({ token, user }: AuthResponse) => {
     if (user.role === 'coach') throw new ApiError(403, COACH_NOT_AVAILABLE);
     setAuthToken(token);
     await Promise.all([tokenStorage.set(token), AsyncStorage.setItem(USER_KEY, JSON.stringify(user))]);
     setState({ status: 'signedIn', user });
   }, []);
 
+  const signIn = useCallback(
+    async (email: string, password: string) =>
+      startSession(await api<AuthResponse>('/api/auth/login', { method: 'POST', body: { email: email.trim(), password } })),
+    [startSession],
+  );
+
+  const signUp = useCallback(
+    async ({ firstName, lastName, email, password }: SignUpInput) =>
+      startSession(
+        await api<AuthResponse>('/api/auth/register', {
+          method: 'POST',
+          body: { firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim(), password },
+        }),
+      ),
+    [startSession],
+  );
+
   const enterDemo = useCallback(() => {
     if (DEMO_ENABLED) setState({ status: 'demo', user: DEMO_USER });
   }, []);
 
-  const value = useMemo(() => ({ ...state, signIn, signOut, enterDemo }), [state, signIn, signOut, enterDemo]);
+  const value = useMemo(() => ({ ...state, signIn, signUp, signOut, enterDemo }), [state, signIn, signUp, signOut, enterDemo]);
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

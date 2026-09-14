@@ -4,7 +4,7 @@ import { useSession } from '@/features/auth/session';
 import { useSocket, useSocketEvent } from '@/features/realtime/socket-provider';
 import { api } from '@/lib/api';
 import type { ApiConversation, ApiMessage } from '@/lib/api-types';
-import { emitAppEvent } from '@/lib/app-events';
+import { emitAppEvent, onAppEvent } from '@/lib/app-events';
 import { formatTime } from '@/lib/format';
 
 import { initialsOf, mapMessages } from './mappers';
@@ -62,6 +62,8 @@ export function useCoachChat() {
   const coach = query.data?.coach ?? null;
   const conversationId = query.data?.conversationId ?? createdConversationId;
   const { refetch } = query;
+
+  useEffect(() => onAppEvent('coach:changed', refetch), [refetch]);
 
   const markRead = useCallback(() => {
     if (status !== 'signedIn' || !conversationId) return;

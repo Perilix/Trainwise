@@ -1,16 +1,17 @@
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 
 import { BRAND } from '@/components/ui/brand-svg';
-import { Button, Field, Icon, Screen, Text } from '@/components/ui';
+import { Button, Field, FormError, Icon, Screen, Text } from '@/components/ui';
 import { DEMO_ENABLED, useSession } from '@/features/auth/session';
 import { useTheme } from '@/theme/theme-provider';
-import { radius } from '@/theme/tokens';
 import { fontFamily } from '@/theme/typography';
 
 export default function LoginScreen() {
   const { scheme, colors } = useTheme();
+  const router = useRouter();
   const { signIn, enterDemo } = useSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -74,26 +75,19 @@ export default function LoginScreen() {
               </Pressable>
             }
           />
-          <Pressable accessibilityRole="link" style={styles.forgot} hitSlop={8}>
+          <Pressable accessibilityRole="link" style={styles.forgot} hitSlop={8} onPress={() => router.push('/forgot-password')}>
             <Text variant="small" color="accentInk" style={{ fontFamily: fontFamily.medium }}>
               Mot de passe oublié ?
             </Text>
           </Pressable>
         </View>
-        {error ? (
-          <View accessibilityRole="alert" style={[styles.error, { backgroundColor: colors.dangerSoft }]}>
-            <Icon name="warning" size={18} color={colors.danger} />
-            <Text variant="small" color="danger" style={styles.flex}>
-              {error}
-            </Text>
-          </View>
-        ) : null}
+        <FormError message={error} style={styles.error} />
         <Button label={submitting ? 'Connexion…' : 'Se connecter'} fullWidth disabled={submitting} onPress={submit} style={styles.submit} />
         {DEMO_ENABLED ? <Button label="Explorer la démo" variant="ghost" fullWidth onPress={enterDemo} style={styles.demo} /> : null}
         <View style={styles.flex} />
         <View style={styles.signup}>
           <Text variant="body2">Pas encore de compte ?</Text>
-          <Pressable accessibilityRole="link" hitSlop={8}>
+          <Pressable accessibilityRole="link" hitSlop={8} onPress={() => router.push('/register')}>
             <Text variant="h3" color="accentInk">
               S’inscrire
             </Text>
@@ -111,7 +105,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, lineHeight: 36 },
   form: { gap: 14, marginTop: 28 },
   forgot: { alignSelf: 'flex-end' },
-  error: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 20, paddingHorizontal: 12, paddingVertical: 10, borderRadius: radius.md },
+  error: { marginTop: 20 },
   submit: { marginTop: 24 },
   demo: { marginTop: 8 },
   signup: { flexDirection: 'row', justifyContent: 'center', gap: 6 },

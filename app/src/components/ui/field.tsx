@@ -67,5 +67,6 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: 14,
   },
-  input: { flex: 1, height: '100%', fontFamily: fontFamily.regular, fontSize: 14 },
+  // minWidth 0 : sur le web, un champ a une largeur intrinsèque qui repousserait l'unité hors de la boîte.
+  input: { flex: 1, minWidth: 0, height: '100%', fontFamily: fontFamily.regular, fontSize: 14 },
 });

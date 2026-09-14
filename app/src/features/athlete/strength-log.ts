@@ -1,4 +1,6 @@
 // Saisie d'une séance de musculation à partir du plan : une ligne par série, cochée une fois faite.
+import { parseDecimal } from '@/lib/format';
+
 import type { ExerciseBlockRef, PlanExercise, StrengthPlanView } from './types';
 
 export type LogSet = { reps: string; weight: string; done: boolean };
@@ -54,11 +56,6 @@ export function entriesFromPlan(plan: StrengthPlanView): LogEntry[] {
   return entries;
 }
 
-const toNumber = (value: string) => {
-  const parsed = Number(value.replace(',', '.'));
-  return value.trim() !== '' && Number.isFinite(parsed) ? parsed : undefined;
-};
-
 type PayloadInput = {
   plannedId: string;
   sessionType: string;
@@ -79,7 +76,7 @@ export function buildStrengthPayload({ plannedId, sessionType, plan, entries, du
       target: entry.target,
       sets: entry.sets
         .filter((set) => set.done)
-        .map((set) => ({ reps: Math.max(1, Math.round(toNumber(set.reps) ?? 1)), weight: toNumber(set.weight) })),
+        .map((set) => ({ reps: Math.max(1, Math.round(parseDecimal(set.reps) ?? 1)), weight: parseDecimal(set.weight) })),
     }))
     .filter((entry) => entry.sets.length > 0);
 

@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Avatar, Icon, IconButton, StateView, Text } from '@/components/ui';
+import { Avatar, Button, Icon, IconButton, StateView, Text } from '@/components/ui';
 import { useCoachChat } from '@/features/athlete/coach-chat';
 import { useTheme } from '@/theme/theme-provider';
 import { radius } from '@/theme/tokens';
@@ -52,6 +52,7 @@ export default function CoachChatScreen() {
             <Text variant="body2" style={styles.centered}>
               Rejoins un coach avec son code d’invitation pour échanger avec lui ici.
             </Text>
+            <Button label="Rejoindre un coach" icon="users" onPress={() => router.push('/rejoindre-coach')} style={styles.joinButton} />
           </View>
         )}
       </SafeAreaView>
@@ -156,6 +157,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   empty: { alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 32 },
   centered: { textAlign: 'center' },
+  joinButton: { marginTop: 14 },
   header: { height: 64, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, borderBottomWidth: 1 },
   presence: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   presenceDot: { width: 7, height: 7, borderRadius: 4 },

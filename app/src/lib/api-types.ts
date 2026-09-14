@@ -161,6 +161,8 @@ export type ApiCalendarData = {
 
 export type ApiCoach = ApiUserRef & { connectedSince: string };
 
+export type ApiCoachInvitation = { _id: string; coach: ApiUserRef | null };
+
 export type ApiStravaStatus = { connected: boolean; connectedAt: string | null };
 
 export type ApiNotification = {

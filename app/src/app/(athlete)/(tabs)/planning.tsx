@@ -77,7 +77,7 @@ export default function PlanningScreen() {
                 <Text variant="h2">{formatDayLong(selected)}</Text>
                 {selected === today ? <Text variant="small">Aujourd’hui</Text> : null}
               </View>
-              <Button label="Ajouter" variant="secondary" size="sm" icon="plus" />
+              <Button label="Ajouter" variant="secondary" size="sm" icon="plus" onPress={() => router.push({ pathname: '/seance/nouvelle', params: { date: selected } })} />
             </View>
             {sessions.length ? (
               <View style={styles.sessionList}>

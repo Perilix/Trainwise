@@ -52,7 +52,7 @@ function ThemedNavigation() {
           <Stack.Screen name="(athlete)" />
         </Stack.Protected>
         <Stack.Protected guard={!signedIn}>
-          <Stack.Screen name="(auth)/login" />
+          <Stack.Screen name="(auth)" />
         </Stack.Protected>
         <Stack.Screen name="design-system" />
       </Stack>

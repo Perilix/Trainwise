@@ -1,9 +1,11 @@
 import { useRouter } from 'expo-router';
+import { useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Avatar, BackBar, Button, Card, Chip, Icon, IconButton, Screen, Section, SectionHeader, Segmented, StateView, Text, type IconName } from '@/components/ui';
 import { useAthleteProfile } from '@/features/athlete/queries';
 import { useSession } from '@/features/auth/session';
+import { onAppEvent } from '@/lib/app-events';
 import { formatDayShort, formatDecimal } from '@/lib/format';
 import { useTheme, type ThemePreference } from '@/theme/theme-provider';
 import { radius } from '@/theme/tokens';
@@ -14,6 +16,8 @@ export default function ProfileScreen() {
   const { colors, preference, setPreference, scheme } = useTheme();
   const { signOut } = useSession();
   const { data: profile, loading, error, refetch } = useAthleteProfile();
+
+  useEffect(() => onAppEvent('coach:changed', refetch), [refetch]);
 
   if (!profile) {
     return (
@@ -128,7 +132,7 @@ export default function ProfileScreen() {
             iconBackground={colors.violetSoft}
             title="Mon coach"
             subtitle={profile.coach ? `${profile.coach.name} · depuis ${profile.coach.since}` : 'Rejoindre un coach avec un code'}
-            onPress={() => router.push('/coach')}
+            onPress={() => router.push(profile.coach ? '/coach' : '/rejoindre-coach')}
             divided
           />
         </Card>

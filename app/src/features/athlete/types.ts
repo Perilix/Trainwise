@@ -20,6 +20,19 @@ export type PlannedSession = {
   status: SessionStatus;
 };
 
+/** Corps de POST /api/planning pour une séance ajoutée par l'athlète. */
+export type NewPlannedSession = {
+  date: string; // AAAA-MM-JJ
+  activityType: Sport;
+  sessionType: string;
+  targetDistance?: number;
+  targetDuration?: number;
+  targetPace?: string;
+  description?: string;
+};
+
+export type CoachInvitation = { id: string; coachName: string; initials: string; email?: string };
+
 export type ExerciseBlockRef = { kind: 'single' | 'circuit' | 'superset'; pairIndex: number | null; slot: 'a' | 'b' | null };
 
 export type PlanExercise = {

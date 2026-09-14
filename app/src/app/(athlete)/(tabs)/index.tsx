@@ -17,6 +17,7 @@ export default function AthleteHomeScreen() {
   const { data, loading, error, refetch } = useAthleteHome();
 
   useEffect(() => onAppEvent('sessions:changed', refetch), [refetch]);
+  useEffect(() => onAppEvent('coach:changed', refetch), [refetch]);
 
   if (!data) {
     return (

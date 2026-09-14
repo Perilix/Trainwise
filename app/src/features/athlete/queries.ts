@@ -4,6 +4,7 @@ import { api, cachedGet, invalidateApiCache } from '@/lib/api';
 import type {
   ApiCalendarData,
   ApiCoach,
+  ApiCoachInvitation,
   ApiCompetition,
   ApiConversation,
   ApiNotification,
@@ -16,11 +17,11 @@ import type {
 import { startOfWeek } from '@/lib/dates';
 import { useQuery, type QueryResult } from '@/lib/use-query';
 
-import { buildHome, buildPlanning, buildProfile, buildRunsOverview, mapNotification, mapRunDetail } from './mappers';
+import { buildHome, buildPlanning, buildProfile, buildRunsOverview, initialsOf, mapNotification, mapRunDetail } from './mappers';
 import { mapPlannedDetail } from './session-detail';
 import type { StrengthSessionPayload } from './strength-log';
 import { samplePlannedDetails, sampleHome, sampleNotifications, samplePlanning, sampleProfile, sampleRuns, sampleRunsOverview } from './sample-data';
-import type { RunsPeriod } from './types';
+import type { CoachInvitation, NewPlannedSession, RunsPeriod } from './types';
 
 const noop = () => {};
 
@@ -131,6 +132,28 @@ export function useUnreadNotificationCount() {
   return useAthleteQuery('notifications:unread', async () => (await api<{ count: number }>('/api/notifications/unread-count')).count, () => 3);
 }
 
+export function useCoachInvitations() {
+  return useAthleteQuery(
+    'coach:invitations',
+    async () => {
+      const invitations = await api<ApiCoachInvitation[]>('/api/athlete/invitations');
+      return invitations.flatMap((invitation): CoachInvitation[] =>
+        invitation.coach
+          ? [
+              {
+                id: invitation._id,
+                coachName: `${invitation.coach.firstName} ${invitation.coach.lastName}`.trim(),
+                initials: initialsOf(invitation.coach.firstName, invitation.coach.lastName),
+                email: invitation.coach.email,
+              },
+            ]
+          : [],
+      );
+    },
+    (): CoachInvitation[] => [],
+  );
+}
+
 export function useChatUnreadCount() {
   return useAthleteQuery('chat:unread', async () => (await api<{ unreadCount: number }>('/api/chat/unread')).unreadCount, () => 1);
 }
@@ -155,6 +178,21 @@ export function useAthleteActions() {
     },
     async reopenSession(id: string) {
       await setSessionStatus(id, 'planned');
+    },
+    async createPlannedSession(payload: NewPlannedSession) {
+      if (!live) return;
+      await api('/api/planning', { method: 'POST', body: { ...payload, status: 'planned' } });
+      invalidateApiCache();
+    },
+    async joinCoach(code: string) {
+      if (!live) return;
+      await api(`/api/athlete/join/${encodeURIComponent(code.trim().toUpperCase())}`, { method: 'POST' });
+      invalidateApiCache();
+    },
+    async answerInvitation(id: string, accept: boolean) {
+      if (!live) return;
+      await api(`/api/athlete/invitations/${encodeURIComponent(id)}/${accept ? 'accept' : 'reject'}`, { method: 'POST' });
+      invalidateApiCache();
     },
     async saveStrengthSession(payload: StrengthSessionPayload) {
       if (!live) return;

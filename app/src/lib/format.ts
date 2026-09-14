@@ -68,5 +68,11 @@ export const formatTime = (date: Date) => `${pad(date.getHours())}:${pad(date.ge
 /** "2 juin 2026" */
 export const formatDayMonthYear = (date: Date) => `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
 
+/** Saisie numérique à la française : "12,5" → 12.5 ; vide ou invalide → undefined */
+export function parseDecimal(value: string) {
+  const parsed = Number(value.trim().replace(',', '.'));
+  return value.trim() !== '' && Number.isFinite(parsed) ? parsed : undefined;
+}
+
 /** 320 s/km → "5:20" */
 export const formatPace = (secondsPerKm: number) => `${Math.floor(secondsPerKm / 60)}:${pad(Math.round(secondsPerKm % 60))}`;

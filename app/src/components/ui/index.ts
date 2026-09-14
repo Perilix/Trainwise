@@ -10,6 +10,7 @@ export { Field } from './field';
 export { Icon, ICON_NAMES, type IconName } from './icon';
 export { IconButton } from './icon-button';
 export { Screen } from './screen';
+export { FormError } from './form-error';
 export { Section } from './section';
 export { StateView } from './state-view';
 export { SectionHeader } from './section-header';
