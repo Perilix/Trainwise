@@ -2,7 +2,6 @@ const axios = require('axios');
 const User = require('../models/user.model');
 const Run = require('../models/run.model');
 const StrengthSession = require('../models/strengthSession.model');
-const { emitTrainCoinsUpdate } = require('../socket/index');
 const { createNotification } = require('./notification.controller');
 const { findPlannedMatches } = require('../services/planningAutoComplete');
 const { athleteHasCoach } = require('../services/coachRelation.service');
@@ -22,18 +21,9 @@ const analyzeRunInBackground = async (run, user) => {
   if (await athleteHasCoach(user._id)) return;
 
   try {
-    // Vérifier et déduire les TrainCoins (0.5 par analyse auto)
+    // L'import Strava est automatique (webhook) : l'analyse qui le suit ne consomme pas de TrainCoins
     const freshUser = await User.findById(user._id);
     if (!freshUser) return;
-
-    const isPro = freshUser.subscriptionStatus === 'pro' &&
-      freshUser.subscriptionExpiry && new Date(freshUser.subscriptionExpiry) > new Date();
-
-    if (!isPro) {
-      if ((freshUser.trainCoins || 0) < 0.5) return; // Pas assez de coins, on ne lance pas l'analyse
-      await User.findByIdAndUpdate(user._id, { $inc: { trainCoins: -0.5 } });
-      emitTrainCoinsUpdate(user._id, { trainCoins: (freshUser.trainCoins || 0) - 0.5 });
-    }
 
     // Récupérer les 5 dernières courses
     const recentRuns = await Run.find({

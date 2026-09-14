@@ -2,6 +2,12 @@ const axios = require('axios');
 const { JWT } = require('google-auth-library');
 const User = require('../models/user.model');
 
+// Deux canaux d'envoi selon le jeton enregistré par l'appareil :
+// - jeton Expo (app Expo) → service push d'Expo ;
+// - jeton FCM (ancienne app Capacitor encore installée) → Firebase Cloud Messaging.
+
+const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
+
 let firebaseInitialized = false;
 let projectId = null;
 let jwtClient = null;
@@ -15,7 +21,7 @@ function initializeFirebase() {
     const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
 
     if (!serviceAccount) {
-      console.warn('⚠️  Firebase credentials not configured. Push notifications will not work.');
+      console.warn('⚠️  Firebase credentials not configured. Push notifications to legacy FCM tokens will not work.');
       return;
     }
 
@@ -36,24 +42,56 @@ function initializeFirebase() {
 
 initializeFirebase();
 
-async function sendPushNotification(userId, notification) {
+const isExpoPushToken = (token) => /^Expo(nent)?PushToken\[.+\]$/.test(token);
+
+// Ne retire le jeton que s'il n'a pas été remplacé entre-temps par un autre appareil
+const clearPushToken = (userId, token) =>
+  User.updateOne({ _id: userId, pushToken: token }, { pushToken: null, pushPlatform: null });
+
+async function sendExpoPush(userId, token, notification) {
+  const headers = { Accept: 'application/json', 'Content-Type': 'application/json' };
+  // Optionnel : à renseigner si l'envoi sécurisé est activé dans le tableau de bord EAS
+  if (process.env.EXPO_ACCESS_TOKEN) {
+    headers.Authorization = `Bearer ${process.env.EXPO_ACCESS_TOKEN}`;
+  }
+
+  const response = await axios.post(EXPO_PUSH_URL, {
+    to: token,
+    title: notification.title,
+    body: notification.body,
+    data: notification.data || {},
+    sound: 'default',
+    badge: 1,
+    priority: 'high',
+    channelId: 'default'
+  }, { headers });
+
+  const tickets = response.data?.data;
+  const ticket = Array.isArray(tickets) ? tickets[0] : tickets;
+
+  if (ticket?.status === 'error') {
+    console.error('❌ Expo push error:', ticket.message, ticket.details);
+    if (ticket.details?.error === 'DeviceNotRegistered') {
+      await clearPushToken(userId, token);
+    }
+    return { success: false, error: ticket.message };
+  }
+
+  return { success: true, response: ticket };
+}
+
+async function sendFcmPush(userId, token, notification) {
   if (!firebaseInitialized) {
     console.warn('Firebase not initialized, skipping push notification');
     return { success: false, error: 'Firebase not initialized' };
   }
 
   try {
-    const user = await User.findById(userId).select('pushToken pushPlatform');
-
-    if (!user || !user.pushToken) {
-      return { success: false, error: 'No push token' };
-    }
-
     const tokenData = await jwtClient.getAccessToken();
 
     const message = {
       message: {
-        token: user.pushToken,
+        token,
         notification: {
           title: notification.title,
           body: notification.body
@@ -85,27 +123,36 @@ async function sendPushNotification(userId, notification) {
     });
 
     return { success: true, response: response.data };
-
   } catch (error) {
-    const errData = error.response?.data || error.message;
-    console.error('❌ Error sending push notification:', errData);
-
     if (error.response?.data?.error?.details?.some(d =>
       d.errorCode === 'INVALID_ARGUMENT' || d.errorCode === 'UNREGISTERED'
     )) {
-      await User.findByIdAndUpdate(userId, { pushToken: null, pushPlatform: null });
+      await clearPushToken(userId, token);
+    }
+    throw error;
+  }
+}
+
+async function sendPushNotification(userId, notification) {
+  try {
+    const user = await User.findById(userId).select('pushToken pushPlatform');
+
+    if (!user || !user.pushToken) {
+      return { success: false, error: 'No push token' };
     }
 
+    if (isExpoPushToken(user.pushToken)) {
+      return await sendExpoPush(userId, user.pushToken, notification);
+    }
+    return await sendFcmPush(userId, user.pushToken, notification);
+  } catch (error) {
+    const errData = error.response?.data || error.message;
+    console.error('❌ Error sending push notification:', errData);
     return { success: false, error: errData };
   }
 }
 
 async function sendPushNotificationToMultiple(userIds, notification) {
-  if (!firebaseInitialized) {
-    console.warn('Firebase not initialized, skipping push notifications');
-    return { success: false, error: 'Firebase not initialized' };
-  }
-
   const results = await Promise.all(
     userIds.map(userId => sendPushNotification(userId, notification))
   );

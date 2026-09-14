@@ -1,10 +1,11 @@
-import { useRouter, type Href } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { BackBar, Button, Icon, Screen, Section, Segmented, StateView, Text, type IconName } from '@/components/ui';
 import { useAthleteActions, useNotifications } from '@/features/athlete/queries';
 import type { AthleteNotification, NotificationKind } from '@/features/athlete/types';
+import { routeForActionUrl } from '@/features/notifications/action-routes';
 import { useTheme } from '@/theme/theme-provider';
 import { radius, type Palette } from '@/theme/tokens';
 
@@ -27,16 +28,6 @@ const KIND_STYLE: Record<NotificationKind, { icon: IconName; background: keyof P
   other: { icon: 'bell', background: 'subtle', foreground: 'text2' },
 };
 
-// Les liens des notifications pointent vers les routes du web : on les traduit vers l'app.
-function routeFor(actionUrl?: string): Href | null {
-  if (!actionUrl) return null;
-  if (actionUrl.startsWith('/chat')) return '/coach';
-  if (actionUrl.startsWith('/planning')) return '/planning';
-  if (actionUrl.startsWith('/sorties')) return '/sorties';
-  const run = actionUrl.match(/^\/run\/([^/?#]+)/);
-  return run ? { pathname: '/sortie/[id]', params: { id: run[1] } } : null;
-}
-
 export default function NotificationsScreen() {
   const router = useRouter();
   const { colors } = useTheme();
@@ -55,7 +46,7 @@ export default function NotificationsScreen() {
 
   const open = (item: AthleteNotification) => {
     if (item.unread) markNotificationRead(item.id).then(refetch, () => undefined);
-    const route = routeFor(item.actionUrl);
+    const route = routeForActionUrl(item.actionUrl);
     if (route) router.push(route);
   };
 

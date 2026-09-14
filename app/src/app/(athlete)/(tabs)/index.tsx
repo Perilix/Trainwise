@@ -74,7 +74,7 @@ export default function AthleteHomeScreen() {
               onPress={activity.sport === 'running' ? () => router.push({ pathname: '/sortie/[id]', params: { id: activity.id } }) : undefined}
             />
           ))}
-          {data.strava.connected ? <StravaRow lastSync={data.strava.lastSyncLabel} /> : null}
+          {data.strava.connected ? <StravaRow /> : null}
         </Card>
       </Section>
 
@@ -250,15 +250,15 @@ function RecentRow({ activity, first, onPress }: { activity: Activity; first: bo
   );
 }
 
-function StravaRow({ lastSync }: { lastSync?: string }) {
+// Les sorties publiées sur Strava arrivent d'elles-mêmes (webhook) : pas d'import manuel.
+function StravaRow() {
   const { colors } = useTheme();
   return (
     <View style={[styles.stravaRow, { borderTopColor: colors.border }]}>
       <View style={styles.stravaLabel}>
         <View style={[styles.dot, { backgroundColor: colors.success, width: 8, height: 8 }]} />
-        <Text variant="small">Strava{lastSync ? ` · synchro ${lastSync}` : ''}</Text>
+        <Text variant="small">Strava connecté · import automatique</Text>
       </View>
-      <Button label="Importer" variant="secondary" size="sm" icon="rotate" />
     </View>
   );
 }

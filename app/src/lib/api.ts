@@ -54,9 +54,12 @@ type RequestOptions = {
   method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
   body?: unknown;
   query?: Record<string, string | number | boolean | undefined>;
+  /** Jeton explicite (ex. appel de déconnexion) : un 401 ne déclenche alors pas la déconnexion globale. */
+  token?: string;
 };
 
-export async function api<T>(path: string, { method = 'GET', body, query }: RequestOptions = {}): Promise<T> {
+export async function api<T>(path: string, { method = 'GET', body, query, token: explicitToken }: RequestOptions = {}): Promise<T> {
+  const token = explicitToken ?? authToken;
   const search = query
     ? Object.entries(query)
         .filter(([, value]) => value !== undefined)
@@ -65,7 +68,7 @@ export async function api<T>(path: string, { method = 'GET', body, query }: Requ
     : '';
   const headers: Record<string, string> = { Accept: 'application/json' };
   if (body !== undefined) headers['Content-Type'] = 'application/json';
-  if (authToken) headers.Authorization = `Bearer ${authToken}`;
+  if (token) headers.Authorization = `Bearer ${token}`;
 
   let response: Response;
   try {
@@ -87,7 +90,7 @@ export async function api<T>(path: string, { method = 'GET', body, query }: Requ
   }
 
   if (!response.ok) {
-    if (response.status === 401 && authToken) unauthorizedHandler?.();
+    if (response.status === 401 && !explicitToken && authToken) unauthorizedHandler?.();
     const message = data && typeof data === 'object' && 'error' in data && typeof data.error === 'string' ? data.error : `Erreur ${response.status}`;
     throw new ApiError(response.status, message);
   }

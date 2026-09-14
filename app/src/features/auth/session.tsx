@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
-import { api, ApiError, invalidateApiCache, onUnauthorized, setAuthToken, tokenStorage } from '@/lib/api';
+import { api, ApiError, getAuthToken, invalidateApiCache, onUnauthorized, setAuthToken, tokenStorage } from '@/lib/api';
 import type { ApiUser, AuthResponse } from '@/lib/api-types';
 import { clearQueryCache } from '@/lib/use-query';
 
@@ -29,15 +29,20 @@ const SessionContext = createContext<SessionValue | null>(null);
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<{ status: SessionStatus; user: ApiUser | null }>({ status: 'loading', user: null });
 
-  const signOut = useCallback(async () => {
+  // `unregisterPush` : l'appareil ne doit plus recevoir les notifications du compte (inutile si le jeton est déjà rejeté).
+  const endSession = useCallback(async (unregisterPush: boolean) => {
+    const token = getAuthToken();
     setAuthToken(null);
     invalidateApiCache();
     clearQueryCache();
     setState({ status: 'signedOut', user: null });
+    if (unregisterPush && token) api('/api/users/push-token', { method: 'DELETE', token }).catch(() => undefined);
     await Promise.all([tokenStorage.clear(), AsyncStorage.removeItem(USER_KEY)]);
   }, []);
 
-  useEffect(() => onUnauthorized(() => void signOut()), [signOut]);
+  const signOut = useCallback(() => endSession(true), [endSession]);
+
+  useEffect(() => onUnauthorized(() => void endSession(false)), [endSession]);
 
   // Reprise de session : jeton stocké, puis profil rafraîchi (profil en cache si hors ligne).
   useEffect(() => {
