@@ -6,7 +6,6 @@ import type {
   ApiCoach,
   ApiCompetition,
   ApiConversation,
-  ApiMessage,
   ApiNotification,
   ApiRun,
   ApiStrengthSession,
@@ -16,13 +15,13 @@ import type {
 import { startOfWeek } from '@/lib/dates';
 import { useQuery, type QueryResult } from '@/lib/use-query';
 
-import { buildHome, buildPlanning, buildProfile, buildRunsOverview, mapMessages, mapNotification, mapRunDetail } from './mappers';
-import { sampleCoachThread, sampleHome, sampleNotifications, samplePlanning, sampleProfile, sampleRuns, sampleRunsOverview } from './sample-data';
+import { buildHome, buildPlanning, buildProfile, buildRunsOverview, mapNotification, mapRunDetail } from './mappers';
+import { sampleHome, sampleNotifications, samplePlanning, sampleProfile, sampleRuns, sampleRunsOverview } from './sample-data';
 import type { RunsPeriod } from './types';
 
 const noop = () => {};
 
-function useAthleteQuery<T>(key: string, fetcher: (user: ApiUser) => Promise<T>, demo: () => T | undefined): QueryResult<T> {
+export function useAthleteQuery<T>(key: string, fetcher: (user: ApiUser) => Promise<T>, demo: () => T | undefined): QueryResult<T> {
   const { status, user } = useSession();
   const query = useQuery(`${user?.id ?? 'anonyme'}:${key}`, () => fetcher(user as ApiUser), { enabled: status === 'signedIn' && user !== null });
   if (status === 'demo') return { data: demo(), loading: false, error: null, refetch: noop };
@@ -30,9 +29,9 @@ function useAthleteQuery<T>(key: string, fetcher: (user: ApiUser) => Promise<T>,
 }
 
 const getRuns = () => cachedGet<ApiRun[]>('/api/runs');
-const getCoach = () => cachedGet<ApiCoach | null>('/api/athlete/coach').catch(() => null);
+export const getCoach = () => cachedGet<ApiCoach | null>('/api/athlete/coach').catch(() => null);
 const getStravaStatus = () => cachedGet<ApiStravaStatus>('/api/strava/status').catch(() => null);
-const getConversations = () => api<ApiConversation[]>('/api/chat/conversations').catch((): ApiConversation[] => []);
+export const getConversations =() => api<ApiConversation[]>('/api/chat/conversations').catch((): ApiConversation[] => []);
 const getCalendar = (year: number, monthIndex: number) => api<ApiCalendarData>('/api/planning/calendar', { query: { month: monthIndex + 1, year } });
 
 export function useAthleteHome() {
@@ -118,18 +117,8 @@ export function useUnreadNotificationCount() {
   return useAthleteQuery('notifications:unread', async () => (await api<{ count: number }>('/api/notifications/unread-count')).count, () => 3);
 }
 
-export function useCoachThread() {
-  return useAthleteQuery(
-    'coach-thread',
-    async (user) => {
-      const [coach, conversations] = await Promise.all([getCoach(), getConversations()]);
-      const conversation = coach ? conversations.find((item) => item.otherParticipant?._id === coach._id) : undefined;
-      if (!conversation) return [];
-      const { messages } = await api<{ messages: ApiMessage[] }>(`/api/chat/conversations/${conversation._id}/messages`, { query: { limit: 50 } });
-      return mapMessages(messages, user.id, new Date());
-    },
-    () => sampleCoachThread,
-  );
+export function useChatUnreadCount() {
+  return useAthleteQuery('chat:unread', async () => (await api<{ unreadCount: number }>('/api/chat/unread')).unreadCount, () => 1);
 }
 
 /** Écritures. Sans effet en mode démo. */

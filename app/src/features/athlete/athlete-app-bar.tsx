@@ -2,6 +2,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 
 import { AppBar } from '@/components/ui';
 import { useSession } from '@/features/auth/session';
+import { useSocketEvent } from '@/features/realtime/socket-provider';
 
 import { initialsOf } from './mappers';
 import { useUnreadNotificationCount } from './queries';
@@ -13,6 +14,7 @@ export function AthleteAppBar() {
   const { data: unread, refetch } = useUnreadNotificationCount();
 
   useFocusEffect(refetch);
+  useSocketEvent('notification:new', refetch);
 
   return (
     <AppBar

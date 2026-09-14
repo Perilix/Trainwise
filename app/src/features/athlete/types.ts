@@ -156,4 +156,5 @@ export type ChatMessage = {
   text: string;
   timeLabel?: string;
   dayLabel?: string;
+  sending?: boolean; // envoyé, pas encore confirmé par le serveur
 };
