@@ -1,7 +1,12 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
-export const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? 'https://trainwise-backend-rnd4.onrender.com').replace(/\/$/, '');
+const DEFAULT_API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://trainwise-backend-rnd4.onrender.com';
+
+// Web en local uniquement : l'API de production refuse l'origine localhost, on passe par scripts/dev-api-proxy.mjs.
+const WEB_API_URL = Platform.OS === 'web' ? process.env.EXPO_PUBLIC_WEB_API_URL : undefined;
+
+export const API_URL = (WEB_API_URL || DEFAULT_API_URL).replace(/\/$/, '');
 
 const TOKEN_KEY = 'trainwise.token';
 
