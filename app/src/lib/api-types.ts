@@ -333,10 +333,21 @@ export type ApiConversation = {
   unreadCount: number;
 };
 
+/** Séance citée dans un message, figée à l'envoi. */
+export type ApiSessionRef = {
+  kind: 'planned' | 'run' | 'strength';
+  id: string;
+  sport?: 'running' | 'strength';
+  title?: string;
+  date?: string;
+  meta?: string;
+};
+
 export type ApiMessage = {
   _id: string;
   content: string;
-  type: 'text' | 'image' | 'document';
+  type: 'text' | 'image' | 'document' | 'session';
   sender: ApiUserRef | string;
+  sessionRef?: ApiSessionRef;
   createdAt: string;
 };

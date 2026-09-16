@@ -267,6 +267,13 @@ export const sampleNotifications: AthleteNotification[] = [
 export const sampleCoachThread: ChatMessage[] = [
   { id: 'm1', fromMe: true, dayLabel: 'Hier', text: 'Séance seuil faite. Jambes lourdes sur le dernier bloc et le mollet gauche tire un peu.', timeLabel: '21:40' },
   { id: 'm2', fromMe: false, dayLabel: 'Aujourd’hui', text: 'Vu : ta FC n’est pas redescendue sous 150 entre les blocs. Pour mardi, fais plutôt 10 × 400 avec 1′30 de récup, je modifie la séance.' },
-  { id: 'm3', fromMe: false, text: 'Si ça tire encore lundi, dis-le-moi et on adapte le bloc.', timeLabel: '09:05' },
-  { id: 'm4', fromMe: true, text: 'Ça marche, merci !', timeLabel: '09:07' },
+  {
+    id: 'm3',
+    fromMe: false,
+    text: 'Séance du mardi 15 septembre : Fractionné 10 × 400 m',
+    timeLabel: '09:05',
+    session: { kind: 'planned', id: 'plan-2026-09-15', sport: 'running', title: 'Fractionné 10 × 400 m', meta: '11 km · 3:32 /km' },
+  },
+  { id: 'm4', fromMe: false, text: 'Si ça tire encore lundi, dis-le-moi et on adapte le bloc.', timeLabel: '09:05' },
+  { id: 'm5', fromMe: true, text: 'Ça marche, merci !', timeLabel: '09:07' },
 ];

@@ -419,12 +419,17 @@ export function mapMessages(messages: ApiMessage[], myId: string, now: Date): Ch
     const dayLabel = day === previousDay ? undefined : age === 0 ? 'Aujourd’hui' : age === 1 ? 'Hier' : formatDayShort(day);
     previousDay = day;
     const senderId = typeof message.sender === 'string' ? message.sender : message.sender._id;
+    const reference = message.sessionRef;
     return {
       id: message._id,
       fromMe: senderId === myId,
-      text: message.type === 'text' ? message.content : message.type === 'image' ? 'Photo' : `Document · ${message.content}`,
+      text: message.type === 'text' || message.type === 'session' ? message.content : message.type === 'image' ? 'Photo' : `Document · ${message.content}`,
       timeLabel: formatTime(created),
       dayLabel,
+      session:
+        message.type === 'session' && reference?.id
+          ? { kind: reference.kind, id: reference.id, sport: reference.sport, title: reference.title || 'Séance', meta: reference.meta }
+          : undefined,
     };
   });
 }

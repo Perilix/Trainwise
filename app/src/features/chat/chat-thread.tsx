@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Avatar, Icon, IconButton, Text } from '@/components/ui';
+import type { CitedSession } from '@/features/athlete/types';
 import { useTheme } from '@/theme/theme-provider';
 import { radius } from '@/theme/tokens';
 import { fontFamily } from '@/theme/typography';
@@ -16,9 +17,11 @@ type Props = {
   headerRight?: ReactNode;
   /** Écran empilé (bouton retour, marge basse) plutôt qu'onglet. */
   onBack?: () => void;
+  /** Ouvre la séance citée dans un message (sans ce prop, la carte n'est pas cliquable). */
+  onOpenSession?: (session: CitedSession) => void;
 };
 
-export function ChatThread({ chat, offlineLabel, headerRight, onBack }: Props) {
+export function ChatThread({ chat, offlineLabel, headerRight, onBack, onOpenSession }: Props) {
   const { colors } = useTheme();
   const [draft, setDraft] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -92,6 +95,7 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack }: Props) {
                   ]}>
                   <Text style={{ color: message.fromMe ? colors.onPrimary : colors.ink }}>{message.text}</Text>
                 </View>
+                {message.session ? <SessionCard session={message.session} onPress={onOpenSession ? () => onOpenSession(message.session!) : undefined} /> : null}
                 {message.sending || message.timeLabel ? (
                   <Text variant="caption" color="text3" style={styles.time}>
                     {message.sending ? 'Envoi…' : message.timeLabel}
@@ -143,8 +147,38 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack }: Props) {
   );
 }
 
+function SessionCard({ session, onPress }: { session: CitedSession; onPress?: () => void }) {
+  const { colors } = useTheme();
+  const running = session.sport !== 'strength';
+  return (
+    <Pressable
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={onPress ? `Ouvrir la séance ${session.title}` : undefined}
+      disabled={!onPress}
+      onPress={onPress}
+      style={({ pressed }) => [styles.sessionCard, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && { backgroundColor: colors.subtle }]}>
+      <View style={[styles.sessionTile, { backgroundColor: running ? colors.accentSoft : colors.subtle }]}>
+        <Icon name={running ? 'route' : 'dumbbell'} size={18} color={running ? colors.accentInk : colors.primary} />
+      </View>
+      <View style={styles.flex}>
+        <Text variant="h3" numberOfLines={2}>
+          {session.title}
+        </Text>
+        {session.meta ? (
+          <Text variant="small" tabular numberOfLines={1}>
+            {session.meta}
+          </Text>
+        ) : null}
+      </View>
+      {onPress ? <Icon name="chevronRight" size={18} color={colors.text3} /> : null}
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  sessionCard: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderWidth: 1, borderRadius: radius.md },
+  sessionTile: { width: 36, height: 36, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
   centered: { textAlign: 'center' },
   header: { height: 64, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, borderBottomWidth: 1 },
   headerWithBack: { paddingLeft: 6, gap: 6 },

@@ -71,7 +71,7 @@ const initializeSocket = (httpServer) => {
     // Handle sending a message
     socket.on('message:send', async (data) => {
       try {
-        const { conversationId, content, type = 'text', attachment } = data;
+        const { conversationId, content, type = 'text', attachment, sessionRef } = data;
 
         // Validate conversation exists and user is a participant
         const conversation = await Conversation.findOne({
@@ -90,12 +90,13 @@ const initializeSocket = (httpServer) => {
           content,
           type,
           attachment,
+          sessionRef: type === 'session' ? sessionRef : undefined,
           readBy: new Map([[userId, new Date()]])
         });
 
         // Update conversation's last message
         conversation.lastMessage = {
-          content: type === 'text' ? content : `[${type}]`,
+          content: type === 'text' || type === 'session' ? content : `[${type}]`,
           sender: socket.user._id,
           sentAt: new Date(),
           type

@@ -3,12 +3,14 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { BackBar, Button, FormError, Screen, StateView, Text } from '@/components/ui';
+import type { PlannedSessionDetail } from '@/features/athlete/types';
+import { useShareSession } from '@/features/chat/share-session';
 import { useCoachActions, useCoachPlannedSession } from '@/features/coach/queries';
 import { DateStepper } from '@/features/sessions/date-stepper';
 import { PlannedSessionBody } from '@/features/sessions/planned-session-body';
 import { emitAppEvent, onAppEvent } from '@/lib/app-events';
 import { addDays } from '@/lib/dates';
-import { formatDayLong, parseDay, toIsoDay } from '@/lib/format';
+import { formatDayLong, formatDecimal, formatHoursMinutes, parseDay, toIsoDay } from '@/lib/format';
 import { layout } from '@/theme/tokens';
 
 type Mode = 'idle' | 'duplicate' | 'delete';
@@ -18,6 +20,7 @@ export default function CoachPlannedSessionScreen() {
   const router = useRouter();
   const { data: session, loading, error, refetch } = useCoachPlannedSession(id, planId);
   const { duplicateAthleteSession, deleteAthleteSession } = useCoachActions();
+  const shareSession = useShareSession();
   const [mode, setMode] = useState<Mode>('idle');
   const [targetDate, setTargetDate] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -61,6 +64,32 @@ export default function CoachPlannedSessionScreen() {
       setBusy(false);
     }
   };
+
+  const share = async () => {
+    if (!session) return;
+    setBusy(true);
+    setActionError(null);
+    try {
+      await shareSession(id, `Séance du ${formatDayLong(session.date).toLowerCase()} : ${session.title}`, {
+        kind: 'planned',
+        id: session.id,
+        sport: session.sport,
+        title: session.title,
+        date: session.date,
+        meta: sessionMeta(session),
+      });
+      setNotice('Séance envoyée dans la conversation.');
+    } catch (reason) {
+      setActionError(reason instanceof Error ? reason.message : 'Envoi impossible.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const openDone = () =>
+    session.sport === 'running' && session.linkedRunId
+      ? router.push({ pathname: '/pro/athletes/[id]/sortie/[runId]', params: { id, runId: session.linkedRunId } })
+      : router.push({ pathname: '/pro/athletes/[id]/muscu/[sessionId]', params: { id, sessionId: session.id, from: 'planned' } });
 
   const remove = async () => {
     setBusy(true);
@@ -106,18 +135,8 @@ export default function CoachPlannedSessionScreen() {
             {notice}
           </Text>
         ) : null}
-        {done ? (
-          <Button
-            label="Voir le réalisé"
-            icon="chart"
-            fullWidth
-            onPress={() =>
-              session.sport === 'running' && session.linkedRunId
-                ? router.push({ pathname: '/pro/athletes/[id]/sortie/[runId]', params: { id, runId: session.linkedRunId } })
-                : router.push({ pathname: '/pro/athletes/[id]/muscu/[sessionId]', params: { id, sessionId: session.id, from: 'planned' } })
-            }
-          />
-        ) : null}
+        <FormError message={actionError} />
+        {done ? <Button label="Voir le réalisé" icon="chart" fullWidth onPress={openDone} /> : null}
         <Button
           label="Modifier la séance"
           icon="pen"
@@ -126,9 +145,10 @@ export default function CoachPlannedSessionScreen() {
           onPress={() => router.push({ pathname: '/pro/athletes/[id]/editeur', params: { id, planId: session.id } })}
         />
         <View style={styles.actions}>
-          <Button label="Dupliquer" variant="secondary" icon="copy" onPress={() => changeMode('duplicate')} style={styles.flex} />
-          <Button label="Supprimer" variant="danger" icon="x" onPress={() => changeMode('delete')} style={styles.flex} />
+          <Button label={busy ? 'Envoi…' : 'Envoyer'} variant="secondary" size="sm" icon="message" disabled={busy} onPress={share} style={styles.flex} />
+          <Button label="Dupliquer" variant="secondary" size="sm" icon="copy" onPress={() => changeMode('duplicate')} style={styles.flex} />
         </View>
+        <Button label="Supprimer du planning" variant="danger" size="sm" icon="x" fullWidth onPress={() => changeMode('delete')} />
       </View>
     );
   }
@@ -139,6 +159,13 @@ export default function CoachPlannedSessionScreen() {
       <PlannedSessionBody session={session} plannedByLabel={session.plannedBy === 'coach' ? 'Planifiée par vous' : 'Ajoutée par l’athlète'} />
     </Screen>
   );
+}
+
+// Résumé court affiché dans la carte du message.
+function sessionMeta(session: PlannedSessionDetail) {
+  return session.sport === 'running'
+    ? [session.distanceKm ? `${formatDecimal(session.distanceKm)} km` : null, session.durationMin ? formatHoursMinutes(session.durationMin * 60) : null].filter(Boolean).join(' · ')
+    : [session.exercisesCount ? `${session.exercisesCount} exercices` : null, session.durationMin ? formatHoursMinutes(session.durationMin * 60) : null].filter(Boolean).join(' · ');
 }
 
 const styles = StyleSheet.create({

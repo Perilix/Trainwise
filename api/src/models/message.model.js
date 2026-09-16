@@ -18,8 +18,18 @@ const messageSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['text', 'image', 'document'],
+    enum: ['text', 'image', 'document', 'session'],
     default: 'text'
+  },
+  // Séance citée dans le message (type 'session'). Figée à l'envoi : la carte
+  // reste lisible même si la séance est ensuite modifiée ou supprimée.
+  sessionRef: {
+    kind: { type: String, enum: ['planned', 'run', 'strength'] },
+    id: mongoose.Schema.Types.ObjectId,
+    sport: String,
+    title: String,
+    date: Date,
+    meta: String
   },
   attachment: {
     url: String,

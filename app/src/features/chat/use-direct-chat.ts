@@ -6,7 +6,7 @@ import { useSession } from '@/features/auth/session';
 import { useSessionQuery } from '@/features/auth/use-session-query';
 import { useSocket, useSocketEvent } from '@/features/realtime/socket-provider';
 import { api } from '@/lib/api';
-import type { ApiConversation, ApiMessage, ApiUserRef } from '@/lib/api-types';
+import type { ApiConversation, ApiMessage, ApiSessionRef, ApiUserRef } from '@/lib/api-types';
 import { emitAppEvent } from '@/lib/app-events';
 import { formatTime } from '@/lib/format';
 
@@ -15,7 +15,7 @@ import { getConversations } from './conversations';
 export type ChatPeer = { id: string; firstName: string; name: string; initials: string; online: boolean };
 
 type ChatData = { peer: ChatPeer | null; conversationId: string | null; messages: ApiMessage[] };
-type Pending = { localId: string; text: string };
+type Pending = { localId: string; text: string; session?: ApiSessionRef };
 
 type Options = {
   /** Clé de cache de la conversation. */
@@ -140,15 +140,20 @@ export function useDirectChat({ key, loadPeer, demo }: Options) {
     typingTimer.current = setTimeout(stopTyping, TYPING_IDLE_MS);
   };
 
-  /** Renvoie true si le message est parti (le brouillon peut être vidé). */
-  const send = async (text: string) => {
+  /**
+   * Envoie un message, éventuellement accompagné d'une séance citée.
+   * Renvoie true si le message est parti (le brouillon peut être vidé).
+   */
+  const send = async (text: string, session?: ApiSessionRef) => {
     const content = text.trim();
     if (!content) return false;
     setSendError(null);
     stopTyping();
 
+    const cited = session ? { kind: session.kind, id: session.id, sport: session.sport, title: session.title || 'Séance', meta: session.meta } : undefined;
+
     if (status === 'demo') {
-      setDemoSent((current) => [...current, { id: `demo-${current.length}`, fromMe: true, text: content, timeLabel: formatTime(new Date()) }]);
+      setDemoSent((current) => [...current, { id: `demo-${current.length}`, fromMe: true, text: content, timeLabel: formatTime(new Date()), session: cited }]);
       return true;
     }
     if (!peer || !socket) return false;
@@ -160,9 +165,9 @@ export function useDirectChat({ key, loadPeer, demo }: Options) {
       setCreatedConversationId(id);
       socket.emit('conversation:join', { conversationId: id });
     }
-    setPending((current) => [...current, { localId: `local-${Date.now()}`, text: content }]);
+    setPending((current) => [...current, { localId: `local-${Date.now()}`, text: content, session }]);
     // Hors connexion, socket.io garde l'envoi en file et le transmet à la reconnexion.
-    socket.emit('message:send', { conversationId: id, content, type: 'text' });
+    socket.emit('message:send', { conversationId: id, content, type: session ? 'session' : 'text', sessionRef: session });
     return true;
   };
 

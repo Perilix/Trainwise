@@ -38,6 +38,11 @@ export default function CoachChatScreen() {
       chat={chat}
       offlineLabel="Ton coach"
       headerRight={<IconButton icon="calendar" accessibilityLabel="Ouvrir le planning" onPress={() => router.push('/planning')} />}
+      onOpenSession={(session) =>
+        session.kind === 'run'
+          ? router.push({ pathname: '/sortie/[id]', params: { id: session.id } })
+          : router.push({ pathname: '/seance/[id]', params: { id: session.id } })
+      }
     />
   );
 }

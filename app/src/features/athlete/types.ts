@@ -223,4 +223,8 @@ export type ChatMessage = {
   timeLabel?: string;
   dayLabel?: string;
   sending?: boolean; // envoyé, pas encore confirmé par le serveur
+  /** Séance citée : carte cliquable sous le message. */
+  session?: CitedSession;
 };
+
+export type CitedSession = { kind: 'planned' | 'run' | 'strength'; id: string; sport?: Sport; title: string; meta?: string };
