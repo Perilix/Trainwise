@@ -1,10 +1,39 @@
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
+const { verifyGoogleToken, verifyAppleToken } = require('../services/socialAuth.service');
 const { cloudinary } = require('../config/cloudinary');
 const emailService = require('../services/email.service');
 
 // Generate JWT token
+const publicUser = (user) => ({
+  id: user._id,
+  email: user.email,
+  firstName: user.firstName,
+  lastName: user.lastName,
+  phone: user.phone,
+  profilePicture: user.profilePicture,
+  role: user.role,
+  runningLevel: user.runningLevel,
+  weeklyFrequency: user.weeklyFrequency,
+  injuries: user.injuries,
+  availableDays: user.availableDays,
+  preferredTime: user.preferredTime,
+  age: user.age,
+  gender: user.gender,
+  disciplines: user.disciplines,
+  experience: user.experience,
+  diplomas: user.diplomas,
+  bio: user.bio,
+  vma: user.vma,
+  fcmax: user.fcmax,
+  hasCompletedOnboarding: user.hasCompletedOnboarding,
+  toursSeen: user.toursSeen,
+  trainCoins: user.trainCoins,
+  subscriptionStatus: user.subscriptionStatus,
+  subscriptionExpiry: user.subscriptionExpiry,
+});
+
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE || '7d'
@@ -120,6 +149,63 @@ exports.login = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+// Connexion via Google ou Apple : on vérifie le jeton d'identité, puis on relie
+// le compte existant (même email) ou on en crée un.
+const socialSignIn = async ({ res, provider, profile, fallbackName }) => {
+  const idField = provider === 'google' ? 'googleId' : 'appleId';
+  const email = (profile.email || '').toLowerCase();
+
+  let user = await User.findOne({ [idField]: profile.providerId });
+
+  if (!user && email) {
+    user = await User.findOne({ email });
+    // Compte créé par mot de passe : on y rattache le fournisseur.
+    if (user) {
+      user[idField] = profile.providerId;
+      await user.save();
+    }
+  }
+
+  if (!user) {
+    if (!email) {
+      return res.status(400).json({ error: 'Adresse email absente du compte ' + provider });
+    }
+    user = await User.create({
+      email,
+      [idField]: profile.providerId,
+      firstName: profile.firstName || fallbackName.firstName || 'Athlète',
+      lastName: profile.lastName || fallbackName.lastName || '',
+      profilePicture: profile.picture || null
+    });
+  }
+
+  res.json({ token: generateToken(user._id), user: publicUser(user) });
+};
+
+// Connexion Google (jeton d'identité obtenu côté app)
+exports.googleSignIn = async (req, res) => {
+  try {
+    const profile = await verifyGoogleToken(req.body.idToken);
+    await socialSignIn({ res, provider: 'google', profile, fallbackName: {} });
+  } catch (error) {
+    console.error('[auth] Google:', error.message);
+    res.status(401).json({ error: 'Connexion Google impossible' });
+  }
+};
+
+// Connexion Apple. Apple ne transmet le nom qu'à la toute première autorisation :
+// l'app le renvoie dans `fullName`, on ne s'en sert que pour créer le compte.
+exports.appleSignIn = async (req, res) => {
+  try {
+    const profile = await verifyAppleToken(req.body.identityToken);
+    const { givenName, familyName } = req.body.fullName || {};
+    await socialSignIn({ res, provider: 'apple', profile, fallbackName: { firstName: givenName, lastName: familyName } });
+  } catch (error) {
+    console.error('[auth] Apple:', error.message);
+    res.status(401).json({ error: 'Connexion Apple impossible' });
   }
 };
 

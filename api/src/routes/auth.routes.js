@@ -130,6 +130,61 @@ router.post('/login', authLimiter, authController.login);
  *       500:
  *         description: Server error
  */
+/**
+ * @swagger
+ * /api/auth/google:
+ *   post:
+ *     summary: Connexion ou inscription avec Google
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [idToken]
+ *             properties:
+ *               idToken:
+ *                 type: string
+ *                 description: Jeton d'identité Google obtenu par l'application
+ *     responses:
+ *       200:
+ *         description: Session ouverte (jeton + utilisateur)
+ *       401:
+ *         description: Jeton invalide
+ */
+router.post('/google', authLimiter, authController.googleSignIn);
+
+/**
+ * @swagger
+ * /api/auth/apple:
+ *   post:
+ *     summary: Connexion ou inscription avec Apple
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [identityToken]
+ *             properties:
+ *               identityToken:
+ *                 type: string
+ *               fullName:
+ *                 type: object
+ *                 description: Transmis par Apple à la première autorisation uniquement
+ *                 properties:
+ *                   givenName: { type: string }
+ *                   familyName: { type: string }
+ *     responses:
+ *       200:
+ *         description: Session ouverte (jeton + utilisateur)
+ *       401:
+ *         description: Jeton invalide
+ */
+router.post('/apple', authLimiter, authController.appleSignIn);
+
 router.post('/forgot-password', authLimiter, authController.forgotPassword);
 
 /**

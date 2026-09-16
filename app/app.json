@@ -8,7 +8,8 @@
     "scheme": "trainwise",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "bundleIdentifier": "com.trainwise.appli"
+      "bundleIdentifier": "com.trainwise.appli",
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "com.trainwise.appli",
@@ -45,7 +46,8 @@
           "color": "#003554",
           "defaultChannel": "default"
         }
-      ]
+      ],
+      "expo-apple-authentication"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -4,6 +4,7 @@ import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'rea
 
 import { BackBar, Button, Field, FormError, Icon, Screen, Text } from '@/components/ui';
 import { useSession, type SignUpInput } from '@/features/auth/session';
+import { SocialSignInButtons } from '@/features/auth/social-buttons';
 import { useTheme } from '@/theme/theme-provider';
 import { layout } from '@/theme/tokens';
 
@@ -68,10 +69,10 @@ export default function RegisterScreen() {
           <View style={styles.form}>
             <View style={styles.row}>
               <View style={styles.flex}>
-                <Field label="Prénom" placeholder="Thomas" autoComplete="given-name" textContentType="givenName" value={form.firstName} onChangeText={update('firstName')} />
+                <Field icon="user" label="Prénom" placeholder="Thomas" autoComplete="given-name" textContentType="givenName" value={form.firstName} onChangeText={update('firstName')} />
               </View>
               <View style={styles.flex}>
-                <Field label="Nom" placeholder="Dubois" autoComplete="family-name" textContentType="familyName" value={form.lastName} onChangeText={update('lastName')} />
+                <Field icon="user" label="Nom" placeholder="Dubois" autoComplete="family-name" textContentType="familyName" value={form.lastName} onChangeText={update('lastName')} />
               </View>
             </View>
             <Field
@@ -112,6 +113,7 @@ export default function RegisterScreen() {
 
           <FormError message={error} style={styles.error} />
           <Button label={submitting ? 'Création…' : 'Créer mon compte'} fullWidth disabled={submitting} onPress={submit} style={styles.submit} />
+          <SocialSignInButtons label="continuer" />
 
           <View style={styles.signin}>
             <Text variant="body2">Déjà un compte ?</Text>

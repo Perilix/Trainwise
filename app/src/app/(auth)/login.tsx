@@ -5,14 +5,15 @@ import { SvgXml } from 'react-native-svg';
 
 import { BRAND } from '@/components/ui/brand-svg';
 import { Button, Field, FormError, Icon, Screen, Text } from '@/components/ui';
-import { DEMO_ENABLED, useSession } from '@/features/auth/session';
+import { useSession } from '@/features/auth/session';
+import { SocialSignInButtons } from '@/features/auth/social-buttons';
 import { useTheme } from '@/theme/theme-provider';
 import { fontFamily } from '@/theme/typography';
 
 export default function LoginScreen() {
   const { scheme, colors } = useTheme();
   const router = useRouter();
-  const { signIn, enterDemo } = useSession();
+  const { signIn } = useSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -83,12 +84,7 @@ export default function LoginScreen() {
         </View>
         <FormError message={error} style={styles.error} />
         <Button label={submitting ? 'Connexion…' : 'Se connecter'} fullWidth disabled={submitting} onPress={submit} style={styles.submit} />
-        {DEMO_ENABLED ? (
-          <View style={styles.demo}>
-            <Button label="Démo athlète" variant="ghost" onPress={() => enterDemo('athlete')} style={styles.flex} />
-            <Button label="Démo coach" variant="ghost" onPress={() => enterDemo('coach')} style={styles.flex} />
-          </View>
-        ) : null}
+        <SocialSignInButtons label="connexion" />
         <View style={styles.flex} />
         <View style={styles.signup}>
           <Text variant="body2">Pas encore de compte ?</Text>
@@ -112,6 +108,5 @@ const styles = StyleSheet.create({
   forgot: { alignSelf: 'flex-end' },
   error: { marginTop: 20 },
   submit: { marginTop: 24 },
-  demo: { flexDirection: 'row', gap: 8, marginTop: 8 },
   signup: { flexDirection: 'row', justifyContent: 'center', gap: 6 },
 });

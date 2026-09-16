@@ -5,6 +5,8 @@ import { api, ApiError, getAuthToken, invalidateApiCache, onUnauthorized, setAut
 import type { ApiUser, AuthResponse } from '@/lib/api-types';
 import { clearQueryCache } from '@/lib/use-query';
 
+import { signInWithAppleToken, signInWithGoogleToken } from './social-sign-in';
+
 const USER_KEY = 'trainwise.user';
 
 /** Mode démo (données d'exemple, sans compte) : développement uniquement ou build explicite. */
@@ -39,6 +41,8 @@ type SessionValue = {
   user: ApiUser | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (input: SignUpInput) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  signInWithApple: () => Promise<void>;
   signOut: () => Promise<void>;
   enterDemo: (role?: DemoRole) => void;
   /** Remplace le profil en mémoire (après une modification du profil). */
@@ -115,6 +119,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     [startSession],
   );
 
+  const signInWithGoogle = useCallback(async () => startSession(await signInWithGoogleToken()), [startSession]);
+
+  const signInWithApple = useCallback(async () => startSession(await signInWithAppleToken()), [startSession]);
+
   const enterDemo = useCallback((role: DemoRole = 'athlete') => {
     if (DEMO_ENABLED) setState({ status: 'demo', user: DEMO_USERS[role] });
   }, []);
@@ -124,7 +132,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     if (getAuthToken()) AsyncStorage.setItem(USER_KEY, JSON.stringify(user)).catch(() => undefined);
   }, []);
 
-  const value = useMemo(() => ({ ...state, signIn, signUp, signOut, enterDemo, updateUser }), [state, signIn, signUp, signOut, enterDemo, updateUser]);
+  const value = useMemo(
+    () => ({ ...state, signIn, signUp, signInWithGoogle, signInWithApple, signOut, enterDemo, updateUser }),
+    [state, signIn, signUp, signInWithGoogle, signInWithApple, signOut, enterDemo, updateUser],
+  );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

@@ -12,7 +12,8 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: [true, 'Mot de passe requis'],
+    // Facultatif pour les comptes créés via Google ou Apple (aucun mot de passe).
+    required: [function () { return !this.googleId && !this.appleId; }, 'Mot de passe requis'],
     minlength: [6, 'Le mot de passe doit contenir au moins 6 caractères'],
     select: false
   },
@@ -29,6 +30,17 @@ const userSchema = new mongoose.Schema({
   phone: {
     type: String,
     trim: true
+  },
+  // Identifiants des fournisseurs de connexion sociale (`sub` du jeton d'identité).
+  googleId: {
+    type: String,
+    default: undefined,
+    index: { unique: true, sparse: true }
+  },
+  appleId: {
+    type: String,
+    default: undefined,
+    index: { unique: true, sparse: true }
   },
   profilePicture: {
     type: String,
