@@ -245,8 +245,39 @@ export type ApiRun = {
   feeling?: number;
   notes?: string;
   stravaActivityId: number | null;
-  plannedSnapshot?: { title: string | null; coach: string | null };
+  /** Ce que le coach avait prévu, figé au moment où la sortie a été rattachée. */
+  plannedSnapshot?: {
+    title: string | null;
+    coach: string | null;
+    sessionType?: string | null;
+    targetDistance?: number | null;
+    targetDuration?: number | null;
+    targetPace?: string | null;
+    description?: string | null;
+    runBlocks?: ApiRunBlock[];
+  };
   stravaData?: ApiStravaData;
+};
+
+/** Série réalisée lors d'une séance de musculation. */
+export type ApiStrengthSet = { reps: number; weight?: number; rpe?: number; notes?: string };
+
+export type ApiStrengthEntry = {
+  exercise: ApiExerciseRef | string | null;
+  sets: ApiStrengthSet[];
+  order?: number;
+  notes?: string;
+  block?: { kind?: 'single' | 'circuit' | 'superset'; pairIndex?: number | null; slot?: 'a' | 'b' | null };
+  target?: { sets?: number; reps?: string; weight?: number; rest?: string };
+};
+
+/** Séance de musculation réalisée (GET /api/coach/athletes/:id/strength-session/:plannedId). */
+export type ApiStrengthSessionDetail = ApiStrengthSession & {
+  notes?: string;
+  exercises: ApiStrengthEntry[];
+  circuit?: { name?: string; rounds?: number; restBetweenRounds?: number } | null;
+  superset?: { name?: string; sets?: number; restBetweenSets?: number } | null;
+  linkedPlannedSession?: string | null;
 };
 
 export type ApiStrengthSession = {

@@ -1,5 +1,5 @@
 // Accès aux données de l'espace coach. En mode démo, les données d'exemple remplacent l'API.
-import { buildPlanning } from '@/features/athlete/mappers';
+import { buildPlanning, mapRunDetail } from '@/features/athlete/mappers';
 import { samplePlannedDetails, samplePlanning } from '@/features/athlete/sample-data';
 import { mapPlannedDetail } from '@/features/athlete/session-detail';
 import type { NewPlannedSession } from '@/features/athlete/types';
@@ -7,6 +7,7 @@ import { useSession } from '@/features/auth/session';
 import { useSessionQuery } from '@/features/auth/use-session-query';
 import { getConversations, mapConversationRows } from '@/features/chat/conversations';
 import { useDirectChat } from '@/features/chat/use-direct-chat';
+import { mapStrengthDone } from '@/features/sessions/strength-done';
 import { api, cachedGet, invalidateApiCache } from '@/lib/api';
 import type {
   ApiCalendarData,
@@ -17,8 +18,10 @@ import type {
   ApiPackageType,
   ApiPendingInvitation,
   ApiPlannedRunDetail,
+  ApiRun,
   ApiRunBlock,
   ApiStrengthPlan,
+  ApiStrengthSessionDetail,
   ApiSubscriptionRequest,
   ApiUser,
   ApiUserSearchResult,
@@ -32,10 +35,12 @@ import {
   sampleCoachAthletes,
   sampleCoachConversations,
   sampleCoachMessages,
+  sampleCoachRun,
   sampleCoachStats,
   sampleInviteCode,
   samplePendingInvitations,
   sampleSearchResults,
+  sampleStrengthDone,
   sampleSubscriptionRequests,
 } from './sample-data';
 import type { TemplatePayload } from './templates';
@@ -70,6 +75,28 @@ export function useCoachPlannedSession(athleteId: string, planId: string) {
     `coach:planned:${athleteId}:${planId}`,
     async () => mapPlannedDetail(await api<ApiPlannedRunDetail>(`${athletePath(athleteId)}/planning/${encodeURIComponent(planId)}`)),
     () => mapPlannedDetail(samplePlannedDetails[planId] ?? samplePlannedDetails['plan-2026-09-13'], 17),
+  );
+}
+
+/** Sortie réalisée par l'athlète, avec ce que le coach avait prévu. */
+export function useCoachRunDetail(athleteId: string, runId: string) {
+  return useSessionQuery(
+    `coach:run:${athleteId}:${runId}`,
+    async () => {
+      const run = await api<ApiRun>(`${athletePath(athleteId)}/runs/${encodeURIComponent(runId)}`);
+      return { run: mapRunDetail(run), snapshot: run.plannedSnapshot };
+    },
+    () => sampleCoachRun,
+  );
+}
+
+/** Séance de musculation réalisée, par séance planifiée ou par identifiant de séance. */
+export function useCoachStrengthDone(athleteId: string, id: string, from: 'planned' | 'session') {
+  const path = from === 'planned' ? 'strength-session' : 'strength-session-by-id';
+  return useSessionQuery(
+    `coach:strength:${athleteId}:${from}:${id}`,
+    async () => mapStrengthDone(await api<ApiStrengthSessionDetail>(`${athletePath(athleteId)}/${path}/${encodeURIComponent(id)}`)),
+    () => mapStrengthDone(sampleStrengthDone),
   );
 }
 

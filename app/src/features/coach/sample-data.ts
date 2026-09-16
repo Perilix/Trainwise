@@ -1,6 +1,6 @@
 // Données d'exemple de l'espace coach (mode démo), au format de l'API.
 import type { ChatMessage } from '@/features/athlete/types';
-import { sampleCoachThread, samplePlannedDetails } from '@/features/athlete/sample-data';
+import { sampleCoachThread, samplePlannedDetails, sampleRuns } from '@/features/athlete/sample-data';
 import type {
   ApiCoachAthlete,
   ApiCoachAthleteDetail,
@@ -10,11 +10,14 @@ import type {
   ApiPendingInvitation,
   ApiSessionTemplate,
   ApiStatusData,
+  ApiStrengthSessionDetail,
   ApiSubscriptionRequest,
   ApiUserSearchResult,
 } from '@/lib/api-types';
 
 export const COACH_SAMPLE_NOW = new Date(2026, 8, 14, 10, 0);
+
+const sampleLongRun = Object.values(sampleRuns)[0];
 
 const statusData = (status: ApiStatusData['status'], daysSinceActivity: number | null, extra: Partial<ApiStatusData> = {}): ApiStatusData => ({
   status,
@@ -272,3 +275,81 @@ export const sampleSearchResults: ApiUserSearchResult[] = [
   { _id: 'user-hugo', firstName: 'Hugo', lastName: 'Lefebvre', email: 'hugo.lefebvre@example.com', relationStatus: null, hasCoach: true },
   { _id: 'athlete-lea', firstName: 'Léa', lastName: 'Martin', email: 'lea.martin@example.com', relationStatus: 'accepted', hasCoach: true },
 ];
+
+/** Sortie d'un athlète, telle que le coach la consulte (mode démo). */
+export const sampleCoachRun = {
+  run: { ...sampleLongRun, id: 'run-2026-09-09', date: '2026-09-09', title: 'Sortie longue' },
+  snapshot: {
+    title: 'Sortie longue 20 km',
+    coach: 'coach-camille',
+    sessionType: 'sortie_longue',
+    targetDistance: 20,
+    targetDuration: 105,
+    targetPace: '5:15',
+    description: 'Endurance fondamentale, relances légères sur les 2 derniers km.',
+  },
+};
+
+export const sampleStrengthDone: ApiStrengthSessionDetail = {
+  _id: 'strength-2026-09-11',
+  date: '2026-09-11T18:20:00.000Z',
+  duration: 55,
+  sessionType: 'lower_body',
+  feeling: 7,
+  stravaActivityId: null,
+  totalSets: 17,
+  notes: 'Squat un peu juste sur la dernière série, mollets faciles.',
+  linkedPlannedSession: 'plan-2026-09-17',
+  exercises: [
+    {
+      exercise: { _id: 'ex-squat', name: 'Squat barre', primaryMuscle: 'quadriceps' },
+      order: 0,
+      block: { kind: 'single' },
+      target: { sets: 4, reps: '8-10', weight: 60, rest: '90 s' },
+      sets: [
+        { reps: 10, weight: 60 },
+        { reps: 10, weight: 60 },
+        { reps: 8, weight: 60 },
+      ],
+      notes: 'Arrêté à 3 séries, dos qui s’arrondit.',
+    },
+    {
+      exercise: { _id: 'ex-bulgarian', name: 'Fente bulgare', primaryMuscle: 'glutes' },
+      order: 1,
+      block: { kind: 'single' },
+      target: { sets: 3, reps: '10', weight: 12, rest: '60 s' },
+      sets: [
+        { reps: 10, weight: 12 },
+        { reps: 10, weight: 12 },
+        { reps: 10, weight: 14 },
+      ],
+    },
+    {
+      exercise: { _id: 'ex-hip-thrust', name: 'Hip thrust', primaryMuscle: 'glutes' },
+      order: 2,
+      block: { kind: 'superset', pairIndex: 0, slot: 'a' },
+      target: { reps: '12', weight: 40 },
+      sets: [
+        { reps: 12, weight: 40 },
+        { reps: 12, weight: 40 },
+        { reps: 12, weight: 45 },
+      ],
+    },
+    {
+      exercise: { _id: 'ex-calf', name: 'Mollets debout', primaryMuscle: 'calves' },
+      order: 3,
+      block: { kind: 'superset', pairIndex: 0, slot: 'b' },
+      target: { reps: '15' },
+      sets: [{ reps: 15 }, { reps: 15 }, { reps: 15 }],
+    },
+    {
+      exercise: { _id: 'ex-plank', name: 'Planche', primaryMuscle: 'core' },
+      order: 4,
+      block: { kind: 'circuit' },
+      target: { reps: '40 s' },
+      sets: [{ reps: 40 }, { reps: 40 }, { reps: 35 }],
+    },
+  ],
+  circuit: { name: 'Gainage', rounds: 3, restBetweenRounds: 45 },
+  superset: { name: 'Super-set fessiers', sets: 3, restBetweenSets: 75 },
+};

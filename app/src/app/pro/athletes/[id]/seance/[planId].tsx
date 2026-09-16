@@ -38,6 +38,7 @@ export default function CoachPlannedSessionScreen() {
 
   // Par défaut, la même séance une semaine plus tard.
   const target = targetDate ?? toIsoDay(addDays(parseDay(session.date), 7));
+  const done = session.status === 'done';
 
   const changeMode = (next: Mode) => {
     setMode(next);
@@ -105,7 +106,25 @@ export default function CoachPlannedSessionScreen() {
             {notice}
           </Text>
         ) : null}
-        <Button label="Modifier la séance" icon="pen" fullWidth onPress={() => router.push({ pathname: '/pro/athletes/[id]/editeur', params: { id, planId: session.id } })} />
+        {done ? (
+          <Button
+            label="Voir le réalisé"
+            icon="chart"
+            fullWidth
+            onPress={() =>
+              session.sport === 'running' && session.linkedRunId
+                ? router.push({ pathname: '/pro/athletes/[id]/sortie/[runId]', params: { id, runId: session.linkedRunId } })
+                : router.push({ pathname: '/pro/athletes/[id]/muscu/[sessionId]', params: { id, sessionId: session.id, from: 'planned' } })
+            }
+          />
+        ) : null}
+        <Button
+          label="Modifier la séance"
+          icon="pen"
+          variant={done ? 'secondary' : 'primary'}
+          fullWidth
+          onPress={() => router.push({ pathname: '/pro/athletes/[id]/editeur', params: { id, planId: session.id } })}
+        />
         <View style={styles.actions}>
           <Button label="Dupliquer" variant="secondary" icon="copy" onPress={() => changeMode('duplicate')} style={styles.flex} />
           <Button label="Supprimer" variant="danger" icon="x" onPress={() => changeMode('delete')} style={styles.flex} />

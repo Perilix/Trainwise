@@ -73,7 +73,15 @@ export default function CoachAthletePlanningScreen() {
                   <SessionItem key={session.id} session={session} onPress={() => router.push({ pathname: '/pro/athletes/[id]/seance/[planId]', params: { id, planId: session.id } })} />
                 ))}
                 {activities.map((activity) => (
-                  <ActivityItem key={activity.id} activity={activity} />
+                  <ActivityItem
+                    key={activity.id}
+                    activity={activity}
+                    onPress={() =>
+                      activity.sport === 'running'
+                        ? router.push({ pathname: '/pro/athletes/[id]/sortie/[runId]', params: { id, runId: activity.id } })
+                        : router.push({ pathname: '/pro/athletes/[id]/muscu/[sessionId]', params: { id, sessionId: activity.id } })
+                    }
+                  />
                 ))}
               </View>
             ) : (
@@ -133,7 +141,7 @@ function SessionItem({ session, onPress }: { session: PlannedSession; onPress: (
   );
 }
 
-function ActivityItem({ activity }: { activity: Activity }) {
+function ActivityItem({ activity, onPress }: { activity: Activity; onPress: () => void }) {
   const { colors } = useTheme();
   const running = activity.sport === 'running';
   const meta = running
@@ -141,7 +149,7 @@ function ActivityItem({ activity }: { activity: Activity }) {
     : [formatHoursMinutes(activity.durationSec), activity.setsCount ? `${activity.setsCount} séries` : null];
 
   return (
-    <Card>
+    <Card onPress={onPress} accessibilityLabel={`${activity.title}, séance réalisée`}>
       <View style={styles.itemRow}>
         <View style={[styles.tile, { backgroundColor: running ? colors.accentSoft : colors.subtle }]}>
           <Icon name={running ? 'route' : 'dumbbell'} size={20} color={running ? colors.accentInk : colors.primary} />
