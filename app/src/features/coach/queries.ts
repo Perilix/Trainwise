@@ -18,6 +18,7 @@ import type {
   ApiPendingInvitation,
   ApiPlannedRunDetail,
   ApiRunBlock,
+  ApiStrengthPlan,
   ApiSubscriptionRequest,
   ApiUser,
   ApiUserSearchResult,
@@ -202,12 +203,16 @@ export function useCoachActions() {
       await api('/api/coach/invite/direct', { method: 'POST', body: { athleteId, packageType } });
       invalidateApiCache();
     },
-    async createAthleteSession(athleteId: string, payload: NewPlannedSession & { runBlocks?: ApiRunBlock[] }) {
+    async createAthleteSession(athleteId: string, payload: NewPlannedSession & { runBlocks?: ApiRunBlock[]; strengthPlan?: ApiStrengthPlan }) {
       if (!live) return;
       await api(`${athletePath(athleteId)}/planning`, { method: 'POST', body: { ...payload, date: noonIso(payload.date), status: 'planned' } });
       invalidateApiCache();
     },
-    async updateAthleteSession(athleteId: string, planId: string, patch: { sessionType?: string; description?: string; runBlocks?: ApiRunBlock[] }) {
+    async updateAthleteSession(
+      athleteId: string,
+      planId: string,
+      patch: { sessionType?: string; description?: string; targetDuration?: number | null; runBlocks?: ApiRunBlock[]; strengthPlan?: ApiStrengthPlan },
+    ) {
       if (!live) return;
       await api(`${athletePath(athleteId)}/planning/${encodeURIComponent(planId)}`, { method: 'PATCH', body: patch });
       invalidateApiCache();

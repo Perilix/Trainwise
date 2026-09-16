@@ -346,7 +346,7 @@ export function RunBlocksEditor({ blocks, onChange, vma }: Props) {
 type DecimalFieldProps = { label: string; value: number | null | undefined; onChange: (value: number | null) => void; unit?: string; integer?: boolean };
 
 // Saisie numérique gardant le texte tapé (« 1, » en cours de frappe) tout en remontant la valeur.
-function DecimalField({ label, value, onChange, unit, integer }: DecimalFieldProps) {
+export function DecimalField({ label, value, onChange, unit, integer }: DecimalFieldProps) {
   const [text, setText] = useState(() => (value ? String(Number(value.toFixed(2))).replace('.', ',') : ''));
   return (
     <Field
@@ -370,10 +370,21 @@ function DecimalField({ label, value, onChange, unit, integer }: DecimalFieldPro
   );
 }
 
-type StepperProps = { label: string; value: number; min: number; max: number; suffix?: string; onChange: (value: number) => void };
+type StepperProps = {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  suffix?: string;
+  step?: number;
+  /** Affichage de la valeur (ex. « 1′30″ ») ; remplace le suffixe. */
+  format?: (value: number) => string;
+  onChange: (value: number) => void;
+};
 
-export function Stepper({ label, value, min, max, suffix = '', onChange }: StepperProps) {
+export function Stepper({ label, value, min, max, suffix = '', step = 1, format, onChange }: StepperProps) {
   const { colors } = useTheme();
+  const display = format ? format(value) : `${value}${suffix}`;
   return (
     <View style={styles.stepperRow}>
       <Text variant="caption" color="ink">
@@ -381,14 +392,13 @@ export function Stepper({ label, value, min, max, suffix = '', onChange }: Stepp
       </Text>
       {/* Pas de regroupement accessible : les boutons − et + doivent rester atteignables au lecteur d'écran. */}
       <View style={[styles.stepper, { borderColor: colors.borderStrong }]}>
-        <Pressable accessibilityRole="button" accessibilityLabel={`Diminuer ${label}`} disabled={value <= min} onPress={() => onChange(Math.max(min, value - 1))} style={styles.stepperButton}>
+        <Pressable accessibilityRole="button" accessibilityLabel={`Diminuer ${label}`} disabled={value <= min} onPress={() => onChange(Math.max(min, value - step))} style={styles.stepperButton}>
           <Text style={[styles.stepperSign, { color: value <= min ? colors.text3 : colors.ink }]}>−</Text>
         </Pressable>
-        <Text variant="h3" tabular accessibilityLabel={`${label} : ${value}${suffix}`} style={styles.stepperValue}>
-          {value}
-          {suffix}
+        <Text variant="h3" tabular accessibilityLabel={`${label} : ${display}`} style={styles.stepperValue}>
+          {display}
         </Text>
-        <Pressable accessibilityRole="button" accessibilityLabel={`Augmenter ${label}`} disabled={value >= max} onPress={() => onChange(Math.min(max, value + 1))} style={styles.stepperButton}>
+        <Pressable accessibilityRole="button" accessibilityLabel={`Augmenter ${label}`} disabled={value >= max} onPress={() => onChange(Math.min(max, value + step))} style={styles.stepperButton}>
           <Icon name="plus" size={16} color={value >= max ? colors.text3 : colors.ink} />
         </Pressable>
       </View>

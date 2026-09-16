@@ -105,9 +105,7 @@ export default function CoachPlannedSessionScreen() {
             {notice}
           </Text>
         ) : null}
-        {session.sport === 'running' ? (
-          <Button label="Modifier la séance" icon="pen" fullWidth onPress={() => router.push({ pathname: '/pro/athletes/[id]/editeur', params: { id, planId: session.id } })} />
-        ) : null}
+        <Button label="Modifier la séance" icon="pen" fullWidth onPress={() => router.push({ pathname: '/pro/athletes/[id]/editeur', params: { id, planId: session.id } })} />
         <View style={styles.actions}>
           <Button label="Dupliquer" variant="secondary" icon="copy" onPress={() => changeMode('duplicate')} style={styles.flex} />
           <Button label="Supprimer" variant="danger" icon="x" onPress={() => changeMode('delete')} style={styles.flex} />

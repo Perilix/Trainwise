@@ -120,8 +120,8 @@ export type ApiPlannedRun = {
   description?: string;
   strengthPlan?: {
     exercises?: unknown[];
-    circuit?: { exercises?: unknown[] };
-    superset?: { pairs?: { a?: unknown; b?: unknown }[] };
+    circuit?: { exercises?: unknown[] } | null;
+    superset?: { pairs?: { a?: unknown; b?: unknown }[] } | null;
     estimatedDuration?: number;
   };
   status: 'planned' | 'completed' | 'skipped';
@@ -170,6 +170,16 @@ export type ApiPlanExercise = {
   notes?: string;
 };
 
+/** Exercice de la bibliothèque (GET /api/exercises). */
+export type ApiExercise = ApiExerciseRef & { muscleGroups?: string[]; equipment?: string; isPublic?: boolean };
+
+export type ApiStrengthPlan = {
+  exercises?: ApiPlanExercise[];
+  circuit?: { name?: string; rounds?: number; restBetweenRounds?: number; exercises?: ApiPlanExercise[] } | null;
+  superset?: { name?: string; sets?: number; restBetweenSets?: number; pairs?: { a?: ApiPlanExercise; b?: ApiPlanExercise }[] } | null;
+  estimatedDuration?: number;
+};
+
 /** Séance planifiée détaillée (GET /api/planning/:id, exercices peuplés). */
 export type ApiPlannedRunDetail = Omit<ApiPlannedRun, 'strengthPlan'> & {
   warmup?: string;
@@ -177,12 +187,7 @@ export type ApiPlannedRunDetail = Omit<ApiPlannedRun, 'strengthPlan'> & {
   cooldown?: string;
   runBlocks?: ApiRunBlock[];
   linkedRun?: string | { _id: string } | null;
-  strengthPlan?: {
-    exercises?: ApiPlanExercise[];
-    circuit?: { name?: string; rounds?: number; restBetweenRounds?: number; exercises?: ApiPlanExercise[] };
-    superset?: { name?: string; sets?: number; restBetweenSets?: number; pairs?: { a?: ApiPlanExercise; b?: ApiPlanExercise }[] };
-    estimatedDuration?: number;
-  };
+  strengthPlan?: ApiStrengthPlan;
 };
 
 /** Allure d'une étape de séance type : zone VMA, % VMA ou allure fixe. */

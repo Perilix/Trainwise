@@ -5,9 +5,11 @@ import { StyleSheet, TextInput, View } from 'react-native';
 import { BackBar, Button, Card, ChoicePill, FormError, Screen, Section, StateView, Text } from '@/components/ui';
 import { useAthleteFiche, useCoachActions, useCoachPlannedRaw } from '@/features/coach/queries';
 import { DateStepper } from '@/features/sessions/date-stepper';
-import { RunBlocksEditor } from '@/features/sessions/run-blocks-editor';
+import { RunBlocksEditor, Stepper } from '@/features/sessions/run-blocks-editor';
 import { newCooldown, newWarmup, toEditable, toPayload, validateBlocks, type EditableBlock } from '@/features/sessions/run-blocks-model';
 import { SESSION_TYPES } from '@/features/sessions/simple-session-form';
+import { StrengthPlanEditor } from '@/features/sessions/strength-plan-editor';
+import { toEditableStrength, toStrengthPayload, validateStrength, type EditableStrengthPlan } from '@/features/sessions/strength-plan-model';
 import { emitAppEvent } from '@/lib/app-events';
 import { toIsoDay } from '@/lib/format';
 import { useTheme } from '@/theme/theme-provider';
@@ -15,7 +17,7 @@ import { layout, radius } from '@/theme/tokens';
 import { fontFamily } from '@/theme/typography';
 
 export default function CoachSessionEditorScreen() {
-  const { id, planId, date: dateParam } = useLocalSearchParams<{ id: string; planId?: string; date?: string }>();
+  const { id, planId, date: dateParam, sport: sportParam } = useLocalSearchParams<{ id: string; planId?: string; date?: string; sport?: string }>();
   const router = useRouter();
   const { colors } = useTheme();
   const { data: raw, loading, error, refetch } = useCoachPlannedRaw(id, planId);
@@ -26,10 +28,13 @@ export default function CoachSessionEditorScreen() {
   const [description, setDescription] = useState<string | null>(null);
   // Nouvelle séance : échauffement et retour au calme proposés d'emblée.
   const [blocks, setBlocks] = useState<EditableBlock[] | null>(() => (planId ? null : [newWarmup(), newCooldown()]));
+  const [plan, setPlan] = useState<EditableStrengthPlan | null>(null);
+  const [duration, setDuration] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const title = planId ? 'Modifier la séance' : 'Séance par blocs';
+  const strength = (raw ? raw.activityType : sportParam) === 'strength';
+  const title = planId ? 'Modifier la séance' : strength ? 'Séance de musculation' : 'Séance par blocs';
 
   if (planId && !raw) {
     return (
@@ -40,38 +45,33 @@ export default function CoachSessionEditorScreen() {
     );
   }
 
-  if (raw && raw.activityType !== 'running') {
-    return (
-      <Screen>
-        <BackBar title={title} />
-        <Section>
-          <Card>
-            <Text variant="body2">L’édition des séances de musculation arrive bientôt dans l’app.</Text>
-          </Card>
-        </Section>
-      </Screen>
-    );
-  }
-
   const vma = fiche?.physical.vma;
   const currentBlocks = blocks ?? toEditable(raw?.runBlocks ?? []);
-  const currentType = sessionType ?? raw?.sessionType ?? 'fractionne';
+  const currentPlan = plan ?? toEditableStrength(raw?.strengthPlan);
+  const currentType = sessionType ?? raw?.sessionType ?? (strength ? 'full_body' : 'fractionne');
   const currentDescription = description ?? raw?.description ?? '';
+  const currentDuration = duration ?? raw?.strengthPlan?.estimatedDuration ?? raw?.targetDuration ?? 45;
 
   const save = async () => {
-    const problem = validateBlocks(currentBlocks);
+    const problem = strength ? validateStrength(currentPlan) : validateBlocks(currentBlocks);
     if (problem) {
       setSaveError(problem);
       return;
     }
     setSaving(true);
     setSaveError(null);
-    const runBlocks = toPayload(currentBlocks, vma);
+    const content = strength ? { strengthPlan: toStrengthPayload(currentPlan, currentDuration), targetDuration: currentDuration } : { runBlocks: toPayload(currentBlocks, vma) };
     try {
       if (planId) {
-        await updateAthleteSession(id, planId, { sessionType: currentType, description: currentDescription.trim(), runBlocks });
+        await updateAthleteSession(id, planId, { sessionType: currentType, description: currentDescription.trim(), ...content });
       } else {
-        await createAthleteSession(id, { date, activityType: 'running', sessionType: currentType, description: currentDescription.trim() || undefined, runBlocks });
+        await createAthleteSession(id, {
+          date,
+          activityType: strength ? 'strength' : 'running',
+          sessionType: currentType,
+          description: currentDescription.trim() || undefined,
+          ...content,
+        });
       }
       emitAppEvent('sessions:changed');
       router.back();
@@ -95,7 +95,7 @@ export default function CoachSessionEditorScreen() {
         <Section style={styles.athlete}>
           <Text variant="small">
             Pour {fiche.name}
-            {vma ? ` · VMA ${String(vma).replace('.', ',')} km/h` : ' · VMA non renseignée'}
+            {strength ? '' : vma ? ` · VMA ${String(vma).replace('.', ',')} km/h` : ' · VMA non renseignée'}
           </Text>
         </Section>
       ) : null}
@@ -113,11 +113,12 @@ export default function CoachSessionEditorScreen() {
               Type de séance
             </Text>
             <View accessibilityRole="radiogroup" style={styles.pills}>
-              {SESSION_TYPES.running.map(([value, label]) => (
+              {SESSION_TYPES[strength ? 'strength' : 'running'].map(([value, label]) => (
                 <ChoicePill key={value} role="radio" label={label} selected={value === currentType} onPress={() => setSessionType(value)} />
               ))}
             </View>
           </View>
+          {strength ? <Stepper label="Durée estimée (min)" value={currentDuration} min={10} max={150} step={5} onChange={setDuration} /> : null}
           <View>
             <Text variant="caption" color="ink" style={styles.label}>
               Consignes
@@ -136,7 +137,7 @@ export default function CoachSessionEditorScreen() {
       </Section>
 
       <Section>
-        <RunBlocksEditor blocks={currentBlocks} onChange={setBlocks} vma={vma} />
+        {strength ? <StrengthPlanEditor plan={currentPlan} onChange={setPlan} /> : <RunBlocksEditor blocks={currentBlocks} onChange={setBlocks} vma={vma} />}
       </Section>
     </Screen>
   );

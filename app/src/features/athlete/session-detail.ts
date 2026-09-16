@@ -8,7 +8,7 @@ import type { ExerciseBlockRef, PlanExercise, PlannedSessionDetail, RunBlockView
 
 const ROLE_LABELS = { warmup: 'Échauffement', main: 'Corps de séance', cooldown: 'Retour au calme' } as const;
 
-const MUSCLE_LABELS: Record<string, string> = {
+export const MUSCLE_LABELS: Record<string, string> = {
   chest: 'Pectoraux',
   back: 'Dos',
   shoulders: 'Épaules',

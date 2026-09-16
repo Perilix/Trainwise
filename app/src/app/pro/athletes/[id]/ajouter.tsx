@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, useWindowDimensions } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { BackBar, Button, Card, FormError, Screen, Section, Segmented, StateView, Text } from '@/components/ui';
 import { useCoachActions } from '@/features/coach/queries';
@@ -64,13 +64,22 @@ export default function CoachAddSessionScreen() {
       </Section>
 
       <Section style={styles.tight}>
-        <Button
-          label="Créer une séance par blocs"
-          variant="secondary"
-          icon="repeat"
-          fullWidth
-          onPress={() => router.replace({ pathname: '/pro/athletes/[id]/editeur', params: { id, date } })}
-        />
+        <View style={styles.editors}>
+          <Button
+            label="Séance par blocs"
+            variant="secondary"
+            icon="repeat"
+            onPress={() => router.replace({ pathname: '/pro/athletes/[id]/editeur', params: { id, date } })}
+            style={styles.flex}
+          />
+          <Button
+            label="Séance de muscu"
+            variant="secondary"
+            icon="dumbbell"
+            onPress={() => router.replace({ pathname: '/pro/athletes/[id]/editeur', params: { id, date, sport: 'strength' } })}
+            style={styles.flex}
+          />
+        </View>
       </Section>
 
       {mode === 'simple' ? (
@@ -124,6 +133,8 @@ export default function CoachAddSessionScreen() {
 }
 
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  editors: { flexDirection: 'row', gap: 8 },
   tight: { paddingBottom: 12 },
   hint: { gap: 8, paddingBottom: 14 },
   group: { paddingBottom: 16 },

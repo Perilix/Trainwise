@@ -88,9 +88,7 @@ export default function TemplateDetailScreen() {
       <FormError message={actionError} />
       <Button label="Planifier pour des athlètes" icon="users" fullWidth onPress={() => router.push({ pathname: '/pro/seance-type/assigner', params: { id: template._id } })} />
       <View style={styles.actions}>
-        {running ? (
-          <Button label="Modifier" variant="secondary" size="sm" icon="pen" onPress={() => router.push({ pathname: '/pro/seance-type/editeur', params: { id: template._id } })} style={styles.flex} />
-        ) : null}
+        <Button label="Modifier" variant="secondary" size="sm" icon="pen" onPress={() => router.push({ pathname: '/pro/seance-type/editeur', params: { id: template._id } })} style={styles.flex} />
         <Button label="Dupliquer" variant="secondary" size="sm" icon="copy" disabled={busy} onPress={duplicate} style={styles.flex} />
       </View>
       <Button label="Supprimer de la bibliothèque" variant="danger" size="sm" icon="x" fullWidth onPress={() => setConfirmDelete(true)} />
