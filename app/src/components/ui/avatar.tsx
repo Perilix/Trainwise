@@ -6,7 +6,7 @@ import { fontFamily } from '@/theme/typography';
 
 import { Text } from './text';
 
-export type AvatarTone = 'primary' | 'accent' | 'violet' | 'highlight';
+export type AvatarTone = 'primary' | 'accent' | 'violet' | 'violetSolid' | 'highlight';
 
 type Props = {
   initials: string;
@@ -20,6 +20,7 @@ export function Avatar({ initials, size = 36, tone = 'primary' }: Props) {
     primary: [colors.primary, colors.onPrimary],
     accent: [colors.accentSoft, colors.accentInk],
     violet: [colors.violetSoft, colors.violetInk],
+    violetSolid: [colors.violet, '#FFFFFF'],
     highlight: [colors.highlight, '#003554'],
   };
   const [background, foreground] = tones[tone];

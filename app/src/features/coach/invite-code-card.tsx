@@ -42,7 +42,7 @@ export function InviteCodeCard({ code, onChanged }: Props) {
 
   return (
     <Card>
-      <Text variant="h2">Code d’invitation</Text>
+      <Text variant="sectionTitle">Code d’invitation</Text>
       <Text variant="small" style={styles.hint}>
         Vos athlètes saisissent ce code dans leur app pour vous rejoindre.
       </Text>

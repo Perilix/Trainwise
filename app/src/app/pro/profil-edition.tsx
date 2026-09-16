@@ -54,7 +54,7 @@ export default function CoachProfileEditScreen() {
 
       <Section style={styles.tight}>
         <Card>
-          <Text variant="h2">Disciplines</Text>
+          <Text variant="sectionTitle">Disciplines</Text>
           <View style={styles.pills}>
             {DISCIPLINE_OPTIONS.map((option) => (
               <ChoicePill key={option.value} label={option.label} selected={disciplines.includes(option.value)} onPress={() => setDisciplines((list) => toggle(list, option.value))} />
@@ -65,7 +65,7 @@ export default function CoachProfileEditScreen() {
 
       <Section style={styles.tight}>
         <Card>
-          <Text variant="h2">Diplômes et certifications</Text>
+          <Text variant="sectionTitle">Diplômes et certifications</Text>
           <View style={styles.pills}>
             {DIPLOMA_OPTIONS.map((option) => (
               <ChoicePill key={option.value} label={option.label} selected={diplomas.includes(option.value)} onPress={() => setDiplomas((list) => toggle(list, option.value))} />

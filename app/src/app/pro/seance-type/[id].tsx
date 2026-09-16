@@ -99,23 +99,26 @@ export default function TemplateDetailScreen() {
     <Screen footer={footer}>
       <BackBar />
 
-      <Section style={styles.header}>
-        <View style={styles.chips}>
-          <Chip label={running ? 'Course' : 'Muscu'} tone={running ? 'accent' : 'neutral'} icon={running ? 'route' : 'dumbbell'} />
-          <Chip label={SESSION_TYPE_LABELS[template.sessionType] ?? template.sessionType} />
-        </View>
-        <Text variant="h1" style={styles.title}>
-          {template.name}
-        </Text>
-        <Text variant="caption">{usage}</Text>
-      </Section>
-
-      <PlannedSessionBody session={templateToDetail(template)} plannedByLabel="" hideHeader />
+      <PlannedSessionBody
+        session={templateToDetail(template)}
+        plannedByLabel=""
+        hideHeader
+        hero={{
+          title: template.name,
+          overline: usage,
+          chips: (
+            <>
+              <Chip label={running ? 'Course' : 'Muscu'} tone={running ? 'accent' : 'neutral'} icon={running ? 'route' : 'dumbbell'} />
+              <Chip label={SESSION_TYPE_LABELS[template.sessionType] ?? template.sessionType} />
+            </>
+          ),
+        }}
+      />
 
       {main && athletes?.length ? (
         <Section>
           <Card>
-            <Text variant="h2">Allures individualisées</Text>
+            <Text variant="sectionTitle">Allures individualisées</Text>
             <Text variant="small" style={styles.hint}>
               {main.label}, selon la VMA de chaque athlète.
             </Text>
@@ -149,9 +152,6 @@ export default function TemplateDetailScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  header: { paddingBottom: 16 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  title: { marginTop: 8 },
   hint: { marginTop: 2, marginBottom: 6 },
   athlete: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
   footer: { gap: 10, paddingHorizontal: layout.gutter, paddingTop: 12, paddingBottom: 8 },

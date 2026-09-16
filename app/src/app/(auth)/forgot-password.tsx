@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, lineHeight: 36, marginTop: 8 },
   intro: { marginTop: 4, marginBottom: 24 },
   error: { marginTop: 20 },
-  submit: { marginTop: 24 },
+  submit: { marginTop: 28 },
   sent: { gap: 8, marginTop: 24 },
   sentIcon: { width: 44, height: 44, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
   back: { marginTop: 12 },

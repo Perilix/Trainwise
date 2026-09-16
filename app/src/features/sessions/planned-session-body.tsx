@@ -1,6 +1,8 @@
+import type { ReactNode } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import { SvgXml } from 'react-native-svg';
 
-import { Card, Chip, Icon, Section, Stat, Text, WorkoutProfile } from '@/components/ui';
+import { BRAND, Card, Chip, Icon, Section, Stat, Text, WorkoutProfile } from '@/components/ui';
 import { SESSION_STATUS_CHIP } from '@/features/athlete/session-status';
 import type { PlanExercise, PlannedSessionDetail, RunBlockView, StrengthPlanView } from '@/features/athlete/types';
 import { formatDayLong, formatDecimal, formatHoursMinutes, formatPace } from '@/lib/format';
@@ -14,10 +16,12 @@ type Props = {
   plannedByLabel: string;
   /** Sans date ni statut (séance type de la bibliothèque). */
   hideHeader?: boolean;
+  /** Séance type : titre et sur-titre de la carte de mise en avant, à la place de la date. */
+  hero?: { title: string; overline: string; chips?: ReactNode };
 };
 
 /** Contenu d'une séance planifiée : en-tête, objectifs, consignes, déroulé ou plan de musculation. */
-export function PlannedSessionBody({ session, plannedByLabel, hideHeader }: Props) {
+export function PlannedSessionBody({ session, plannedByLabel, hideHeader, hero }: Props) {
   const { width } = useWindowDimensions();
   const running = session.sport === 'running';
   const byCoach = session.plannedBy === 'coach';
@@ -26,38 +30,31 @@ export function PlannedSessionBody({ session, plannedByLabel, hideHeader }: Prop
 
   return (
     <>
-      {hideHeader ? null : (
-        <Section style={styles.titleBlock}>
-          <Text variant="small">{formatDayLong(session.date)}</Text>
-          <Text variant="h1">{session.title}</Text>
-          <View style={styles.chips}>
+      {hideHeader ? (
+        <Section style={styles.tight}>
+          {hero ? (
+            <SessionHero session={session} running={running} overline={hero.overline} title={hero.title}>
+              {hero.chips}
+            </SessionHero>
+          ) : (
+            <Card style={styles.stats}>
+              <SessionStats session={session} running={running} />
+            </Card>
+          )}
+        </Section>
+      ) : (
+        <Section style={styles.tight}>
+          <SessionHero session={session} running={running}>
             <Chip label={plannedByLabel} tone={byCoach ? 'violet' : 'neutral'} icon={byCoach ? 'user' : 'pen'} />
             <Chip label={status.label} tone={status.tone} icon={status.icon} />
-          </View>
+          </SessionHero>
         </Section>
       )}
-
-      <Section style={styles.tight}>
-        <Card style={styles.stats}>
-          {running ? (
-            <>
-              <Stat label="Distance" value={session.distanceKm ? formatDecimal(session.distanceKm, session.distanceKm % 1 ? 1 : 0) : '—'} unit="km" style={styles.flex} />
-              <Stat label="Durée" value={session.durationMin ? formatHoursMinutes(session.durationMin * 60) : '—'} style={styles.flex} />
-              {session.paceSecPerKm ? <Stat label="Allure" value={formatPace(session.paceSecPerKm)} unit="/km" style={styles.flex} /> : null}
-            </>
-          ) : (
-            <>
-              <Stat label="Exercices" value={session.exercisesCount ? String(session.exercisesCount) : '—'} style={styles.flex} />
-              <Stat label="Durée" value={session.durationMin ? formatHoursMinutes(session.durationMin * 60) : '—'} style={styles.flex} />
-            </>
-          )}
-        </Card>
-      </Section>
 
       {session.description ? (
         <Section style={styles.tight}>
           <Card>
-            <Text variant="h2">Consignes</Text>
+            <Text variant="sectionTitle">Consignes</Text>
             <Text variant="body2" style={styles.paragraph}>
               {session.description}
             </Text>
@@ -69,7 +66,7 @@ export function PlannedSessionBody({ session, plannedByLabel, hideHeader }: Prop
         <Section style={styles.tight}>
           <Card>
             <View style={styles.cardHeader}>
-              <Text variant="h2">Déroulé</Text>
+              <Text variant="sectionTitle">Déroulé</Text>
               {totalSec ? (
                 <Text variant="small" tabular>
                   ≈ {formatDuration(totalSec)}
@@ -89,7 +86,7 @@ export function PlannedSessionBody({ session, plannedByLabel, hideHeader }: Prop
       {running && !session.blocks.length && session.textPlan.length ? (
         <Section style={styles.tight}>
           <Card>
-            <Text variant="h2">Déroulé</Text>
+            <Text variant="sectionTitle">Déroulé</Text>
             {session.textPlan.map((item) => (
               <View key={item.label} style={styles.textPlanItem}>
                 <Text variant="overline">{item.label}</Text>
@@ -101,6 +98,51 @@ export function PlannedSessionBody({ session, plannedByLabel, hideHeader }: Prop
       ) : null}
 
       {session.strength ? <StrengthPlanCards plan={session.strength} /> : null}
+    </>
+  );
+}
+
+// La séance ouverte est l'élément mis en avant de l'écran : carte navy, comme la séance du jour (spec § 7).
+function SessionHero({ session, running, children, overline, title }: { session: PlannedSessionDetail; running: boolean; children?: ReactNode; overline?: string; title?: string }) {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.hero, { backgroundColor: colors.brand }]}>
+      <View style={styles.watermark} pointerEvents="none">
+        <SvgXml xml={BRAND.glyph} width={112} height={112} opacity={0.05} />
+      </View>
+      <Text variant="overline" style={{ color: colors.highlight }}>
+        {overline ?? formatDayLong(session.date)}
+      </Text>
+      <Text variant="h1" style={[styles.heroTitle, { color: colors.onBrand }]}>
+        {title ?? session.title}
+      </Text>
+      {children ? <View style={styles.chips}>{children}</View> : null}
+      <View style={styles.heroStats}>
+        <SessionStats session={session} running={running} onBrand />
+      </View>
+    </View>
+  );
+}
+
+function SessionStats({ session, running, onBrand }: { session: PlannedSessionDetail; running: boolean; onBrand?: boolean }) {
+  const { colors } = useTheme();
+  const tint = onBrand ? { label: 'rgba(255, 255, 255, 0.55)', value: colors.onBrand } : undefined;
+  const items = running
+    ? [
+        { label: 'Distance', value: session.distanceKm ? formatDecimal(session.distanceKm, session.distanceKm % 1 ? 1 : 0) : '—', unit: 'km' },
+        { label: 'Durée', value: session.durationMin ? formatHoursMinutes(session.durationMin * 60) : '—', unit: undefined },
+        ...(session.paceSecPerKm ? [{ label: 'Allure', value: formatPace(session.paceSecPerKm), unit: '/km' }] : []),
+      ]
+    : [
+        { label: 'Exercices', value: session.exercisesCount ? String(session.exercisesCount) : '—', unit: undefined },
+        { label: 'Durée', value: session.durationMin ? formatHoursMinutes(session.durationMin * 60) : '—', unit: undefined },
+      ];
+
+  return (
+    <>
+      {items.map((item) => (
+        <Stat key={item.label} label={item.label} value={item.value} unit={item.unit} tint={tint} style={styles.flex} />
+      ))}
     </>
   );
 }
@@ -165,7 +207,7 @@ function StrengthPlanCards({ plan }: { plan: StrengthPlanView }) {
       {plan.exercises.length ? (
         <Section style={styles.tight}>
           <Card>
-            <Text variant="h2">Exercices</Text>
+            <Text variant="sectionTitle">Exercices</Text>
             {plan.exercises.map((exercise, index) => (
               <ExerciseRow key={exercise.key} exercise={exercise} first={index === 0} showSets />
             ))}
@@ -177,8 +219,8 @@ function StrengthPlanCards({ plan }: { plan: StrengthPlanView }) {
         <Section style={styles.tight}>
           <Card>
             <View style={styles.cardHeader}>
-              <Text variant="h2">{superset.name ?? 'Super-set'}</Text>
-              <Chip label={`${superset.sets} séries · repos ${formatDuration(superset.restBetweenSetsSec)}`} tone="violet" />
+              <Text variant={superset.name ? 'h2' : 'sectionTitle'}>{superset.name ?? 'Super-set'}</Text>
+              <Chip label={`${superset.sets} séries · repos ${formatDuration(superset.restBetweenSetsSec)}`} tone="accent" />
             </View>
             {superset.pairs.map((pair, pairIndex) => (
               <View key={pairIndex}>
@@ -194,7 +236,7 @@ function StrengthPlanCards({ plan }: { plan: StrengthPlanView }) {
         <Section style={styles.tight}>
           <Card>
             <View style={styles.cardHeader}>
-              <Text variant="h2">{circuit.name ?? 'Circuit'}</Text>
+              <Text variant={circuit.name ? 'h2' : 'sectionTitle'}>{circuit.name ?? 'Circuit'}</Text>
               <Chip label={`${circuit.rounds} tours · repos ${formatDuration(circuit.restBetweenRoundsSec)}`} tone="accent" />
             </View>
             {circuit.exercises.map((exercise, index) => (
@@ -236,8 +278,11 @@ function ExerciseRow({ exercise, first, prefix, showSets }: { exercise: PlanExer
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  titleBlock: { paddingBottom: 16 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
+  hero: { borderRadius: radius.xl, padding: 20, overflow: 'hidden' },
+  watermark: { position: 'absolute', right: -16, bottom: -18 },
+  heroTitle: { marginTop: 6 },
+  heroStats: { flexDirection: 'row', gap: 8, marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: 'rgba(255, 255, 255, 0.14)' },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
   tight: { paddingBottom: 12 },
   stats: { flexDirection: 'row', gap: 8 },
   paragraph: { marginTop: 6 },

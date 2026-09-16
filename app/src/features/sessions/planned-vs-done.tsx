@@ -78,7 +78,7 @@ export function PlannedVsDone({ snapshot, run }: { snapshot: Snapshot; run: RunD
   return (
     <Card>
       <View style={styles.header}>
-        <Text variant="h2">Prévu / réalisé</Text>
+        <Text variant="sectionTitle">Prévu / réalisé</Text>
         {verdict ? <Chip label={verdict} tone={offTarget ? 'warning' : 'success'} icon={offTarget ? 'warning' : 'check'} /> : null}
       </View>
 

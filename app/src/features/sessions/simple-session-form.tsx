@@ -121,7 +121,7 @@ export function SimpleSessionForm({ date, submitLabel, onSubmit }: Props) {
 
       <Section style={styles.tight}>
         <Card style={styles.gap}>
-          <Text variant="h2">Objectifs</Text>
+          <Text variant="sectionTitle">Objectifs</Text>
           {running ? (
             <View style={styles.row}>
               <View style={styles.flex}>
@@ -139,7 +139,7 @@ export function SimpleSessionForm({ date, submitLabel, onSubmit }: Props) {
 
       <Section style={styles.tight}>
         <Card>
-          <Text variant="h2">Consignes</Text>
+          <Text variant="sectionTitle">Consignes</Text>
           <TextInput
             accessibilityLabel="Consignes de la séance"
             placeholder={running ? 'Ex. footing en aisance, 4 lignes droites à la fin' : 'Ex. 4 × 10 squats, 3 × 12 pompes'}

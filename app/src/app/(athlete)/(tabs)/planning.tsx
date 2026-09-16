@@ -41,7 +41,7 @@ export default function PlanningScreen() {
   const sessions = data?.sessionsByDay[selected] ?? [];
 
   return (
-    <Screen>
+    <Screen tabs>
       <AthleteAppBar />
 
       <Section style={styles.header}>

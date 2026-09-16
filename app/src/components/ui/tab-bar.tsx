@@ -4,8 +4,10 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/theme/theme-provider';
+import { radius } from '@/theme/tokens';
 import { fontFamily } from '@/theme/typography';
 
+import { GlassSurface } from './glass-surface';
 import { Icon, type IconName } from './icon';
 import { Text } from './text';
 
@@ -15,18 +17,25 @@ export type TabItem = { name: string; label: string; icon: IconName; badge?: num
 
 type Props = TabBarRenderProps & { items: readonly TabItem[] };
 
-// Barre d'onglets claire avec libellés, passée à `tabBar` du composant Tabs d'expo-router.
+// Hauteur occupée par la barre flottante : sert de padding bas aux écrans (cf. Screen).
+export const TAB_BAR_HEIGHT = 66;
+export const TAB_BAR_MARGIN = 16;
+
+// Barre flottante en verre posée sur le fond de la page ; onglet actif en pastille `subtle`, jamais en bleu.
 export function TabBar({ state, navigation, items }: Props) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.bar, { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 8) }]}>
+    <GlassSurface
+      radius={radius.pill}
+      interactive={false}
+      style={[styles.bar, { bottom: Math.max(insets.bottom, 16), left: TAB_BAR_MARGIN, right: TAB_BAR_MARGIN }]}>
       {state.routes.map((route, index) => {
         const item = items.find((candidate) => candidate.name === route.name);
         if (!item) return null;
         const focused = state.index === index;
-        const tint = focused ? colors.primary : colors.text3;
+        const tint = focused ? colors.ink : colors.text3;
 
         const onPress = () => {
           const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
@@ -41,34 +50,36 @@ export function TabBar({ state, navigation, items }: Props) {
             accessibilityLabel={item.badge ? `${item.label}, ${item.badge} non lu` : item.label}
             onPress={onPress}
             style={styles.item}>
-            <View>
-              <Icon name={item.icon} size={24} color={tint} strokeWidth={focused ? 2 : 1.75} />
-              {item.badge ? (
-                <View style={[styles.badge, { backgroundColor: colors.danger, borderColor: colors.surface }]}>
-                  <Text style={styles.badgeLabel}>{item.badge}</Text>
-                </View>
-              ) : null}
+            <View style={[styles.pill, focused && { backgroundColor: colors.subtle }]}>
+              <View>
+                <Icon name={item.icon} size={24} color={tint} strokeWidth={focused ? 2.2 : 2} />
+                {item.badge ? (
+                  <View style={[styles.badge, { backgroundColor: colors.danger }]}>
+                    <Text style={styles.badgeLabel}>{item.badge > 99 ? '99+' : item.badge}</Text>
+                  </View>
+                ) : null}
+              </View>
+              <Text style={{ fontSize: 11, lineHeight: 14, color: tint, fontFamily: focused ? fontFamily.bold : fontFamily.medium }}>{item.label}</Text>
             </View>
-            <Text style={{ fontSize: 11, lineHeight: 14, color: tint, fontFamily: focused ? fontFamily.semibold : fontFamily.medium }}>{item.label}</Text>
           </Pressable>
         );
       })}
-    </View>
+    </GlassSurface>
   );
 }
 
 const styles = StyleSheet.create({
-  bar: { flexDirection: 'row', borderTopWidth: 1, paddingTop: 6, paddingHorizontal: 8 },
-  item: { flex: 1, height: 52, alignItems: 'center', justifyContent: 'center', gap: 4 },
+  bar: { position: 'absolute', height: TAB_BAR_HEIGHT, flexDirection: 'row', padding: 7 },
+  item: { flex: 1 },
+  pill: { flex: 1, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', gap: 3 },
   badge: {
     position: 'absolute',
-    top: -5,
-    right: -10,
-    minWidth: 19,
-    height: 19,
+    top: -6,
+    right: -11,
+    minWidth: 17,
+    height: 17,
     paddingHorizontal: 4,
-    borderRadius: 10,
-    borderWidth: 2,
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -2,7 +2,7 @@ import { useRef, useState, type ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Avatar, Icon, IconButton, Text } from '@/components/ui';
+import { Avatar, Icon, IconButton, TAB_BAR_HEIGHT, TAB_BAR_MARGIN, Text } from '@/components/ui';
 import type { CitedSession } from '@/features/athlete/types';
 import { useTheme } from '@/theme/theme-provider';
 import { radius } from '@/theme/tokens';
@@ -49,6 +49,8 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack, onOpenSess
     if (value) chat.notifyTyping();
   };
 
+  // Sans bouton retour, le fil vit dans un onglet : on dégage la hauteur de la barre flottante.
+  const tabSpace = onBack ? 0 : TAB_BAR_HEIGHT + TAB_BAR_MARGIN * 2;
   const errorText = sendFailure ?? chat.sendError;
   const canSend = draft.trim().length > 0 && !submitting;
 
@@ -58,7 +60,7 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack, onOpenSess
         {onBack ? <IconButton icon="chevronLeft" size={44} accessibilityLabel="Retour" onPress={onBack} /> : null}
         <Avatar initials={peer.initials} size={38} tone={onBack ? 'accent' : 'violet'} />
         <View style={styles.flex}>
-          <Text variant="h3" numberOfLines={1}>
+          <Text variant="h2" numberOfLines={1}>
             {peer.name}
           </Text>
           <View style={styles.presence}>
@@ -122,7 +124,7 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack, onOpenSess
           </View>
         ) : null}
 
-        <View style={[styles.composer, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+        <View style={[styles.composer, { backgroundColor: colors.surface, borderTopColor: colors.border, marginBottom: tabSpace }]}>
           <TextInput
             accessibilityLabel="Message"
             placeholder="Écrire un message…"
@@ -138,8 +140,8 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack, onOpenSess
             accessibilityState={{ disabled: !canSend }}
             disabled={!canSend}
             onPress={submit}
-            style={[styles.send, { backgroundColor: colors.primary, opacity: canSend ? 1 : 0.4 }]}>
-            <Icon name="send" size={18} color={colors.onPrimary} strokeWidth={2} />
+            style={[styles.send, { backgroundColor: canSend ? colors.accent : colors.subtle, opacity: canSend ? 1 : 0.7 }]}>
+            <Icon name="send" size={18} color={canSend ? colors.ctaInk : colors.text3} strokeWidth={2} />
           </Pressable>
         </View>
       </KeyboardAvoidingView>
@@ -196,7 +198,7 @@ const styles = StyleSheet.create({
   typingBubble: { borderWidth: 1, borderBottomLeftRadius: 6, paddingVertical: 6 },
   time: { paddingHorizontal: 4 },
   error: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 12, marginBottom: 8, paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.md },
-  composer: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: 1 },
+  composer: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: 1 },
   input: { flex: 1, minHeight: 44, maxHeight: 120, borderRadius: 22, borderWidth: 1, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12, fontFamily: fontFamily.regular, fontSize: 14 },
   send: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
 });

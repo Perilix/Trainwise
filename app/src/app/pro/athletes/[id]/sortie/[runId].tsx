@@ -1,11 +1,10 @@
 import { useLocalSearchParams } from 'expo-router';
-import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, useWindowDimensions } from 'react-native';
 
-import { BackBar, Chip, Screen, Section, StateView, Text } from '@/components/ui';
+import { BackBar, Chip, Screen, Section, StateView } from '@/components/ui';
 import { useCoachRunDetail } from '@/features/coach/queries';
 import { PlannedVsDone } from '@/features/sessions/planned-vs-done';
-import { RunDetailBody } from '@/features/sessions/run-detail-body';
-import { formatDayShort } from '@/lib/format';
+import { RunDetailBody, RunHero } from '@/features/sessions/run-detail-body';
 import { layout } from '@/theme/tokens';
 
 export default function CoachRunDetailScreen() {
@@ -29,16 +28,11 @@ export default function CoachRunDetailScreen() {
     <Screen>
       <BackBar />
 
-      <Section style={styles.titleBlock}>
-        <Text variant="small">
-          {formatDayShort(run.date)}
-          {run.startTime ? ` · ${run.startTime}` : ''}
-        </Text>
-        <Text variant="h1">{run.title}</Text>
-        <View style={styles.chips}>
+      <Section style={styles.tight}>
+        <RunHero run={run}>
           {run.fromStrava ? <Chip label="Strava" tone="strava" /> : null}
           <Chip label={snapshot ? 'Séance planifiée' : 'Sortie libre'} tone={snapshot ? 'violet' : 'neutral'} icon={snapshot ? 'user' : 'route'} />
-        </View>
+        </RunHero>
       </Section>
 
       {snapshot ? (
@@ -53,7 +47,6 @@ export default function CoachRunDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  titleBlock: { paddingBottom: 16 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
   tight: { paddingBottom: 12 },
 });

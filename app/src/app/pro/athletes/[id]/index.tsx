@@ -159,7 +159,7 @@ export default function AthleteFicheScreen() {
 
       <Section style={styles.tight}>
         <Card>
-          <Text variant="h2">Données physiques</Text>
+          <Text variant="sectionTitle">Données physiques</Text>
           <View style={styles.grid}>
             <Fact label="Taille" value={physical.heightCm ? `${physical.heightCm} cm` : '—'} />
             <Fact label="Poids" value={physical.weightKg ? `${formatDecimal(physical.weightKg, physical.weightKg % 1 ? 1 : 0)} kg` : '—'} />
@@ -196,7 +196,7 @@ export default function AthleteFicheScreen() {
       <Section>
         <Card>
           <View style={styles.rowBetween}>
-            <Text variant="h2">Activité</Text>
+            <Text variant="sectionTitle">Activité</Text>
             <Text variant="caption">7 derniers jours</Text>
           </View>
           {fiche.activities.length ? (
@@ -289,7 +289,7 @@ function SportProfile({ fiche }: { fiche: AthleteFiche }) {
 
   return (
     <Card>
-      <Text variant="h2">Profil sportif</Text>
+      <Text variant="sectionTitle">Profil sportif</Text>
       {!runningLines.length && !strengthLines.length && !competition && !hasAvailability ? (
         <Text variant="body2" style={styles.empty}>
           L’athlète n’a pas encore renseigné son profil sportif.
@@ -340,7 +340,7 @@ function SportProfile({ fiche }: { fiche: AthleteFiche }) {
           <View style={styles.days}>
             {availability.days.map((available, index) => (
               <View key={index} style={[styles.day, { backgroundColor: available ? colors.primary : colors.subtle }]}>
-                <Text style={[styles.dayText, { color: available ? colors.onPrimary : colors.text3 }]}>{WEEKDAY_LETTERS[index]}</Text>
+                <Text style={[styles.dayText, { color: available ? colors.onPrimary : colors.text2 }]}>{WEEKDAY_LETTERS[index]}</Text>
               </View>
             ))}
           </View>

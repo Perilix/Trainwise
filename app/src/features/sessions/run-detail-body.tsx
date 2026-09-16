@@ -1,12 +1,14 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { SvgXml } from 'react-native-svg';
 
 import { HeartRateChart } from '@/components/charts/heart-rate-chart';
 import { PaceChart } from '@/components/charts/pace-chart';
-import { Card, Chip, Section, Stat, Text } from '@/components/ui';
+import { BRAND, Card, Chip, Section, Stat, Text } from '@/components/ui';
 import type { KmSplit, RunDetail } from '@/features/athlete/types';
-import { formatClock, formatDecimal, formatPace } from '@/lib/format';
+import { formatClock, formatDayShort, formatDecimal, formatPace } from '@/lib/format';
 import { useTheme } from '@/theme/theme-provider';
+import { radius } from '@/theme/tokens';
 import { fontFamily } from '@/theme/typography';
 
 type Props = {
@@ -31,9 +33,6 @@ export function RunDetailBody({ run, chartWidth, feeling, feelingCard }: Props) 
     <>
       <Section style={styles.tight}>
         <Card style={styles.statsGrid}>
-          <Stat label="Distance" value={run.distanceKm ? formatDecimal(run.distanceKm) : '—'} unit="km" style={styles.gridCell} />
-          <Stat label="Durée" value={formatClock(run.durationSec)} style={styles.gridCell} />
-          <Stat label="Allure" value={run.paceSecPerKm ? formatPace(run.paceSecPerKm) : '—'} unit="/km" style={styles.gridCell} />
           <Stat label="FC moy." value={run.avgHr ? String(run.avgHr) : '—'} unit="bpm" style={styles.gridCell} />
           <Stat label="D+" value={run.elevationGain ? String(Math.round(run.elevationGain)) : '—'} unit="m" style={styles.gridCell} />
           <Stat label="Ressenti" value={shownFeeling ? String(shownFeeling) : '—'} unit="/10" style={styles.gridCell} />
@@ -44,13 +43,13 @@ export function RunDetailBody({ run, chartWidth, feeling, feelingCard }: Props) 
         <Section style={styles.tight}>
           <Card>
             <View style={styles.cardHeader}>
-              <Text variant="h2">Allure</Text>
+              <Text variant="sectionTitle">Allure</Text>
               {gain > 0 ? <Chip label={`Negative split · −${gain} s/km`} tone="success" icon="trendUp" /> : null}
             </View>
             <View style={styles.chart}>
               <PaceChart splits={run.splits} width={chartWidth} />
             </View>
-            <Text variant="h3" style={styles.tableTitle}>
+            <Text variant="sectionTitle" style={styles.tableTitle}>
               Par kilomètre
             </Text>
             <SplitsTable splits={run.splits} />
@@ -61,7 +60,7 @@ export function RunDetailBody({ run, chartWidth, feeling, feelingCard }: Props) 
       {run.avgHr ? (
         <Section style={styles.tight}>
           <Card>
-            <Text variant="h2">Fréquence cardiaque</Text>
+            <Text variant="sectionTitle">Fréquence cardiaque</Text>
             <View style={styles.hrStats}>
               <Stat label="Moyenne" value={String(run.avgHr)} unit="bpm" style={styles.flex} />
               <Stat label="Max" value={run.maxHr ? String(Math.round(run.maxHr)) : '—'} unit="bpm" style={styles.flex} />
@@ -77,7 +76,7 @@ export function RunDetailBody({ run, chartWidth, feeling, feelingCard }: Props) 
       {run.paceZones.length ? (
         <Section style={styles.tight}>
           <Card>
-            <Text variant="h2">Zones d’allure</Text>
+            <Text variant="sectionTitle">Zones d’allure</Text>
             <PaceZones zones={run.paceZones} />
           </Card>
         </Section>
@@ -88,7 +87,7 @@ export function RunDetailBody({ run, chartWidth, feeling, feelingCard }: Props) 
       {run.notes ? (
         <Section>
           <Card>
-            <Text variant="h2">Notes</Text>
+            <Text variant="sectionTitle">Notes</Text>
             <Text variant="body2" style={styles.notes}>
               {run.notes}
             </Text>
@@ -98,6 +97,33 @@ export function RunDetailBody({ run, chartWidth, feeling, feelingCard }: Props) 
     </>
   );
 }
+
+/** Sortie ouverte : carte navy de mise en avant (titre, date, chiffres clés), comme la séance du jour. */
+export function RunHero({ run, children }: { run: RunDetail; children?: ReactNode }) {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.hero, { backgroundColor: colors.brand }]}>
+      <View style={styles.watermark} pointerEvents="none">
+        <SvgXml xml={BRAND.glyph} width={112} height={112} opacity={0.05} />
+      </View>
+      <Text variant="overline" style={{ color: colors.highlight }}>
+        {formatDayShort(run.date)}
+        {run.startTime ? ` · ${run.startTime}` : ''}
+      </Text>
+      <Text variant="h1" style={[styles.heroTitle, { color: colors.onBrand }]}>
+        {run.title}
+      </Text>
+      {children ? <View style={styles.heroChips}>{children}</View> : null}
+      <View style={styles.heroStats}>
+        <Stat label="Distance" value={run.distanceKm ? formatDecimal(run.distanceKm) : '—'} unit="km" tint={HERO_TINT} style={styles.flex} />
+        <Stat label="Durée" value={formatClock(run.durationSec)} tint={HERO_TINT} style={styles.flex} />
+        <Stat label="Allure" value={run.paceSecPerKm ? formatPace(run.paceSecPerKm) : '—'} unit="/km" tint={HERO_TINT} style={styles.flex} />
+      </View>
+    </View>
+  );
+}
+
+const HERO_TINT = { label: 'rgba(255, 255, 255, 0.55)', value: '#FFFFFF' };
 
 const formatElevation = (meters?: number) => (meters === undefined ? '—' : `${meters < 0 ? '−' : '+'}${Math.abs(meters)} m`);
 
@@ -178,6 +204,11 @@ function PaceZones({ zones }: { zones: { label: string; minutes: number }[] }) {
 }
 
 const styles = StyleSheet.create({
+  hero: { borderRadius: radius.xl, padding: 20, overflow: 'hidden' },
+  watermark: { position: 'absolute', right: -16, bottom: -18 },
+  heroTitle: { marginTop: 6 },
+  heroChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
+  heroStats: { flexDirection: 'row', gap: 8, marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: 'rgba(255, 255, 255, 0.14)' },
   flex: { flex: 1 },
   tight: { paddingBottom: 12 },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 16 },

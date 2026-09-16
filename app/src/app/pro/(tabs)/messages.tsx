@@ -18,7 +18,7 @@ export default function CoachMessagesScreen() {
   useSocketEvent('message:new', refetch);
 
   return (
-    <Screen>
+    <Screen tabs>
       <MainAppBar />
       <Section style={styles.heading}>
         <Text variant="h1">Messages</Text>
@@ -77,7 +77,7 @@ function ConversationItem({ conversation, divided, onPress }: { conversation: Co
             {conversation.preview}
           </Text>
           {unread ? (
-            <View style={[styles.badge, { backgroundColor: colors.accent }]}>
+            <View style={[styles.badge, { backgroundColor: colors.danger }]}>
               <Text style={[styles.badgeText, { color: colors.onBrand }]}>{conversation.unread}</Text>
             </View>
           ) : null}

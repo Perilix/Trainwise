@@ -1,8 +1,9 @@
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { SvgXml } from 'react-native-svg';
 
-import { Avatar, Button, Card, Chip, Divider, Icon, IconButton, Screen, Section, SectionHeader, Stat, StateView, Text } from '@/components/ui';
+import { Avatar, BRAND, Button, Card, Chip, GlassSurface, Icon, IconButton, Screen, Section, SectionHeader, StateView, Text } from '@/components/ui';
 import { AthleteAppBar } from '@/features/athlete/athlete-app-bar';
 import { useAthleteHome } from '@/features/athlete/queries';
 import { onAppEvent } from '@/lib/app-events';
@@ -21,7 +22,7 @@ export default function AthleteHomeScreen() {
 
   if (!data) {
     return (
-      <Screen>
+      <Screen tabs>
         <AthleteAppBar />
         <StateView loading={loading} error={error} onRetry={refetch} />
       </Screen>
@@ -29,13 +30,15 @@ export default function AthleteHomeScreen() {
   }
 
   return (
-    <Screen>
+    <Screen tabs>
       <AthleteAppBar />
 
       <Section style={styles.greeting}>
         <View style={styles.flex}>
-          <Text variant="h1">Bonjour, {data.firstName}</Text>
-          <Text variant="body2">{data.motto}</Text>
+          <Text variant="display">Bonjour, {data.firstName} !</Text>
+          <Text variant="body2" style={styles.motto}>
+            {data.motto}
+          </Text>
         </View>
         <StreakBadge weeks={data.streakWeeks} />
       </Section>
@@ -48,20 +51,20 @@ export default function AthleteHomeScreen() {
 
       <Section>
         <SectionHeader title="Cette semaine" actionLabel="Voir tout" onAction={() => router.push('/planning')} />
-        <Card style={styles.sectionCard}>
+        <Card padding={12} style={styles.sectionCard}>
           <WeekStrip days={data.week} />
-          <Divider style={styles.divider} />
+          <Legend />
           <View style={styles.statsRow}>
-            <Stat label="Sorties" value={String(data.weekStats.runs)} style={styles.flex} />
-            <Stat label="Distance" value={formatDecimal(data.weekStats.distanceKm)} unit="km" style={styles.flex} />
-            <Stat label="Temps" value={formatHoursMinutes(data.weekStats.durationSec)} style={styles.flex} />
+            <StatTile value={String(data.weekStats.runs)} label="Sorties" />
+            <StatTile value={formatDecimal(data.weekStats.distanceKm)} label="km" />
+            <StatTile value={formatHoursMinutes(data.weekStats.durationSec)} label="Temps" />
           </View>
         </Card>
       </Section>
 
       <Section>
-        <SectionHeader title="Prochains entraînements" actionLabel="Planning" onAction={() => router.push('/planning')} />
-        <Card padding={0} style={[styles.sectionCard, styles.listCard]}>
+        <SectionHeader title="Prochains entraînements" actionLabel="Voir tout" onAction={() => router.push('/planning')} />
+        <Card padding={0} style={styles.sectionCard}>
           {data.upcoming.map((session, index) => (
             <UpcomingRow key={session.id} session={session} first={index === 0} onPress={() => router.push({ pathname: '/seance/[id]', params: { id: session.id } })} />
           ))}
@@ -69,8 +72,8 @@ export default function AthleteHomeScreen() {
       </Section>
 
       <Section>
-        <SectionHeader title="Derniers entraînements" actionLabel="Sorties" onAction={() => router.push('/sorties')} />
-        <Card padding={0} style={[styles.sectionCard, styles.listCard]}>
+        <SectionHeader title="Derniers entraînements" actionLabel="Voir tout" onAction={() => router.push('/sorties')} />
+        <Card padding={0} style={styles.sectionCard}>
           {data.recent.map((activity, index) => (
             <RecentRow
               key={activity.id}
@@ -85,83 +88,84 @@ export default function AthleteHomeScreen() {
 
       {data.coach ? (
         <Section>
-          <Card>
-            <View style={styles.coachHeader}>
-              <Avatar initials={data.coach.initials} size={44} tone="violet" />
-              <View style={styles.flex}>
-                <Text variant="h3">{data.coach.name}</Text>
-                <Text variant="small">Ton coach{data.coach.online ? ' · en ligne' : ''}</Text>
-              </View>
-              <IconButton icon="message" accessibilityLabel={`Écrire à ${data.coach.name}`} bordered onPress={() => router.push('/coach')} />
-            </View>
-            {data.coach.lastMessage ? <CoachQuote text={data.coach.lastMessage} /> : null}
-          </Card>
+          <CoachCard coach={data.coach} onMessage={() => router.push('/coach')} />
         </Section>
       ) : null}
     </Screen>
   );
 }
 
+// Signature visuelle : verre renforcé, comme les deux boutons de l'en-tête.
 function StreakBadge({ weeks }: { weeks: number }) {
   const { colors } = useTheme();
   return (
-    <View
-      accessibilityLabel={`Série de ${weeks} semaines`}
-      style={[styles.streak, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <Icon name="flame" size={16} color={colors.warning} fill={colors.warning} strokeWidth={1.25} />
-      <Text variant="h3" tabular style={{ fontSize: 13 }}>
-        {weeks} sem.
-      </Text>
-    </View>
+    <GlassSurface intensity="strong" radius={18} interactive={false} accessibilityLabel={`Série de ${weeks} semaines`} style={styles.streak}>
+      <Icon name="flame" size={22} color={colors.warning} fill={colors.warning} strokeWidth={1.25} />
+      <View style={styles.streakValue}>
+        <Text variant="stat" tabular style={styles.streakNumber}>
+          {weeks}
+        </Text>
+        <Text variant="overline" style={styles.streakLabel}>
+          semaines
+        </Text>
+      </View>
+    </GlassSurface>
   );
 }
 
 function TodayCard({ session, onOpen }: { session: PlannedSession; onOpen: () => void }) {
   const { colors } = useTheme();
-  const faded = 'rgba(255, 255, 255, 0.64)';
+  const faded = 'rgba(255, 255, 255, 0.7)';
   const stats = [
     { label: 'Distance', value: session.distanceKm ? formatDecimal(session.distanceKm, 0) : '—', unit: 'km' },
-    { label: 'Durée', value: session.durationMin ? formatHoursMinutes(session.durationMin * 60) : '—' },
+    { label: 'Durée', value: session.durationMin ? formatHoursMinutes(session.durationMin * 60) : '—', unit: '' },
     { label: 'Allure', value: session.paceSecPerKm ? formatPace(session.paceSecPerKm) : '—', unit: '/km' },
   ];
 
   return (
     <View style={[styles.today, { backgroundColor: colors.brand }]}>
+      <View style={styles.watermark} pointerEvents="none">
+        <SvgXml xml={BRAND.glyph} width={112} height={112} opacity={0.05} />
+      </View>
+
       <View style={styles.rowBetween}>
-        <Text variant="overline" style={{ color: faded }}>
+        <Text variant="overline" style={{ color: colors.highlight }}>
           Aujourd’hui
         </Text>
         {session.plannedBy === 'coach' ? (
           <View style={styles.todayChip}>
-            <Icon name="user" size={13} color={colors.highlight} strokeWidth={2} />
-            <Text variant="caption" style={{ color: colors.onBrand }}>
+            <Icon name="user" size={13} color="#DDD3FF" strokeWidth={2.2} />
+            <Text variant="caption" style={styles.todayChipLabel}>
               Planifiée par {session.coachName ?? 'ton coach'}
             </Text>
           </View>
         ) : null}
       </View>
+
       <View style={styles.todayTitle}>
-        <Text variant="h2" style={{ color: colors.onBrand, fontSize: 20, lineHeight: 28 }}>
+        <Text variant="h1" style={{ color: colors.onBrand }}>
           {session.title}
         </Text>
-        {session.description ? <Text style={{ color: 'rgba(255, 255, 255, 0.72)' }}>{session.description}</Text> : null}
+        {session.description ? <Text style={{ color: faded }}>{session.description}</Text> : null}
       </View>
+
       <View style={styles.todayStats}>
         {stats.map((stat) => (
           <View key={stat.label} style={styles.flex}>
-            <Text variant="caption" style={{ color: 'rgba(255, 255, 255, 0.6)', fontFamily: fontFamily.regular }}>
+            <Text variant="overline" style={styles.todayStatLabel}>
               {stat.label}
             </Text>
             <View style={styles.baseline}>
-              <Text tabular style={{ color: colors.onBrand, fontFamily: fontFamily.semibold, fontSize: 18, lineHeight: 26 }}>
+              <Text variant="stat" tabular style={{ color: colors.onBrand }}>
                 {stat.value}
               </Text>
-              {stat.unit ? <Text variant="caption" style={{ color: 'rgba(255, 255, 255, 0.6)', fontFamily: fontFamily.regular }}>{stat.unit}</Text> : null}
+              {stat.unit ? <Text variant="small" style={{ color: faded }}>{stat.unit}</Text> : null}
             </View>
           </View>
         ))}
       </View>
-      <Button label="Voir la séance" variant="inverse" fullWidth onPress={onOpen} />
+
+      <Button label="Voir la séance" variant="accent" shape="pill" icon="arrowRight" iconPosition="trailing" fullWidth onPress={onOpen} />
     </View>
   );
 }
@@ -173,26 +177,55 @@ function WeekStrip({ days }: { days: WeekDay[] }) {
       {days.map((day, index) => {
         const date = parseDay(day.date);
         const done = day.status === 'done';
-        const circle = day.isToday ? { backgroundColor: colors.primary } : done ? { backgroundColor: colors.successSoft } : undefined;
-        const numberColor = day.isToday ? colors.onPrimary : done ? colors.successInk : colors.ink;
-        const statusLabel = done ? 'effectuée' : day.status === 'planned' ? 'séance prévue' : 'repos';
+        const planned = day.status === 'planned';
+        const statusLabel = done ? 'effectuée' : planned ? 'séance prévue' : 'repos';
+        const dot = done ? colors.success : planned ? colors.violet : undefined;
         return (
-          <View key={day.date} style={styles.weekDay} accessible accessibilityLabel={`${formatDayShort(day.date)}, ${statusLabel}`}>
-            <Text variant="caption" color="text3">
+          <View
+            key={day.date}
+            accessible
+            accessibilityLabel={`${formatDayShort(day.date)}, ${statusLabel}`}
+            style={[styles.weekDay, day.isToday && { backgroundColor: colors.accentSoft }]}>
+            <Text variant="overline" style={{ color: day.isToday ? colors.accentInk : colors.text2, fontSize: 10.5 }}>
               {WEEKDAY_INITIALS[index]}
             </Text>
-            <View style={[styles.weekCircle, circle]}>
-              <Text tabular style={{ color: numberColor, fontFamily: fontFamily.semibold, fontSize: 14 }}>
-                {date.getDate()}
-              </Text>
-            </View>
-            <View style={styles.weekMark}>
-              {done ? <Icon name="check" size={12} color={colors.successInk} strokeWidth={2.5} /> : null}
-              {day.status === 'planned' ? <View style={[styles.dot, { backgroundColor: colors.accent }]} /> : null}
-            </View>
+            <Text tabular style={[styles.weekNumber, { color: day.isToday ? colors.accentInk : day.status === 'rest' ? colors.text3 : colors.ink }]}>
+              {date.getDate()}
+            </Text>
+            <View style={styles.weekMark}>{dot ? <View style={[styles.dot, { backgroundColor: dot }]} /> : null}</View>
           </View>
         );
       })}
+    </View>
+  );
+}
+
+function Legend() {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.legend, { borderTopColor: colors.border }]}>
+      <View style={styles.legendItem}>
+        <View style={[styles.dot, { backgroundColor: colors.success }]} />
+        <Text variant="caption">Effectuée</Text>
+      </View>
+      <View style={styles.legendItem}>
+        <View style={[styles.dot, { backgroundColor: colors.violet }]} />
+        <Text variant="caption">Planifiée coach</Text>
+      </View>
+    </View>
+  );
+}
+
+function StatTile({ value, label }: { value: string; label: string }) {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.statTile, { backgroundColor: colors.subtle }]}>
+      <Text variant="stat" tabular>
+        {value}
+      </Text>
+      <Text variant="overline" style={styles.statTileLabel}>
+        {label}
+      </Text>
     </View>
   );
 }
@@ -206,14 +239,15 @@ function UpcomingRow({ session, first, onPress }: { session: PlannedSession; fir
 
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={[styles.listRow, !first && { borderTopWidth: 1, borderTopColor: colors.border }]}>
-      <View style={[styles.dateTile, { backgroundColor: colors.subtle }]}>
-        <Text variant="overline" style={{ fontSize: 10, lineHeight: 12 }}>
+      <View style={styles.dateTile}>
+        <Text variant="overline" style={{ color: colors.accentInk, fontSize: 10.5 }}>
           {formatWeekdayTile(session.date)}
         </Text>
-        <Text tabular style={{ fontFamily: fontFamily.semibold, fontSize: 17, lineHeight: 22, color: colors.ink }}>
+        <Text tabular style={[styles.weekNumber, { color: colors.ink, fontSize: 17, lineHeight: 22 }]}>
           {parseDay(session.date).getDate()}
         </Text>
       </View>
+      <View style={[styles.rowDivider, { backgroundColor: colors.border }]} />
       <View style={styles.flex}>
         <Text variant="h3" numberOfLines={1}>
           {session.title}
@@ -222,8 +256,7 @@ function UpcomingRow({ session, first, onPress }: { session: PlannedSession; fir
           {meta.filter(Boolean).join(' · ')}
         </Text>
       </View>
-      {session.plannedBy === 'coach' ? <Chip label="Coach" tone="violet" icon="user" /> : null}
-      <Icon name="chevronRight" size={18} color={colors.text3} />
+      {session.plannedBy === 'coach' ? <Chip label="Coach" tone="violet" badge /> : <Icon name="chevronRight" size={18} color={colors.text3} />}
     </Pressable>
   );
 }
@@ -236,21 +269,23 @@ function RecentRow({ activity, first, onPress }: { activity: Activity; first: bo
     : [formatHoursMinutes(activity.durationSec), activity.setsCount ? `${activity.setsCount} séries` : null];
 
   return (
-    <Pressable accessibilityRole={onPress ? 'button' : undefined} disabled={!onPress} onPress={onPress} style={[styles.listRow, !first && { borderTopWidth: 1, borderTopColor: colors.border }]}>
-      <View style={[styles.iconTile, { backgroundColor: running ? colors.accentSoft : colors.subtle }]}>
-        <Icon name={running ? 'route' : 'dumbbell'} size={20} color={running ? colors.accentInk : colors.primary} />
+    <Pressable
+      accessibilityRole={onPress ? 'button' : undefined}
+      disabled={!onPress}
+      onPress={onPress}
+      style={[styles.listRow, !first && { borderTopWidth: 1, borderTopColor: colors.border }]}>
+      <View style={[styles.iconTile, { backgroundColor: colors.accentSoft }]}>
+        <Icon name={running ? 'route' : 'dumbbell'} size={19} color={colors.accentInk} strokeWidth={1.9} />
       </View>
       <View style={styles.flex}>
-        <View style={styles.rowBetween}>
-          <Text variant="h3" numberOfLines={1} style={styles.flex}>
-            {activity.title}
-          </Text>
-          {activity.fromStrava ? <Chip label="Strava" tone="strava" /> : null}
-        </View>
+        <Text variant="h3" numberOfLines={1}>
+          {activity.title}
+        </Text>
         <Text variant="small" tabular numberOfLines={1}>
           {[formatDayShort(activity.date), ...meta.filter(Boolean)].join(' · ')}
         </Text>
       </View>
+      {activity.fromStrava ? <Chip label="Strava" tone="strava" badge /> : null}
     </Pressable>
   );
 }
@@ -260,47 +295,77 @@ function StravaRow() {
   const { colors } = useTheme();
   return (
     <View style={[styles.stravaRow, { borderTopColor: colors.border }]}>
-      <View style={styles.stravaLabel}>
-        <View style={[styles.dot, { backgroundColor: colors.success, width: 8, height: 8 }]} />
-        <Text variant="small">Strava connecté · import automatique</Text>
-      </View>
+      <View style={[styles.dot, { backgroundColor: colors.success }]} />
+      <Text variant="small">Strava connecté · import automatique</Text>
     </View>
   );
 }
 
-function CoachQuote({ text }: { text: string }) {
+function CoachCard({ coach, onMessage }: { coach: NonNullable<ReturnType<typeof useAthleteHome>['data']>['coach']; onMessage: () => void }) {
   const { colors } = useTheme();
+  if (!coach) return null;
+
   return (
-    <View style={[styles.quote, { backgroundColor: colors.bg }]}>
-      <Text>« {text} »</Text>
+    <View style={[styles.coachCard, { backgroundColor: colors.violetSoft, borderColor: colors.violetLine }]}>
+      <View style={styles.coachHeader}>
+        <View>
+          <Avatar initials={coach.initials} size={50} tone="violetSolid" />
+          {coach.online ? <View style={[styles.presence, { backgroundColor: colors.success, borderColor: colors.bg }]} /> : null}
+        </View>
+        <View style={styles.flex}>
+          <Text variant="overline" style={{ color: colors.violetInk }}>
+            Ta coach{coach.online ? ' · en ligne' : ''}
+          </Text>
+          <Text variant="h2">{coach.name}</Text>
+        </View>
+        <IconButton icon="message" accessibilityLabel={`Écrire à ${coach.name}`} bordered onPress={onMessage} />
+      </View>
+      {coach.lastMessage ? (
+        <View style={[styles.quote, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text>{coach.lastMessage}</Text>
+        </View>
+      ) : null}
+      <Button label="Envoyer un message" variant="violet" icon="message" fullWidth style={styles.coachButton} onPress={onMessage} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  greeting: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingTop: 4, paddingBottom: 20 },
-  streak: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 32, paddingLeft: 9, paddingRight: 11, borderRadius: radius.pill, borderWidth: 1 },
+  greeting: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 8, paddingBottom: 20 },
+  motto: { marginTop: 4 },
+  streak: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 11, paddingRight: 13, paddingVertical: 8 },
+  streakValue: { alignItems: 'center' },
+  streakNumber: { fontSize: 19, lineHeight: 22 },
+  streakLabel: { fontSize: 9, letterSpacing: 0.54, marginTop: 2 },
   sectionCard: { marginTop: 12 },
-  listCard: { paddingHorizontal: 16 },
-  divider: { marginVertical: 14 },
-  statsRow: { flexDirection: 'row', gap: 8 },
+  statsRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  statTile: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: radius.md, gap: 2 },
+  statTileLabel: { fontSize: 10, letterSpacing: 0.5 },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   baseline: { flexDirection: 'row', alignItems: 'baseline', gap: 3 },
-  today: { borderRadius: radius.lg, padding: 18, gap: 14 },
-  todayChip: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 24, paddingHorizontal: 9, borderRadius: radius.pill, backgroundColor: 'rgba(255, 255, 255, 0.12)' },
-  todayTitle: { gap: 4 },
-  todayStats: { flexDirection: 'row', gap: 8, paddingVertical: 12, borderTopWidth: 1, borderBottomWidth: 1, borderColor: 'rgba(255, 255, 255, 0.12)' },
-  week: { flexDirection: 'row', gap: 4 },
-  weekDay: { flex: 1, alignItems: 'center', gap: 6 },
-  weekCircle: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  weekMark: { height: 12, alignItems: 'center', justifyContent: 'center' },
-  dot: { width: 6, height: 6, borderRadius: 4 },
-  listRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
-  dateTile: { width: 44, height: 48, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  today: { borderRadius: radius.xl, padding: 20, gap: 16, overflow: 'hidden' },
+  watermark: { position: 'absolute', right: -16, bottom: -18 },
+  todayChip: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 26, paddingHorizontal: 10, borderRadius: radius.pill, backgroundColor: 'rgba(167, 139, 250, 0.32)' },
+  todayChipLabel: { color: '#EFE9FF' },
+  todayTitle: { gap: 6 },
+  todayStats: { flexDirection: 'row', gap: 8, paddingTop: 14, borderTopWidth: 1, borderTopColor: 'rgba(255, 255, 255, 0.14)' },
+  todayStatLabel: { color: 'rgba(255, 255, 255, 0.55)', fontSize: 10.5 },
+  week: { flexDirection: 'row', gap: 3 },
+  weekDay: { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: radius.md },
+  weekNumber: { fontFamily: fontFamily.semibold, fontSize: 16, lineHeight: 21, marginTop: 4 },
+  weekMark: { height: 7, marginTop: 6, alignItems: 'center', justifyContent: 'center' },
+  legend: { flexDirection: 'row', justifyContent: 'center', gap: 18, marginTop: 12, paddingTop: 12, borderTopWidth: 1 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  dot: { width: 7, height: 7, borderRadius: 4 },
+  listRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14 },
+  rowDivider: { width: 1, alignSelf: 'stretch' },
+  dateTile: { width: 40, alignItems: 'center' },
   iconTile: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
-  stravaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingTop: 12, paddingBottom: 14, borderTopWidth: 1 },
-  stravaLabel: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
+  stravaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12, paddingHorizontal: 14, borderTopWidth: 1 },
+  coachCard: { borderRadius: radius.xl, borderWidth: 1, padding: 18 },
   coachHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  quote: { marginTop: 12, paddingHorizontal: 12, paddingVertical: 10, borderRadius: radius.md },
+  presence: { position: 'absolute', right: 0, bottom: 0, width: 12, height: 12, borderRadius: 6, borderWidth: 2 },
+  quote: { marginTop: 14, paddingHorizontal: 14, paddingVertical: 12, borderWidth: 1, borderTopLeftRadius: 4, borderTopRightRadius: radius.lg, borderBottomLeftRadius: radius.lg, borderBottomRightRadius: radius.lg },
+  coachButton: { marginTop: 12 },
 });

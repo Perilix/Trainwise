@@ -14,13 +14,13 @@ type Props = {
 export function SectionHeader({ title, actionLabel, onAction, style }: Props) {
   return (
     <View style={[styles.row, style]}>
-      <Text variant="h2" accessibilityRole="header">
+      <Text variant="sectionTitle" accessibilityRole="header">
         {title}
       </Text>
       {actionLabel ? (
         <Pressable accessibilityRole="button" onPress={onAction} hitSlop={12}>
-          <Text variant="small" color="accentInk" style={{ fontFamily: fontFamily.medium }}>
-            {actionLabel}
+          <Text variant="small" color="accentInk" style={{ fontFamily: fontFamily.semibold }}>
+            {actionLabel} →
           </Text>
         </Pressable>
       ) : null}

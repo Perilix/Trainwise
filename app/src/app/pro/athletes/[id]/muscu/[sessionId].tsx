@@ -48,7 +48,7 @@ export default function CoachStrengthDoneScreen() {
       {data.notes ? (
         <Section>
           <Card>
-            <Text variant="h2">Notes de l’athlète</Text>
+            <Text variant="sectionTitle">Notes de l’athlète</Text>
             <Text variant="body2" style={styles.notes}>
               {data.notes}
             </Text>

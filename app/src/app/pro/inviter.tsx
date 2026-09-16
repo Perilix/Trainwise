@@ -87,7 +87,7 @@ export default function InviteAthleteScreen() {
       <Section style={styles.tight}>
         <Card style={styles.gap}>
           <View>
-            <Text variant="h2">Inviter un utilisateur Trainwise</Text>
+            <Text variant="sectionTitle">Inviter un utilisateur Trainwise</Text>
             <Text variant="small" style={styles.hint}>
               Il reçoit une invitation à accepter dans son app, avec la formule choisie.
             </Text>

@@ -5,8 +5,7 @@ import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { RoutePreview } from '@/components/charts/route-preview';
 import { BackBar, Card, Chip, FeelingSlider, IconButton, Screen, Section, StateView, Text } from '@/components/ui';
 import { useAthleteActions, useRunDetail } from '@/features/athlete/queries';
-import { RunDetailBody } from '@/features/sessions/run-detail-body';
-import { formatDayShort } from '@/lib/format';
+import { RunDetailBody, RunHero } from '@/features/sessions/run-detail-body';
 import { layout } from '@/theme/tokens';
 
 export default function RunDetailScreen() {
@@ -36,7 +35,7 @@ export default function RunDetailScreen() {
   const feelingCard = (
     <Card>
       <View style={styles.feelingHeader}>
-        <Text variant="h2">Ressenti</Text>
+        <Text variant="sectionTitle">Ressenti</Text>
         <View style={styles.baseline}>
           <Text variant="stat" tabular>
             {feeling ?? '—'}
@@ -52,16 +51,11 @@ export default function RunDetailScreen() {
     <Screen>
       <BackBar right={<IconButton icon="moreV" accessibilityLabel="Plus d’actions" />} />
 
-      <Section style={styles.titleBlock}>
-        <Text variant="small">
-          {formatDayShort(run.date)}
-          {run.startTime ? ` · ${run.startTime}` : ''}
-        </Text>
-        <Text variant="h1">{run.title}</Text>
-        <View style={styles.chips}>
+      <Section style={styles.tight}>
+        <RunHero run={run}>
           {run.fromStrava ? <Chip label="Strava" tone="strava" /> : null}
           {run.plannedBy === 'coach' ? <Chip label={`Planifiée par ${run.coachName ?? 'ton coach'}`} tone="violet" icon="user" /> : null}
-        </View>
+        </RunHero>
       </Section>
 
       <Section style={styles.tight}>
@@ -74,8 +68,6 @@ export default function RunDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  titleBlock: { paddingBottom: 16 },
-  chips: { flexDirection: 'row', gap: 6, marginTop: 6 },
   tight: { paddingBottom: 12 },
   feelingHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 12 },
   baseline: { flexDirection: 'row', alignItems: 'baseline', gap: 2 },

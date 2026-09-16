@@ -131,7 +131,7 @@ export default function StrengthLogScreen() {
       <Section style={styles.tight}>
         <Card>
           <View style={styles.rowBetween}>
-            <Text variant="h2">Ressenti</Text>
+            <Text variant="sectionTitle">Ressenti</Text>
             <View style={styles.baseline}>
               <Text variant="stat" tabular>
                 {feeling}
@@ -147,7 +147,7 @@ export default function StrengthLogScreen() {
 
       <Section>
         <Card>
-          <Text variant="h2">Notes</Text>
+          <Text variant="sectionTitle">Notes</Text>
           <TextInput
             accessibilityLabel="Notes pour ton coach"
             placeholder="Sensations, douleurs, charges à revoir…"
@@ -190,7 +190,7 @@ function ExerciseCard({ entry, onChangeSet, onAddSet, onRemoveSet }: ExerciseCar
             {[entry.muscle, goal ? `Objectif ${goal}` : null].filter(Boolean).join(' · ')}
           </Text>
         </View>
-        {entry.context ? <Chip label={entry.context} tone={entry.block.kind === 'circuit' ? 'accent' : 'violet'} /> : null}
+        {entry.context ? <Chip label={entry.context} tone="accent" /> : null}
       </View>
 
       <View style={styles.setHeader}>

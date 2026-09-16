@@ -12,7 +12,7 @@ export function AppearanceCard() {
       <View style={styles.row}>
         <Icon name={scheme === 'dark' ? 'moon' : 'sun'} size={20} color={colors.text2} />
         <View style={styles.flex}>
-          <Text variant="h3">Apparence</Text>
+          <Text variant="sectionTitle">Apparence</Text>
           <Text variant="small">Clair, sombre ou automatique</Text>
         </View>
       </View>

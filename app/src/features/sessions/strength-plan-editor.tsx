@@ -140,7 +140,7 @@ export function StrengthPlanEditor({ plan, onChange }: Props) {
     <>
       <Card>
         <View style={styles.cardHeader}>
-          <Text variant="h2">Exercices</Text>
+          <Text variant="sectionTitle">Exercices</Text>
           <Button label="Ajouter" size="sm" icon="plus" onPress={() => setTarget({ kind: 'single' })} />
         </View>
         {plan.exercises.length ? (
@@ -162,7 +162,7 @@ export function StrengthPlanEditor({ plan, onChange }: Props) {
       {plan.superset ? (
         <Card style={styles.block}>
           <View style={styles.cardHeader}>
-            <Text variant="h2">Super-set</Text>
+            <Text variant="sectionTitle">Super-set</Text>
             <Button label="Retirer le bloc" variant="danger" size="sm" icon="x" onPress={() => setSuperset(null)} />
           </View>
           <View style={styles.fields}>
@@ -207,7 +207,7 @@ export function StrengthPlanEditor({ plan, onChange }: Props) {
       {plan.circuit ? (
         <Card style={styles.block}>
           <View style={styles.cardHeader}>
-            <Text variant="h2">Circuit</Text>
+            <Text variant="sectionTitle">Circuit</Text>
             <Button label="Retirer le bloc" variant="danger" size="sm" icon="x" onPress={() => setCircuit(null)} />
           </View>
           <View style={styles.fields}>

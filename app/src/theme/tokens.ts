@@ -19,6 +19,8 @@ const light = {
   onBrand: '#FFFFFF',
   highlight: '#7FD3FD',
   accent: '#00A6FB',
+  // Texte posé sur un aplat `accent`.
+  ctaInk: '#051923',
   accentInk: '#0077B6',
   accentSoft: '#E3F4FD',
   success: '#10B981',
@@ -31,8 +33,11 @@ const light = {
   dangerSoft: '#FBE9E7',
   // Violet réservé à « planifié par le coach ».
   violet: '#8B5CF6',
+  // Aplat violet portant du texte blanc (bouton du coach).
+  violetBtn: '#7C3AED',
   violetInk: '#6D28D9',
   violetSoft: '#EFEAFD',
+  violetLine: 'rgba(139, 92, 246, 0.22)',
   strava: '#FC4C02',
   stravaInk: '#C2410C',
   stravaSoft: '#FEEDE5',
@@ -57,6 +62,7 @@ const dark: Palette = {
   onBrand: '#FFFFFF',
   highlight: '#7FD3FD',
   accent: '#1AB0FF',
+  ctaInk: '#04121C',
   accentInk: '#5CC8FF',
   accentSoft: '#0E2C3E',
   success: '#34D399',
@@ -68,8 +74,10 @@ const dark: Palette = {
   danger: '#F87171',
   dangerSoft: '#351818',
   violet: '#A78BFA',
+  violetBtn: '#6D4AE0',
   violetInk: '#C4B5FD',
   violetSoft: '#241E3A',
+  violetLine: 'rgba(167, 139, 250, 0.28)',
   strava: '#FC4C02',
   stravaInk: '#FF8A57',
   stravaSoft: '#35190C',
@@ -85,8 +93,8 @@ export const intensityRamp: Record<ColorScheme, readonly string[]> = {
   dark: ['#173447', '#1D5577', '#1E80B8', '#2AAAF0', '#8AD8FF'],
 };
 
-export const radius = { sm: 10, md: 12, lg: 16, pill: 999 } as const;
+export const radius = { sm: 10, md: 12, lg: 16, xl: 20, pill: 999 } as const;
 
 export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, xxxl: 32 } as const;
 
-export const layout = { gutter: 20, desktopBreakpoint: 1024, sidebarWidth: 248 } as const;
+export const layout = { gutter: 16, desktopBreakpoint: 1024, sidebarWidth: 248 } as const;

@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Avatar, Button, Card, Chip, Field, FormError, Icon, IconButton, Screen, Section, SectionHeader, Stat, StateView, Text } from '@/components/ui';
+import { Avatar, Button, Card, Chip, Field, FormError, Icon, IconButton, Screen, Section, SectionHeader, StateView, Text } from '@/components/ui';
 import { useCoachActions, useCoachHome } from '@/features/coach/queries';
 import { ATHLETE_STATUS_STYLE } from '@/features/coach/status';
 import type { CoachAthleteRow, SubscriptionRequestRow } from '@/features/coach/types';
@@ -24,7 +24,7 @@ export default function CoachHomeScreen() {
 
   if (!data) {
     return (
-      <Screen>
+      <Screen tabs>
         <MainAppBar />
         <StateView loading={loading} error={error} onRetry={refetch} />
       </Screen>
@@ -50,7 +50,7 @@ export default function CoachHomeScreen() {
   const openChat = (peerId: string) => router.push({ pathname: '/pro/conversation/[id]', params: { id: peerId } });
 
   return (
-    <Screen>
+    <Screen tabs>
       <MainAppBar />
 
       <Section style={styles.heading}>
@@ -63,26 +63,20 @@ export default function CoachHomeScreen() {
       </Section>
 
       <Section>
-        <View style={styles.statsGrid}>
-          <Card style={styles.statCard}>
-            <Stat label="Athlètes" value={String(data.stats.athletes)} />
-          </Card>
-          <Card style={styles.statCard}>
-            <Stat label="Invitations en attente" value={String(data.stats.pendingInvitations)} />
-          </Card>
-          <Card style={styles.statCard}>
-            <Stat label="Séances cette semaine" value={String(data.stats.sessionsThisWeek)} />
-          </Card>
-          <Card style={styles.statCard}>
-            <Stat label="Séances créées" value={data.stats.sessionsTotal.toLocaleString('fr-FR')} />
-          </Card>
-        </View>
+        <Card padding={12}>
+          <View style={styles.statsGrid}>
+            <StatTile label="Athlètes" value={String(data.stats.athletes)} />
+            <StatTile label="Invitations" value={String(data.stats.pendingInvitations)} />
+            <StatTile label="Séances / sem." value={String(data.stats.sessionsThisWeek)} />
+            <StatTile label="Séances créées" value={data.stats.sessionsTotal.toLocaleString('fr-FR')} />
+          </View>
+        </Card>
       </Section>
 
       {data.requests.length ? (
         <Section>
           <View style={styles.requestsTitle}>
-            <Text variant="h2">Demandes d’abonnement</Text>
+            <Text variant="sectionTitle">Demandes d’abonnement</Text>
             <CountBadge count={data.requests.length} />
           </View>
           <FormError message={actionError} style={styles.requestError} />
@@ -120,6 +114,20 @@ export default function CoachHomeScreen() {
         )}
       </Section>
     </Screen>
+  );
+}
+
+function StatTile({ label, value }: { label: string; value: string }) {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.statTile, { backgroundColor: colors.subtle }]}>
+      <Text variant="stat" tabular>
+        {value}
+      </Text>
+      <Text variant="overline" style={styles.statTileLabel}>
+        {label}
+      </Text>
+    </View>
   );
 }
 
@@ -199,8 +207,9 @@ const styles = StyleSheet.create({
   shrink: { flexShrink: 1 },
   heading: { gap: 2, paddingTop: 4, paddingBottom: 14 },
   tight: { paddingBottom: 16 },
-  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  statCard: { flexBasis: '47%', flexGrow: 1, padding: 14 },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  statTileLabel: { fontSize: 10, letterSpacing: 0.5 },
+  statTile: { flexBasis: '47%', flexGrow: 1, alignItems: 'center', paddingVertical: 12, borderRadius: radius.md, gap: 2 },
   requestsTitle: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   requestError: { marginTop: 12 },
   badge: { minWidth: 22, height: 22, paddingHorizontal: 6, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },

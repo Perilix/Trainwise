@@ -74,7 +74,7 @@ export default function AssignTemplateScreen() {
 
       <Section>
         <View style={styles.rowBetween}>
-          <Text variant="h2">Athlètes</Text>
+          <Text variant="sectionTitle">Athlètes</Text>
           {athletes?.length ? <Button label={allSelected ? 'Aucun' : 'Tous'} variant="ghost" size="sm" onPress={() => setSelected(allSelected ? [] : athletes.map((athlete) => athlete.id))} /> : null}
         </View>
         {athletes ? (

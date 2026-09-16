@@ -7,21 +7,25 @@ import { Icon, type IconName } from './icon';
 import { Text } from './text';
 
 // `inverse` : bouton blanc posé sur une surface de marque (carte du jour).
-export type ButtonVariant = 'primary' | 'secondary' | 'tonal' | 'ghost' | 'danger' | 'inverse';
+export type ButtonVariant = 'primary' | 'secondary' | 'tonal' | 'ghost' | 'danger' | 'inverse' | 'accent' | 'violet';
 
 type Props = {
   label: string;
   onPress?: () => void;
   variant?: ButtonVariant;
   size?: 'md' | 'sm';
+  // `pill` : boutons posés sur une surface de marque ou en verre.
+  shape?: 'md' | 'pill';
   icon?: IconName;
+  // `trailing` : flèche posée après le libellé (« Voir la séance → »).
+  iconPosition?: 'leading' | 'trailing';
   fullWidth?: boolean;
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
 };
 
-export function Button({ label, onPress, variant = 'primary', size = 'md', icon, fullWidth, disabled, style, accessibilityLabel }: Props) {
+export function Button({ label, onPress, variant = 'primary', size = 'md', shape = 'md', icon, iconPosition = 'leading', fullWidth, disabled, style, accessibilityLabel }: Props) {
   const { colors } = useTheme();
   const tone = {
     primary: { bg: colors.primary, border: colors.primary, fg: colors.onPrimary },
@@ -30,6 +34,8 @@ export function Button({ label, onPress, variant = 'primary', size = 'md', icon,
     ghost: { bg: 'transparent', border: 'transparent', fg: colors.accentInk },
     danger: { bg: 'transparent', border: 'transparent', fg: colors.danger },
     inverse: { bg: '#FFFFFF', border: '#FFFFFF', fg: '#003554' },
+    accent: { bg: colors.accent, border: colors.accent, fg: colors.ctaInk },
+    violet: { bg: colors.violetBtn, border: colors.violetBtn, fg: '#FFFFFF' },
   }[variant];
   const small = size === 'sm';
 
@@ -43,16 +49,17 @@ export function Button({ label, onPress, variant = 'primary', size = 'md', icon,
       hitSlop={small ? 4 : 0}
       style={({ pressed }) => [
         styles.base,
-        { height: small ? 36 : 48, paddingHorizontal: small ? 14 : 20, backgroundColor: tone.bg, borderColor: tone.border },
+        { height: small ? 36 : 48, paddingHorizontal: small ? 14 : 20, backgroundColor: tone.bg, borderColor: tone.border, borderRadius: shape === 'pill' ? radius.pill : radius.md },
         fullWidth && styles.fullWidth,
         pressed && styles.pressed,
         disabled && styles.disabled,
         style,
       ]}>
-      {icon ? <Icon name={icon} size={small ? 16 : 18} color={tone.fg} strokeWidth={2} /> : null}
+      {icon && iconPosition === 'leading' ? <Icon name={icon} size={small ? 16 : 18} color={tone.fg} strokeWidth={2} /> : null}
       <Text variant="h3" numberOfLines={1} style={{ color: tone.fg, fontSize: small ? 13 : 14 }}>
         {label}
       </Text>
+      {icon && iconPosition === 'trailing' ? <Icon name={icon} size={small ? 16 : 18} color={tone.fg} strokeWidth={2} /> : null}
     </Pressable>
   );
 }

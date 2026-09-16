@@ -2,25 +2,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
-import {
-  AppBar,
-  Avatar,
-  Button,
-  Card,
-  Chip,
-  Divider,
-  FeelingSlider,
-  Field,
-  Icon,
-  ICON_NAMES,
-  IconButton,
-  Screen,
-  SectionHeader,
-  Segmented,
-  Stat,
-  Text,
-  WorkoutProfile,
-} from '@/components/ui';
+import { AppBar, Avatar, Button, Card, Chip, Divider, FeelingSlider, Field, Icon, ICON_NAMES, IconButton, Screen, SectionHeader, Segmented, Stat, Text, WorkoutProfile, GlassSurface, liquidGlass } from '@/components/ui';
 import { expand, formatDuration, formatKm, INTENSITY_LEVELS, SAMPLE_STRUCTURES, totals } from '@/lib/sessions';
 import { AppThemeProvider, useTheme, type ThemePreference } from '@/theme/theme-provider';
 import type { Palette } from '@/theme/tokens';
@@ -58,14 +40,16 @@ const SWATCHES: { token: keyof Palette; label: string }[] = [
 ];
 
 const TYPE_SAMPLES: { variant: TextVariant; sample: string; spec: string }[] = [
-  { variant: 'h1', sample: 'Bonjour, Thomas', spec: 'Titre · 24/32' },
-  { variant: 'h2', sample: 'Prochains entraînements', spec: 'Section · 16/24' },
-  { variant: 'h3', sample: 'Fractionné 12 × 400 m', spec: 'Ligne · 14/20' },
+  { variant: 'display', sample: 'Bonjour, Thomas !', spec: 'Gulfs · 23/30' },
+  { variant: 'h1', sample: 'Fractionné 10 × 400 m', spec: 'Gulfs · 22/29' },
+  { variant: 'h2', sample: 'Camille Roux', spec: 'Gulfs · 17/24' },
+  { variant: 'sectionTitle', sample: 'Prochains entraînements', spec: 'Poppins · 13/16' },
+  { variant: 'h3', sample: 'Footing récupération', spec: 'Ligne · 15/20' },
   { variant: 'body', sample: 'Endurance fondamentale en aisance respiratoire.', spec: 'Texte · 14/21' },
   { variant: 'small', sample: 'Mer. 9 sept. · 11,2 km · 4:39 /km', spec: 'Secondaire · 13/18' },
   { variant: 'caption', sample: 'Séances sautées · 4 sem.', spec: 'Légende · 12/16' },
-  { variant: 'overline', sample: 'Course à pied', spec: 'Surtitre · 11/16' },
-  { variant: 'stat', sample: '1:52:40', spec: 'Chiffres · 20/28' },
+  { variant: 'overline', sample: 'Course à pied', spec: 'Surtitre · 11/14' },
+  { variant: 'stat', sample: '1:52:40', spec: 'Gulfs · 18/24' },
 ];
 
 function Gallery() {
@@ -127,10 +111,29 @@ function Gallery() {
         </Card>
       </Section>
 
+      <Section title="Verre liquide">
+        <Text variant="small" style={styles.glassNote}>
+          {liquidGlass ? 'Verre natif iOS 26 actif.' : 'Verre natif indisponible ici : repli sur une surface pleine.'}
+        </Text>
+        <View style={styles.glassRow}>
+          <GlassSurface intensity="strong" radius={radius.pill} style={styles.glassButton}>
+            <Text variant="h3">JD</Text>
+          </GlassSurface>
+          <GlassSurface intensity="strong" radius={radius.pill} style={styles.glassButton}>
+            <Icon name="bell" size={22} color={colors.ink} strokeWidth={1.9} />
+          </GlassSurface>
+          <GlassSurface radius={radius.lg} style={styles.glassPill}>
+            <Icon name="flame" size={20} color={colors.warning} fill={colors.warning} strokeWidth={1.25} />
+            <Text variant="stat">6</Text>
+          </GlassSurface>
+        </View>
+      </Section>
+
       <Section title="Boutons">
         <View style={styles.stack}>
           <Button label="Enregistrer la séance" fullWidth />
           <View style={styles.row}>
+            <Button label="Voir la séance" variant="accent" shape="pill" icon="arrowRight" iconPosition="trailing" style={styles.flex} />
             <Button label="Passer" variant="secondary" style={styles.flex} />
             <Button label="Détailler" style={styles.flex} />
           </View>
@@ -252,6 +255,10 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   flex: { flex: 1 },
+  glassRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10 },
+  glassButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  glassPill: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 8 },
+  glassNote: { marginTop: 4 },
   swatches: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 12 },
   swatch: { width: '25%', alignItems: 'center', gap: 6 },
   swatchColor: { width: 48, height: 48, borderRadius: radius.md, borderWidth: 1 },

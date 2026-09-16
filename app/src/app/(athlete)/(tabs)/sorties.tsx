@@ -21,7 +21,7 @@ export default function RunsScreen() {
   const previewWidth = width - layout.gutter * 2 - 16;
 
   return (
-    <Screen>
+    <Screen tabs>
       <AthleteAppBar />
 
       <Section style={styles.top}>

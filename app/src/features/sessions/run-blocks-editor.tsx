@@ -224,7 +224,7 @@ export function RunBlocksEditor({ blocks, onChange, vma }: Props) {
   return (
     <Card>
       <View style={styles.rowBetween}>
-        <Text variant="h2">Blocs de course</Text>
+        <Text variant="sectionTitle">Blocs de course</Text>
         {total.sec ? (
           <Text variant="small" tabular>
             ≈ {formatDecimal(total.dist / 1000)} km · ≈ {formatDuration(total.sec)}

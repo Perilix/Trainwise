@@ -29,7 +29,7 @@ export default function LibraryScreen() {
   const profileWidth = width - layout.gutter * 2 - 32 - 48;
 
   return (
-    <Screen>
+    <Screen tabs>
       <MainAppBar />
       <Section style={styles.heading}>
         <View style={styles.titleRow}>
@@ -56,7 +56,7 @@ export default function LibraryScreen() {
         groups.length ? (
           groups.map((group) => (
             <Section key={group.label} style={styles.group}>
-              <Text variant="overline" style={styles.groupLabel}>
+              <Text variant="sectionTitle" style={styles.groupLabel}>
                 {group.label}
               </Text>
               <Card padding={0} style={styles.list}>

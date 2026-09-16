@@ -12,10 +12,12 @@ type Props = {
   label: string;
   tone?: ChipTone;
   icon?: IconName;
+  // Badge de bout de ligne : capitales, plus petit (« COACH », « STRAVA »).
+  badge?: boolean;
 };
 
 // Toujours un libellé : la couleur seule ne porte jamais l'information.
-export function Chip({ label, tone = 'neutral', icon }: Props) {
+export function Chip({ label, tone = 'neutral', icon, badge }: Props) {
   const { colors } = useTheme();
   const tones: Record<ChipTone, [string, string]> = {
     neutral: [colors.subtle, colors.text2],
@@ -30,9 +32,9 @@ export function Chip({ label, tone = 'neutral', icon }: Props) {
   const [background, foreground] = tones[tone];
 
   return (
-    <View style={[styles.chip, { backgroundColor: background }]}>
+    <View style={[styles.chip, badge && styles.badge, { backgroundColor: background }]}>
       {icon ? <Icon name={icon} size={13} color={foreground} strokeWidth={2} /> : null}
-      <Text variant="caption" numberOfLines={1} style={{ color: foreground }}>
+      <Text variant={badge ? 'overline' : 'caption'} numberOfLines={1} style={[{ color: foreground }, badge && styles.badgeLabel]}>
         {label}
       </Text>
     </View>
@@ -49,4 +51,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 9,
     borderRadius: radius.pill,
   },
+  badge: { height: 22, paddingHorizontal: 7, borderRadius: radius.sm },
+  badgeLabel: { fontSize: 9.5, letterSpacing: 0.5 },
 });

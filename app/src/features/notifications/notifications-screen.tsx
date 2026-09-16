@@ -77,7 +77,7 @@ export function NotificationsScreen() {
             if (!items.length) return null;
             return (
               <Section key={group.key} style={styles.group}>
-                <Text variant="overline" style={styles.groupLabel}>
+                <Text variant="sectionTitle" style={styles.groupLabel}>
                   {group.label}
                 </Text>
                 <View style={[styles.list, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -123,7 +123,7 @@ function NotificationRow({ item, divided, onPress }: { item: AthleteNotification
           <Text variant="caption" color="text3">
             {item.timeLabel}
           </Text>
-          <View style={[styles.unreadDot, { backgroundColor: item.unread ? colors.accent : 'transparent' }]} />
+          <View style={[styles.unreadDot, { backgroundColor: item.unread ? colors.danger : 'transparent' }]} />
         </View>
         <Text variant="small" style={styles.body}>
           {item.body}

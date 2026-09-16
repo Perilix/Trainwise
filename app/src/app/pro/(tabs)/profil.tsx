@@ -21,7 +21,7 @@ export default function CoachProfileScreen() {
   const diplomas = user.diplomas ?? [];
 
   return (
-    <Screen>
+    <Screen tabs>
       <MainAppBar />
       <Section style={styles.heading}>
         <Text variant="h1">Profil</Text>
