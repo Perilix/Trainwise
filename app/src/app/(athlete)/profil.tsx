@@ -1,9 +1,9 @@
 import { useRouter } from 'expo-router';
-import { useEffect } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { Avatar, BackBar, Button, Card, Chip, Icon, IconButton, Screen, Section, SectionHeader, StateView, Text, type IconName } from '@/components/ui';
-import { useAthleteProfile } from '@/features/athlete/queries';
+import { useAthleteActions, useAthleteProfile } from '@/features/athlete/queries';
 import { useSession } from '@/features/auth/session';
 import { onAppEvent } from '@/lib/app-events';
 import { formatDayShort, formatDecimal } from '@/lib/format';
@@ -17,6 +17,46 @@ export default function ProfileScreen() {
   const { colors } = useTheme();
   const { signOut } = useSession();
   const { data: profile, loading, error, refetch } = useAthleteProfile();
+  const { connectStrava, disconnectStrava } = useAthleteActions();
+  const [stravaBusy, setStravaBusy] = useState(false);
+
+  // Liaison : autorisation Strava dans le navigateur système, puis retour dans l'app.
+  const linkStrava = async () => {
+    setStravaBusy(true);
+    try {
+      if (await connectStrava()) refetch();
+    } catch (reason) {
+      Alert.alert('Strava', reason instanceof Error ? reason.message : 'Connexion impossible.');
+    } finally {
+      setStravaBusy(false);
+    }
+  };
+
+  // Délier Strava coupe aussi l'import automatique : on demande confirmation.
+  const askDisconnectStrava = () => {
+    Alert.alert(
+      'Délier Strava',
+      'Tes sorties Strava ne seront plus importées automatiquement. Les séances déjà enregistrées sont conservées.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Délier',
+          style: 'destructive',
+          onPress: async () => {
+            setStravaBusy(true);
+            try {
+              await disconnectStrava();
+              refetch();
+            } catch (reason) {
+              Alert.alert('Strava', reason instanceof Error ? reason.message : 'Déconnexion impossible.');
+            } finally {
+              setStravaBusy(false);
+            }
+          },
+        },
+      ],
+    );
+  };
 
   useEffect(() => onAppEvent('coach:changed', refetch), [refetch]);
 
@@ -108,7 +148,20 @@ export default function ProfileScreen() {
 
       <Section style={styles.tight}>
         <Card padding={0} style={styles.linksCard}>
-          <LinkRow icon="activity" iconColor={colors.stravaInk} iconBackground={colors.stravaSoft} title="Strava" subtitle={profile.strava.connected ? `Connecté depuis le ${profile.strava.since}` : 'Non connecté'} trailing={profile.strava.connected ? <Chip label="Connecté" tone="success" icon="check" /> : undefined} />
+          <LinkRow
+            icon="activity"
+            iconColor={colors.stravaInk}
+            iconBackground={colors.stravaSoft}
+            title="Strava"
+            subtitle={profile.strava.connected ? `Connecté depuis le ${profile.strava.since}` : 'Importer tes sorties automatiquement'}
+            trailing={
+              profile.strava.connected ? (
+                <Button label={stravaBusy ? 'Déliaison…' : 'Délier'} variant="secondary" size="sm" disabled={stravaBusy} onPress={askDisconnectStrava} />
+              ) : (
+                <Button label={stravaBusy ? 'Connexion…' : 'Connecter'} size="sm" disabled={stravaBusy} onPress={linkStrava} />
+              )
+            }
+          />
           <LinkRow
             icon="users"
             iconColor={colors.violetInk}
@@ -150,8 +203,12 @@ type LinkRowProps = {
 
 function LinkRow({ icon, title, subtitle, iconColor, iconBackground, trailing, onPress, divided }: LinkRowProps) {
   const { colors } = useTheme();
+  // Sans action propre, la ligne n'est pas un bouton : elle peut alors en contenir un (« Délier »).
+  const Container = onPress ? Pressable : View;
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={[styles.linkRow, divided && { borderTopWidth: 1, borderTopColor: colors.border }]}>
+    <Container
+      {...(onPress ? { accessibilityRole: 'button' as const, onPress } : {})}
+      style={[styles.linkRow, divided && { borderTopWidth: 1, borderTopColor: colors.border }]}>
       {iconBackground ? (
         <View style={[styles.linkTile, { backgroundColor: iconBackground }]}>
           <Icon name={icon} size={20} color={iconColor} />
@@ -163,8 +220,8 @@ function LinkRow({ icon, title, subtitle, iconColor, iconBackground, trailing, o
         <Text variant={subtitle ? 'h3' : 'body'}>{title}</Text>
         {subtitle ? <Text variant="small">{subtitle}</Text> : null}
       </View>
-      {trailing ?? <Icon name="chevronRight" size={18} color={colors.text3} />}
-    </Pressable>
+      {trailing ?? (onPress ? <Icon name="chevronRight" size={18} color={colors.text3} /> : null)}
+    </Container>
   );
 }
 

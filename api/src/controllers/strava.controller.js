@@ -428,16 +428,26 @@ const applyRunUpdateFromStrava = async (run, activity) => {
 };
 
 // Générer l'URL d'autorisation Strava
+// `state` transporte l'utilisateur et, pour l'app mobile, l'URL de retour.
+// Elle varie selon l'environnement (`exp://…` dans Expo Go, `trainwise://` en build),
+// d'où l'envoi par l'app — filtré ici pour ne pas rediriger n'importe où.
+const MOBILE_STATE_SEPARATOR = '|';
+const ALLOWED_RETURN_SCHEMES = ['trainwise://', 'exp://', 'exp+trainwise://'];
+
+const safeReturnUrl = (url) =>
+  typeof url === 'string' && ALLOWED_RETURN_SCHEMES.some((scheme) => url.startsWith(scheme)) ? url : null;
+
 exports.getAuthUrl = async (req, res) => {
   try {
     const redirectUri = `${process.env.BACKEND_URL || 'http://localhost:3000'}/api/strava/callback`;
+    const returnUrl = safeReturnUrl(req.query.returnTo);
 
     const params = new URLSearchParams({
       client_id: process.env.STRAVA_CLIENT_ID,
       redirect_uri: redirectUri,
       response_type: 'code',
       scope: 'read,activity:read_all,activity:write',
-      state: req.user._id.toString()
+      state: returnUrl ? `${req.user._id}${MOBILE_STATE_SEPARATOR}${returnUrl}` : `${req.user._id}`
     });
 
     const authUrl = `${STRAVA_AUTH_URL}?${params.toString()}`;
@@ -450,11 +460,17 @@ exports.getAuthUrl = async (req, res) => {
 
 // Callback OAuth Strava
 exports.handleCallback = async (req, res) => {
-  try {
-    const { code, state } = req.query;
+  const { code, state } = req.query;
+  const [userId, rawReturn] = typeof state === 'string' ? state.split(MOBILE_STATE_SEPARATOR) : [state];
+  const returnUrl = safeReturnUrl(rawReturn);
+  const back = (query) =>
+    returnUrl
+      ? `${returnUrl}${returnUrl.includes('?') ? '&' : '?'}${query}`
+      : `${process.env.FRONTEND_URL || 'http://localhost:4200'}/dashboard?${query}`;
 
+  try {
     if (!code) {
-      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:4200'}/dashboard?strava=error&message=no_code`);
+      return res.redirect(back('strava=error&message=no_code'));
     }
 
     // Échanger le code contre un token
@@ -468,7 +484,7 @@ exports.handleCallback = async (req, res) => {
     const { access_token, refresh_token, expires_at, athlete } = tokenResponse.data;
 
     // Mettre à jour l'utilisateur avec les infos Strava
-    await User.findByIdAndUpdate(state, {
+    await User.findByIdAndUpdate(userId, {
       'strava.athleteId': athlete.id,
       'strava.accessToken': access_token,
       'strava.refreshToken': refresh_token,
@@ -476,11 +492,11 @@ exports.handleCallback = async (req, res) => {
       'strava.connectedAt': new Date()
     });
 
-    // Rediriger vers le frontend avec succès
-    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:4200'}/dashboard?strava=success`);
+    // Retour à l'app mobile ou au tableau de bord web, selon l'origine de la demande
+    res.redirect(back('strava=success'));
   } catch (error) {
     console.error('Strava callback error:', error.message);
-    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:4200'}/dashboard?strava=error&message=${encodeURIComponent(error.message)}`);
+    res.redirect(back(`strava=error&message=${encodeURIComponent(error.message)}`));
   }
 };
 

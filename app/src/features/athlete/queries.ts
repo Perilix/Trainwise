@@ -1,4 +1,7 @@
 // Accès aux données de la partie athlète. En mode démo, les données d'exemple remplacent l'API.
+import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
+
 import { useSession } from '@/features/auth/session';
 import { api, cachedGet, invalidateApiCache } from '@/lib/api';
 import type {
@@ -150,6 +153,9 @@ export function useChatUnreadCount() {
 }
 
 /** Écritures. Sans effet en mode démo. */
+/** URL de retour après l'autorisation Strava : `exp://…` dans Expo Go, `trainwise://` en build. */
+const stravaReturnUrl = () => Linking.createURL('strava');
+
 export function useAthleteActions() {
   const { status } = useSession();
   const live = status === 'signedIn';
@@ -194,6 +200,23 @@ export function useAthleteActions() {
       if (!live) return;
       await api(`/api/runs/${encodeURIComponent(id)}`, { method: 'PATCH', body: { feeling } });
       invalidateApiCache('/api/runs');
+    },
+    /** Ouvre l'autorisation Strava et renvoie true si le compte a bien été relié. */
+    async connectStrava() {
+      if (!live) return false;
+      const returnTo = stravaReturnUrl();
+      const { authUrl } = await api<{ authUrl: string }>('/api/strava/auth-url', { query: { returnTo } });
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, returnTo);
+      if (result.type !== 'success') return false;
+      const success = result.url.includes('strava=success');
+      if (success) invalidateApiCache();
+      return success;
+    },
+    /** Délie le compte Strava : l'API révoque aussi l'autorisation côté Strava. */
+    async disconnectStrava() {
+      if (!live) return;
+      await api('/api/strava/disconnect', { method: 'DELETE' });
+      invalidateApiCache();
     },
     async markNotificationRead(id: string) {
       if (!live) return;
