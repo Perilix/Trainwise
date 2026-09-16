@@ -1,0 +1,12 @@
+node_modules
+dist
+.expo
+.git
+.claude
+docs
+android
+ios
+*.log
+.env
+.env.local
+.DS_Store
