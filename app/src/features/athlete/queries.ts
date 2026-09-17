@@ -18,6 +18,7 @@ import type {
 } from '@/lib/api-types';
 import { emitAppEvent } from '@/lib/app-events';
 import { startOfWeek } from '@/lib/dates';
+import { formatPace } from '@/lib/format';
 import { useSessionQuery } from '@/features/auth/use-session-query';
 import { getConversations } from '@/features/chat/conversations';
 
@@ -150,8 +151,24 @@ export function useCoachInvitations() {
   );
 }
 
+/** Total des messages non lus, toutes conversations : côté coach, qui a la liste complète. */
+export function useAllChatUnreadCount() {
+  return useAthleteQuery('chat:unread:all', async () => (await api<{ unreadCount: number }>('/api/chat/unread')).unreadCount, () => 0);
+}
+
+/** Messages non lus du coach (onglet Coach de l'athlète). */
 export function useChatUnreadCount() {
-  return useAthleteQuery('chat:unread', async () => (await api<{ unreadCount: number }>('/api/chat/unread')).unreadCount, () => 1);
+  return useAthleteQuery(
+    'chat:unread',
+    async () => {
+      // `/api/chat/unread` totalise toutes les conversations, or l'athlète n'a d'écran que
+      // pour celle de son coach : un non-lu ailleurs laisserait la pastille allumée pour toujours.
+      const [conversations, coach] = await Promise.all([getConversations(), getCoach()]);
+      if (!coach) return 0;
+      return conversations.find((conversation) => conversation.otherParticipant?._id === coach._id)?.unreadCount ?? 0;
+    },
+    () => 0,
+  );
 }
 
 /** Écritures. Sans effet en mode démo. */
@@ -201,6 +218,9 @@ export type SportProfilePatch = Pick<ApiUser, 'runningLevel' | 'weeklyFrequency'
 
 export type CompetitionPayload = { name: string; date: string; discipline: string; targetTime?: string | null; priority: 'A' | 'B' | 'C' };
 
+/** Sortie réalisée saisie à la main depuis une séance prévue. */
+export type DoneRunPayload = { date: string; distanceKm?: number; durationMin?: number; feeling?: number; notes?: string; sessionType?: string };
+
 export function useAthleteActions() {
   const { status, user, updateUser } = useSession();
   const live = status === 'signedIn';
@@ -245,6 +265,35 @@ export function useAthleteActions() {
       if (!live) return;
       await api(`/api/runs/${encodeURIComponent(id)}`, { method: 'PATCH', body: { feeling } });
       invalidateApiCache('/api/runs');
+    },
+    /**
+     * Sortie saisie à la main, quand Strava ne l'a pas importée. L'API complète
+     * d'elle-même la séance prévue du même jour et prévient le coach.
+     */
+    async logRun(payload: DoneRunPayload) {
+      if (!live) return;
+      const pace = payload.distanceKm && payload.durationMin ? formatPace((payload.durationMin * 60) / payload.distanceKm) : undefined;
+      await api('/api/runs', {
+        method: 'POST',
+        body: {
+          date: new Date(`${payload.date}T12:00:00`).toISOString(),
+          distance: payload.distanceKm,
+          duration: payload.durationMin,
+          averagePace: pace,
+          feeling: payload.feeling,
+          notes: payload.notes || undefined,
+          sessionType: payload.sessionType,
+        },
+      });
+      invalidateApiCache();
+      emitAppEvent('sessions:changed');
+    },
+    /** Compte rendu libre de la sortie : ce que l'athlète a réellement fait. */
+    async saveRunNotes(id: string, notes: string) {
+      if (!live) return;
+      await api(`/api/runs/${encodeURIComponent(id)}`, { method: 'PATCH', body: { notes } });
+      invalidateApiCache('/api/runs');
+      emitAppEvent('sessions:changed');
     },
     /**
      * Ouvre l'autorisation Strava, puis suit l'import de l'historique lancé par
