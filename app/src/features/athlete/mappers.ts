@@ -310,9 +310,10 @@ function periodRange(period: RunsPeriod, now: Date, offset: number): PeriodRange
   return { start: `${year}-01-01`, end: `${year}-12-31`, label: String(year), short: String(year), compareLabel: String(year) };
 }
 
-export function buildRunsOverview(apiRuns: ApiRun[], period: RunsPeriod, now: Date): RunsOverview {
+export function buildRunsOverview(apiRuns: ApiRun[], period: RunsPeriod, now: Date, offset = 0): RunsOverview {
   const runs = apiRuns.map(mapRun);
-  const ranges = Array.from({ length: 6 }, (_, index) => periodRange(period, now, 5 - index));
+  // Six périodes se terminant sur celle consultée : l'historique se lit vers la gauche.
+  const ranges = Array.from({ length: 6 }, (_, index) => periodRange(period, now, 5 - index + offset));
   const within = (range: PeriodRange) => runs.filter((run) => run.date >= range.start && run.date <= range.end);
   const distance = (list: Activity[]) => sum(list.map((run) => run.distanceKm ?? 0));
 
@@ -326,15 +327,19 @@ export function buildRunsOverview(apiRuns: ApiRun[], period: RunsPeriod, now: Da
   const count = current.length;
   const noun = count > 1 ? 'sorties' : 'sortie';
   const listTitle =
-    period === 'week' ? `${count} ${noun} cette semaine` : period === 'month' ? `${count} ${noun} en ${formatMonthName(parseDay(ranges[5].start).getMonth())}` : `${count} ${noun} en ${ranges[5].label}`;
+    period === 'week'
+      ? `${count} ${noun} ${offset === 0 ? 'cette semaine' : `${ranges[5].label.toLowerCase()}`}`
+      : period === 'month'
+        ? `${count} ${noun} en ${formatMonthName(parseDay(ranges[5].start).getMonth())}`
+        : `${count} ${noun} en ${ranges[5].label}`;
 
   return {
     periodLabel: ranges[5].label,
     listTitle,
     distanceKm: total,
     trendLabel: trend === undefined ? undefined : `${trend >= 0 ? '+' : '−'}${Math.abs(trend)} % vs ${ranges[4].compareLabel}`,
-    trendUp: trend !== undefined && trend >= 0,
-    bars: ranges.map((range, index) => ({ label: range.short, distanceKm: distance(within(range)), selected: index === 5 })),
+    trendUp: trend === undefined ? undefined : trend >= 0,
+    bars: ranges.map((range, index) => ({ label: range.short, distanceKm: distance(within(range)), selected: index === 5, offset: offset + 5 - index })),
     stats: {
       runs: count,
       avgPaceSecPerKm: timedDistance > 0 ? sum(timed.map((run) => run.durationSec)) / timedDistance : undefined,

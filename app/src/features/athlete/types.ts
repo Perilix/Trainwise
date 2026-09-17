@@ -164,8 +164,10 @@ export type RunsOverview = {
   listTitle: string;
   distanceKm: number;
   trendLabel?: string;
+  /** `true` en hausse, `false` en baisse, absent quand la comparaison n'a pas de sens. */
   trendUp?: boolean;
-  bars: { label: string; distanceKm: number; selected: boolean }[];
+  /** `offset` : nombre de périodes en arrière, 0 = période en cours. */
+  bars: { label: string; distanceKm: number; selected: boolean; offset: number }[];
   stats: { runs: number; avgPaceSecPerKm?: number; durationSec: number };
   runs: Activity[];
 };

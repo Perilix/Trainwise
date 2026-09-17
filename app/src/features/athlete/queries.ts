@@ -79,8 +79,8 @@ export function usePlannedSession(id: string) {
   );
 }
 
-export function useRunsOverview(period: RunsPeriod) {
-  return useAthleteQuery(`runs:${period}`, async () => buildRunsOverview(await getRuns(), period, new Date()), () => sampleRunsOverview);
+export function useRunsOverview(period: RunsPeriod, offset = 0) {
+  return useAthleteQuery(`runs:${period}:${offset}`, async () => buildRunsOverview(await getRuns(), period, new Date(), offset), () => sampleRunsOverview);
 }
 
 export function useRunDetail(id: string) {
