@@ -206,18 +206,28 @@ export type AthleteProfile = {
 
 export type NotificationKind =
   | 'session-updated'
+  | 'session-planned'
+  | 'week-published'
+  | 'session-reminder'
+  | 'feedback'
   | 'message'
-  | 'sessions-planned'
   | 'strava-import'
+  | 'session-done'
   | 'friend-request'
   | 'invitation'
   | 'record'
   | 'competition'
+  | 'subscription'
+  | 'alert'
   | 'other';
+
+/** Les trois sections du centre de notifications. */
+export type NotificationCategory = 'priority' | 'training' | 'account';
 
 export type AthleteNotification = {
   id: string;
   kind: NotificationKind;
+  category: NotificationCategory;
   title: string;
   body: string;
   timeLabel: string;

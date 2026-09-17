@@ -2,31 +2,38 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { BackBar, Button, Icon, Screen, Section, Segmented, StateView, Text, type IconName } from '@/components/ui';
+import { BackBar, Button, Chip, Icon, Screen, Section, Segmented, StateView, Text, type IconName } from '@/components/ui';
 import { useAthleteActions, useNotifications } from '@/features/athlete/queries';
-import type { AthleteNotification, NotificationKind } from '@/features/athlete/types';
+import type { AthleteNotification, NotificationCategory, NotificationKind } from '@/features/athlete/types';
 import { isCoach, useSession } from '@/features/auth/session';
 import { useTheme } from '@/theme/theme-provider';
 import { radius, type Palette } from '@/theme/tokens';
 
 import { routeForActionUrl } from './action-routes';
 
-const GROUPS: { key: AthleteNotification['group']; label: string }[] = [
-  { key: 'today', label: 'Aujourd’hui' },
-  { key: 'yesterday', label: 'Hier' },
-  { key: 'week', label: 'Cette semaine' },
-  { key: 'older', label: 'Plus ancien' },
+// Trois sections plutôt qu'un fil chronologique : ce qui vient du coach d'abord,
+// l'entraînement ensuite, le compte en dernier.
+const SECTIONS: { key: NotificationCategory; label: string }[] = [
+  { key: 'priority', label: 'Prioritaires' },
+  { key: 'training', label: 'Entraînements' },
+  { key: 'account', label: 'Compte' },
 ];
 
 const KIND_STYLE: Record<NotificationKind, { icon: IconName; background: keyof Palette; foreground: keyof Palette }> = {
   'session-updated': { icon: 'pen', background: 'violetSoft', foreground: 'violetInk' },
+  'session-planned': { icon: 'calendar', background: 'violetSoft', foreground: 'violetInk' },
+  'week-published': { icon: 'calendar', background: 'violetSoft', foreground: 'violetInk' },
+  'session-reminder': { icon: 'bell', background: 'accentSoft', foreground: 'accentInk' },
+  feedback: { icon: 'quote', background: 'accentSoft', foreground: 'accentInk' },
   message: { icon: 'message', background: 'accentSoft', foreground: 'accentInk' },
-  'sessions-planned': { icon: 'calendar', background: 'violetSoft', foreground: 'violetInk' },
   'strava-import': { icon: 'activity', background: 'stravaSoft', foreground: 'stravaInk' },
+  'session-done': { icon: 'check', background: 'successSoft', foreground: 'successInk' },
   'friend-request': { icon: 'users', background: 'subtle', foreground: 'text2' },
   invitation: { icon: 'user', background: 'violetSoft', foreground: 'violetInk' },
   record: { icon: 'trophy', background: 'successSoft', foreground: 'successInk' },
   competition: { icon: 'flag', background: 'warningSoft', foreground: 'warningInk' },
+  subscription: { icon: 'shield', background: 'subtle', foreground: 'text2' },
+  alert: { icon: 'warning', background: 'dangerSoft', foreground: 'danger' },
   other: { icon: 'bell', background: 'subtle', foreground: 'text2' },
 };
 
@@ -72,28 +79,30 @@ export function NotificationsScreen() {
             />
           </Section>
 
-          {GROUPS.map((group) => {
-            const items = visible.filter((item) => item.group === group.key);
-            if (!items.length) return null;
-            return (
-              <Section key={group.key} style={styles.group}>
-                <Text variant="sectionTitle" style={styles.groupLabel}>
-                  {group.label}
-                </Text>
-                <View style={[styles.list, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                  {items.map((item, index) => (
-                    <NotificationRow key={item.id} item={item} divided={index > 0} onPress={() => open(item)} />
-                  ))}
-                </View>
-              </Section>
-            );
-          })}
-
-          {!visible.length ? (
+          {visible.length ? (
+            SECTIONS.map((section) => {
+              const items = visible.filter((item) => item.category === section.key);
+              if (!items.length) return null;
+              const unread = items.filter((item) => item.unread).length;
+              return (
+                <Section key={section.key} style={styles.group}>
+                  <View style={styles.groupHeader}>
+                    <Text variant="sectionTitle">{section.label}</Text>
+                    {unread ? <Chip label={String(unread)} tone="danger" /> : null}
+                  </View>
+                  <View style={[styles.list, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                    {items.map((item, index) => (
+                      <NotificationRow key={item.id} item={item} divided={index > 0} onPress={() => open(item)} />
+                    ))}
+                  </View>
+                </Section>
+              );
+            })
+          ) : (
             <Section>
               <Text variant="body2">{filter === 'unread' ? 'Tout est lu, aucune notification en attente.' : 'Aucune notification pour le moment.'}</Text>
             </Section>
-          ) : null}
+          )}
         </>
       ) : (
         <StateView loading={loading} error={error} onRetry={refetch} />
@@ -137,7 +146,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   filter: { paddingBottom: 16 },
   group: { paddingBottom: 16 },
-  groupLabel: { marginBottom: 8 },
+  groupHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
   list: { borderRadius: radius.lg, borderWidth: 1, overflow: 'hidden' },
   row: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingHorizontal: 16, paddingVertical: 14 },
   tile: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },

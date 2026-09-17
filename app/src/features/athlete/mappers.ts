@@ -24,6 +24,7 @@ import type {
   CalendarMarker,
   ChatMessage,
   KmSplit,
+  NotificationCategory,
   NotificationKind,
   PlannedSession,
   PlanningMonth,
@@ -389,29 +390,92 @@ export function buildProfile(user: ApiUser, competitions: ApiCompetition[], stra
   };
 }
 
+/**
+ * Type et action de l'API → nature affichée. L'action est la source fiable : le
+ * type `session` couvre aussi bien une séance ajoutée qu'un rappel du matin.
+ */
 function notificationKind(notification: ApiNotification): NotificationKind {
+  switch (notification.action) {
+    case 'session_created':
+      return 'session-planned';
+    case 'session_updated':
+      return 'session-updated';
+    case 'week_published':
+      return 'week-published';
+    case 'session_reminder':
+      return 'session-reminder';
+    case 'feedback_missing':
+      return 'feedback';
+    case 'strava_auto_import':
+      return 'strava-import';
+    case 'session_completed':
+      return 'session-done';
+    case 'personal_record':
+    case 'streak':
+      return 'record';
+    case 'competition_soon':
+      return 'competition';
+    case 'friend_request':
+    case 'friend_accepted':
+    case 'friend_rejected':
+      return 'friend-request';
+    case 'status_degraded':
+      return 'alert';
+    default:
+      break;
+  }
+
   switch (notification.type) {
     case 'message':
       return 'message';
     case 'session':
-      return /updat|modif|edit/i.test(notification.action) ? 'session-updated' : 'sessions-planned';
+      return /updat|modif|edit/i.test(notification.action) ? 'session-updated' : 'session-planned';
     case 'friend':
       return 'friend-request';
     case 'invitation':
     case 'invitation_response':
       return 'invitation';
+    case 'subscription':
+    case 'subscription_request':
+      return 'subscription';
+    case 'competition':
+      return 'competition';
+    case 'achievement':
+      return 'record';
     default:
       return 'other';
   }
 }
 
+// Ce qui vient du coach ou change le programme passe en premier ; l'entraînement
+// au milieu ; le reste (compte, relations, abonnement) en bas.
+const CATEGORY_BY_KIND: Record<NotificationKind, NotificationCategory> = {
+  'session-updated': 'priority',
+  'session-planned': 'priority',
+  'week-published': 'priority',
+  message: 'priority',
+  alert: 'priority',
+  'session-reminder': 'training',
+  feedback: 'training',
+  'strava-import': 'training',
+  'session-done': 'training',
+  record: 'training',
+  competition: 'training',
+  subscription: 'account',
+  invitation: 'account',
+  'friend-request': 'account',
+  other: 'account',
+};
+
 export function mapNotification(notification: ApiNotification, now: Date): AthleteNotification {
   const created = new Date(notification.createdAt);
   const age = daysBetween(created, now);
   const [weekday, ...dayMonth] = formatDayShort(toIsoDay(created)).split(' ');
+  const kind = notificationKind(notification);
   return {
     id: notification._id,
-    kind: notificationKind(notification),
+    kind,
+    category: CATEGORY_BY_KIND[kind],
     title: notification.title,
     body: notification.message,
     timeLabel: age <= 1 ? formatTime(created) : age < 7 ? weekday : dayMonth.join(' '),

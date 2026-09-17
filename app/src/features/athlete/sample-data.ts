@@ -275,13 +275,16 @@ export const sampleProfile: AthleteProfile = {
 };
 
 export const sampleNotifications: AthleteNotification[] = [
-  { id: 'n1', kind: 'session-updated', title: 'Séance modifiée par Camille', body: 'Fractionné : 12 × 400 m → 10 × 400 m · mar. 15 sept.', timeLabel: '09:05', group: 'today', unread: true },
-  { id: 'n2', kind: 'message', title: 'Camille Roux', body: '« Si ça tire encore lundi, dis-le-moi et on adapte le bloc. »', timeLabel: '09:04', group: 'today', unread: true },
-  { id: 'n3', kind: 'sessions-planned', title: '3 séances planifiées', body: 'Semaine du 14 sept. · par Camille', timeLabel: '08:30', group: 'today', unread: true },
-  { id: 'n4', kind: 'strava-import', title: 'Sortie longue importée', body: '16,2 km · 1:26:40 · ressenti pas encore noté', timeLabel: '19:12', group: 'yesterday', unread: false },
-  { id: 'n5', kind: 'friend-request', title: 'Nathan Girard veut t’ajouter en ami', body: 'Vous êtes tous les deux suivis par Camille', timeLabel: '17:40', group: 'yesterday', unread: false },
-  { id: 'n6', kind: 'record', title: 'Nouveau record sur 400 m', body: '1:24 lors du fractionné du mar. 8 sept.', timeLabel: 'Mar.', group: 'week', unread: false },
-  { id: 'n7', kind: 'competition', title: 'Marathon de Lyon dans 3 semaines', body: 'Dim. 4 oct. · objectif 3:15:00', timeLabel: 'Lun.', group: 'week', unread: false },
+  { id: 'n1', kind: 'session-updated', category: 'priority', title: 'Séance modifiée', body: 'Camille Roux a modifié ta séance du mardi 15 septembre', timeLabel: '09:05', group: 'today', unread: true },
+  { id: 'n2', kind: 'message', category: 'priority', title: 'Nouveau message de Camille', body: '« Si ça tire encore lundi, dis-le-moi et on adapte le bloc. »', timeLabel: '09:04', group: 'today', unread: true },
+  { id: 'n3', kind: 'week-published', category: 'priority', title: 'Ton programme est disponible', body: 'Camille Roux vient de publier 4 séances, du 21 au 27 septembre', timeLabel: '08:30', group: 'today', unread: true },
+  { id: 'n4', kind: 'session-reminder', category: 'training', title: 'Séance prévue aujourd’hui', body: 'Séance d’entraînement prévue aujourd’hui : Fractionné 10 × 400 m', timeLabel: '07:00', group: 'today', unread: true },
+  { id: 'n5', kind: 'strava-import', category: 'training', title: 'Activité Strava synchronisée 🏃', body: 'Sortie longue (16,2 km) a été synchronisée — viens la détailler !', timeLabel: '19:12', group: 'yesterday', unread: false },
+  { id: 'n6', kind: 'feedback', category: 'training', title: 'Comment s’est passée ta séance ?', body: 'Ajoute ton ressenti sur ta sortie d’hier, ton coach le verra.', timeLabel: '07:00', group: 'yesterday', unread: false },
+  { id: 'n7', kind: 'record', category: 'training', title: 'Nouveau record 🏆', body: '21,1 km : c’est ta plus longue sortie, tu bats 19 km.', timeLabel: 'Mar.', group: 'week', unread: false },
+  { id: 'n8', kind: 'competition', category: 'training', title: 'J-7', body: 'J-7 avant le Marathon de Lyon.', timeLabel: 'Lun.', group: 'week', unread: false },
+  { id: 'n9', kind: 'subscription', category: 'account', title: 'Paiement effectué', body: 'Ton abonnement Pro est actif jusqu’au 4 octobre 2026.', timeLabel: '12 sept.', group: 'older', unread: false },
+  { id: 'n10', kind: 'friend-request', category: 'account', title: 'Nathan Girard veut t’ajouter en ami', body: 'Vous êtes tous les deux suivis par Camille', timeLabel: '17:40', group: 'older', unread: false },
 ];
 
 export const sampleCoachThread: ChatMessage[] = [
