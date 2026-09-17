@@ -36,6 +36,10 @@ interface CalendarDay {
   styleUrl: './athlete-planning.component.scss'
 })
 export class AthletePlanningComponent implements OnInit {
+  // Au-delà de 1024px, le jour choisi s'affiche dans un rail plutôt que dans
+  // une feuille qui recouvre le calendrier.
+  isDesktop = signal(typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches);
+
   athleteId = '';
   athlete = signal<AthleteDetail | null>(null);
 
@@ -166,6 +170,9 @@ export class AthletePlanningComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    if (typeof window !== 'undefined') {
+      window.matchMedia('(min-width: 1024px)').addEventListener('change', event => this.isDesktop.set(event.matches));
+    }
     this.athleteId = this.route.snapshot.paramMap.get('id') || '';
     const openDay = this.route.snapshot.queryParamMap.get('openDay');
     if (openDay) {
@@ -671,6 +678,61 @@ export class AthletePlanningComponent implements OnInit {
       day: 'numeric',
       month: 'long'
     });
+  }
+
+  /**
+   * Le contenu d'un jour, nommé — les cases desktop ont la place d'afficher
+   * ce qui s'y passe, là où le mobile se contente d'une pastille comptée.
+   */
+  dayChips(day: CalendarDay): { label: string; meta: string; kind: string }[] {
+    const chips: { label: string; meta: string; kind: string }[] = [];
+
+    for (const competition of day.competitions) {
+      chips.push({ label: competition.name, meta: `Priorité ${competition.priority}`, kind: 'competition' });
+    }
+
+    for (const run of day.runs) {
+      const distance = this.getRunDistance(run);
+      chips.push({
+        label: this.getRunTitle(run.notes) || 'Course',
+        meta: distance ? `${this.fr(distance)} km` : '',
+        kind: 'completed',
+      });
+    }
+
+    for (const session of day.strengthSessions) {
+      chips.push({ label: this.getSessionTypeLabel((session as any).sessionType ?? ''), meta: 'Muscu', kind: 'completed' });
+    }
+
+    for (const planned of day.plannedRuns) {
+      // La distance annoncée fait foi ; la somme des blocs ne couvre pas les
+      // phases exprimées en durée et sous-estimerait la séance.
+      const distance = planned.targetDistance || this.getPlannedTotalDistance(planned);
+      const exercises = this.getPlannedExerciseCount(planned);
+      const meta = distance ? `${this.fr(distance)} km`
+        : exercises ? `${exercises} exercices`
+        : planned.targetDuration ? `${planned.targetDuration} min` : '';
+      const kind = planned.status === 'completed' ? 'completed'
+        : planned.status === 'skipped' ? 'skipped'
+        : planned.generatedBy === 'coach' ? 'planned-coach'
+        : planned.generatedBy === 'ai' ? 'planned-ia' : 'planned-athlete';
+      chips.push({
+        label: planned.title || this.getSessionTypeLabel(planned.sessionType),
+        meta,
+        kind,
+      });
+    }
+
+    return chips;
+  }
+
+  private fr(value: number): string {
+    return value.toLocaleString('fr-FR', { maximumFractionDigits: 1 });
+  }
+
+  /** Les kilomètres du mois, à la française. */
+  monthKmLabel(): string {
+    return this.fr(this.getMonthStats().totalKm);
   }
 
   getDayIndicators(day: CalendarDay): { type: string; count: number }[] {

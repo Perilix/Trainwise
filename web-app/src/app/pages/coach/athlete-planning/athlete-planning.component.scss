@@ -1600,8 +1600,168 @@
 }
 
 // Desktop ≥1024px : élargir le contenu (sidebar active)
+// -----------------------------------------------
+// Desktop ≥1024px : calendrier à gauche, jour choisi et mois en cours dans
+// un rail — la feuille du mobile masquerait le calendrier qu'on consulte.
+// -----------------------------------------------
 @media (min-width: 1024px) {
   .container {
-    max-width: 1100px;
+    max-width: none;
+    padding: calc(var(--navbar-height, 0px) + 32px) 40px 40px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    grid-template-rows: auto auto auto 1fr auto;
+    gap: 0 20px;
+    align-content: start;
+  }
+
+  .page-header,
+  .alert,
+  .loading-state { grid-column: 1 / -1; }
+
+  // Les chiffres du mois sont repris par le rail.
+  .month-stats { display: none; }
+
+  .calendar-nav,
+  .calendar,
+  .legend { grid-column: 1; }
+
+  .ap-rail {
+    grid-column: 2;
+    grid-row: 3 / span 3;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: sticky;
+    top: 24px;
+    max-height: calc(100vh - 140px);
+    overflow-y: auto;
+  }
+
+  .calendar-day { min-height: 104px; }
+}
+
+// --- Rail du planning -------------------------------------------------
+.ap-rail { font-family: 'Poppins', sans-serif; color: #051923; }
+
+.ap-card {
+  background: #FFFFFF;
+  border: 1px solid #E7E2D9;
+  border-radius: 16px;
+  padding: 18px;
+
+  h3 { font-size: 16px; line-height: 22px; font-weight: 600; margin: 0; }
+}
+
+.ap-day-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  margin-bottom: 14px;
+}
+
+.ap-muted { font-size: 13px; line-height: 18px; color: #5A6878; }
+
+.ap-add {
+  width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+  border: 1px solid #D3CCBF; background: #FFFFFF; color: #051923;
+  font-size: 18px; line-height: 1; cursor: pointer;
+
+  &:hover { background: #F6F4F0; }
+}
+
+.ap-line {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #E7E2D9;
+  font-size: 14px;
+
+  &:last-child { border-bottom: none; }
+  span { color: #5A6878; }
+  strong { font-weight: 600; }
+}
+
+
+// Contenu nommé des cases, en desktop seulement.
+.day-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  width: 100%;
+}
+
+.day-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  border-left: 3px solid #D3CCBF;
+  background: #F1EEE8;
+  text-align: left;
+  min-width: 0;
+
+  &.completed { background: #DCFCE7; border-left-color: #10B981; }
+  &.planned-coach { background: #EDE9FE; border-left-color: #7C3AED; }
+  &.planned-athlete { background: #E3F4FD; border-left-color: #0077B6; }
+  &.planned-ia { background: #E3F4FD; border-left-color: #00A6FB; }
+  &.skipped { background: #FDF0D5; border-left-color: #F59E0B; }
+  &.competition { background: #003554; border-left-color: #003554; color: #FFFFFF; }
+}
+
+.day-chip-label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 11px;
+  line-height: 15px;
+  font-weight: 600;
+  color: #051923;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  .competition & { color: #FFFFFF; }
+}
+
+.day-chip-meta {
+  font-family: 'Poppins', sans-serif;
+  font-size: 10px;
+  line-height: 14px;
+  color: #5A6878;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  .competition & { color: rgba(255, 255, 255, 0.75); }
+}
+
+@media (min-width: 1024px) {
+  .calendar-day {
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 8px;
+    min-height: 116px;
+  }
+
+  .page-header h1 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 24px;
+    line-height: 32px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+}
+
+@media (min-width: 1024px) {
+  // Sans min-width, une pastille au long libellé élargit sa colonne et
+  // déséquilibre toute la semaine.
+  .calendar-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  .calendar-day { min-width: 0; overflow: hidden; }
+  .day-chips { max-width: 100%; }
+
+  .page-header .athlete-info h1 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 24px;
+    line-height: 32px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
   }
 }

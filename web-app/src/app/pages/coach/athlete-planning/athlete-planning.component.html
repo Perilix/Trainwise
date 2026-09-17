@@ -94,17 +94,62 @@
             (click)="selectDay(day)"
           >
             <span class="day-number">{{ day.dayOfMonth }}</span>
-            <div class="day-indicators">
-              @for (indicator of getDayIndicators(day); track indicator.type) {
-                <div class="indicator-badge" [class]="indicator.type">{{ indicator.count }}</div>
-              }
-            </div>
+            @if (isDesktop()) {
+              <div class="day-chips">
+                @for (chip of dayChips(day); track $index) {
+                  <span class="day-chip {{ chip.kind }}">
+                    <span class="day-chip-label">{{ chip.label }}</span>
+                    @if (chip.meta) { <span class="day-chip-meta">{{ chip.meta }}</span> }
+                  </span>
+                }
+              </div>
+            } @else {
+              <div class="day-indicators">
+                @for (indicator of getDayIndicators(day); track indicator.type) {
+                  <div class="indicator-badge" [class]="indicator.type">{{ indicator.count }}</div>
+                }
+              </div>
+            }
           </div>
         }
       </div>
     </div>
 
     <!-- Légende -->
+    <!-- Rail desktop : le jour choisi et le mois en cours, au lieu d'une
+         feuille qui recouvre le calendrier. -->
+    @if (isDesktop()) {
+      <aside class="ap-rail">
+        <section class="ap-card">
+          @if (selectedDay(); as day) {
+            <div class="ap-day-head">
+              <div>
+                <h3>{{ formatDate(day.date) }}</h3>
+                @if (day.isToday) { <span class="ap-muted">Aujourd'hui</span> }
+              </div>
+              <button class="ap-add" (click)="openAddSession()" title="Ajouter une séance">+</button>
+            </div>
+            <ng-container *ngTemplateOutlet="dayContentTpl; context: { $implicit: day }"></ng-container>
+          } @else {
+            <p class="ap-muted">Choisissez un jour du calendrier pour voir ce qui y est prévu.</p>
+          }
+        </section>
+
+        <section class="ap-card">
+          <h3>Ce mois</h3>
+          <div class="ap-line"><span>Planifiées</span><strong>{{ getMonthStats().planned }}</strong></div>
+          <div class="ap-line"><span>Effectuées</span><strong>{{ getMonthStats().completed }}</strong></div>
+          <div class="ap-line"><span>Distance</span><strong>{{ monthKmLabel() }} km</strong></div>
+          @if (athlete()?.nextCompetition) {
+            <div class="ap-line">
+              <span>Prochaine compétition</span>
+              <strong>{{ athlete()!.nextCompetition!.date | date:'d MMM' }}</strong>
+            </div>
+          }
+        </section>
+      </aside>
+    }
+
     <div class="legend">
       <span class="legend-item"><span class="dot completed"></span> Effectuée</span>
       <span class="legend-item"><span class="dot planned-coach"></span> Planifiée coach</span>
@@ -114,8 +159,9 @@
   }
 </div>
 
-<!-- Modal détail du jour -->
-@if (selectedDay()) {
+<!-- Détail du jour en feuille. En desktop le jour vit dans le rail : seule
+     l'ajout de séance garde sa boîte de dialogue. -->
+@if (selectedDay() && (!isDesktop() || isAddingSession())) {
   <div class="modal-overlay"
     (click)="onOverlayClick()"
     (touchstart)="onOverlayTouchStart($event)"
