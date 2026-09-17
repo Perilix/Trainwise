@@ -119,7 +119,7 @@ function RunCard({ run, seed, previewWidth, onPress }: { run: Activity; seed: nu
   return (
     <Card padding={0} onPress={onPress} accessibilityLabel={`${run.title}, ${formatDayShort(run.date)}`} style={styles.runCard}>
       <View style={styles.preview}>
-        <RoutePreview width={previewWidth} height={120} seed={seed} />
+        <RoutePreview width={previewWidth} height={120} polyline={run.polyline} seed={seed} />
       </View>
       <View style={styles.runBody}>
         <View style={styles.runHeader}>

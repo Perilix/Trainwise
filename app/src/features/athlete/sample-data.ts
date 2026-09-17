@@ -115,6 +115,13 @@ const longRunToday = coachSession({
   paceSecPerKm: 320,
 });
 
+// Tracés d'exemple (boucles lyonnaises) pour illustrer l'aperçu de parcours.
+const SAMPLE_POLYLINES = {
+  a: 'cjlvG_}u\\aK_GmJq@iI`FyGnM_FbQiDzOuBbKkAvEk@~BUnDEzIDpPTjUj@xUjAfQtBvIhDhB~Ea@xG[hI|AlJtF`K~H`K~FlJp@hIaFxGoM~EcQhD{OtBcKjAwEj@_CToDD{IEqPUkUk@yUkAgQuBwIiDiB_F`@yGZiI}AmJuFaK_I',
+  b: '_hivG{rq\\yJsMuI{ByGnIkEbT{BnUq@pMAxAVoDZ_DHjCIdP[|XWlX@rNp@v@zBmGjEyHxGiAtI|GxJhOxJrMtIzBxGoIjEcTzBoUp@qM@yAWnD[~CIkCHePZ}XVmXAsNq@w@{BlGkExHyGhAuI}GyJiO',
+  c: 'cgfvG{ds\\cO{EcN@kLnGaJlLqGbKcElE_C\\eAFUbDTfKdApO~BzMbEzFpGD`JmBjLe@bNlCbOlGbOzEbNAjLoG`JmLpGcKbEmE~B]dAGTcDUgKeAqO_C{McE{FqGEaJlBkLd@cNmCcOmG',
+};
+
 export const sampleHome: AthleteHome = {
   firstName: 'Thomas',
   initials: 'TD',
@@ -133,8 +140,8 @@ export const sampleHome: AthleteHome = {
   ],
   recent: [
     { id: 'strength-2026-09-11', date: '2026-09-11', sport: 'strength', title: 'Renfo haut du corps', durationSec: 55 * 60, setsCount: 17, fromStrava: false },
-    { id: 'run-2026-09-09', date: '2026-09-09', sport: 'running', title: 'Fractionné 6 × 1000 m', distanceKm: 11.2, durationSec: 52 * 60 + 10, paceSecPerKm: 279, fromStrava: true },
-    { id: 'run-2026-09-07', date: '2026-09-07', sport: 'running', title: 'Footing', distanceKm: 8.4, durationSec: 48 * 60 + 47, paceSecPerKm: 348, fromStrava: true },
+    { id: 'run-2026-09-09', date: '2026-09-09', sport: 'running', title: 'Fractionné 6 × 1000 m', distanceKm: 11.2, durationSec: 52 * 60 + 10, paceSecPerKm: 279, fromStrava: true, polyline: SAMPLE_POLYLINES.a },
+    { id: 'run-2026-09-07', date: '2026-09-07', sport: 'running', title: 'Footing', distanceKm: 8.4, durationSec: 48 * 60 + 47, paceSecPerKm: 348, fromStrava: true, polyline: SAMPLE_POLYLINES.b },
   ],
   coach: { name: 'Camille Roux', initials: 'CR', online: true, lastMessage: 'Pense à noter ton ressenti après la sortie longue, on ajuste la semaine ensuite.' },
   strava: { connected: true, lastSyncLabel: 'il y a 2 h' },
@@ -209,9 +216,9 @@ const longRun: RunDetail = {
 
 const augustRuns: Activity[] = [
   { id: longRun.id, date: '2026-08-31', startTime: '08:12', sport: 'running', title: 'Sortie longue', distanceKm: 21.1, durationSec: longRun.durationSec, paceSecPerKm: 320, avgHr: 146, feeling: 8, fromStrava: true },
-  { id: 'run-2026-08-28', date: '2026-08-28', startTime: '18:40', sport: 'running', title: 'Fractionné 10 × 400 m', distanceKm: 9.2, durationSec: 48 * 60 + 10, paceSecPerKm: 314, avgHr: 158, feeling: 6, fromStrava: true },
-  { id: 'run-2026-08-26', date: '2026-08-26', startTime: '07:05', sport: 'running', title: 'Footing', distanceKm: 10.4, durationSec: 58 * 60 + 20, paceSecPerKm: 337, avgHr: 139, feeling: 7, fromStrava: true },
-  { id: 'run-2026-08-24', date: '2026-08-24', startTime: '09:30', sport: 'running', title: 'Sortie longue vallonnée', distanceKm: 19, durationSec: 103 * 60 + 10, paceSecPerKm: 326, avgHr: 144, feeling: 7, fromStrava: true },
+  { id: 'run-2026-08-28', date: '2026-08-28', startTime: '18:40', sport: 'running', title: 'Fractionné 10 × 400 m', distanceKm: 9.2, durationSec: 48 * 60 + 10, paceSecPerKm: 314, avgHr: 158, feeling: 6, fromStrava: true, polyline: SAMPLE_POLYLINES.a },
+  { id: 'run-2026-08-26', date: '2026-08-26', startTime: '07:05', sport: 'running', title: 'Footing', distanceKm: 10.4, durationSec: 58 * 60 + 20, paceSecPerKm: 337, avgHr: 139, feeling: 7, fromStrava: true, polyline: SAMPLE_POLYLINES.b },
+  { id: 'run-2026-08-24', date: '2026-08-24', startTime: '09:30', sport: 'running', title: 'Sortie longue vallonnée', distanceKm: 19, durationSec: 103 * 60 + 10, paceSecPerKm: 326, avgHr: 144, feeling: 7, fromStrava: true, polyline: SAMPLE_POLYLINES.c },
 ];
 
 export const sampleRunsOverview: RunsOverview = {

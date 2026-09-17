@@ -59,7 +59,7 @@ export default function RunDetailScreen() {
       </Section>
 
       <Section style={styles.tight}>
-        <RoutePreview width={contentWidth} height={180} seed={1} />
+        <RoutePreview width={contentWidth} height={180} polyline={run.polyline} />
       </Section>
 
       <RunDetailBody run={run} chartWidth={contentWidth - 32} feeling={feeling} feelingCard={feelingCard} />

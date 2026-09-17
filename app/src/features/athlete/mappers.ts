@@ -116,6 +116,7 @@ export function mapRun(run: ApiRun): Activity {
     avgHr: run.averageHeartRate ? Math.round(run.averageHeartRate) : undefined,
     feeling: run.feeling ?? undefined,
     fromStrava: Boolean(run.stravaActivityId),
+    polyline: run.polyline ?? null,
   };
 }
 

@@ -97,6 +97,8 @@ export type Activity = {
   setsCount?: number;
   feeling?: number; // 1 à 10
   fromStrava: boolean;
+  /** Tracé encodé, absent pour une séance sans GPS. */
+  polyline?: string | null;
 };
 
 export type WeekDay = {

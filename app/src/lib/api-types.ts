@@ -245,6 +245,8 @@ export type ApiRun = {
   feeling?: number;
   notes?: string;
   stravaActivityId: number | null;
+  /** Tracé encodé (format Google polyline) quand la sortie a un GPS. */
+  polyline?: string | null;
   /** Ce que le coach avait prévu, figé au moment où la sortie a été rattachée. */
   plannedSnapshot?: {
     title: string | null;
