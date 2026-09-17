@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "trainwise",
+    "scheme": ["trainwise", "com.trainwise.appli"],
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.trainwise.appli",

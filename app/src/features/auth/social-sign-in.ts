@@ -1,5 +1,6 @@
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as AuthSession from 'expo-auth-session';
+import Constants from 'expo-constants';
 import * as Crypto from 'expo-crypto';
 import { Platform } from 'react-native';
 
@@ -15,8 +16,8 @@ export class SocialSignInCancelled extends Error {
 }
 
 // --- Google -----------------------------------------------------------------
-// Flux OAuth dans le navigateur système (fonctionne dans Expo Go, contrairement
-// aux modules Google natifs qui exigent un build de développement).
+// Flux OAuth dans le navigateur système : pas de module natif, mais une adresse
+// de retour que seul un vrai build sait recevoir (cf. `googleAvailable`).
 const GOOGLE_DISCOVERY = {
   authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
   tokenEndpoint: 'https://oauth2.googleapis.com/token',
@@ -29,19 +30,29 @@ const googleClientId = () =>
     default: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
   }) || process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID) ?? '';
 
-export const googleAvailable = () => !!googleClientId();
+/**
+ * Google refuse le schéma d'Expo Go (`exp://`) comme adresse de retour : la
+ * connexion Google n'existe que dans un vrai build, où l'app répond à son
+ * identifiant de bundle.
+ */
+const nativeScheme = () => Constants.expoConfig?.ios?.bundleIdentifier ?? Constants.expoConfig?.android?.package;
+
+export const googleAvailable = () =>
+  !!googleClientId() && (Platform.OS === 'web' || (Constants.executionEnvironment !== 'storeClient' && !!nativeScheme()));
 
 export async function signInWithGoogleToken(): Promise<AuthResponse> {
   const clientId = googleClientId();
   if (!clientId) throw new Error('Connexion Google non configurée');
 
-  const redirectUri = AuthSession.makeRedirectUri({ scheme: 'trainwise', path: 'auth/google' });
+  // Adresse de retour attendue par un client OAuth natif : `<bundle>:/oauthredirect`.
+  const redirectUri = AuthSession.makeRedirectUri({ native: `${nativeScheme()}:/oauthredirect` });
   const request = new AuthSession.AuthRequest({
     clientId,
     redirectUri,
     scopes: ['openid', 'profile', 'email'],
-    // `id_token` seul : le serveur n'a besoin que de vérifier l'identité.
-    responseType: AuthSession.ResponseType.IdToken,
+    // Google n'autorise que le flux `code` + PKCE pour une application installée.
+    responseType: AuthSession.ResponseType.Code,
+    usePKCE: true,
     extraParams: { nonce: Crypto.randomUUID() },
   });
 
@@ -49,7 +60,13 @@ export async function signInWithGoogleToken(): Promise<AuthResponse> {
   if (result.type === 'cancel' || result.type === 'dismiss') throw new SocialSignInCancelled();
   if (result.type !== 'success') throw new Error('Connexion Google impossible');
 
-  const idToken = result.params.id_token;
+  // Échange du code : un client natif n'a pas de secret, le vérificateur PKCE suffit.
+  const tokens = await AuthSession.exchangeCodeAsync(
+    { clientId, code: result.params.code, redirectUri, extraParams: request.codeVerifier ? { code_verifier: request.codeVerifier } : undefined },
+    GOOGLE_DISCOVERY,
+  );
+
+  const idToken = tokens.idToken;
   if (!idToken) throw new Error('Connexion Google impossible');
 
   return api<AuthResponse>('/api/auth/google', { method: 'POST', body: { idToken } });
