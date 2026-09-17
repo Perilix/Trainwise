@@ -128,7 +128,7 @@
                       <span class="cd-name">{{ req.athlete.firstName }} {{ req.athlete.lastName }}</span>
                       <span class="cd-sub">Demandé le {{ req.invitedAt | date:'d MMM' }}</span>
                     </span>
-                    <span class="cd-pill">{{ getPackageByType(req.packageType)?.name }}</span>
+                    <span class="cd-pill">{{ getPackageByType(req.packageType).name }}</span>
                   </div>
                   <div class="cd-request-actions">
                     <button class="cd-btn cd-btn-solid cd-btn-sm" [disabled]="respondingRequestId() === req._id"

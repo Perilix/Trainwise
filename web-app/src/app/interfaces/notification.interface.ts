@@ -7,7 +7,10 @@ export interface Notification {
     lastName: string;
     profilePicture?: string;
   };
-  type: 'invitation' | 'invitation_response' | 'session' | 'message' | 'friend' | 'reengagement' | 'athlete_alert' | 'subscription_request';
+  // Mêmes valeurs que l'énumération du modèle côté API : les trois dernières
+  // sont arrivées avec le centre de notifications trié.
+  type: 'invitation' | 'invitation_response' | 'session' | 'message' | 'friend' | 'reengagement' | 'athlete_alert' | 'subscription_request'
+      | 'competition' | 'achievement' | 'subscription';
   action: string;
   title: string;
   message: string;

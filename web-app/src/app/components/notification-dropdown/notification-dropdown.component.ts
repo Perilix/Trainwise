@@ -1,6 +1,6 @@
 import { Component, OnInit, signal, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { NotificationService } from '../../services/notification.service';
 import { AthleteService } from '../../services/athlete.service';
 import { CoachInvitationModalService } from '../../services/coach-invitation-modal.service';
@@ -9,7 +9,7 @@ import { Notification } from '../../interfaces/notification.interface';
 @Component({
   selector: 'app-notification-dropdown',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   templateUrl: './notification-dropdown.component.html',
   styleUrls: ['./notification-dropdown.component.scss']
 })

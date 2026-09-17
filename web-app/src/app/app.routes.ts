@@ -175,6 +175,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/impersonate/impersonate.component').then(m => m.ImpersonateComponent)
   },
   {
+    path: 'notifications',
+    loadComponent: () => import('./pages/notifications/notifications.component').then(m => m.NotificationsComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'beta/feedback',
     loadComponent: () => import('./pages/beta-feedback/beta-feedback.component').then(m => m.BetaFeedbackComponent),
     canActivate: [authGuard]
