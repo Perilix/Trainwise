@@ -12,6 +12,7 @@ import type {
   ApiNotification,
   ApiPlannedRunDetail,
   ApiRun,
+  ApiRunBlock,
   ApiUser,
   ApiStrengthSession,
   ApiStravaStatus,
@@ -22,7 +23,7 @@ import { formatPace } from '@/lib/format';
 import { useSessionQuery } from '@/features/auth/use-session-query';
 import { getConversations } from '@/features/chat/conversations';
 
-import { buildHome, buildPlanning, buildProfile, buildRunsOverview, initialsOf, mapNotification, mapRunDetail } from './mappers';
+import { buildHome, buildPlanning, buildProfile, buildRunsOverview, initialsOf, mapNotification, mapRunDetail, SESSION_TYPE_LABELS } from './mappers';
 import { mapPlannedDetail } from './session-detail';
 import type { StrengthSessionPayload } from './strength-log';
 import { samplePlannedDetails, sampleHome, sampleNotifications, samplePlanning, sampleProfile, sampleRuns, sampleRunsOverview } from './sample-data';
@@ -88,13 +89,36 @@ export function useRunsOverview(period: RunsPeriod, offset = 0) {
 export function useRunDetail(id: string) {
   return useAthleteQuery(
     `run:${id}`,
-    async () => {
+    async (user) => {
       const [run, coach] = await Promise.all([api<ApiRun>(`/api/runs/${encodeURIComponent(id)}`), getCoach()]);
-      return mapRunDetail(run, coach?.firstName);
+      return mapRunDetail(run, coach?.firstName, user.vma);
     },
     () => sampleRuns[id] ?? sampleRuns['run-2026-08-31'],
   );
 }
+
+/**
+ * Blocs réalisés d'une sortie, format brut pour l'éditeur. Sans blocs enregistrés,
+ * on amorce une étape unique aux chiffres de la sortie : il reste à la découper.
+ */
+export function useRunBlocksDraft(id: string) {
+  return useAthleteQuery(
+    `run-blocks:${id}`,
+    async () => {
+      const run = await api<ApiRun>(`/api/runs/${encodeURIComponent(id)}`);
+      return runBlocksDraft(run);
+    },
+    () => runBlocksDraft({ _id: id, date: new Date().toISOString(), distance: 10, duration: 55, averagePace: '5:30', stravaActivityId: null }),
+  );
+}
+
+const runBlocksDraft = (run: ApiRun) => ({
+  title: run.stravaData?.name || SESSION_TYPE_LABELS[run.sessionType ?? ''] || 'Sortie',
+  auto: Boolean(run.blocksAutoReconstructed),
+  blocks: run.runBlocks?.length
+    ? run.runBlocks
+    : ([{ role: 'main', mode: 'distance', distance: run.distance ?? null, pace: run.averagePace ?? null, repetitions: 1, order: 0 }] as ApiRunBlock[]),
+});
 
 export function useAthleteProfile() {
   return useAthleteQuery(
@@ -287,6 +311,12 @@ export function useAthleteActions() {
       });
       invalidateApiCache();
       emitAppEvent('sessions:changed');
+    },
+    /** Déroulé réalisé : l'API prévient le coach et cesse de le réécrire depuis Strava. */
+    async saveRunBlocks(id: string, runBlocks: ApiRunBlock[]) {
+      if (!live) return;
+      await api(`/api/runs/${encodeURIComponent(id)}`, { method: 'PATCH', body: { runBlocks } });
+      invalidateApiCache('/api/runs');
     },
     /** Compte rendu libre de la sortie : ce que l'athlète a réellement fait. */
     async saveRunNotes(id: string, notes: string) {

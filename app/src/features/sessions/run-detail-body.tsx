@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 
 import { HeartRateChart } from '@/components/charts/heart-rate-chart';
+import { SessionPreview } from './session-preview';
 import { PaceChart } from '@/components/charts/pace-chart';
 import { BRAND, Card, Chip, Section, Stat, Text } from '@/components/ui';
 import type { KmSplit, RunDetail } from '@/features/athlete/types';
@@ -38,6 +39,19 @@ export function RunDetailBody({ run, chartWidth, feeling, feelingCard }: Props) 
           <Stat label="Ressenti" value={shownFeeling ? String(shownFeeling) : '—'} unit="/10" style={styles.gridCell} />
         </Card>
       </Section>
+
+      {run.blocks.length ? (
+        <Section style={styles.tight}>
+          <Card>
+            <SessionPreview blocks={run.blocks} segments={run.segments} width={chartWidth} title="Déroulé réalisé" />
+            {run.blocksAuto ? (
+              <Text variant="caption" style={styles.autoNote}>
+                Reconstruit depuis les tours de ta montre.
+              </Text>
+            ) : null}
+          </Card>
+        </Section>
+      ) : null}
 
       {run.splits.length > 1 ? (
         <Section style={styles.tight}>
@@ -227,4 +241,5 @@ const styles = StyleSheet.create({
   zoneSwatch: { width: 10, height: 10, borderRadius: 3 },
   zonePct: { width: 40, textAlign: 'right' },
   notes: { marginTop: 6 },
+  autoNote: { marginTop: 10 },
 });

@@ -2,14 +2,20 @@
   "expo": {
     "name": "Trainwise",
     "slug": "trainwise",
-    "version": "1.0.0",
+    "version": "2.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "trainwise",
+    "scheme": [
+      "trainwise",
+      "com.trainwise.appli"
+    ],
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.trainwise.appli",
-      "usesAppleSignIn": true
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.trainwise.appli",
@@ -53,6 +59,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "96a7aebe-00b5-4fa4-8ce9-91da85837525"
+      }
+    },
+    "owner": "perilix"
   }
 }

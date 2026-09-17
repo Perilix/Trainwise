@@ -37,10 +37,12 @@ type Props = {
   onChange: (blocks: EditableBlock[]) => void;
   /** VMA de l'athlète : allures des zones et profil d'intensité. */
   vma?: number;
+  /** Déroulé réalisé : les nouvelles étapes partent sur une allure tenue, pas une zone. */
+  realized?: boolean;
 };
 
 /** Éditeur de séance de course par blocs, avec profil d'intensité et totaux en direct. */
-export function RunBlocksEditor({ blocks, onChange, vma }: Props) {
+export function RunBlocksEditor({ blocks, onChange, vma, realized }: Props) {
   const { width } = useWindowDimensions();
   const { colors, ramp } = useTheme();
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -320,7 +322,7 @@ export function RunBlocksEditor({ blocks, onChange, vma }: Props) {
                     size="sm"
                     icon="plus"
                     onPress={() => {
-                      const child = newChild();
+                      const child = newChild(realized);
                       update(block.key, (current) => ({ ...current, children: [...(current.children ?? []), withZone(child, child.paceSource?.zone ?? 'vma', vma)] }));
                       setExpanded(child.key);
                     }}
@@ -334,10 +336,10 @@ export function RunBlocksEditor({ blocks, onChange, vma }: Props) {
       </View>
 
       <View style={styles.addRow}>
-        <Button label="Étape" variant="secondary" size="sm" icon="plus" onPress={() => add(newStep())} />
-        <Button label="Bloc à répéter" variant="secondary" size="sm" icon="repeat" onPress={() => add(newRepeat())} />
-        {!hasWarmup ? <Button label="Échauffement" variant="secondary" size="sm" icon="plus" onPress={() => add(newWarmup())} /> : null}
-        {!hasCooldown ? <Button label="Retour au calme" variant="secondary" size="sm" icon="plus" onPress={() => add(newCooldown())} /> : null}
+        <Button label="Étape" variant="secondary" size="sm" icon="plus" onPress={() => add(newStep(realized))} />
+        <Button label="Bloc à répéter" variant="secondary" size="sm" icon="repeat" onPress={() => add(newRepeat(realized))} />
+        {!hasWarmup ? <Button label="Échauffement" variant="secondary" size="sm" icon="plus" onPress={() => add(newWarmup(realized))} /> : null}
+        {!hasCooldown ? <Button label="Retour au calme" variant="secondary" size="sm" icon="plus" onPress={() => add(newCooldown(realized))} /> : null}
       </View>
     </Card>
   );

@@ -157,6 +157,11 @@ export type RunDetail = Activity & {
   notes?: string;
   splits: KmSplit[];
   paceZones: { label: string; minutes: number }[];
+  /** Déroulé réalisé, vide tant que personne ne l'a saisi. */
+  blocks: RunBlockView[];
+  segments: Segment[];
+  /** Déroulé encore issu de la reconstruction automatique des tours Strava. */
+  blocksAuto: boolean;
 };
 
 export type RunsPeriod = 'week' | 'month' | 'year';

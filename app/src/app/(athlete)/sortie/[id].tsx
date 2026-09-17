@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
@@ -14,6 +14,7 @@ type Panel = 'none' | 'notes' | 'match';
 
 export default function RunDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const { colors } = useTheme();
   const { data: run, loading, error, refetch } = useRunDetail(id);
   const { saveRunFeeling, saveRunNotes } = useAthleteActions();
@@ -92,7 +93,8 @@ export default function RunDetailScreen() {
 
   const openActions = () =>
     Alert.alert('Cette sortie', undefined, [
-      { text: run.notes ? 'Modifier mon compte rendu' : 'Détailler ma séance', onPress: openNotes },
+      { text: run.blocks.length ? 'Modifier le déroulé' : 'Détailler le déroulé', onPress: () => router.push({ pathname: '/detailler/[id]', params: { id: run.id } }) },
+      { text: run.notes ? 'Modifier mon compte rendu' : 'Écrire un compte rendu', onPress: openNotes },
       { text: 'Associer à une séance prévue', onPress: openMatch },
       { text: 'Annuler', style: 'cancel' },
     ]);

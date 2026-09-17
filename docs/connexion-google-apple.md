@@ -32,8 +32,12 @@ correspondant reste simplement masqué : rien ne casse.
    - **iOS** — identifiant de bundle `com.trainwise.appli`.
    - **Android** — nom de package `com.trainwise.appli` + empreinte SHA-1 du certificat
      (`eas credentials` te la donne).
-   - **Web** — sert de repli et pour le web ; URI de redirection autorisée :
-     `https://auth.expo.io/@ton-compte/trainwise` pendant les tests en Expo Go.
+   - **Web** — pour la version web et comme repli ; URI de redirection autorisée :
+     l'adresse du site (`https://www.trainwise-app.com`).
+
+   Rien à saisir comme URI de redirection pour iOS et Android : Google l'impose lui-même
+   (`com.trainwise.appli:/oauthredirect`), et l'app y répond parce que son identifiant de bundle
+   est déclaré comme schéma dans `app.json`.
 4. Renseigne, dans `app/.env` :
 
    ```
@@ -57,10 +61,16 @@ Aucune clé privée n'est nécessaire : on vérifie le jeton d'identité, on n'a
 
 ## Limite à connaître pour les tests
 
-Le bouton **Apple ne s'affiche pas dans Expo Go** : l'autorisation « Sign in with Apple » appartient
-à l'application qui l'héberge, et Expo Go ne la porte pas. Il apparaît dans un build de
-développement (`eas build --profile development`), en TestFlight et en production. Le bouton Google,
-lui, fonctionne dans Expo Go dès que les identifiants sont renseignés.
+**Aucun des deux boutons ne s'affiche dans Expo Go.**
+
+- *Apple* : l'autorisation « Sign in with Apple » appartient à l'application qui l'héberge, et
+  Expo Go ne la porte pas.
+- *Google* : l'adresse de retour d'un client OAuth natif est `com.trainwise.appli:/oauthredirect`.
+  Dans Expo Go, l'app répond à `exp://…`, que Google refuse ; le bouton se masque donc de lui-même
+  plutôt que d'échouer au retour.
+
+Les deux apparaissent dans un build de développement (`eas build --profile development`), en
+TestFlight et en production.
 
 Rappel App Store : dès qu'une app propose une connexion tierce comme Google, Apple exige que
 « Sign in with Apple » soit proposé aussi. Les deux sont là, donc c'est couvert.

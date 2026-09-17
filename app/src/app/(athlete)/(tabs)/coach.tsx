@@ -25,7 +25,7 @@ export default function CoachChatScreen() {
     () =>
       function AthleteCitedSessionBody({ session }: { session: CitedSession }) {
         const { data } = usePlannedSession(session.id);
-        return data ? <SessionPreview session={data} width={previewWidth} /> : null;
+        return data ? <SessionPreview blocks={data.blocks} segments={data.segments} width={previewWidth} /> : null;
       },
     [previewWidth],
   );

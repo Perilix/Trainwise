@@ -51,22 +51,26 @@ export function withFixedPace<T extends ApiRunBlockStep>(step: T, pace: string):
   return { ...step, paceSource: { mode: 'absolute' }, pace: pace.trim() || null };
 }
 
-export const newWarmup = (): EditableBlock =>
-  withZone({ key: newKey(), role: 'warmup', mode: 'duration', duration: 20, distance: null, repetitions: 1, description: '', recoveryMode: null }, 'endurance');
+/** Séance réalisée : l'allure tenue remplace la zone de VMA, qui n'a plus de sens après coup. */
+const zoneOrFree = <T extends EditableStep>(step: T, zone: string, realized?: boolean): T => (realized ? withFixedPace(step, '') : withZone(step, zone));
 
-export const newCooldown = (): EditableBlock =>
-  withZone({ key: newKey(), role: 'cooldown', mode: 'duration', duration: 10, distance: null, repetitions: 1, description: '', recoveryMode: null }, 'endurance');
+export const newWarmup = (realized?: boolean): EditableBlock =>
+  zoneOrFree({ key: newKey(), role: 'warmup', mode: 'duration', duration: 20, distance: null, repetitions: 1, description: '', recoveryMode: null }, 'endurance', realized);
 
-export const newStep = (): EditableBlock =>
-  withZone({ key: newKey(), role: 'main', mode: 'distance', distance: 1, duration: null, repetitions: 1, description: '', recoveryMode: null }, 'threshold');
+export const newCooldown = (realized?: boolean): EditableBlock =>
+  zoneOrFree({ key: newKey(), role: 'cooldown', mode: 'duration', duration: 10, distance: null, repetitions: 1, description: '', recoveryMode: null }, 'endurance', realized);
 
-export const newChild = (): EditableStep =>
-  withZone(
+export const newStep = (realized?: boolean): EditableBlock =>
+  zoneOrFree({ key: newKey(), role: 'main', mode: 'distance', distance: 1, duration: null, repetitions: 1, description: '', recoveryMode: null }, 'threshold', realized);
+
+export const newChild = (realized?: boolean): EditableStep =>
+  zoneOrFree(
     { key: newKey(), role: 'main', mode: 'distance', distance: 0.4, duration: null, repetitions: 1, description: '', recoveryMode: 'duration', recoveryDuration: '1min30', recoveryDescription: 'trot' },
     'vma',
+    realized,
   );
 
-export const newRepeat = (): EditableBlock => ({
+export const newRepeat = (realized?: boolean): EditableBlock => ({
   key: newKey(),
   role: 'main',
   mode: 'distance',
@@ -77,7 +81,7 @@ export const newRepeat = (): EditableBlock => ({
   repetitions: 8,
   description: '',
   recoveryMode: null,
-  children: [newChild()],
+  children: [newChild(realized)],
 });
 
 /** Blocs de l'API → blocs éditables (clés stables tant que la séance n'est pas modifiée). */

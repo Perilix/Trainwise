@@ -29,7 +29,7 @@ export default function CoachConversationScreen() {
     () =>
       function CoachCitedSessionBody({ session }: { session: CitedSession }) {
         const { data } = useCoachPlannedSession(id, session.id);
-        return data ? <SessionPreview session={data} width={previewWidth} /> : null;
+        return data ? <SessionPreview blocks={data.blocks} segments={data.segments} width={previewWidth} /> : null;
       },
     [id, previewWidth],
   );
