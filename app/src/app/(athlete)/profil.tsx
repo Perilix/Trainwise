@@ -1,10 +1,9 @@
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useEffect } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Avatar, BackBar, Button, Card, Chip, Icon, IconButton, Screen, Section, SectionHeader, StateView, Text, type IconName } from '@/components/ui';
-import { useAthleteActions, useAthleteProfile, type StravaImportResult } from '@/features/athlete/queries';
-import { StravaImportModal } from '@/features/athlete/strava-import-modal';
+import { useAthleteProfile } from '@/features/athlete/queries';
 import { useSession } from '@/features/auth/session';
 import { onAppEvent } from '@/lib/app-events';
 import { formatDayShort, formatDecimal } from '@/lib/format';
@@ -18,56 +17,9 @@ export default function ProfileScreen() {
   const { colors } = useTheme();
   const { signOut } = useSession();
   const { data: profile, loading, error, refetch } = useAthleteProfile();
-  const { connectStrava, disconnectStrava } = useAthleteActions();
-  const [stravaBusy, setStravaBusy] = useState(false);
-  const [stravaImport, setStravaImport] = useState<StravaImportResult | null>(null);
 
-  // Liaison : autorisation Strava dans le navigateur système, puis import de l'historique.
-  const linkStrava = async () => {
-    setStravaBusy(true);
-    try {
-      // La fenêtre d'import s'ouvre dès le retour de Strava et suit l'avancement.
-      const result = await connectStrava((progress) => setStravaImport(progress));
-      if (!result) {
-        setStravaImport(null);
-        return;
-      }
-      setStravaImport(result);
-      refetch();
-    } catch (reason) {
-      setStravaImport(null);
-      Alert.alert('Strava', reason instanceof Error ? reason.message : 'Connexion impossible.');
-    } finally {
-      setStravaBusy(false);
-    }
-  };
-
-  // Délier Strava coupe aussi l'import automatique : on demande confirmation.
-  const askDisconnectStrava = () => {
-    Alert.alert(
-      'Délier Strava',
-      'Tes sorties Strava ne seront plus importées automatiquement. Les séances déjà enregistrées sont conservées.',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Délier',
-          style: 'destructive',
-          onPress: async () => {
-            setStravaBusy(true);
-            try {
-              await disconnectStrava();
-              refetch();
-            } catch (reason) {
-              Alert.alert('Strava', reason instanceof Error ? reason.message : 'Déconnexion impossible.');
-            } finally {
-              setStravaBusy(false);
-            }
-          },
-        },
-      ],
-    );
-  };
-
+  // Le retour de l'écran Connecteurs peut avoir lié ou délié Strava.
+  useFocusEffect(refetch);
   useEffect(() => onAppEvent('coach:changed', refetch), [refetch]);
 
   if (!profile) {
@@ -160,22 +112,20 @@ export default function ProfileScreen() {
         </Card>
       </Section>
 
-      <StravaImportModal result={stravaImport} onClose={() => setStravaImport(null)} />
-
       <Section style={styles.tight}>
         <Card padding={0} style={styles.linksCard}>
           <LinkRow
-            icon="activity"
-            iconColor={colors.stravaInk}
-            iconBackground={colors.stravaSoft}
-            title="Strava"
-            subtitle={profile.strava.connected ? `Connecté depuis le ${profile.strava.since}` : 'Importer tes sorties automatiquement'}
+            icon="plug"
+            iconColor={colors.accentInk}
+            iconBackground={colors.accentSoft}
+            title="Connecteurs"
+            subtitle="Strava, montres, applis"
+            onPress={() => router.push('/connecteurs')}
             trailing={
-              profile.strava.connected ? (
-                <Button label={stravaBusy ? 'Déliaison…' : 'Délier'} variant="secondary" size="sm" disabled={stravaBusy} onPress={askDisconnectStrava} />
-              ) : (
-                <Button label={stravaBusy ? 'Import…' : 'Connecter'} size="sm" disabled={stravaBusy} onPress={linkStrava} />
-              )
+              <View style={styles.trailing}>
+                <Chip label={profile.strava.connected ? '1 connecté' : 'À relier'} tone={profile.strava.connected ? 'success' : 'neutral'} />
+                <Icon name="chevronRight" size={18} color={colors.text3} />
+              </View>
             }
           />
           <LinkRow
@@ -253,5 +203,6 @@ const styles = StyleSheet.create({
   priority: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   linksCard: { paddingHorizontal: 16 },
   linkRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingVertical: 10 },
+  trailing: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   linkTile: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
 });
