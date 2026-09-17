@@ -91,3 +91,13 @@
   font-weight: 700;
   margin-top: 5px;
 }
+
+// Mode compact : la timeline seule, sans carte ni statistiques.
+.wp-card.wp-compact {
+  background: none;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+
+  .wp-timeline { height: 6px; margin-bottom: 0; }
+}

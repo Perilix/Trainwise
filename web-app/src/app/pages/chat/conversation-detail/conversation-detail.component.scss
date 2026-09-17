@@ -579,3 +579,38 @@
   right: 0;
   bottom: 0;
 }
+
+// Bouton « Fiche athlète » de l'en-tête (côté coach).
+.sheet-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid #D3CCBF;
+  background: #FFFFFF;
+  color: #051923;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover { background: #F6F4F0; }
+}
+
+// ── Desktop ≥1024px : l'en-tête et la zone de saisie de la maquette ──
+@media (min-width: 1024px) {
+  .chat-container.embedded .chat-header {
+    padding: 14px 20px;
+    background: #FFFFFF;
+
+    .avatar { background: #E3F4FD; color: #0077B6; }
+    .user-name { font-size: 16px; font-weight: 600; color: #051923; }
+  }
+
+  .chat-container.embedded .messages-container { background: #F6F4F0; }
+  .chat-container.embedded .input-area { background: #FFFFFF; }
+}

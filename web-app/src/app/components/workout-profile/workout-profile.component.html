@@ -1,10 +1,11 @@
 @if (hasData) {
-  <div class="wp-card">
+  <div class="wp-card" [class.wp-compact]="compact">
     <div class="wp-timeline">
       @for (seg of segments; track $index) {
         <div class="wp-seg" [class]="'t-' + seg.type" [style.flex]="seg.flex"></div>
       }
     </div>
+    @if (!compact) {
     <div class="wp-labels">
       @for (lab of labels; track $index) {
         <div class="wp-label" [style.flex]="lab.flex">{{ lab.text }}</div>
@@ -24,5 +25,6 @@
         <div class="wp-l">{{ stepsCount > 1 ? 'Étapes' : 'Étape' }}</div>
       </div>
     </div>
+    }
   </div>
 }

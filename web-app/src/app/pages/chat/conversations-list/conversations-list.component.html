@@ -5,7 +5,7 @@
   <header class="chat-header">
     <div class="header-content">
       <div class="header-left">
-        @if (authService.isCoach()) {
+        @if (authService.isCoach() && !isDesktop()) {
           <button class="back-btn" routerLink="/coach">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
           </button>
@@ -21,6 +21,15 @@
       </button>
     </div>
   </header>
+
+  <!-- Filtre de la liste : seulement en desktop, où la place existe -->
+  @if (isDesktop() && !showNewConversation()) {
+    <label class="list-filter">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="search" placeholder="Rechercher"
+             [value]="listFilter()" (input)="listFilter.set($any($event.target).value)">
+    </label>
+  }
 
   <!-- New conversation search -->
   @if (showNewConversation()) {
@@ -87,8 +96,12 @@
             Nouvelle conversation
           </button>
         </div>
+      } @else if (filteredConversations().length === 0) {
+        <div class="empty-state">
+          <p>Aucune conversation ne correspond à « {{ listFilter() }} »</p>
+        </div>
       } @else {
-        @for (conversation of chatService.sortedConversations(); track conversation._id) {
+        @for (conversation of filteredConversations(); track conversation._id) {
           <div
             class="conversation-item"
             [class.unread]="conversation.unreadCount > 0"
@@ -135,6 +148,13 @@
       </div>
     }
   </div>
+
+  <!-- Troisième panneau : le contexte de l'athlète, côté coach seulement -->
+  @if (authService.isCoach() && selectedPartnerId()) {
+    <aside class="context-pane">
+      <app-coach-athlete-rail [athleteId]="selectedPartnerId()"></app-coach-athlete-rail>
+    </aside>
+  }
 }
 </div>
 

@@ -426,12 +426,13 @@
     display: flex;
     align-items: stretch;
     height: 100vh;
-    max-width: 1400px;
-    margin: 0 auto;
+    // Les trois panneaux occupent toute la largeur : un max-width laissait
+    // des marges vides à côté d'une sidebar déjà large.
+    margin: 0;
   }
 
   .container {
-    width: 380px;
+    width: 330px;
     max-width: none;
     flex-shrink: 0;
     margin: 0;
@@ -468,4 +469,135 @@
   .conversation-item.selected {
     background: rgba(0, 166, 251, 0.08);
   }
+
+  // Troisième panneau : le contexte de l'athlète.
+  .context-pane {
+    width: 330px;
+    flex-shrink: 0;
+    height: 100%;
+    min-height: 0;
+    border-left: 1px solid rgba(0, 53, 84, 0.1);
+    background: #FFFFFF;
+  }
+}
+
+// Sous 1400px, trois panneaux ne tiennent plus : le contexte s'efface,
+// la fiche athlète reste à un clic depuis l'en-tête de la conversation.
+@media (min-width: 1024px) and (max-width: 1399px) {
+  .context-pane { display: none; }
+}
+
+// ── Desktop ≥1024px : la liste reprend la maquette Messages ─────────
+// Règles additives, cantonnées au desktop : la vue mobile est intacte.
+@media (min-width: 1024px) {
+  .chat-header {
+    padding: 26px 20px 14px;
+    background: #FFFFFF;
+    border-bottom: none;
+
+    // La conversation (encapsulation None) pose un `display: flex` global sur
+    // .chat-header : sans cela l'en-tête de la liste se rétrécit sur son texte
+    // et le bouton « + » vient se coller au titre.
+    .header-content { flex: 1; width: 100%; }
+
+    // Même spécificité que la règle mobile, qui impose la fonte d'affichage.
+    .header-content h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 24px;
+      line-height: 32px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: #051923;
+    }
+  }
+
+  // Nichée comme la règle mobile, sinon celle-ci garde le rond cyan.
+  .chat-header .new-chat-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    background: #FFFFFF;
+    border: 1px solid #D3CCBF;
+    color: #051923;
+
+    &:hover { background: #F6F4F0; transform: none; }
+  }
+
+  .list-filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 20px 14px;
+    padding: 0 14px;
+    height: 44px;
+    border: 1px solid #E7E2D9;
+    border-radius: 12px;
+    background: #F6F4F0;
+    color: #7D8793;
+
+    &:focus-within { border-color: #D3CCBF; }
+
+    input {
+      flex: 1;
+      min-width: 0;
+      border: none;
+      background: none;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+      font-size: 14px;
+      color: #051923;
+
+      &::placeholder { color: #7D8793; }
+      &:focus { outline: none; }
+    }
+  }
+
+  .conversations-list { background: #FFFFFF; }
+
+  .conversation-item {
+    position: relative;
+    padding: 14px 20px;
+    border-bottom: 1px solid #F0EDE7;
+    background: #FFFFFF;
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      background: #E3F4FD;
+      color: #0077B6;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .conversation-name { font-size: 14px; font-weight: 600; color: #051923; }
+    .conversation-time { font-size: 12px; color: #7D8793; }
+    .message-preview { font-size: 13px; color: #5A6878; }
+
+    &.unread .conversation-time { color: #0077B6; font-weight: 600; }
+
+    .unread-badge {
+      background: #0077B6;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    &:hover { background: #FAF8F5; }
+
+    // Conversation ouverte : liseré d'accent, comme sur la maquette.
+    &.selected {
+      background: #F6F4F0;
+
+      &::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: #0077B6;
+      }
+    }
+  }
+
+  .container { background: #FFFFFF; }
 }

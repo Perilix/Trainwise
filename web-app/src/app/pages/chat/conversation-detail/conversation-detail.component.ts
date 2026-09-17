@@ -299,6 +299,20 @@ export class ConversationDetailComponent implements OnInit, OnDestroy, AfterView
     return this.chatService.currentConversation()?.otherParticipant?.isOnline || false;
   }
 
+  /** L'interlocuteur d'une conversation à deux, s'il y en a un. */
+  otherParticipantId(): string | null {
+    const conversation = this.chatService.currentConversation();
+    if (!conversation || conversation.type === 'group') return null;
+    if (conversation.otherParticipant) return conversation.otherParticipant._id;
+    const me = this.authService.getUser()?.id;
+    return conversation.participants.find(p => p._id !== me)?._id ?? null;
+  }
+
+  openAthleteSheet() {
+    const id = this.otherParticipantId();
+    if (id) this.router.navigate(['/coach/athletes', id]);
+  }
+
   isOwnMessage(message: Message): boolean {
     return message.sender._id === this.authService.getUser()?.id;
   }

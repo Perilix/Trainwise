@@ -47,6 +47,9 @@ export class WorkoutProfileComponent {
   // Si non fournie, on retombe sur le calcul interne.
   @Input() totalKm: number | null = null;
 
+  /** Réduit à la seule timeline, pour les listes où la place manque. */
+  @Input() compact = false;
+
   get hasData(): boolean {
     return this.segments.length > 0;
   }

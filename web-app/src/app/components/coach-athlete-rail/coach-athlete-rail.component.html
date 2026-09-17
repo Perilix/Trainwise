@@ -1,0 +1,71 @@
+@if (athlete(); as a) {
+  <div class="car">
+    <header class="car-head" (click)="openSheet()" title="Ouvrir la fiche">
+      <span class="car-avatar">
+        @if (a.profilePicture) { <img [src]="a.profilePicture" alt=""> }
+        @else { {{ (a.firstName[0] + a.lastName[0]).toUpperCase() }} }
+      </span>
+      <span class="car-head-text">
+        <span class="car-name">{{ a.firstName }} {{ a.lastName }}</span>
+        @if (a.nextCompetition) {
+          <span class="car-muted">
+            {{ a.nextCompetition.name }}@if (daysToRace() !== null) { · J-{{ daysToRace() }} }
+          </span>
+        }
+      </span>
+    </header>
+
+    <div class="car-chips">
+      <span class="car-chip status-{{ a.status || 'red' }}">
+        <i class="fa-solid" [class.fa-circle-check]="a.status === 'green'"
+           [class.fa-triangle-exclamation]="a.status !== 'green'"></i>{{ statusLabel() }}
+      </span>
+      @if (a.vma) { <span class="car-chip">VMA {{ a.vma }}</span> }
+      @if (a.weeklyVolume !== undefined) {
+        <span class="car-chip">
+          {{ a.weeklyVolume }}@if (a.baselineWeeklyVolume) { / {{ a.baselineWeeklyVolume }} } km
+        </span>
+      }
+    </div>
+
+    <div class="car-week-head">
+      <h3>Sa semaine</h3>
+      <span class="car-muted">{{ weekRange() }}</span>
+    </div>
+
+    <div class="car-days">
+      @for (day of days(); track day.number) {
+        <div class="car-day" [class.today]="day.isToday">
+          <span class="car-date">
+            <span class="car-date-label">{{ day.label }}</span>
+            <span class="car-date-number">{{ day.number }}</span>
+          </span>
+
+          <div class="car-day-body">
+            @if (day.sessions.length === 0) {
+              <span class="car-muted">Repos</span>
+            } @else {
+              @for (session of day.sessions; track session._id) {
+                <div class="car-session">
+                  <span class="car-session-name">{{ sessionTitle(session) }}</span>
+                  @if (sessionMeta(session)) { <span class="car-muted">{{ sessionMeta(session) }}</span> }
+                  @if (blocksOf(session).length) {
+                    <app-workout-profile [blocks]="blocksOf(session)" [compact]="true"></app-workout-profile>
+                  }
+                </div>
+              }
+            }
+          </div>
+
+          @if (day.sessions.length > 0) {
+            <button class="car-open" (click)="openPlanning()" title="Ouvrir le planning">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          }
+        </div>
+      }
+    </div>
+  </div>
+} @else if (isLoading()) {
+  <div class="car car-quiet">Chargement…</div>
+}

@@ -6,12 +6,13 @@ import { ChatService, Conversation, UserPreview } from '../../../services/chat.s
 import { AuthService } from '../../../services/auth.service';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
 import { ConversationDetailComponent } from '../conversation-detail/conversation-detail.component';
+import { CoachAthleteRailComponent } from '../../../components/coach-athlete-rail/coach-athlete-rail.component';
 import { debounceTime, Subject } from 'rxjs';
 
 @Component({
   selector: 'app-conversations-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavbarComponent, RouterLink, ConversationDetailComponent],
+  imports: [CommonModule, FormsModule, NavbarComponent, RouterLink, ConversationDetailComponent, CoachAthleteRailComponent],
   templateUrl: './conversations-list.component.html',
   styleUrl: './conversations-list.component.scss'
 })
@@ -28,6 +29,26 @@ export class ConversationsListComponent implements OnInit, OnDestroy {
   selectedConversationId = signal<string | null>(null);
   private desktopQuery = window.matchMedia('(min-width: 1024px)');
   private onDesktopChange = (e: MediaQueryListEvent) => this.isDesktop.set(e.matches);
+
+  /** L'interlocuteur de la conversation ouverte, pour le rail de contexte. */
+  selectedPartnerId = computed(() => {
+    const id = this.selectedConversationId();
+    if (!id) return null;
+    const conversation = this.chatService.sortedConversations().find(c => c._id === id);
+    if (!conversation || conversation.type === 'group') return null;
+    if (conversation.otherParticipant) return conversation.otherParticipant._id;
+    const me = this.authService.getUser()?.id;
+    return conversation.participants.find(p => p._id !== me)?._id ?? null;
+  });
+
+  // Filtre de la liste (desktop) : cherche dans les noms, pas sur le serveur.
+  listFilter = signal('');
+  filteredConversations = computed(() => {
+    const query = this.listFilter().toLowerCase().trim();
+    const conversations = this.chatService.sortedConversations();
+    if (!query) return conversations;
+    return conversations.filter(c => this.getConversationName(c).toLowerCase().includes(query));
+  });
 
   // Search debounce
   private searchSubject = new Subject<string>();
