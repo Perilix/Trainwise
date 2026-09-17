@@ -3,7 +3,7 @@
   margin: 0 auto;
   padding: 2rem 1rem;
   padding-top: calc(var(--navbar-height, 120px) + 1rem);
-  padding-bottom: 120px;
+  padding-bottom: calc(var(--bottom-nav-height) + 2rem);
   min-height: 100vh;
   background: #F6F4F0;
 

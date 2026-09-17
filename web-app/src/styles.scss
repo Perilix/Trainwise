@@ -132,9 +132,16 @@ input, select, textarea, button {
   --sidebar-width: 0px;
 }
 
+// ≥769px : la barre du bas laisse la place à la navbar du haut. Le jeton tombe
+// à 0 avec elle, sinon les pages continuent de réserver sa hauteur dans le vide.
+@media (min-width: 769px) {
+  :root {
+    --bottom-nav-height: 0px;
+  }
+}
+
 // Desktop ≥1024px : shell en ligne avec sidebar à gauche, navbar masquée
 // (--navbar-height: 0 fait retomber tous les padding-top des pages).
-// Les bottom-navs sont déjà en display:none à partir de 769px.
 @media (min-width: 1024px) {
   :root {
     --sidebar-width: 240px;

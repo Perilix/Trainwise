@@ -67,7 +67,7 @@
   }
 }
 
-// Desktop: cacher la bottom nav
+// Desktop : la navbar du haut prend le relais, puis la sidebar à 1024px.
 @media (min-width: 769px) {
   .bottom-nav {
     display: none;

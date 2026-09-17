@@ -853,7 +853,7 @@
   flex-direction: column;
   gap: 1.5rem;
   position: sticky;
-  top: calc(120px + 2rem);
+  top: calc(var(--navbar-height) + 2rem);
 
   @media (max-width: 768px) {
     top: calc(70px + 1.5rem);
