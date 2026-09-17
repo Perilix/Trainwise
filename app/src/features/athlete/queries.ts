@@ -61,9 +61,9 @@ export function useAthleteHome() {
 export function usePlanningMonth(year: number, monthIndex: number) {
   return useAthleteQuery(
     `planning:${year}-${monthIndex}`,
-    async () => {
+    async (user) => {
       const [calendar, coach] = await Promise.all([getCalendar(year, monthIndex), getCoach()]);
-      return buildPlanning(calendar, new Date(), coach?.firstName);
+      return buildPlanning(calendar, new Date(), coach?.firstName, user.vma ?? undefined);
     },
     () => ({ ...samplePlanning, year, monthIndex }),
   );

@@ -1,6 +1,7 @@
 // Bibliothèque de séances types du coach.
 import { SESSION_TYPE_LABELS } from '@/features/athlete/mappers';
-import { blocksToSegments, mapPlannedDetail, mapStrengthPlan } from '@/features/athlete/session-detail';
+import { blocksToSegments } from '@/features/athlete/run-blocks';
+import { mapPlannedDetail, mapStrengthPlan } from '@/features/athlete/session-detail';
 import type { PlannedSessionDetail } from '@/features/athlete/types';
 import { useSessionQuery } from '@/features/auth/use-session-query';
 import { stepValueLabel, type EditableBlock, type EditableStep } from '@/features/sessions/run-blocks-model';

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { Button, Card, ChoicePill, Field, Icon, Segmented, Text, WorkoutProfile } from '@/components/ui';
-import { blocksToSegments } from '@/features/athlete/session-detail';
+import { blocksToSegments } from '@/features/athlete/run-blocks';
 import { formatDecimal, parseDecimal } from '@/lib/format';
 import { formatDuration, intensityColor, totals } from '@/lib/sessions';
 import { useTheme } from '@/theme/theme-provider';

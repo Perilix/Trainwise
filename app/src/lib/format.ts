@@ -76,3 +76,10 @@ export function parseDecimal(value: string) {
 
 /** 320 s/km → "5:20" */
 export const formatPace = (secondsPerKm: number) => `${Math.floor(secondsPerKm / 60)}:${pad(Math.round(secondsPerKm % 60))}`;
+
+/** "5:20" → 320 s/km */
+export function paceToSeconds(pace?: string | null) {
+  if (!pace) return undefined;
+  const [minutes, seconds] = pace.split(':').map(Number);
+  return Number.isFinite(minutes) && Number.isFinite(seconds) ? minutes * 60 + seconds : undefined;
+}

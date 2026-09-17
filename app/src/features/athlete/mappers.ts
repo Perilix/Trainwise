@@ -13,8 +13,9 @@ import type {
   ApiUser,
 } from '@/lib/api-types';
 import { addDays, daysBetween, isoWeek, startOfWeek } from '@/lib/dates';
-import { formatDayMonthYear, formatDayShort, formatMonthName, formatMonthShort, formatMonthYear, formatTime, parseDay, toIsoDay } from '@/lib/format';
+import { formatDayMonthYear, formatDayShort, formatMonthName, formatMonthShort, formatMonthYear, formatTime, paceToSeconds, parseDay, toIsoDay } from '@/lib/format';
 
+import { estimateFromBlocks } from './run-blocks';
 import type {
   Activity,
   AthleteHome,
@@ -67,12 +68,6 @@ export const initialsOf = (firstName?: string, lastName?: string) => `${firstNam
 
 const fullName = (person: { firstName: string; lastName: string }) => `${person.firstName} ${person.lastName}`.trim();
 
-export function paceToSeconds(pace?: string | null) {
-  if (!pace) return undefined;
-  const [minutes, seconds] = pace.split(':').map(Number);
-  return Number.isFinite(minutes) && Number.isFinite(seconds) ? minutes * 60 + seconds : undefined;
-}
-
 // Strava fournit l'heure locale de départ encodée comme UTC : on la lit telle quelle.
 const runDay = (run: ApiRun) => run.stravaData?.startDateLocal?.slice(0, 10) ?? toIsoDay(new Date(run.date));
 const dayOf = (isoDate: string) => toIsoDay(new Date(isoDate));
@@ -84,17 +79,20 @@ function exercisesCount(plan: ApiPlannedRun['strengthPlan']) {
   return count || undefined;
 }
 
-export function mapPlanned(planned: ApiPlannedRun, coachName?: string): PlannedSession {
+export function mapPlanned(planned: ApiPlannedRun, coachName?: string, vma?: number): PlannedSession {
   const byCoach = planned.generatedBy === 'coach';
+  // Le coach construit sa séance bloc par bloc et laisse souvent les totaux vides :
+  // sans cette estimation, l'athlète voit « — » en distance, durée et allure.
+  const estimated = planned.activityType === 'running' ? estimateFromBlocks(planned.runBlocks, vma) : {};
   return {
     id: planned._id,
     date: dayOf(planned.date),
     sport: planned.activityType,
     title: planned.title || SESSION_TYPE_LABELS[planned.sessionType] || (planned.activityType === 'strength' ? 'Renforcement' : 'Course'),
     description: planned.description || undefined,
-    distanceKm: planned.targetDistance ?? undefined,
-    durationMin: planned.targetDuration ?? planned.strengthPlan?.estimatedDuration ?? undefined,
-    paceSecPerKm: paceToSeconds(planned.targetPace),
+    distanceKm: planned.targetDistance ?? estimated.distanceKm,
+    durationMin: planned.targetDuration ?? planned.strengthPlan?.estimatedDuration ?? estimated.durationMin,
+    paceSecPerKm: paceToSeconds(planned.targetPace) ?? estimated.paceSecPerKm,
     exercisesCount: planned.activityType === 'strength' ? exercisesCount(planned.strengthPlan) : undefined,
     plannedBy: byCoach ? 'coach' : 'athlete',
     coachName: byCoach ? coachName : undefined,
@@ -198,7 +196,7 @@ type HomeInput = {
 export function buildHome({ user, calendars, runs, strength, coach, conversations, strava, now }: HomeInput): AthleteHome {
   const today = toIsoDay(now);
   const plannedById = new Map(calendars.flatMap((calendar) => calendar.plannedRuns).map((planned) => [planned._id, planned]));
-  const planned = [...plannedById.values()].map((item) => mapPlanned(item, coach?.firstName));
+  const planned = [...plannedById.values()].map((item) => mapPlanned(item, coach?.firstName, user.vma ?? undefined));
   const activities = [...runs.map(mapRun), ...strength.map(mapStrength)];
 
   const activeDays = new Set(activities.map((activity) => activity.date));
@@ -245,11 +243,11 @@ export function buildHome({ user, calendars, runs, strength, coach, conversation
   };
 }
 
-export function buildPlanning(calendar: ApiCalendarData, now: Date, coachName?: string): PlanningMonth {
+export function buildPlanning(calendar: ApiCalendarData, now: Date, coachName?: string, vma?: number): PlanningMonth {
   const markers: Record<string, CalendarMarker> = {};
   const competitionPriority: PlanningMonth['competitionPriority'] = {};
   const sessionsByDay: Record<string, PlannedSession[]> = {};
-  const planned = calendar.plannedRuns.map((item) => mapPlanned(item, coachName));
+  const planned = calendar.plannedRuns.map((item) => mapPlanned(item, coachName, vma));
 
   planned.forEach((session) => {
     (sessionsByDay[session.date] ??= []).push(session);

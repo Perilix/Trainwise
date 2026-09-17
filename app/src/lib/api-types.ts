@@ -134,6 +134,9 @@ export type ApiPlannedRun = {
   feeling: number | null;
   generatedBy: 'ai' | 'manual' | 'coach';
   createdBy: string | null;
+  // Le calendrier renvoie les séances entières : les blocs servent à estimer
+  // distance, durée et allure quand le coach n'a pas rempli les totaux.
+  runBlocks?: ApiRunBlock[];
 };
 
 export type ApiRunBlockStep = {
