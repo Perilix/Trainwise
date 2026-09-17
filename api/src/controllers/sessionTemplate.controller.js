@@ -349,6 +349,8 @@ exports.assignTemplate = async (req, res) => {
         date: new Date(assign.date),
         activityType: template.sport,
         sessionType: template.sessionType,
+        // Le nom donné par le coach prime sur le libellé du type (« Tempo »).
+        title: template.name,
         targetDistance: template.targetDistance,
         targetDuration: template.targetDuration,
         targetPace,
