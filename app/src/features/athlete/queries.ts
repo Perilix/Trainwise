@@ -156,6 +156,31 @@ export function useChatUnreadCount() {
 /** URL de retour après l'autorisation Strava : `exp://…` dans Expo Go, `trainwise://` en build. */
 const stravaReturnUrl = () => Linking.createURL('strava');
 
+export type StravaImportResult = { status: 'running' | 'done' | 'partial' | 'error'; imported: number; skipped: number };
+
+type StravaStatus = { connected: boolean; initialImport: StravaImportResult | null };
+
+/**
+ * L'import de l'historique tourne côté serveur : on interroge son avancement
+ * pour pouvoir annoncer un nombre de séances. Au-delà du délai, il continue
+ * sans nous et l'athlète verra ses séances arriver.
+ */
+const waitForInitialImport = async (): Promise<StravaImportResult> => {
+  const deadline = Date.now() + 90_000;
+
+  while (Date.now() < deadline) {
+    const status = await api<StravaStatus>('/api/strava/status').catch(() => null);
+    const initial = status?.initialImport;
+    if (initial && initial.status !== 'running') {
+      invalidateApiCache();
+      return initial;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+
+  return { status: 'running', imported: 0, skipped: 0 };
+};
+
 export function useAthleteActions() {
   const { status } = useSession();
   const live = status === 'signedIn';
@@ -201,16 +226,19 @@ export function useAthleteActions() {
       await api(`/api/runs/${encodeURIComponent(id)}`, { method: 'PATCH', body: { feeling } });
       invalidateApiCache('/api/runs');
     },
-    /** Ouvre l'autorisation Strava et renvoie true si le compte a bien été relié. */
-    async connectStrava() {
-      if (!live) return false;
+    /**
+     * Ouvre l'autorisation Strava, puis suit l'import de l'historique lancé par
+     * le serveur. Renvoie `null` si l'athlète a abandonné l'autorisation.
+     */
+    async connectStrava(): Promise<StravaImportResult | null> {
+      if (!live) return null;
       const returnTo = stravaReturnUrl();
       const { authUrl } = await api<{ authUrl: string }>('/api/strava/auth-url', { query: { returnTo } });
       const result = await WebBrowser.openAuthSessionAsync(authUrl, returnTo);
-      if (result.type !== 'success') return false;
-      const success = result.url.includes('strava=success');
-      if (success) invalidateApiCache();
-      return success;
+      if (result.type !== 'success' || !result.url.includes('strava=success')) return null;
+
+      invalidateApiCache();
+      return waitForInitialImport();
     },
     /** Délie le compte Strava : l'API révoque aussi l'autorisation côté Strava. */
     async disconnectStrava() {

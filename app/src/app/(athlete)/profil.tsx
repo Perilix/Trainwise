@@ -20,11 +20,23 @@ export default function ProfileScreen() {
   const { connectStrava, disconnectStrava } = useAthleteActions();
   const [stravaBusy, setStravaBusy] = useState(false);
 
-  // Liaison : autorisation Strava dans le navigateur système, puis retour dans l'app.
+  // Liaison : autorisation Strava dans le navigateur système, puis import de l'historique.
   const linkStrava = async () => {
     setStravaBusy(true);
     try {
-      if (await connectStrava()) refetch();
+      const result = await connectStrava();
+      if (!result) return;
+      refetch();
+
+      const seances = `${result.imported} séance${result.imported > 1 ? 's' : ''}`;
+      const message = {
+        done: `${seances} importée${result.imported > 1 ? 's' : ''} depuis ton historique. Les prochaines arriveront toutes seules.`,
+        partial: `${seances} importée${result.imported > 1 ? 's' : ''}. Strava limite le nombre de requêtes : le reste de ton historique suivra.`,
+        running: 'Ton historique est en cours d’import, tes séances vont apparaître petit à petit.',
+        error: 'Compte relié, mais l’import de l’historique a échoué. Tes prochaines sorties seront quand même importées.',
+      }[result.status];
+
+      Alert.alert('Strava connecté', message);
     } catch (reason) {
       Alert.alert('Strava', reason instanceof Error ? reason.message : 'Connexion impossible.');
     } finally {
@@ -158,7 +170,7 @@ export default function ProfileScreen() {
               profile.strava.connected ? (
                 <Button label={stravaBusy ? 'Déliaison…' : 'Délier'} variant="secondary" size="sm" disabled={stravaBusy} onPress={askDisconnectStrava} />
               ) : (
-                <Button label={stravaBusy ? 'Connexion…' : 'Connecter'} size="sm" disabled={stravaBusy} onPress={linkStrava} />
+                <Button label={stravaBusy ? 'Import…' : 'Connecter'} size="sm" disabled={stravaBusy} onPress={linkStrava} />
               )
             }
           />

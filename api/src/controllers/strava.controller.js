@@ -458,6 +458,76 @@ exports.getAuthUrl = async (req, res) => {
   }
 };
 
+// ─────────────── Import initial à la connexion du compte Strava ───────────────
+// Strava limite à 100 requêtes par quart d'heure et chaque course coûte un appel
+// de détail : on parcourt l'historique page par page et on s'arrête proprement
+// si la limite est atteinte (statut « partial »), le webhook prenant le relais
+// pour les sorties suivantes.
+const INITIAL_IMPORT_MAX_PAGES = 3;
+const INITIAL_IMPORT_PAGE_SIZE = 50;
+
+const setInitialImport = (userId, patch) =>
+  User.findByIdAndUpdate(userId, Object.entries(patch).reduce((acc, [key, value]) => {
+    acc[`strava.initialImport.${key}`] = value;
+    return acc;
+  }, {}));
+
+const runInitialImport = async (userId) => {
+  await setInitialImport(userId, { status: 'running', imported: 0, skipped: 0, startedAt: new Date(), finishedAt: null, error: null });
+
+  let imported = 0;
+  let skipped = 0;
+  let rateLimited = false;
+
+  try {
+    const user = await User.findById(userId).select('+strava.accessToken +strava.refreshToken');
+    const fullUser = await User.findById(userId);
+    const accessToken = await refreshTokenIfNeeded(user);
+
+    for (let page = 1; page <= INITIAL_IMPORT_MAX_PAGES && !rateLimited; page++) {
+      const { data } = await axios.get(`${STRAVA_API_URL}/athlete/activities`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        params: { per_page: INITIAL_IMPORT_PAGE_SIZE, page }
+      });
+
+      if (!data.length) break;
+
+      for (const activity of data) {
+        const type = getActivityType(activity);
+        const isRun = STRAVA_RUN_TYPES.includes(type);
+        const isStrength = STRAVA_STRENGTH_TYPES.includes(type);
+        if (!isRun && !isStrength) continue;
+
+        try {
+          const result = isRun
+            ? await importRunActivity(userId, activity, accessToken, fullUser)
+            : await importStrengthActivity(userId, activity, accessToken);
+          if (result.status === 'skipped') skipped++;
+          else imported++;
+        } catch (e) {
+          if (e.response?.status === 429) {
+            rateLimited = true;
+            break;
+          }
+          console.error(`[Strava] import initial, activité ${activity.id}:`, e.message);
+        }
+      }
+
+      if (data.length < INITIAL_IMPORT_PAGE_SIZE) break;
+    }
+
+    await setInitialImport(userId, {
+      status: rateLimited ? 'partial' : 'done',
+      imported,
+      skipped,
+      finishedAt: new Date()
+    });
+  } catch (error) {
+    console.error('[Strava] import initial:', error.response?.data || error.message);
+    await setInitialImport(userId, { status: 'error', imported, skipped, finishedAt: new Date(), error: error.message });
+  }
+};
+
 // Callback OAuth Strava
 exports.handleCallback = async (req, res) => {
   const { code, state } = req.query;
@@ -492,6 +562,9 @@ exports.handleCallback = async (req, res) => {
       'strava.connectedAt': new Date()
     });
 
+    // L'import de l'historique tourne en tâche de fond : la redirection ne l'attend pas.
+    runInitialImport(userId).catch((e) => console.error('[Strava] import initial:', e.message));
+
     // Retour à l'app mobile ou au tableau de bord web, selon l'origine de la demande
     res.redirect(back('strava=success'));
   } catch (error) {
@@ -505,10 +578,20 @@ exports.getStatus = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('+strava.accessToken');
 
+    const initial = user.strava?.initialImport;
+
     res.json({
       connected: !!user.strava?.athleteId,
       athleteId: user.strava?.athleteId || null,
-      connectedAt: user.strava?.connectedAt || null
+      connectedAt: user.strava?.connectedAt || null,
+      initialImport: initial?.status
+        ? {
+            status: initial.status,
+            imported: initial.imported || 0,
+            skipped: initial.skipped || 0,
+            finishedAt: initial.finishedAt || null
+          }
+        : null
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -750,7 +833,8 @@ exports.disconnect = async (req, res) => {
         'strava.accessToken': 1,
         'strava.refreshToken': 1,
         'strava.expiresAt': 1,
-        'strava.connectedAt': 1
+        'strava.connectedAt': 1,
+        'strava.initialImport': 1
       }
     });
 
