@@ -1282,8 +1282,31 @@
 }
 
 // Desktop ≥1024px : élargir le contenu (sidebar active)
+// Desktop ≥1024px : les cartes se rangent en deux colonnes. Restent pleine
+// largeur celles qui en ont besoin — l'identité en bandeau, le graphique, et
+// le pied de page.
 @media (min-width: 1024px) {
   .container {
-    max-width: 1000px;
+    max-width: 1180px;
+  }
+
+  main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    align-items: start;
+    align-content: start;
+  }
+
+  main > section {
+    // L'espacement vient de la grille : les marges de la pile s'additionneraient.
+    margin-bottom: 0;
+  }
+
+  .user-card,
+  .chart-section,
+  .about-section,
+  .logout-section {
+    grid-column: 1 / -1;
   }
 }

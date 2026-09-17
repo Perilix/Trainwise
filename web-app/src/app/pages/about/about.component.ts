@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { Location } from '@angular/common';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
-import { NavbarComponent } from '../../components/navbar/navbar.component';
+import { Router, RouterLink } from '@angular/router';
+import { PublicNavComponent } from '../../components/public-nav/public-nav.component';
 import { AuthService } from '../../services/auth.service';
 
 /**
@@ -11,7 +11,7 @@ import { AuthService } from '../../services/auth.service';
 @Component({
   selector: 'app-about',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, NavbarComponent],
+  imports: [RouterLink, PublicNavComponent],
   templateUrl: './about.component.html',
   styleUrls: ['../legal/legal-pages.scss']
 })

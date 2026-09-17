@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { Location } from '@angular/common';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
-import { NavbarComponent } from '../../components/navbar/navbar.component';
+import { Router } from '@angular/router';
+import { PublicNavComponent } from '../../components/public-nav/public-nav.component';
 import { AuthService } from '../../services/auth.service';
 
 /**
@@ -11,7 +11,7 @@ import { AuthService } from '../../services/auth.service';
 @Component({
   selector: 'app-privacy',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, NavbarComponent],
+  imports: [PublicNavComponent],
   templateUrl: './privacy.component.html',
   styleUrls: ['./legal-pages.scss']
 })
