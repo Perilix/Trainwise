@@ -399,6 +399,8 @@ $pro-color: #003554;
     grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
     align-items: start;
+    // `min-height: 100vh` répartirait sinon la hauteur restante entre les lignes.
+    align-content: start;
   }
 
   .shop-header,
@@ -408,6 +410,8 @@ $pro-color: #003554;
   .msg-success,
   .btn-restore {
     grid-column: 1 / -1;
+    // L'espacement vient de la grille : les marges de la pile s'additionneraient.
+    margin-bottom: 0;
   }
 
   .product-card {

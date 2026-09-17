@@ -915,6 +915,8 @@ $display-font: 'GulfsDisplay', 'Archivo Black', serif;
     grid-template-columns: 380px 1fr;
     gap: 1.5rem;
     align-items: start;
+    // `min-height: 100vh` répartirait sinon la hauteur restante entre les lignes.
+    align-content: start;
   }
 
   .page-header,

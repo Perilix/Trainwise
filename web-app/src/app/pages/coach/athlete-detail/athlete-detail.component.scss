@@ -768,6 +768,8 @@
     grid-template-columns: 1fr 1fr;
     gap: 1.25rem;
     align-items: start;
+    // `min-height: 100vh` répartirait sinon la hauteur restante entre les lignes.
+    align-content: start;
   }
 
   .status-card {
