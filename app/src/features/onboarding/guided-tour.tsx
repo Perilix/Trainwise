@@ -1,6 +1,5 @@
-import { BlurView } from 'expo-blur';
 import { useState } from 'react';
-import { Modal, StyleSheet, View } from 'react-native';
+import { Modal, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, TAB_BAR_HEIGHT, TAB_BAR_MARGIN, Text } from '@/components/ui';
@@ -37,8 +36,9 @@ const PADDING = 8;
  * les nôtres et leur géométrie est fixée par les jetons.
  */
 export function GuidedTour({ steps, onDone }: Props) {
-  const { colors, scheme } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
   const [index, setIndex] = useState(0);
 
   const step = steps[index];
@@ -47,47 +47,48 @@ export function GuidedTour({ steps, onDone }: Props) {
   const last = index === steps.length - 1;
   const barBottom = Math.max(insets.bottom, 16);
 
+  // Rectangle mis en avant, en coordonnées écran. La barre d'onglets et l'en-tête
+  // sont les nôtres : leur géométrie vient des jetons, rien n'est mesuré.
+  const spot = (() => {
+    if (step.spot.kind === 'tab') {
+      const itemWidth = (width - (TAB_BAR_MARGIN + 7) * 2) / step.spot.count;
+      return {
+        top: height - barBottom - TAB_BAR_HEIGHT + 7 - PADDING,
+        left: TAB_BAR_MARGIN + 7 + itemWidth * step.spot.index - PADDING,
+        width: itemWidth + PADDING * 2,
+        height: TAB_BAR_HEIGHT - 14 + PADDING * 2,
+      };
+    }
+    if (step.spot.kind === 'appBar') {
+      return {
+        top: insets.top + (APP_BAR_HEIGHT - BUTTON) / 2 - PADDING,
+        left: step.spot.side === 'left' ? layout.gutter - PADDING : width - layout.gutter - BUTTON - PADDING,
+        width: BUTTON + PADDING * 2,
+        height: BUTTON + PADDING * 2,
+      };
+    }
+    return null;
+  })();
+
   // La carte se place du côté opposé au halo, pour ne jamais le masquer.
   const cardPosition = step.spot.kind === 'tab' ? { bottom: barBottom + TAB_BAR_HEIGHT + 24 } : { top: insets.top + APP_BAR_HEIGHT + 24 };
+  const veil = { backgroundColor: 'rgba(5, 25, 35, 0.66)' };
 
   return (
     <Modal visible transparent animationType="fade" statusBarTranslucent onRequestClose={onDone}>
       <View style={styles.backdrop}>
-        <BlurView intensity={18} tint={scheme === 'dark' ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(5, 25, 35, 0.55)' }]} />
-
-        {step.spot.kind === 'tab' ? (
-          <View
-            pointerEvents="none"
-            style={[
-              styles.tabRow,
-              { bottom: barBottom + 7 - PADDING, left: TAB_BAR_MARGIN + 7 - PADDING, right: TAB_BAR_MARGIN + 7 - PADDING, height: TAB_BAR_HEIGHT - 14 + PADDING * 2 },
-            ]}>
-            <View
-              style={[
-                styles.spot,
-                { width: `${100 / step.spot.count}%`, left: `${(100 / step.spot.count) * step.spot.index}%`, borderColor: colors.accent },
-              ]}
-            />
-          </View>
-        ) : null}
-
-        {step.spot.kind === 'appBar' ? (
-          <View
-            pointerEvents="none"
-            style={[
-              styles.spot,
-              {
-                position: 'absolute',
-                top: insets.top + (APP_BAR_HEIGHT - BUTTON) / 2 - PADDING,
-                height: BUTTON + PADDING * 2,
-                width: BUTTON + PADDING * 2,
-                borderColor: colors.accent,
-                ...(step.spot.side === 'left' ? { left: layout.gutter - PADDING } : { right: layout.gutter - PADDING }),
-              },
-            ]}
-          />
-        ) : null}
+        {/* Le voile s'arrête au bord du rectangle : l'élément dont on parle reste net. */}
+        {spot ? (
+          <>
+            <View pointerEvents="none" style={[styles.veil, veil, { top: 0, left: 0, right: 0, height: spot.top }]} />
+            <View pointerEvents="none" style={[styles.veil, veil, { top: spot.top + spot.height, left: 0, right: 0, bottom: 0 }]} />
+            <View pointerEvents="none" style={[styles.veil, veil, { top: spot.top, left: 0, width: spot.left, height: spot.height }]} />
+            <View pointerEvents="none" style={[styles.veil, veil, { top: spot.top, left: spot.left + spot.width, right: 0, height: spot.height }]} />
+            <View pointerEvents="none" style={[styles.ring, { top: spot.top, left: spot.left, width: spot.width, height: spot.height, borderColor: colors.accent }]} />
+          </>
+        ) : (
+          <View pointerEvents="none" style={[StyleSheet.absoluteFill, veil]} />
+        )}
 
         <View style={[styles.card, cardPosition, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text variant="overline" style={{ color: colors.accentInk }}>
@@ -99,9 +100,9 @@ export function GuidedTour({ steps, onDone }: Props) {
           <Text variant="body2">{step.text}</Text>
 
           <View style={styles.actions}>
-            {last ? null : <Button label="Passer" variant="ghost" size="sm" onPress={onDone} style={styles.flex} />}
+            {last ? null : <Button label="Passer" variant="secondary" size="sm" onPress={onDone} style={styles.flex} />}
             <Button
-              label={last ? 'C’est parti' : 'Suivant'}
+              label={last ? 'Compris' : 'Suivant'}
               icon={last ? 'check' : 'arrowRight'}
               iconPosition={last ? 'leading' : 'trailing'}
               onPress={() => (last ? onDone() : setIndex((value) => value + 1))}
@@ -117,8 +118,8 @@ export function GuidedTour({ steps, onDone }: Props) {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   backdrop: { flex: 1 },
-  tabRow: { position: 'absolute' },
-  spot: { position: 'absolute', top: 0, bottom: 0, borderWidth: 2, borderRadius: radius.pill },
+  veil: { position: 'absolute' },
+  ring: { position: 'absolute', borderWidth: 2, borderRadius: radius.pill },
   card: { position: 'absolute', left: layout.gutter, right: layout.gutter, gap: 6, padding: 20, borderRadius: radius.xl, borderWidth: 1 },
   title: { marginTop: 2 },
   actions: { flexDirection: 'row', gap: 8, marginTop: 14 },
