@@ -1,22 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { Avatar, BackBar, Button, Card, Chip, ChoicePill, Field, FormError, Screen, Section, SectionHeader, Text } from '@/components/ui';
+import { Avatar, BackBar, Button, Card, Chip, Field, FormError, Screen, Section, SectionHeader, Text } from '@/components/ui';
 import { InviteCodeCard } from '@/features/coach/invite-code-card';
-import { PACKAGE_LABELS, PACKAGE_PRICES } from '@/features/coach/mappers';
 import { useCoachActions, useInviteOverview } from '@/features/coach/queries';
 import type { AthleteSearchRow, PackageType } from '@/features/coach/types';
 import { emitAppEvent } from '@/lib/app-events';
 import { useTheme } from '@/theme/theme-provider';
 
-const OFFERS: PackageType[] = ['bronze', 'silver', 'gold'];
+// Les formules d'abonnement n'existent plus pour l'instant : on n'en propose pas
+// au coach et on envoie une valeur neutre, que l'API attend toujours.
+const DEFAULT_PACKAGE: PackageType = 'silver';
 const SEARCH_DELAY_MS = 350;
 
 export default function InviteAthleteScreen() {
   const { colors } = useTheme();
   const { data: overview, refetch } = useInviteOverview();
   const { searchAthletes, inviteAthlete } = useCoachActions();
-  const [offer, setOffer] = useState<PackageType>('silver');
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<AthleteSearchRow[] | null>(null);
   const [searching, setSearching] = useState(false);
@@ -65,7 +65,7 @@ export default function InviteAthleteScreen() {
     setBusyId(row.id);
     setError(null);
     try {
-      await inviteAthlete(row.id, offer);
+      await inviteAthlete(row.id, DEFAULT_PACKAGE);
       setInvitedIds((ids) => [...ids, row.id]);
       refetch();
       emitAppEvent('athletes:changed');
@@ -89,18 +89,8 @@ export default function InviteAthleteScreen() {
           <View>
             <Text variant="sectionTitle">Inviter un utilisateur Trainwise</Text>
             <Text variant="small" style={styles.hint}>
-              Il reçoit une invitation à accepter dans son app, avec la formule choisie.
+              Il reçoit une invitation à accepter dans son app.
             </Text>
-          </View>
-          <View>
-            <Text variant="caption" style={styles.label}>
-              Formule
-            </Text>
-            <View accessibilityRole="radiogroup" style={styles.pills}>
-              {OFFERS.map((type) => (
-                <ChoicePill key={type} role="radio" label={`${PACKAGE_LABELS[type]} · ${PACKAGE_PRICES[type]}`} selected={offer === type} onPress={() => setOffer(type)} />
-              ))}
-            </View>
           </View>
           <Field icon="search" label="Rechercher" placeholder="Nom ou email" autoCapitalize="none" autoCorrect={false} value={query} onChangeText={changeQuery} />
           <FormError message={error} />
@@ -167,7 +157,6 @@ const styles = StyleSheet.create({
   tight: { paddingBottom: 12 },
   gap: { gap: 16 },
   hint: { marginTop: 4 },
-  label: { marginBottom: 8 },
   pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   result: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
   list: { paddingHorizontal: 16, marginTop: 12 },
