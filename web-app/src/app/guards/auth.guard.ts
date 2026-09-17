@@ -14,7 +14,8 @@ export const authGuard: CanActivateFn = (_route, state) => {
   return false;
 };
 
-// Racine du site : un visiteur non connecté atterrit sur la vitrine.
+// Racine du site : un visiteur non connecté atterrit sur la connexion.
+// La vitrine reste accessible à /about (c'est l'URL marketing de l'App Store).
 export const homeGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
@@ -23,7 +24,7 @@ export const homeGuard: CanActivateFn = () => {
     return true;
   }
 
-  router.navigate(['/about']);
+  router.navigate(['/login']);
   return false;
 };
 
