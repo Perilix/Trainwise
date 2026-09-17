@@ -1020,3 +1020,226 @@
   color: #999;
   font-style: italic;
 }
+
+// ===============================================================
+// Accueil coach — mise en page desktop des maquettes (≥1024px).
+// Préfixe `cd-` : ces règles ne touchent jamais la vue mobile, qui
+// vit dans l'autre branche du gabarit.
+// ===============================================================
+// La page desktop tient ses propres gouttières (40px, comme la maquette) :
+// le gabarit mobile plafonnait à 1200px et laissait le contenu flotter.
+.container.cd-page {
+  max-width: none;
+  padding: calc(var(--navbar-height, 0px) + 36px) 40px 40px;
+}
+
+.cd {
+  --cd-navy: #003554;
+  --cd-ink: #051923;
+  --cd-muted: #5A6878;
+  --cd-faint: #7D8793;
+  --cd-line: #E7E2D9;
+  --cd-line-strong: #D3CCBF;
+  --cd-surface: #FFFFFF;
+  --cd-bg: #F6F4F0;
+  --cd-accent-soft: #E3F4FD;
+  --cd-accent-ink: #0077B6;
+
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  font-family: 'Poppins', sans-serif;
+  color: var(--cd-ink);
+}
+
+.cd-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+
+  h1 { font-size: 28px; line-height: 36px; font-weight: 600; letter-spacing: -0.02em; margin: 0; }
+  p { font-size: 14px; line-height: 21px; color: var(--cd-muted); margin: 2px 0 0; }
+}
+
+.cd-head-actions { display: flex; gap: 10px; }
+
+.cd-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none;
+
+  &.cd-btn-solid { background: var(--cd-navy); color: #fff; border: 1px solid var(--cd-navy); }
+  &.cd-btn-ghost { background: var(--cd-surface); color: var(--cd-ink); border: 1px solid var(--cd-line-strong); }
+  &.cd-btn-sm { height: 36px; padding: 0 14px; font-size: 13px; border-radius: 10px; }
+  &.cd-btn-round { padding: 0; border-radius: 999px; width: 36px; }
+  &:disabled { opacity: 0.55; cursor: default; }
+
+  i { font-size: 14px; }
+}
+
+.cd-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+
+.cd-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--cd-surface);
+  border: 1px solid var(--cd-line);
+  border-radius: 16px;
+  padding: 18px 20px;
+  min-height: 92px;
+}
+
+.cd-kpi-label { font-size: 13px; line-height: 18px; color: var(--cd-muted); }
+// Un libellé sur deux lignes ne doit pas décaler le chiffre d'une tuile à l'autre.
+.cd-kpi-value { margin-top: auto; font-size: 28px; line-height: 36px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.cd-cols { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 20px; align-items: start; }
+
+.cd-card {
+  background: var(--cd-surface);
+  border: 1px solid var(--cd-line);
+  border-radius: 16px;
+  overflow: hidden;
+
+  &.cd-card-pad { padding: 18px 20px 20px; }
+}
+
+.cd-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px;
+
+  .cd-card-pad & { padding: 0 0 12px; }
+  h2 { font-size: 16px; line-height: 22px; font-weight: 600; margin: 0; }
+}
+
+.cd-count {
+  min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px;
+  background: #DC2626; color: #fff; font-size: 12px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+
+.cd-search {
+  display: flex; align-items: center; gap: 10px;
+  width: 280px; height: 44px; padding: 0 16px;
+  border: 1px solid var(--cd-line); border-radius: 12px;
+  background: var(--cd-surface); color: var(--cd-faint);
+
+  &:focus-within { border-color: var(--cd-line-strong); }
+
+  input {
+    flex: 1; min-width: 0; border: none; background: none; padding: 0;
+    font: inherit; font-size: 14px; color: var(--cd-ink);
+
+    &::placeholder { color: var(--cd-faint); }
+    &:focus { outline: none; }
+  }
+}
+
+.cd-empty { padding: 0 20px 24px; color: var(--cd-muted); font-size: 14px; }
+
+// Tableau : mêmes colonnes que la maquette, la dernière pour les actions.
+.cd-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 200px) 104px 96px minmax(130px, 1fr) 80px;
+  gap: 12px;
+  align-items: center;
+  padding: 0 20px;
+  height: 64px;
+  border-top: 1px solid var(--cd-line);
+}
+
+.cd-row-head {
+  height: 40px;
+  background: var(--cd-bg);
+  border-bottom: 1px solid var(--cd-line);
+
+  span {
+    font-size: 11px; line-height: 16px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--cd-faint);
+  }
+}
+
+.cd-athlete { display: flex; align-items: center; gap: 12px; min-width: 0; }
+
+.cd-avatar {
+  width: 36px; height: 36px; border-radius: 999px; flex-shrink: 0;
+  background: var(--cd-accent-soft); color: var(--cd-accent-ink);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 600; letter-spacing: 0.02em;
+}
+
+.cd-athlete-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.cd-name { font-size: 14px; line-height: 20px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cd-sub { font-size: 13px; line-height: 18px; color: var(--cd-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.cd-status {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; line-height: 18px; color: var(--cd-ink);
+
+  .cd-dot { width: 8px; height: 8px; border-radius: 999px; background: #10B981; }
+  &.status-orange .cd-dot { background: #F59E0B; }
+  &.status-red .cd-dot { background: #DC2626; }
+}
+
+.cd-pill {
+  display: inline-flex; align-items: center; height: 24px; padding: 0 10px;
+  border-radius: 999px; background: #EFEBE4; color: var(--cd-muted);
+  font-size: 12px; font-weight: 600; white-space: nowrap; gap: 6px;
+
+  &.cd-pill-warn { background: #FCF1DC; color: #B45309; }
+}
+
+.cd-race { display: flex; flex-direction: column; min-width: 0; }
+
+.cd-row-actions { display: flex; justify-content: flex-end; gap: 4px; }
+
+.cd-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; border: none; color: var(--cd-muted); cursor: pointer;
+
+  &.cd-icon-boxed { border: 1px solid var(--cd-line-strong); background: var(--cd-surface); color: var(--cd-ink); }
+  &:hover { background: var(--cd-bg); color: var(--cd-ink); }
+}
+
+.cd-rail { display: flex; flex-direction: column; gap: 20px; }
+
+.cd-request {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 12px 0;
+  border-top: 1px solid var(--cd-line);
+
+  &:first-of-type { border-top: none; }
+}
+
+.cd-request-actions { display: grid; grid-template-columns: 1fr 1fr 36px; gap: 8px; }
+
+.cd-invite {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--cd-line);
+
+  &:first-of-type { border-top: none; }
+}
+
+// Sous 1400px, le rail volerait au tableau la place de ses colonnes :
+// il passe dessous, ses deux cartes côte à côte.
+@media (max-width: 1399px) {
+  .cd-cols { grid-template-columns: minmax(0, 1fr); }
+  .cd-rail { flex-direction: row; align-items: flex-start; }
+  .cd-rail > * { flex: 1; min-width: 0; }
+}

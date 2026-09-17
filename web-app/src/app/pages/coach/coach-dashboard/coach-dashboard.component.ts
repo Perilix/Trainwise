@@ -9,6 +9,7 @@ import { Athlete, CoachStats, UserSearchResult, PendingInvitation, SubscriptionR
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
 import { TourTooltipComponent, TourStep } from '../../../components/tour-tooltip/tour-tooltip.component';
 import { COACH_PACKAGES, PackageType } from '../../../interfaces/package.interface';
+import { formatCount } from '../../../utils/number.util';
 
 @Component({
   selector: 'app-coach-dashboard',
@@ -39,6 +40,10 @@ export class CoachDashboardComponent implements OnInit {
       description: 'Point vert = actif, orange = inactif depuis 7j ou séances sautées, rouge = alerte. Clique sur un athlète pour le détail.',
     },
   ];
+
+  // Au-delà de 1024px, l'accueil coach prend la mise en page des maquettes
+  // (tableau d'athlètes + rail de droite) ; en dessous, la vue mobile est gardée.
+  isDesktop = signal(typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches);
 
   athletes = signal<Athlete[]>([]);
   stats = signal<CoachStats | null>(null);
@@ -92,6 +97,10 @@ export class CoachDashboardComponent implements OnInit {
   }
 
   ngOnInit() {
+    // Suit les redimensionnements de la fenêtre, comme la liste des conversations.
+    if (typeof window !== 'undefined') {
+      window.matchMedia('(min-width: 1024px)').addEventListener('change', event => this.isDesktop.set(event.matches));
+    }
     this.loadDashboard();
   }
 
@@ -300,6 +309,10 @@ export class CoachDashboardComponent implements OnInit {
       month: 'short',
       year: 'numeric'
     });
+  }
+
+  count(value: number | null | undefined): string {
+    return formatCount(value);
   }
 
   getInitials(firstName: string, lastName: string): string {

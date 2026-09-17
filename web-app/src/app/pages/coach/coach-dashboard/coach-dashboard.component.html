@@ -5,21 +5,24 @@
   [steps]="coachTourSteps">
 </app-tour-tooltip>
 
-<div class="container">
-  <header class="page-header">
-    <div class="header-content">
-      <h1>Espace Coach</h1>
-      <p class="subtitle">Gérez vos athlètes et leurs entraînements</p>
-    </div>
-    <div class="header-actions">
-      <a routerLink="/coach/exercises" class="btn-secondary">
-        Exercices
-      </a>
-      <button class="btn-primary" (click)="openInviteModal()">
-        Inviter un athlète
-      </button>
-    </div>
-  </header>
+<div class="container" [class.cd-page]="isDesktop()">
+  <!-- Au-delà de 1024px, l'en-tête vit dans la vue desktop (.cd-head). -->
+  @if (!isDesktop()) {
+    <header class="page-header">
+      <div class="header-content">
+        <h1>Espace Coach</h1>
+        <p class="subtitle">Gérez vos athlètes et leurs entraînements</p>
+      </div>
+      <div class="header-actions">
+        <a routerLink="/coach/exercises" class="btn-secondary">
+          Exercices
+        </a>
+        <button class="btn-primary" (click)="openInviteModal()">
+          Inviter un athlète
+        </button>
+      </div>
+    </header>
+  }
 
   @if (error()) {
     <div class="alert error">{{ error() }}</div>
@@ -32,6 +35,131 @@
     <div class="loading-state">
       <div class="loading-spinner"></div>
       <p>Chargement...</p>
+    </div>
+  } @else {
+  @if (isDesktop()) {
+    <!-- Accueil coach, mise en page des maquettes desktop -->
+    <div class="cd">
+      <header class="cd-head">
+        <div>
+          <h1>Espace coach</h1>
+          <p>Gérez vos athlètes et leurs entraînements.</p>
+        </div>
+        <div class="cd-head-actions">
+          <a routerLink="/coach/exercises" class="cd-btn cd-btn-ghost"><i class="fa-solid fa-dumbbell"></i>Exercices</a>
+          <button class="cd-btn cd-btn-solid" (click)="openInviteModal()"><i class="fa-solid fa-plus"></i>Inviter un athlète</button>
+        </div>
+      </header>
+
+      <div class="cd-kpis" data-tour="coach-stats">
+        <div class="cd-kpi"><span class="cd-kpi-label">Athlètes</span><span class="cd-kpi-value">{{ stats()?.totalAthletes || 0 }}</span></div>
+        <div class="cd-kpi"><span class="cd-kpi-label">Invitations en attente</span><span class="cd-kpi-value">{{ stats()?.pendingInvitations || 0 }}</span></div>
+        <div class="cd-kpi"><span class="cd-kpi-label">Séances cette semaine</span><span class="cd-kpi-value">{{ count(stats()?.sessionsCreatedThisWeek) }}</span></div>
+        <div class="cd-kpi"><span class="cd-kpi-label">Séances totales</span><span class="cd-kpi-value">{{ count(stats()?.sessionsCreatedTotal) }}</span></div>
+      </div>
+
+      <div class="cd-cols">
+        <section class="cd-card" data-tour="coach-athletes">
+          <div class="cd-card-head">
+            <h2>Mes athlètes</h2>
+            @if (athletes().length > 0) {
+              <label class="cd-search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="search" placeholder="Rechercher un athlète"
+                       [value]="athleteSearch()" (input)="athleteSearch.set($any($event.target).value)">
+              </label>
+            }
+          </div>
+
+          @if (athletes().length === 0) {
+            <p class="cd-empty">Aucun athlète pour l'instant. Invite ton premier athlète pour commencer.</p>
+          } @else {
+            <div class="cd-table">
+              <div class="cd-row cd-row-head">
+                <span>Athlète</span><span>Statut</span><span>Offre</span><span>Prochaine course</span><span></span>
+              </div>
+              @for (athlete of filteredAthletes(); track athlete._id) {
+                <div class="cd-row">
+                  <div class="cd-athlete">
+                    <span class="cd-avatar">{{ getInitials(athlete.firstName, athlete.lastName) }}</span>
+                    <span class="cd-athlete-text">
+                      <span class="cd-name">{{ athlete.firstName }} {{ athlete.lastName }}</span>
+                      <span class="cd-sub">{{ getLevelLabel(athlete.runningLevel) }}</span>
+                    </span>
+                  </div>
+                  <div class="cd-status status-{{ getActivityStatus(athlete) }}" [title]="getActivityTooltip(athlete)">
+                    <span class="cd-dot"></span>{{ getActivityBadgeLabel(athlete) }}
+                  </div>
+                  <div><span class="cd-pill">{{ getPackageDetails(athlete).name }}</span></div>
+                  <div class="cd-race">
+                    @if (athlete.nextCompetition) {
+                      <span class="cd-name">{{ athlete.nextCompetition.name }}</span>
+                      <span class="cd-sub">{{ athlete.nextCompetition.priority }} · {{ athlete.nextCompetition.date | date:'d MMM' }}</span>
+                    } @else {
+                      <span class="cd-sub">Aucune</span>
+                    }
+                  </div>
+                  <div class="cd-row-actions">
+                    <button class="cd-icon cd-icon-boxed" title="Planning" (click)="viewAthletePlanning(athlete)">
+                      <i class="fa-regular fa-calendar"></i>
+                    </button>
+                    <button class="cd-icon" title="Voir la fiche" (click)="viewAthlete(athlete)">
+                      <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </section>
+
+        <aside class="cd-rail">
+          @if (subscriptionRequests().length > 0) {
+            <section class="cd-card cd-card-pad">
+              <div class="cd-card-head">
+                <h2>Demandes d'abonnement</h2>
+                <span class="cd-count">{{ subscriptionRequests().length }}</span>
+              </div>
+              @for (req of subscriptionRequests(); track req._id) {
+                <div class="cd-request">
+                  <div class="cd-athlete">
+                    <span class="cd-avatar">{{ getInitials(req.athlete.firstName, req.athlete.lastName) }}</span>
+                    <span class="cd-athlete-text">
+                      <span class="cd-name">{{ req.athlete.firstName }} {{ req.athlete.lastName }}</span>
+                      <span class="cd-sub">Demandé le {{ req.invitedAt | date:'d MMM' }}</span>
+                    </span>
+                    <span class="cd-pill">{{ getPackageByType(req.packageType)?.name }}</span>
+                  </div>
+                  <div class="cd-request-actions">
+                    <button class="cd-btn cd-btn-solid cd-btn-sm" [disabled]="respondingRequestId() === req._id"
+                            (click)="respondRequest(req, 'accept')"><i class="fa-solid fa-check"></i>Accepter</button>
+                    <button class="cd-btn cd-btn-ghost cd-btn-sm" [disabled]="respondingRequestId() === req._id"
+                            (click)="respondRequest(req, 'decline')">Refuser</button>
+                    <button class="cd-btn cd-btn-ghost cd-btn-sm cd-btn-round" title="Discuter avant de décider"
+                            (click)="openRequestChat(req)"><i class="fa-regular fa-message"></i></button>
+                  </div>
+                </div>
+              }
+            </section>
+          }
+
+          @if (pendingInvitations().length > 0) {
+            <section class="cd-card cd-card-pad">
+              <div class="cd-card-head"><h2>Invitations en attente</h2></div>
+              @for (inv of pendingInvitations(); track inv._id) {
+                <div class="cd-invite">
+                  <span class="cd-avatar">{{ getInitials(inv.athlete.firstName, inv.athlete.lastName) }}</span>
+                  <span class="cd-athlete-text">
+                    <span class="cd-name">{{ inv.athlete.firstName }} {{ inv.athlete.lastName }}</span>
+                    <span class="cd-sub">Envoyée le {{ inv.invitedAt | date:'d MMM' }}</span>
+                  </span>
+                  <span class="cd-pill cd-pill-warn"><i class="fa-regular fa-clock"></i>En attente</span>
+                </div>
+              }
+            </section>
+          }
+        </aside>
+      </div>
     </div>
   } @else {
     <!-- Stats cards -->
@@ -193,7 +321,7 @@
                     <span class="value next-competition">
                       <span class="comp-priority priority-{{ athlete.nextCompetition.priority }}">{{ athlete.nextCompetition.priority }}</span>
                       {{ athlete.nextCompetition.name }}
-                      <span class="comp-date">· {{ athlete.nextCompetition.date | date:'dd MMM' }}</span>
+                      <span class="comp-date">· {{ athlete.nextCompetition.date | date:'d MMM' }}</span>
                     </span>
                   } @else {
                     <span class="value muted">Aucune</span>
@@ -214,6 +342,7 @@
         </div>
       }
     </section>
+    }
   }
 </div>
 
