@@ -9,16 +9,10 @@
 1. **Compte Expo** : `npx eas login` depuis `app/`.
 2. **Rattacher le projet** : `npx eas init` — écrit `extra.eas.projectId` dans `app.json`.
 3. **Variables publiques du build.** Un build EAS ne lit pas ton `.env` local : les `EXPO_PUBLIC_*`
-   doivent être connues d'EAS. Le plus simple, une fois les identifiants Google créés :
-
-   ```bash
-   npx eas env:create --name EXPO_PUBLIC_API_URL --value https://trainwise-backend-rnd4.onrender.com --visibility plaintext --environment production
-   npx eas env:create --name EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID --value … --visibility plaintext --environment production
-   npx eas env:create --name EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID --value … --visibility plaintext --environment production
-   npx eas env:create --name EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID --value … --visibility plaintext --environment production
-   ```
-
-   Ce ne sont pas des secrets : un identifiant client OAuth est public par construction.
+   sont déclarées dans le bloc `env` de chaque profil d'`eas.json`, déjà rempli (API, mode démo,
+   identifiant client Google iOS). Ce ne sont pas des secrets : un identifiant client OAuth est
+   public par construction, il vit dans le binaire. Les prochains (Android, Web) s'ajoutent au même
+   endroit.
 4. **App Store Connect** : l'app `com.trainwise.appli` doit exister (elle existe déjà, l'app
    Capacitor a été soumise en juillet). Vérifie que **Sign In with Apple** est coché sur
    l'identifiant, sinon le build sera rejeté à la validation.

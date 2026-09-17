@@ -7,22 +7,32 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "ios": { "simulator": false },
+      "ios": {
+        "simulator": false
+      },
       "env": {
-        "EXPO_PUBLIC_DEMO": "0"
+        "EXPO_PUBLIC_DEMO": "0",
+        "EXPO_PUBLIC_API_URL": "https://trainwise-backend-rnd4.onrender.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "1002254054572-e2q9cnogfc92tbul70jf0n9qg22klqu8.apps.googleusercontent.com"
       }
     },
     "preview": {
       "distribution": "internal",
-      "ios": { "simulator": false },
+      "ios": {
+        "simulator": false
+      },
       "env": {
-        "EXPO_PUBLIC_DEMO": "0"
+        "EXPO_PUBLIC_DEMO": "0",
+        "EXPO_PUBLIC_API_URL": "https://trainwise-backend-rnd4.onrender.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "1002254054572-e2q9cnogfc92tbul70jf0n9qg22klqu8.apps.googleusercontent.com"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_DEMO": "0"
+        "EXPO_PUBLIC_DEMO": "0",
+        "EXPO_PUBLIC_API_URL": "https://trainwise-backend-rnd4.onrender.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "1002254054572-e2q9cnogfc92tbul70jf0n9qg22klqu8.apps.googleusercontent.com"
       }
     }
   },
