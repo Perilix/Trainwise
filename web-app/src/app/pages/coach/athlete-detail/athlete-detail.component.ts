@@ -7,15 +7,30 @@ import { ChatService } from '../../../services/chat.service';
 import { AthleteDetail, RecentActivity } from '../../../interfaces/coach.interfaces';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
 import { CompetitionsManagerComponent } from '../../../components/competitions-manager/competitions-manager.component';
+import { COACH_PACKAGES, PackageType } from '../../../interfaces/package.interface';
 
 @Component({
   selector: 'app-athlete-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavbarComponent, CompetitionsManagerComponent],
+  imports: [CommonModule, FormsModule, RouterLink, NavbarComponent, CompetitionsManagerComponent],
   templateUrl: './athlete-detail.component.html',
   styleUrl: './athlete-detail.component.scss'
 })
 export class AthleteDetailComponent implements OnInit {
+  // Au-delà de 1024px, la fiche prend la mise en page des maquettes
+  // (colonne d'analyse + rail de profil) ; en dessous, la vue mobile est gardée.
+  isDesktop = signal(typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches);
+
+  readonly WEEK_DAYS = [
+    { key: 'lundi', short: 'Lun.' },
+    { key: 'mardi', short: 'Mar.' },
+    { key: 'mercredi', short: 'Mer.' },
+    { key: 'jeudi', short: 'Jeu.' },
+    { key: 'vendredi', short: 'Ven.' },
+    { key: 'samedi', short: 'Sam.' },
+    { key: 'dimanche', short: 'Dim.' },
+  ];
+
   athleteId = '';
   athlete = signal<AthleteDetail | null>(null);
   isLoading = signal(true);
@@ -38,6 +53,9 @@ export class AthleteDetailComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    if (typeof window !== 'undefined') {
+      window.matchMedia('(min-width: 1024px)').addEventListener('change', event => this.isDesktop.set(event.matches));
+    }
     this.athleteId = this.route.snapshot.paramMap.get('id') || '';
     if (this.athleteId) {
       this.loadAthlete();
@@ -83,6 +101,41 @@ export class AthleteDetailComponent implements OnInit {
     if (status === 'green') return 'Top';
     if (status === 'orange') return 'À surveiller';
     return 'Alerte';
+  }
+
+  /** Nom de l'offre souscrite, pour le sous-titre de l'en-tête desktop. */
+  packageLabel(): string {
+    const type: PackageType = this.athlete()?.packageType ?? 'silver';
+    return COACH_PACKAGES[type]?.name ?? '';
+  }
+
+  /**
+   * Les huit dernières semaines de forme.
+   *
+   * L'API n'historise que les *changements* de statut : on rejoue donc ces
+   * transitions pour retrouver, semaine par semaine, celui qui était en cours.
+   * `null` = antérieur au premier calcul, donc inconnu.
+   */
+  formWeeks(): ({ status: 'green' | 'orange' | 'red' | null })[] {
+    const athlete = this.athlete();
+    if (!athlete) return [];
+
+    const history = [...(athlete.statusHistory ?? [])]
+      .map(entry => ({ status: entry.status, time: new Date(entry.date).getTime() }))
+      .sort((a, b) => a.time - b.time);
+
+    const week = 7 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+
+    return Array.from({ length: 8 }, (_, index) => {
+      // Fin de chaque semaine, de la plus ancienne (index 0) à celle en cours.
+      const at = now - (7 - index) * week;
+      const applicable = history.filter(entry => entry.time <= at).pop();
+      if (applicable) return { status: applicable.status };
+      // Pas de transition avant cette date : la semaine en cours retombe sur
+      // le statut courant, les plus anciennes restent inconnues.
+      return { status: index === 7 ? (athlete.status ?? null) : null };
+    });
   }
 
   formatShortDate(date: Date | string): string {
@@ -168,6 +221,17 @@ export class AthleteDetailComponent implements OnInit {
       'mixte': 'Mixte'
     };
     return value ? types[value] || value : 'Non défini';
+  }
+
+  /** Durée d'une sortie en horloge — « 49:30 », « 1:02:10 » — comme sur la fiche. */
+  formatClock(minutes: number | undefined): string {
+    if (minutes === undefined || minutes === null) return '—';
+    const total = Math.round(minutes * 60);
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    const pad = (value: number) => String(value).padStart(2, '0');
+    return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
   }
 
   formatDuration(minutes: number): string {

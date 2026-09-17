@@ -776,3 +776,283 @@
     grid-column: 1 / -1;
   }
 }
+
+// ===============================================================
+// Fiche athlète — mise en page desktop des maquettes (≥1024px).
+// Préfixe `ad-` : ces règles ne touchent jamais la vue mobile, qui
+// vit dans l'autre branche du gabarit.
+// ===============================================================
+.container.ad-page {
+  max-width: none;
+  padding: calc(var(--navbar-height, 0px) + 28px) 40px 40px;
+}
+
+.ad {
+  --ad-navy: #003554;
+  --ad-ink: #051923;
+  --ad-muted: #5A6878;
+  --ad-faint: #7D8793;
+  --ad-line: #E7E2D9;
+  --ad-line-strong: #D3CCBF;
+  --ad-surface: #FFFFFF;
+  --ad-bg: #F6F4F0;
+  --ad-accent-soft: #E3F4FD;
+  --ad-accent-ink: #0077B6;
+  --ad-green: #10B981;
+  --ad-orange: #F59E0B;
+  --ad-red: #DC2626;
+
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-family: 'Poppins', sans-serif;
+  color: var(--ad-ink);
+}
+
+.ad-back {
+  display: inline-flex; align-items: center; gap: 8px; align-self: flex-start;
+  font-size: 14px; font-weight: 500; color: var(--ad-muted); text-decoration: none;
+
+  &:hover { color: var(--ad-ink); }
+  i { font-size: 12px; }
+}
+
+.ad-head {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+
+  h1 { font-size: 30px; line-height: 38px; font-weight: 600; letter-spacing: -0.02em; margin: 0; }
+  p { font-size: 14px; line-height: 21px; color: var(--ad-muted); margin: 2px 0 0; }
+}
+
+.ad-head-text { flex: 1; min-width: 0; }
+.ad-head-actions { display: flex; gap: 10px; }
+
+.ad-avatar {
+  width: 64px; height: 64px; border-radius: 999px; flex-shrink: 0; overflow: hidden;
+  background: var(--ad-accent-soft); color: var(--ad-accent-ink);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 600;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+}
+
+.ad-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 48px; padding: 0 20px; border-radius: 12px;
+  font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer;
+  text-decoration: none;
+
+  &.ad-btn-solid { background: var(--ad-navy); color: #fff; border: 1px solid var(--ad-navy); }
+  &.ad-btn-ghost { background: var(--ad-surface); color: var(--ad-ink); border: 1px solid var(--ad-line-strong); }
+  i { font-size: 14px; }
+}
+
+.ad-cols { display: grid; grid-template-columns: minmax(0, 1fr) 412px; gap: 20px; align-items: start; }
+.ad-main, .ad-rail { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+
+.ad-card {
+  background: var(--ad-surface);
+  border: 1px solid var(--ad-line);
+  border-radius: 16px;
+
+  &.ad-card-pad { padding: 20px 22px 22px; }
+  h2 { font-size: 16px; line-height: 22px; font-weight: 600; margin: 0; }
+}
+
+.ad-card-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--ad-line);
+}
+
+.ad-overline {
+  display: block;
+  font-size: 11px; line-height: 16px; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--ad-faint);
+  margin: 18px 0 4px;
+
+  &:first-of-type { margin-top: 14px; }
+}
+
+.ad-muted { font-size: 13px; line-height: 18px; color: var(--ad-muted); }
+.ad-empty { padding: 20px 22px; color: var(--ad-muted); font-size: 14px; margin: 0; }
+
+// --- Statut de forme -------------------------------------------------
+.ad-status { padding: 22px; }
+
+.ad-status-head { display: flex; align-items: center; gap: 14px; padding-bottom: 20px; }
+
+.ad-status-icon {
+  width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+
+  .status-green & { background: #DCFCE7; color: #047857; }
+  .status-orange & { background: #FDF0D5; color: #B45309; }
+  .status-red & { background: #FDE4E4; color: #B91C1C; }
+}
+
+.ad-status-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.ad-status-text .ad-overline { margin: 0; }
+.ad-status-value { font-size: 22px; line-height: 30px; font-weight: 600; }
+
+.ad-status-trend { display: flex; align-items: center; gap: 10px; }
+
+.ad-trend {
+  display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px;
+  border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap;
+  background: #EFEBE4; color: var(--ad-muted);
+
+  &.trend-declining { background: #FDF0D5; color: #B45309; }
+  &.trend-improving { background: #DCFCE7; color: #047857; }
+  i { font-size: 11px; }
+}
+
+.ad-status-stats {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px;
+  padding: 18px 0;
+  border-top: 1px solid var(--ad-line);
+  border-bottom: 1px solid var(--ad-line);
+}
+
+.ad-stat { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ad-stat-label { font-size: 13px; line-height: 18px; color: var(--ad-muted); }
+.ad-stat-value {
+  font-size: 20px; line-height: 28px; font-weight: 600;
+  small { font-size: 13px; font-weight: 500; color: var(--ad-muted); margin-left: 3px; }
+}
+.ad-stat-note { font-size: 12px; line-height: 17px; color: var(--ad-faint); }
+
+.ad-weeks { padding-top: 16px; }
+.ad-weeks-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ad-legend { display: flex; gap: 14px; }
+.ad-legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ad-muted); }
+
+.ad-dot {
+  width: 8px; height: 8px; border-radius: 999px; display: inline-block;
+
+  &.dot-green { background: var(--ad-green); }
+  &.dot-orange { background: var(--ad-orange); }
+  &.dot-red { background: var(--ad-red); }
+}
+
+.ad-weeks-bars { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+
+.ad-week {
+  height: 8px; border-radius: 999px; background: var(--ad-line);
+
+  &.bar-green { background: var(--ad-green); }
+  &.bar-orange { background: var(--ad-orange); }
+  &.bar-red { background: var(--ad-red); }
+  // Semaine antérieure au premier calcul : rien à affirmer.
+  &.bar-unknown { background: repeating-linear-gradient(90deg, var(--ad-line) 0 4px, transparent 4px 8px); }
+}
+
+// --- Tableau d'activité ----------------------------------------------
+.ad-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) 86px 86px 92px 86px 24px;
+  gap: 12px;
+  align-items: center;
+  padding: 0 22px;
+  height: 64px;
+  font-size: 14px;
+  border-top: 1px solid var(--ad-line);
+
+  &:first-of-type { border-top: none; }
+  &.ad-row-click { cursor: pointer; }
+  &.ad-row-click:hover { background: var(--ad-bg); }
+}
+
+.ad-row-head {
+  height: 40px;
+  background: var(--ad-bg);
+  border-top: none;
+  border-bottom: 1px solid var(--ad-line);
+
+  span {
+    font-size: 11px; line-height: 16px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--ad-faint);
+  }
+}
+
+.ad-session { display: flex; align-items: center; gap: 12px; min-width: 0; }
+
+.ad-session-icon {
+  width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 14px;
+  background: var(--ad-accent-soft); color: var(--ad-accent-ink);
+
+  &.type-strength { background: #EFEBE4; color: var(--ad-muted); }
+}
+
+.ad-session-text { display: flex; flex-direction: column; min-width: 0; }
+.ad-session-name { font-size: 14px; line-height: 20px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ad-feeling { font-weight: 600; small { font-size: 12px; font-weight: 500; color: var(--ad-muted); } }
+.ad-row-chevron { color: var(--ad-faint); font-size: 12px; text-align: right; }
+
+// --- Rail de droite ---------------------------------------------------
+.ad-pairs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 20px; margin-top: 16px; }
+.ad-pair { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ad-pair-value { display: flex; align-items: center; gap: 8px; font-size: 15px; line-height: 22px; font-weight: 600; }
+
+.ad-pen {
+  border: none; background: none; padding: 0; cursor: pointer;
+  color: var(--ad-accent-ink); font-size: 12px;
+}
+
+.ad-vma-edit {
+  display: flex; align-items: center; gap: 6px;
+
+  input { width: 76px; height: 32px; padding: 0 8px; border: 1px solid var(--ad-line-strong); border-radius: 8px; font: inherit; font-size: 14px; }
+  button { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--ad-line-strong); background: var(--ad-surface); cursor: pointer; }
+}
+
+.ad-error { font-size: 12px; color: var(--ad-red); }
+
+.ad-line {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--ad-line);
+  font-size: 14px;
+
+  span { color: var(--ad-muted); white-space: nowrap; }
+  strong { font-weight: 600; text-align: right; }
+}
+
+.ad-comp {
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 14px; padding: 12px 14px;
+  background: var(--ad-bg); border-radius: 12px;
+}
+
+.ad-comp-priority {
+  width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--ad-navy); color: #fff; font-size: 13px; font-weight: 700;
+}
+
+// Les sept jours tiennent sur une ligne, quelle que soit la largeur du rail.
+.ad-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; margin-top: 16px; }
+
+.ad-day {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 34px; border-radius: 10px;
+  background: #EFEBE4; color: var(--ad-faint);
+  font-size: 13px; font-weight: 600;
+
+  &.on { background: var(--ad-navy); color: #fff; }
+}
+
+.ad-slot { margin: 14px 0 0; }
+
+// Sous 1400px, le rail passerait sous le tableau en écrasant ses colonnes.
+@media (max-width: 1399px) {
+  .ad-cols { grid-template-columns: minmax(0, 1fr); }
+  .ad-rail { flex-direction: row; align-items: flex-start; }
+  .ad-rail > * { flex: 1; min-width: 0; }
+  // Le rail rétréci ne tient plus sept jours de front.
+  .ad-days { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}

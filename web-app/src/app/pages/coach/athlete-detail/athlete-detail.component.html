@@ -1,12 +1,14 @@
 <app-navbar></app-navbar>
 
-<div class="container">
-  <button class="back-btn" (click)="goBack()">
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M19 12H5M12 19l-7-7 7-7"/>
-    </svg>
-    Retour
-  </button>
+<div class="container" [class.ad-page]="isDesktop()">
+  @if (!isDesktop()) {
+    <button class="back-btn" (click)="goBack()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Retour
+    </button>
+  }
 
   @if (error()) {
     <div class="alert error">{{ error() }}</div>
@@ -16,6 +18,246 @@
     <div class="loading-state">
       <div class="loading-spinner"></div>
       <p>Chargement...</p>
+    </div>
+  } @else if (athlete() && isDesktop()) {
+    <!-- Fiche athlète, mise en page des maquettes desktop -->
+    <div class="ad">
+      <a class="ad-back" routerLink="/coach/dashboard">
+        <i class="fa-solid fa-chevron-left"></i>Mes athlètes
+      </a>
+
+      <header class="ad-head">
+        <span class="ad-avatar">
+          @if (athlete()!.profilePicture) {
+            <img [src]="athlete()!.profilePicture" alt="">
+          } @else {
+            {{ getInitials(athlete()!.firstName, athlete()!.lastName) }}
+          }
+        </span>
+        <div class="ad-head-text">
+          <h1>{{ athlete()!.firstName }} {{ athlete()!.lastName }}</h1>
+          <p>Votre athlète depuis le {{ formatDate(athlete()!.joinedAt) }} · offre {{ packageLabel() }}</p>
+        </div>
+        <div class="ad-head-actions">
+          <button class="ad-btn ad-btn-ghost" (click)="startChat()"><i class="fa-regular fa-message"></i>Message</button>
+          <button class="ad-btn ad-btn-solid" (click)="viewPlanning()"><i class="fa-regular fa-calendar"></i>Planning</button>
+        </div>
+      </header>
+
+      <div class="ad-cols">
+        <div class="ad-main">
+
+          <!-- Statut de forme -->
+          <section class="ad-card ad-status status-{{ athlete()!.status || 'red' }}">
+            <div class="ad-status-head">
+              <span class="ad-status-icon">
+                <i class="fa-solid" [class.fa-circle-check]="athlete()!.status === 'green'"
+                   [class.fa-triangle-exclamation]="athlete()!.status !== 'green'"></i>
+              </span>
+              <div class="ad-status-text">
+                <span class="ad-overline">Statut de forme</span>
+                <span class="ad-status-value">{{ getStatusLabel(athlete()!.status) }}</span>
+              </div>
+              <div class="ad-status-trend">
+                <span class="ad-trend trend-{{ athlete()!.statusTrend || 'stable' }}">
+                  @if (athlete()!.statusTrend === 'declining') {
+                    <i class="fa-solid fa-arrow-trend-down"></i>En dégradation
+                  } @else if (athlete()!.statusTrend === 'improving') {
+                    <i class="fa-solid fa-arrow-trend-up"></i>En amélioration
+                  } @else {
+                    <i class="fa-solid fa-minus"></i>Stable
+                  }
+                </span>
+                @if (athlete()!.statusChangedAt) {
+                  <span class="ad-muted">depuis le {{ formatShortDate(athlete()!.statusChangedAt!) }}</span>
+                }
+              </div>
+            </div>
+
+            <div class="ad-status-stats">
+              <div class="ad-stat">
+                <span class="ad-stat-label">Dernière activité</span>
+                @if (athlete()!.daysSinceActivity === null || athlete()!.daysSinceActivity === undefined) {
+                  <span class="ad-stat-value">Jamais</span>
+                } @else if (athlete()!.daysSinceActivity === 0) {
+                  <span class="ad-stat-value">Aujourd'hui</span>
+                } @else if (athlete()!.daysSinceActivity === 1) {
+                  <span class="ad-stat-value">Hier</span>
+                } @else {
+                  <span class="ad-stat-value">il y a {{ athlete()!.daysSinceActivity }} j</span>
+                }
+              </div>
+              <div class="ad-stat">
+                <span class="ad-stat-label">Sautées · 4 sem.</span>
+                <span class="ad-stat-value">{{ athlete()!.skippedCount ?? 0 }}</span>
+              </div>
+              <div class="ad-stat">
+                <span class="ad-stat-label">Ressenti moyen</span>
+                @if (athlete()!.avgFeeling !== null && athlete()!.avgFeeling !== undefined) {
+                  <span class="ad-stat-value">{{ athlete()!.avgFeeling | number:'1.0-1' }}<small>/10</small></span>
+                } @else {
+                  <span class="ad-stat-value ad-muted">—</span>
+                }
+              </div>
+              <div class="ad-stat">
+                <span class="ad-stat-label">Volume · 7 jours</span>
+                <span class="ad-stat-value">{{ athlete()!.weeklyVolume ?? 0 }}<small>km</small></span>
+                @if (athlete()!.baselineWeeklyVolume) {
+                  <span class="ad-stat-note">habituel : {{ athlete()!.baselineWeeklyVolume }} km</span>
+                }
+              </div>
+            </div>
+
+            <div class="ad-weeks">
+              <div class="ad-weeks-head">
+                <span class="ad-muted">8 dernières semaines</span>
+                <span class="ad-legend">
+                  <span class="ad-legend-item"><i class="ad-dot dot-green"></i>En forme</span>
+                  <span class="ad-legend-item"><i class="ad-dot dot-orange"></i>Vigilance</span>
+                  <span class="ad-legend-item"><i class="ad-dot dot-red"></i>Alerte</span>
+                </span>
+              </div>
+              <div class="ad-weeks-bars">
+                @for (week of formWeeks(); track $index) {
+                  <span class="ad-week bar-{{ week.status || 'unknown' }}"
+                        [title]="week.status ? '' : 'Avant le premier calcul de forme'"></span>
+                }
+              </div>
+            </div>
+          </section>
+
+          <!-- Activité -->
+          <section class="ad-card">
+            <div class="ad-card-head">
+              <h2>Activité</h2>
+              <span class="ad-muted">7 derniers jours</span>
+            </div>
+
+            @if (athlete()!.recentStats.recentActivities.length === 0) {
+              <p class="ad-empty">Aucune activité sur les 7 derniers jours.</p>
+            } @else {
+              <div class="ad-row ad-row-head">
+                <span>Séance</span><span>Volume</span><span>Durée</span><span>Allure</span><span>Ressenti</span><span></span>
+              </div>
+              @for (activity of athlete()!.recentStats.recentActivities; track $index) {
+                <div class="ad-row ad-row-click" (click)="openActivity(activity)">
+                  <div class="ad-session">
+                    <span class="ad-session-icon type-{{ activity.type }}">
+                      <i class="fa-solid" [class.fa-person-running]="activity.type === 'run'"
+                         [class.fa-dumbbell]="activity.type === 'strength'"></i>
+                    </span>
+                    <span class="ad-session-text">
+                      <span class="ad-session-name">
+                        @if (activity.type === 'run') { Course } @else { {{ getSessionTypeLabel(activity.sessionType || '') }} }
+                      </span>
+                      <span class="ad-muted">{{ formatActivityDate(activity.date) }}</span>
+                    </span>
+                  </div>
+                  <div>
+                    @if (activity.type === 'run') {
+                      {{ activity.distance ? (activity.distance | number:'1.0-1') + ' km' : '—' }}
+                    } @else {
+                      {{ activity.exerciseCount ? activity.exerciseCount + ' exos' : '—' }}
+                    }
+                  </div>
+                  <div>{{ formatClock(activity.duration) }}</div>
+                  <div>{{ activity.averagePace ? activity.averagePace + ' /km' : '—' }}</div>
+                  <div>
+                    @if (activity.feeling) {
+                      <span class="ad-feeling">{{ activity.feeling | number:'1.0-1' }}<small>/10</small></span>
+                    } @else { — }
+                  </div>
+                  <div class="ad-row-chevron"><i class="fa-solid fa-chevron-right"></i></div>
+                </div>
+              }
+            }
+          </section>
+        </div>
+
+        <aside class="ad-rail">
+          <!-- Données physiques -->
+          <section class="ad-card ad-card-pad">
+            <h2>Données physiques</h2>
+            <div class="ad-pairs">
+              <div class="ad-pair">
+                <span class="ad-stat-label">Taille</span>
+                <span class="ad-pair-value">{{ athlete()!.height ? athlete()!.height + ' cm' : '—' }}</span>
+              </div>
+              <div class="ad-pair">
+                <span class="ad-stat-label">Poids</span>
+                <span class="ad-pair-value">{{ athlete()!.weight ? athlete()!.weight + ' kg' : '—' }}</span>
+              </div>
+              <div class="ad-pair">
+                <span class="ad-stat-label">VMA</span>
+                @if (!editingVma()) {
+                  <span class="ad-pair-value">
+                    {{ athlete()!.vma ? athlete()!.vma + ' km/h' : '—' }}
+                    <button class="ad-pen" (click)="startEditVma()" title="Modifier la VMA"><i class="fa-solid fa-pen"></i></button>
+                  </span>
+                } @else {
+                  <span class="ad-vma-edit">
+                    <input type="number" [ngModel]="vmaInput()" (ngModelChange)="vmaInput.set($event)"
+                           min="8" max="30" step="0.5" (keyup.enter)="saveVma()" (keyup.escape)="cancelEditVma()">
+                    <button (click)="saveVma()" [disabled]="vmaSaving()"><i class="fa-solid fa-check"></i></button>
+                    <button (click)="cancelEditVma()"><i class="fa-solid fa-xmark"></i></button>
+                  </span>
+                  @if (vmaError()) { <span class="ad-error">{{ vmaError() }}</span> }
+                }
+              </div>
+              <div class="ad-pair">
+                <span class="ad-stat-label">FCmax</span>
+                <span class="ad-pair-value">{{ athlete()!.fcmax ? athlete()!.fcmax + ' bpm' : '—' }}</span>
+              </div>
+              <div class="ad-pair">
+                <span class="ad-stat-label">Âge</span>
+                <span class="ad-pair-value">{{ athlete()!.age ? athlete()!.age + ' ans' : '—' }}</span>
+              </div>
+              <div class="ad-pair">
+                <span class="ad-stat-label">Genre</span>
+                <span class="ad-pair-value">{{ getGenderLabel(athlete()!.gender) }}</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Profil sportif -->
+          <section class="ad-card ad-card-pad">
+            <h2>Profil sportif</h2>
+
+            <span class="ad-overline">Course à pied</span>
+            <div class="ad-line"><span>Niveau</span><strong>{{ getLevelLabel(athlete()!.runningLevel) }}</strong></div>
+            <div class="ad-line"><span>Fréquence</span><strong>{{ athlete()!.weeklyFrequency ? athlete()!.weeklyFrequency + ' séances/sem.' : '—' }}</strong></div>
+            <div class="ad-line"><span>Blessures</span><strong>{{ athlete()!.injuries || 'Aucune' }}</strong></div>
+
+            @if (athlete()!.nextCompetition; as comp) {
+              <div class="ad-comp">
+                <span class="ad-comp-priority">{{ comp.priority }}</span>
+                <span class="ad-session-text">
+                  <span class="ad-session-name">{{ comp.name }}</span>
+                  <span class="ad-muted">
+                    {{ comp.date | date:'EEE d MMM' }}@if (comp.targetTime) { · Objectif {{ comp.targetTime }} }
+                  </span>
+                </span>
+              </div>
+            }
+
+            <span class="ad-overline">Musculation</span>
+            <div class="ad-line"><span>Objectif</span><strong>{{ getStrengthGoalLabel(athlete()!.strengthGoal) }}</strong></div>
+            <div class="ad-line"><span>Type</span><strong>{{ getStrengthTypeLabel(athlete()!.strengthType) }}</strong></div>
+            <div class="ad-line"><span>Fréquence</span><strong>{{ athlete()!.strengthFrequency != null ? athlete()!.strengthFrequency + ' séances/sem.' : '—' }}</strong></div>
+          </section>
+
+          <!-- Disponibilités -->
+          <section class="ad-card ad-card-pad">
+            <h2>Disponibilités</h2>
+            <div class="ad-days">
+              @for (day of WEEK_DAYS; track day.key) {
+                <span class="ad-day" [class.on]="(athlete()!.availableDays || []).includes(day.key)">{{ day.short }}</span>
+              }
+            </div>
+            <p class="ad-muted ad-slot">Créneau préféré : {{ getPreferredTimeLabel(athlete()!.preferredTime).toLowerCase() }}</p>
+          </section>
+        </aside>
+      </div>
     </div>
   } @else if (athlete()) {
     <div class="athlete-profile">
