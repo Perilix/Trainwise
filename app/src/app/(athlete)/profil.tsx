@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { Avatar, BackBar, Button, Card, Chip, Icon, IconButton, Screen, Section, SectionHeader, StateView, Text, type IconName } from '@/components/ui';
-import { useAthleteActions, useAthleteProfile } from '@/features/athlete/queries';
+import { useAthleteActions, useAthleteProfile, type StravaImportResult } from '@/features/athlete/queries';
+import { StravaImportModal } from '@/features/athlete/strava-import-modal';
 import { useSession } from '@/features/auth/session';
 import { onAppEvent } from '@/lib/app-events';
 import { formatDayShort, formatDecimal } from '@/lib/format';
@@ -19,13 +20,22 @@ export default function ProfileScreen() {
   const { data: profile, loading, error, refetch } = useAthleteProfile();
   const { connectStrava, disconnectStrava } = useAthleteActions();
   const [stravaBusy, setStravaBusy] = useState(false);
+  const [stravaImport, setStravaImport] = useState<StravaImportResult | null>(null);
 
-  // Liaison : autorisation Strava dans le navigateur système, puis retour dans l'app.
+  // Liaison : autorisation Strava dans le navigateur système, puis import de l'historique.
   const linkStrava = async () => {
     setStravaBusy(true);
     try {
-      if (await connectStrava()) refetch();
+      // La fenêtre d'import s'ouvre dès le retour de Strava et suit l'avancement.
+      const result = await connectStrava((progress) => setStravaImport(progress));
+      if (!result) {
+        setStravaImport(null);
+        return;
+      }
+      setStravaImport(result);
+      refetch();
     } catch (reason) {
+      setStravaImport(null);
       Alert.alert('Strava', reason instanceof Error ? reason.message : 'Connexion impossible.');
     } finally {
       setStravaBusy(false);
@@ -146,6 +156,8 @@ export default function ProfileScreen() {
         </Section>
       ) : null}
 
+      <StravaImportModal result={stravaImport} onClose={() => setStravaImport(null)} />
+
       <Section style={styles.tight}>
         <Card padding={0} style={styles.linksCard}>
           <LinkRow
@@ -158,7 +170,7 @@ export default function ProfileScreen() {
               profile.strava.connected ? (
                 <Button label={stravaBusy ? 'Déliaison…' : 'Délier'} variant="secondary" size="sm" disabled={stravaBusy} onPress={askDisconnectStrava} />
               ) : (
-                <Button label={stravaBusy ? 'Connexion…' : 'Connecter'} size="sm" disabled={stravaBusy} onPress={linkStrava} />
+                <Button label={stravaBusy ? 'Import…' : 'Connecter'} size="sm" disabled={stravaBusy} onPress={linkStrava} />
               )
             }
           />

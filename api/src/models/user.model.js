@@ -211,6 +211,19 @@ const userSchema = new mongoose.Schema({
     connectedAt: {
       type: Date,
       default: null
+    },
+    // Import initial déclenché à la connexion du compte Strava.
+    initialImport: {
+      status: {
+        type: String,
+        enum: ['running', 'done', 'partial', 'error'],
+        default: null
+      },
+      imported: { type: Number, default: 0 },
+      skipped: { type: Number, default: 0 },
+      startedAt: { type: Date, default: null },
+      finishedAt: { type: Date, default: null },
+      error: { type: String, default: null }
     }
   },
   // Push notifications
