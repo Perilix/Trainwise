@@ -14,6 +14,12 @@ export type ApiUser = {
   fcmax?: number;
   height?: number;
   weight?: number;
+  /** Blessures ou contraintes, en texte libre. */
+  injuries?: string;
+  /** Jours d'entraînement possibles : 'lundi', 'mardi'… */
+  availableDays?: string[];
+  /** Créneau préféré : 'matin', 'midi', 'soir'. */
+  preferredTime?: string;
   hasCompletedOnboarding?: boolean;
   // Profil coach
   disciplines?: string[];
@@ -128,6 +134,9 @@ export type ApiPlannedRun = {
   feeling: number | null;
   generatedBy: 'ai' | 'manual' | 'coach';
   createdBy: string | null;
+  // Le calendrier renvoie les séances entières : les blocs servent à estimer
+  // distance, durée et allure quand le coach n'a pas rempli les totaux.
+  runBlocks?: ApiRunBlock[];
 };
 
 export type ApiRunBlockStep = {
@@ -245,6 +254,8 @@ export type ApiRun = {
   feeling?: number;
   notes?: string;
   stravaActivityId: number | null;
+  /** Tracé encodé (format Google polyline) quand la sortie a un GPS. */
+  polyline?: string | null;
   /** Ce que le coach avait prévu, figé au moment où la sortie a été rattachée. */
   plannedSnapshot?: {
     title: string | null;
@@ -294,6 +305,7 @@ export type ApiCompetition = {
   _id: string;
   name: string;
   date: string;
+  discipline?: string;
   targetTime: string | null;
   priority: 'A' | 'B' | 'C';
   status: 'upcoming' | 'completed' | 'cancelled';

@@ -2,7 +2,7 @@ import { Tabs } from 'expo-router';
 import { useEffect } from 'react';
 
 import { TabBar, type TabItem } from '@/components/ui';
-import { useChatUnreadCount } from '@/features/athlete/queries';
+import { useAllChatUnreadCount } from '@/features/athlete/queries';
 import { useSocketEvent } from '@/features/realtime/socket-provider';
 import { onAppEvent } from '@/lib/app-events';
 
@@ -14,7 +14,7 @@ const COACH_TABS: readonly TabItem[] = [
 ];
 
 export default function CoachTabsLayout() {
-  const { data: unreadMessages, refetch } = useChatUnreadCount();
+  const { data: unreadMessages, refetch } = useAllChatUnreadCount();
 
   useSocketEvent('message:new', refetch);
   useEffect(() => onAppEvent('chat:read', refetch), [refetch]);

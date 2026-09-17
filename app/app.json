@@ -47,7 +47,8 @@
           "defaultChannel": "default"
         }
       ],
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      "expo-maps"
     ],
     "experiments": {
       "typedRoutes": true,

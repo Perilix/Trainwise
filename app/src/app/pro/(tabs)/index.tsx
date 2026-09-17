@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Avatar, Button, Card, Chip, Field, FormError, Icon, IconButton, Screen, Section, SectionHeader, StateView, Text } from '@/components/ui';
+import { Avatar, Button, Card, Field, FormError, Icon, IconButton, Screen, Section, SectionHeader, StateView, Text } from '@/components/ui';
 import { useCoachActions, useCoachHome } from '@/features/coach/queries';
 import { ATHLETE_STATUS_STYLE } from '@/features/coach/status';
 import type { CoachAthleteRow, SubscriptionRequestRow } from '@/features/coach/types';
@@ -159,7 +159,6 @@ function RequestRow({ request, divided, busy, onAccept, onDecline, onMessage }: 
           <Text variant="h3">{request.name}</Text>
           <Text variant="small">{request.requestedLabel}</Text>
         </View>
-        <Chip label={request.offer} />
       </View>
       <View style={styles.requestActions}>
         <Button label="Accepter" icon="check" size="sm" disabled={busy} onPress={onAccept} style={styles.flex} />
@@ -188,7 +187,6 @@ function AthleteRow({ athlete, divided, onPress }: { athlete: CoachAthleteRow; d
           <Text variant="h3" numberOfLines={1} style={styles.shrink}>
             {athlete.name}
           </Text>
-          <Chip label={athlete.offer} />
         </View>
         <Text variant="small" numberOfLines={1}>
           <Text variant="small" style={{ color: colors.ink, fontFamily: fontFamily.medium }}>

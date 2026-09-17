@@ -3,11 +3,15 @@ import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-nat
 import { useTheme } from '@/theme/theme-provider';
 import { radius } from '@/theme/tokens';
 
+import { GlassSurface, glassBackdrop } from './glass-surface';
 import { Icon, type IconName } from './icon';
 import { Text } from './text';
 
 // `inverse` : bouton blanc posé sur une surface de marque (carte du jour).
 export type ButtonVariant = 'primary' | 'secondary' | 'tonal' | 'ghost' | 'danger' | 'inverse' | 'accent' | 'violet';
+
+// Variantes rendues en verre teinté : les boutons d'action, jamais les boutons discrets.
+const GLASS_VARIANTS = new Set<ButtonVariant>(['primary', 'accent', 'violet', 'inverse']);
 
 type Props = {
   label: string;
@@ -38,6 +42,10 @@ export function Button({ label, onPress, variant = 'primary', size = 'md', shape
     violet: { bg: colors.violetBtn, border: colors.violetBtn, fg: '#FFFFFF' },
   }[variant];
   const small = size === 'sm';
+  // Les boutons d'action portent leur couleur en verre teinté : sur iOS 26 ils prennent
+  // le fond qu'ils survolent, ailleurs la couleur reste pleine (cf. docs/design-system.md § 5).
+  const glass = GLASS_VARIANTS.has(variant);
+  const shapeRadius = shape === 'pill' ? radius.pill : radius.md;
 
   return (
     <Pressable
@@ -49,12 +57,14 @@ export function Button({ label, onPress, variant = 'primary', size = 'md', shape
       hitSlop={small ? 4 : 0}
       style={({ pressed }) => [
         styles.base,
-        { height: small ? 36 : 48, paddingHorizontal: small ? 14 : 20, backgroundColor: tone.bg, borderColor: tone.border, borderRadius: shape === 'pill' ? radius.pill : radius.md },
+        { height: small ? 36 : 48, paddingHorizontal: small ? 14 : 20, borderColor: tone.border, borderRadius: shapeRadius },
+        glass ? styles.glassBase : { backgroundColor: tone.bg },
         fullWidth && styles.fullWidth,
         pressed && styles.pressed,
         disabled && styles.disabled,
         style,
       ]}>
+      {glass ? <GlassSurface radius={shapeRadius} tint={tone.bg} style={glassBackdrop} /> : null}
       {icon && iconPosition === 'leading' ? <Icon name={icon} size={small ? 16 : 18} color={tone.fg} strokeWidth={2} /> : null}
       <Text variant="h3" numberOfLines={1} style={{ color: tone.fg, fontSize: small ? 13 : 14 }}>
         {label}
@@ -74,6 +84,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   fullWidth: { alignSelf: 'stretch' },
-  pressed: { opacity: 0.85 },
+  // Le verre est posé en fond absolu : le bouton lui-même reste transparent et rogne les coins.
+  glassBase: { backgroundColor: 'transparent', overflow: 'hidden' },
+  pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
   disabled: { opacity: 0.5 },
 });

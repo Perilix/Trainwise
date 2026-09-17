@@ -2,14 +2,16 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { Button, Card, Chip, Screen, Section, SectionHeader, Stat, Text } from '@/components/ui';
+import { Button, Card, Chip, Icon, Screen, Section, SectionHeader, Stat, Text } from '@/components/ui';
 import { AthleteAppBar } from '@/features/athlete/athlete-app-bar';
 import { useAthleteActions, usePlanningMonth } from '@/features/athlete/queries';
 import { SESSION_STATUS_CHIP } from '@/features/athlete/session-status';
-import type { PlannedSession } from '@/features/athlete/types';
+import type { Activity, PlannedSession } from '@/features/athlete/types';
 import { MonthCalendar } from '@/features/planning/month-calendar';
 import { emitAppEvent, onAppEvent } from '@/lib/app-events';
-import { formatDayLong, formatDecimal, formatHoursMinutes, formatPace, toIsoDay } from '@/lib/format';
+import { formatClock, formatDayLong, formatDecimal, formatHoursMinutes, formatPace, toIsoDay } from '@/lib/format';
+import { useTheme } from '@/theme/theme-provider';
+import { radius } from '@/theme/tokens';
 
 export default function PlanningScreen() {
   const [now] = useState(() => new Date());
@@ -39,6 +41,8 @@ export default function PlanningScreen() {
   };
 
   const sessions = data?.sessionsByDay[selected] ?? [];
+  // Séances réalisées du jour (saisies ou importées de Strava) : elles ne sont pas des séances planifiées.
+  const activities = data?.activitiesByDay[selected] ?? [];
 
   return (
     <Screen tabs>
@@ -74,7 +78,7 @@ export default function PlanningScreen() {
               </View>
               <Button label="Ajouter" variant="secondary" size="sm" icon="plus" onPress={() => router.push({ pathname: '/seance/nouvelle', params: { date: selected } })} />
             </View>
-            {sessions.length ? (
+            {sessions.length || activities.length ? (
               <View style={styles.sessionList}>
                 {sessions.map((session) => (
                   <SessionCard
@@ -82,6 +86,15 @@ export default function PlanningScreen() {
                     session={session}
                     onSkip={() => skip(session.id)}
                     onOpen={() => router.push({ pathname: '/seance/[id]', params: { id: session.id } })}
+                  />
+                ))}
+                {activities.map((activity) => (
+                  <ActivityCard
+                    key={activity.id}
+                    activity={activity}
+                    onPress={
+                      activity.sport === 'running' ? () => router.push({ pathname: '/sortie/[id]', params: { id: activity.id } }) : undefined
+                    }
                   />
                 ))}
               </View>
@@ -139,10 +152,40 @@ function SessionCard({ session, onSkip, onOpen }: { session: PlannedSession; onS
   );
 }
 
+/** Séance déjà réalisée : saisie dans l'app ou importée de Strava. */
+function ActivityCard({ activity, onPress }: { activity: Activity; onPress?: () => void }) {
+  const { colors } = useTheme();
+  const running = activity.sport === 'running';
+  const meta = running
+    ? [activity.distanceKm ? `${formatDecimal(activity.distanceKm)} km` : null, formatClock(activity.durationSec), activity.paceSecPerKm ? `${formatPace(activity.paceSecPerKm)} /km` : null]
+    : [formatHoursMinutes(activity.durationSec), activity.setsCount ? `${activity.setsCount} séries` : null];
+
+  return (
+    <Card onPress={onPress} accessibilityLabel={`${activity.title}, séance réalisée`}>
+      <View style={styles.activityRow}>
+        <View style={[styles.activityTile, { backgroundColor: colors.accentSoft }]}>
+          <Icon name={running ? 'route' : 'dumbbell'} size={19} color={colors.accentInk} strokeWidth={1.9} />
+        </View>
+        <View style={styles.flex}>
+          <Text variant="h3" numberOfLines={1}>
+            {activity.title}
+          </Text>
+          <Text variant="small" tabular numberOfLines={1}>
+            {meta.filter(Boolean).join(' · ')}
+          </Text>
+        </View>
+        {activity.fromStrava ? <Chip label="Strava" tone="strava" badge /> : <Chip label="Réalisée" tone="success" badge />}
+      </View>
+    </Card>
+  );
+}
+
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 4, paddingBottom: 16 },
   dayHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
+  activityRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  activityTile: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   sessionList: { gap: 12 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   sessionTitle: { gap: 2, marginTop: 10 },

@@ -147,7 +147,7 @@ function SessionStats({ session, running, onBrand }: { session: PlannedSessionDe
   );
 }
 
-function BlockRow({ block, first }: { block: RunBlockView; first: boolean }) {
+export function BlockRow({ block, first }: { block: RunBlockView; first: boolean }) {
   const { colors, ramp } = useTheme();
   const peak = Math.max(...block.steps.map((step) => step.pct));
   const single = block.steps.length === 1 ? block.steps[0] : null;

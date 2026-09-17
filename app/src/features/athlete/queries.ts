@@ -12,10 +12,13 @@ import type {
   ApiNotification,
   ApiPlannedRunDetail,
   ApiRun,
+  ApiUser,
   ApiStrengthSession,
   ApiStravaStatus,
 } from '@/lib/api-types';
+import { emitAppEvent } from '@/lib/app-events';
 import { startOfWeek } from '@/lib/dates';
+import { formatPace } from '@/lib/format';
 import { useSessionQuery } from '@/features/auth/use-session-query';
 import { getConversations } from '@/features/chat/conversations';
 
@@ -59,9 +62,9 @@ export function useAthleteHome() {
 export function usePlanningMonth(year: number, monthIndex: number) {
   return useAthleteQuery(
     `planning:${year}-${monthIndex}`,
-    async () => {
+    async (user) => {
       const [calendar, coach] = await Promise.all([getCalendar(year, monthIndex), getCoach()]);
-      return buildPlanning(calendar, new Date(), coach?.firstName);
+      return buildPlanning(calendar, new Date(), coach?.firstName, user.vma ?? undefined);
     },
     () => ({ ...samplePlanning, year, monthIndex }),
   );
@@ -78,8 +81,8 @@ export function usePlannedSession(id: string) {
   );
 }
 
-export function useRunsOverview(period: RunsPeriod) {
-  return useAthleteQuery(`runs:${period}`, async () => buildRunsOverview(await getRuns(), period, new Date()), () => sampleRunsOverview);
+export function useRunsOverview(period: RunsPeriod, offset = 0) {
+  return useAthleteQuery(`runs:${period}:${offset}`, async () => buildRunsOverview(await getRuns(), period, new Date(), offset), () => sampleRunsOverview);
 }
 
 export function useRunDetail(id: string) {
@@ -148,8 +151,24 @@ export function useCoachInvitations() {
   );
 }
 
+/** Total des messages non lus, toutes conversations : côté coach, qui a la liste complète. */
+export function useAllChatUnreadCount() {
+  return useAthleteQuery('chat:unread:all', async () => (await api<{ unreadCount: number }>('/api/chat/unread')).unreadCount, () => 0);
+}
+
+/** Messages non lus du coach (onglet Coach de l'athlète). */
 export function useChatUnreadCount() {
-  return useAthleteQuery('chat:unread', async () => (await api<{ unreadCount: number }>('/api/chat/unread')).unreadCount, () => 1);
+  return useAthleteQuery(
+    'chat:unread',
+    async () => {
+      // `/api/chat/unread` totalise toutes les conversations, or l'athlète n'a d'écran que
+      // pour celle de son coach : un non-lu ailleurs laisserait la pastille allumée pour toujours.
+      const [conversations, coach] = await Promise.all([getConversations(), getCoach()]);
+      if (!coach) return 0;
+      return conversations.find((conversation) => conversation.otherParticipant?._id === coach._id)?.unreadCount ?? 0;
+    },
+    () => 0,
+  );
 }
 
 /** Écritures. Sans effet en mode démo. */
@@ -176,18 +195,34 @@ const waitForInitialImport = async (onProgress?: (result: StravaImportResult) =>
       last = initial;
       onProgress?.(initial);
       if (initial.status !== 'running') {
-        invalidateApiCache();
+        finishImport(initial);
         return initial;
       }
     }
     await new Promise((resolve) => setTimeout(resolve, 2000));
   }
 
+  // Délai dépassé : le serveur continue, mais ce qui est déjà importé doit s'afficher.
+  finishImport(last);
   return { ...last, status: 'running' };
 };
 
+/** Vide le cache et réveille les écrans montés, qui gardent sinon leurs anciennes données. */
+const finishImport = (result: StravaImportResult) => {
+  invalidateApiCache();
+  if (result.imported > 0) emitAppEvent('sessions:changed');
+};
+
+/** Champs du profil sportif modifiables depuis l'app. */
+export type SportProfilePatch = Pick<ApiUser, 'runningLevel' | 'weeklyFrequency' | 'vma' | 'fcmax' | 'height' | 'weight' | 'injuries' | 'availableDays' | 'preferredTime'>;
+
+export type CompetitionPayload = { name: string; date: string; discipline: string; targetTime?: string | null; priority: 'A' | 'B' | 'C' };
+
+/** Sortie réalisée saisie à la main depuis une séance prévue. */
+export type DoneRunPayload = { date: string; distanceKm?: number; durationMin?: number; feeling?: number; notes?: string; sessionType?: string };
+
 export function useAthleteActions() {
-  const { status } = useSession();
+  const { status, user, updateUser } = useSession();
   const live = status === 'signedIn';
 
   const setSessionStatus = async (id: string, next: 'planned' | 'completed' | 'skipped') => {
@@ -232,6 +267,35 @@ export function useAthleteActions() {
       invalidateApiCache('/api/runs');
     },
     /**
+     * Sortie saisie à la main, quand Strava ne l'a pas importée. L'API complète
+     * d'elle-même la séance prévue du même jour et prévient le coach.
+     */
+    async logRun(payload: DoneRunPayload) {
+      if (!live) return;
+      const pace = payload.distanceKm && payload.durationMin ? formatPace((payload.durationMin * 60) / payload.distanceKm) : undefined;
+      await api('/api/runs', {
+        method: 'POST',
+        body: {
+          date: new Date(`${payload.date}T12:00:00`).toISOString(),
+          distance: payload.distanceKm,
+          duration: payload.durationMin,
+          averagePace: pace,
+          feeling: payload.feeling,
+          notes: payload.notes || undefined,
+          sessionType: payload.sessionType,
+        },
+      });
+      invalidateApiCache();
+      emitAppEvent('sessions:changed');
+    },
+    /** Compte rendu libre de la sortie : ce que l'athlète a réellement fait. */
+    async saveRunNotes(id: string, notes: string) {
+      if (!live) return;
+      await api(`/api/runs/${encodeURIComponent(id)}`, { method: 'PATCH', body: { notes } });
+      invalidateApiCache('/api/runs');
+      emitAppEvent('sessions:changed');
+    },
+    /**
      * Ouvre l'autorisation Strava, puis suit l'import de l'historique lancé par
      * le serveur. Renvoie `null` si l'athlète a abandonné l'autorisation.
      */
@@ -250,6 +314,46 @@ export function useAthleteActions() {
       if (!live) return;
       await api('/api/strava/disconnect', { method: 'DELETE' });
       invalidateApiCache();
+    },
+    /** Profil sportif : niveau, fréquence, mensurations, contraintes. */
+    async updateSportProfile(patch: SportProfilePatch) {
+      if (!user) return;
+      if (!live) {
+        updateUser({ ...user, ...patch });
+        return;
+      }
+      updateUser(await api<ApiUser>('/api/auth/profile', { method: 'PATCH', body: patch }));
+    },
+    async saveCompetition(id: string | null, payload: CompetitionPayload) {
+      if (!live) return;
+      await api(id ? `/api/competitions/${encodeURIComponent(id)}` : '/api/competitions', { method: id ? 'PATCH' : 'POST', body: payload });
+      invalidateApiCache();
+    },
+    async deleteCompetition(id: string) {
+      if (!live) return;
+      await api(`/api/competitions/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      invalidateApiCache();
+    },
+    async updateIdentity(patch: { firstName: string; lastName: string }) {
+      if (!user) return;
+      if (!live) {
+        updateUser({ ...user, ...patch });
+        return;
+      }
+      updateUser(await api<ApiUser>('/api/auth/profile', { method: 'PATCH', body: patch }));
+    },
+    async changeEmail(email: string, password: string) {
+      if (!user || !live) return;
+      const { email: saved } = await api<{ email: string }>('/api/auth/email', { method: 'PATCH', body: { email, password } });
+      updateUser({ ...user, email: saved });
+    },
+    async changePassword(currentPassword: string, newPassword: string) {
+      if (!live) return;
+      await api('/api/auth/password', { method: 'PATCH', body: { currentPassword, newPassword } });
+    },
+    async deleteAccount() {
+      if (!live) return;
+      await api('/api/auth/account', { method: 'DELETE' });
     },
     async markNotificationRead(id: string) {
       if (!live) return;

@@ -100,28 +100,38 @@ Tous les chiffres qui s'alignent en colonne ou changent en direct utilisent
 
 ## 5. Verre liquide
 
-Implémenté avec **`expo-glass-effect`** (déjà installé) : `GlassView`, et `isLiquidGlassAvailable()`
-pour le repli.
+Un seul composant, `GlassSurface` (`src/components/ui/glass-surface.tsx`) : `GlassView`
+d'**`expo-glass-effect`** sur iOS 26, repli flouté partout ailleurs.
 
 **Où on met du verre** — uniquement ce qui flotte au-dessus du contenu ou se touche :
 
-1. Les deux boutons de l'en-tête (avatar, cloche).
+1. Les deux boutons de l'en-tête (avatar, cloche) et les bulles d'icône des en-têtes de sous-écran
+   (retour, réglages, calendrier, « plus d'actions ») — `IconButton glass`.
 2. Le badge de série « 6 semaines ».
-3. Le bouton « Voir la séance » et le bouton du coach.
+3. Les boutons d'action — variantes `primary`, `accent`, `violet`, `inverse` — en **verre teinté**
+   (`tintColor`) : sur iOS 26 ils prennent le fond qu'ils survolent.
 4. La barre d'onglets et sa pastille d'onglet actif.
+5. La barre d'action basse des écrans à `footer` : le contenu défile dessous, en transparence.
+6. Le fond des fenêtres modales (l'écran reste visible, flouté).
 
-**Où on n'en met pas** : cartes de contenu, lignes de liste, carte du jour, tuiles de stats. Elles
-restent pleines — le texte long sur du translucide fatigue et casse le contraste.
+**Où on n'en met pas** : cartes de contenu, lignes de liste, carte du jour, tuiles de stats, et la
+carte d'une fenêtre modale. Elles restent pleines — le texte long sur du translucide fatigue et
+casse le contraste.
 
 **Deux intensités**
 
-- *Standard* (`glassEffectStyle: 'regular'`) : boutons du CTA, barre d'onglets.
-- *Renforcée* (les trois éléments du haut : avatar, cloche, badge de série) : flou et saturation
-  poussés, liseré irisé (une pointe de bleu et de violet sur le pourtour), reflet plus marqué en haut.
-  C'est la signature visuelle de l'app — elle reste cantonnée à ces trois éléments.
+- *Standard* (`glassEffectStyle: 'regular'`) : boutons, barre d'onglets, barre d'action.
+- *Renforcée* (avatar, cloche, badge de série, bulles d'icône) : flou et saturation poussés,
+  liseré irisé (une pointe de bleu en haut, de violet en bas), reflet plus marqué.
 
-**Repli obligatoire** (Android, iOS < 26, `isLiquidGlassAvailable() === false`) : surface
-`surface` à 92 % d'opacité + bordure 1 px `border` + ombre douce. La mise en page ne change pas.
+**Repli** (Android, web, iOS < 26 — `isLiquidGlassAvailable() === false`) : `BlurView`
+d'`expo-blur` (28 en standard, 44 en renforcée ; `blurMethod` Dimezis sur Android 12+), voile de
+surface à 62 %, liseré clair, et un reflet en dégradé diagonal (SVG) qui s'éteint au tiers. Un
+bouton **teinté** garde en revanche sa couleur pleine : du texte clair sur une teinte translucide
+passerait sous le seuil de contraste selon ce qui défile dessous. La mise en page ne change pas.
+
+Le verre posé en fond d'un élément tactile utilise `glassBackdrop` (absolu, `zIndex: -1`) : sur le
+web, un enfant positionné passerait sinon devant le libellé et l'icône.
 
 **Retour tactile** : à l'appui, `scale: 0.96` avec ressort (`react-native-reanimated`, déjà installé).
 
@@ -195,12 +205,20 @@ Nom de l'interlocuteur en `h2` (nom propre = Gulfs), bulles : `brand` pour soi, 
 l'autre. Champ de saisie sur la gouttière de 16 px ; bouton d'envoi `accent` quand il y a du texte,
 `subtle` sinon. Dans un onglet, le champ se place au-dessus de la barre flottante.
 
-### 6.10 Icônes
+### 6.10 Carte des sorties
+
+Le détail d'une sortie affiche le parcours sur une carte native (`expo-maps` :
+Plans sur iOS, Google Maps sur Android), tracé en `accent`, dans un cadre au rayon `md`.
+La carte n'existe ni sur le web ni dans Expo Go : on y retombe sur le tracé dessiné
+(`RoutePreview`), qui sert aussi aux sorties sans GPS et aux vignettes de la liste —
+une carte native par ligne coûterait trop cher au défilement.
+
+### 6.11 Icônes
 
 Un seul jeu : `src/components/ui/icon.tsx`, au trait, 24 px, épaisseur 1,75 (2 à 2,2 si actif).
 Jamais d'icône pleine, jamais d'emoji.
 
-### 6.11 Deux exceptions assumées
+### 6.12 Deux exceptions assumées
 
 - **La flamme de la série** est la seule icône pleine de l'app, avec son dégradé orange : c'est une
   signature de marque, héritée de l'ancienne app.

@@ -13,8 +13,9 @@ import type {
   ApiUser,
 } from '@/lib/api-types';
 import { addDays, daysBetween, isoWeek, startOfWeek } from '@/lib/dates';
-import { formatDayMonthYear, formatDayShort, formatMonthName, formatMonthShort, formatMonthYear, formatTime, parseDay, toIsoDay } from '@/lib/format';
+import { formatDayMonthYear, formatDayShort, formatMonthName, formatMonthShort, formatMonthYear, formatTime, paceToSeconds, parseDay, toIsoDay } from '@/lib/format';
 
+import { estimateFromBlocks } from './run-blocks';
 import type {
   Activity,
   AthleteHome,
@@ -67,12 +68,6 @@ export const initialsOf = (firstName?: string, lastName?: string) => `${firstNam
 
 const fullName = (person: { firstName: string; lastName: string }) => `${person.firstName} ${person.lastName}`.trim();
 
-export function paceToSeconds(pace?: string | null) {
-  if (!pace) return undefined;
-  const [minutes, seconds] = pace.split(':').map(Number);
-  return Number.isFinite(minutes) && Number.isFinite(seconds) ? minutes * 60 + seconds : undefined;
-}
-
 // Strava fournit l'heure locale de départ encodée comme UTC : on la lit telle quelle.
 const runDay = (run: ApiRun) => run.stravaData?.startDateLocal?.slice(0, 10) ?? toIsoDay(new Date(run.date));
 const dayOf = (isoDate: string) => toIsoDay(new Date(isoDate));
@@ -84,17 +79,20 @@ function exercisesCount(plan: ApiPlannedRun['strengthPlan']) {
   return count || undefined;
 }
 
-export function mapPlanned(planned: ApiPlannedRun, coachName?: string): PlannedSession {
+export function mapPlanned(planned: ApiPlannedRun, coachName?: string, vma?: number): PlannedSession {
   const byCoach = planned.generatedBy === 'coach';
+  // Le coach construit sa séance bloc par bloc et laisse souvent les totaux vides :
+  // sans cette estimation, l'athlète voit « — » en distance, durée et allure.
+  const estimated = planned.activityType === 'running' ? estimateFromBlocks(planned.runBlocks, vma) : {};
   return {
     id: planned._id,
     date: dayOf(planned.date),
     sport: planned.activityType,
     title: planned.title || SESSION_TYPE_LABELS[planned.sessionType] || (planned.activityType === 'strength' ? 'Renforcement' : 'Course'),
     description: planned.description || undefined,
-    distanceKm: planned.targetDistance ?? undefined,
-    durationMin: planned.targetDuration ?? planned.strengthPlan?.estimatedDuration ?? undefined,
-    paceSecPerKm: paceToSeconds(planned.targetPace),
+    distanceKm: planned.targetDistance ?? estimated.distanceKm,
+    durationMin: planned.targetDuration ?? planned.strengthPlan?.estimatedDuration ?? estimated.durationMin,
+    paceSecPerKm: paceToSeconds(planned.targetPace) ?? estimated.paceSecPerKm,
     exercisesCount: planned.activityType === 'strength' ? exercisesCount(planned.strengthPlan) : undefined,
     plannedBy: byCoach ? 'coach' : 'athlete',
     coachName: byCoach ? coachName : undefined,
@@ -116,6 +114,7 @@ export function mapRun(run: ApiRun): Activity {
     avgHr: run.averageHeartRate ? Math.round(run.averageHeartRate) : undefined,
     feeling: run.feeling ?? undefined,
     fromStrava: Boolean(run.stravaActivityId),
+    polyline: run.polyline ?? null,
   };
 }
 
@@ -197,7 +196,7 @@ type HomeInput = {
 export function buildHome({ user, calendars, runs, strength, coach, conversations, strava, now }: HomeInput): AthleteHome {
   const today = toIsoDay(now);
   const plannedById = new Map(calendars.flatMap((calendar) => calendar.plannedRuns).map((planned) => [planned._id, planned]));
-  const planned = [...plannedById.values()].map((item) => mapPlanned(item, coach?.firstName));
+  const planned = [...plannedById.values()].map((item) => mapPlanned(item, coach?.firstName, user.vma ?? undefined));
   const activities = [...runs.map(mapRun), ...strength.map(mapStrength)];
 
   const activeDays = new Set(activities.map((activity) => activity.date));
@@ -244,11 +243,11 @@ export function buildHome({ user, calendars, runs, strength, coach, conversation
   };
 }
 
-export function buildPlanning(calendar: ApiCalendarData, now: Date, coachName?: string): PlanningMonth {
+export function buildPlanning(calendar: ApiCalendarData, now: Date, coachName?: string, vma?: number): PlanningMonth {
   const markers: Record<string, CalendarMarker> = {};
   const competitionPriority: PlanningMonth['competitionPriority'] = {};
   const sessionsByDay: Record<string, PlannedSession[]> = {};
-  const planned = calendar.plannedRuns.map((item) => mapPlanned(item, coachName));
+  const planned = calendar.plannedRuns.map((item) => mapPlanned(item, coachName, vma));
 
   planned.forEach((session) => {
     (sessionsByDay[session.date] ??= []).push(session);
@@ -310,9 +309,10 @@ function periodRange(period: RunsPeriod, now: Date, offset: number): PeriodRange
   return { start: `${year}-01-01`, end: `${year}-12-31`, label: String(year), short: String(year), compareLabel: String(year) };
 }
 
-export function buildRunsOverview(apiRuns: ApiRun[], period: RunsPeriod, now: Date): RunsOverview {
+export function buildRunsOverview(apiRuns: ApiRun[], period: RunsPeriod, now: Date, offset = 0): RunsOverview {
   const runs = apiRuns.map(mapRun);
-  const ranges = Array.from({ length: 6 }, (_, index) => periodRange(period, now, 5 - index));
+  // Six périodes se terminant sur celle consultée : l'historique se lit vers la gauche.
+  const ranges = Array.from({ length: 6 }, (_, index) => periodRange(period, now, 5 - index + offset));
   const within = (range: PeriodRange) => runs.filter((run) => run.date >= range.start && run.date <= range.end);
   const distance = (list: Activity[]) => sum(list.map((run) => run.distanceKm ?? 0));
 
@@ -326,15 +326,19 @@ export function buildRunsOverview(apiRuns: ApiRun[], period: RunsPeriod, now: Da
   const count = current.length;
   const noun = count > 1 ? 'sorties' : 'sortie';
   const listTitle =
-    period === 'week' ? `${count} ${noun} cette semaine` : period === 'month' ? `${count} ${noun} en ${formatMonthName(parseDay(ranges[5].start).getMonth())}` : `${count} ${noun} en ${ranges[5].label}`;
+    period === 'week'
+      ? `${count} ${noun} ${offset === 0 ? 'cette semaine' : `${ranges[5].label.toLowerCase()}`}`
+      : period === 'month'
+        ? `${count} ${noun} en ${formatMonthName(parseDay(ranges[5].start).getMonth())}`
+        : `${count} ${noun} en ${ranges[5].label}`;
 
   return {
     periodLabel: ranges[5].label,
     listTitle,
     distanceKm: total,
     trendLabel: trend === undefined ? undefined : `${trend >= 0 ? '+' : '−'}${Math.abs(trend)} % vs ${ranges[4].compareLabel}`,
-    trendUp: trend !== undefined && trend >= 0,
-    bars: ranges.map((range, index) => ({ label: range.short, distanceKm: distance(within(range)), selected: index === 5 })),
+    trendUp: trend === undefined ? undefined : trend >= 0,
+    bars: ranges.map((range, index) => ({ label: range.short, distanceKm: distance(within(range)), selected: index === 5, offset: offset + 5 - index })),
     stats: {
       runs: count,
       avgPaceSecPerKm: timedDistance > 0 ? sum(timed.map((run) => run.durationSec)) / timedDistance : undefined,
@@ -368,6 +372,7 @@ export function buildProfile(user: ApiUser, competitions: ApiCompetition[], stra
           id: competition._id,
           name: competition.name,
           date: competition.day,
+          discipline: competition.discipline ?? undefined,
           priority: competition.priority,
           goal: competition.targetTime ?? undefined,
           weeksLeftLabel: days === 0 ? 'Aujourd’hui' : days < 7 ? `Dans ${days} j` : `Dans ${Math.round(days / 7)} sem.`,

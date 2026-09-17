@@ -1,10 +1,9 @@
 import { StyleSheet, View } from 'react-native';
 
 import { Card, Chip, Text } from '@/components/ui';
-import { paceToSeconds } from '@/features/athlete/mappers';
 import type { RunDetail } from '@/features/athlete/types';
 import type { ApiRun } from '@/lib/api-types';
-import { formatClock, formatDecimal, formatPace } from '@/lib/format';
+import { formatClock, formatDecimal, formatPace, paceToSeconds } from '@/lib/format';
 import { useTheme } from '@/theme/theme-provider';
 
 type Snapshot = NonNullable<ApiRun['plannedSnapshot']>;
