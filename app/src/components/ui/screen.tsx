@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
-import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets, type Edge } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/theme/theme-provider';
 
@@ -20,7 +20,10 @@ type Props = {
 
 export function Screen({ children, scroll = true, tabs, edges = ['top'], contentStyle, footer }: Props) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const bottom = tabs ? TAB_BAR_HEIGHT + TAB_BAR_MARGIN * 2 + 24 : 28;
+  // La barre d'action descend jusqu'au bord : elle garde sous elle la place de la barre d'accueil.
+  const footerInset = edges.includes('bottom') ? 0 : insets.bottom;
   return (
     <SafeAreaView edges={edges} style={{ flex: 1, backgroundColor: colors.bg }}>
       {scroll ? (
@@ -32,7 +35,11 @@ export function Screen({ children, scroll = true, tabs, edges = ['top'], content
       )}
       {/* La barre d'action flotte : le contenu défile dessous, en transparence. */}
       {footer ? (
-        <GlassSurface radius={0} sheen={false} interactive={false} style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }}>
+        <GlassSurface
+          radius={0}
+          sheen={false}
+          interactive={false}
+          style={{ paddingBottom: footerInset, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }}>
           {footer}
         </GlassSurface>
       ) : null}
