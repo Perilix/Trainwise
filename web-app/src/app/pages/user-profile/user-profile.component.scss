@@ -238,3 +238,10 @@
   cursor: pointer;
   margin-top: 1rem;
 }
+
+// Desktop : la fiche suit la largeur des autres pages de contenu (cf. profile, settings).
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1000px;
+  }
+}

@@ -387,3 +387,31 @@ $pro-color: #003554;
   i { font-size: 0.75rem; }
   &:active { color: $pro-color; }
 }
+
+// -----------------------------------------------
+// Desktop ≥1024px : les deux offres se lisent côte à côte. Tout le reste
+// (en-tête, bandeaux, messages) traverse la grille.
+// -----------------------------------------------
+@media (min-width: 1024px) {
+  .shop-page {
+    max-width: 1000px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .shop-header,
+  .pro-banner,
+  .web-notice,
+  .msg-error,
+  .msg-success,
+  .btn-restore {
+    grid-column: 1 / -1;
+  }
+
+  .product-card {
+    margin: 0;
+    height: 100%;
+  }
+}

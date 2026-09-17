@@ -752,3 +752,25 @@
     }
   }
 }
+
+// -----------------------------------------------
+// Desktop ≥1024px : la fiche tient en un écran plutôt qu'en six cartes empilées.
+// Le statut de forme garde toute la largeur (sa frise de 8 semaines en a besoin),
+// le reste se range en deux colonnes.
+// -----------------------------------------------
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1200px;
+  }
+
+  .profile-sections {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    align-items: start;
+  }
+
+  .status-card {
+    grid-column: 1 / -1;
+  }
+}

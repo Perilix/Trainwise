@@ -902,3 +902,40 @@ $display-font: 'GulfsDisplay', 'Archivo Black', serif;
     &:hover { color: #ef4444; }
   }
 }
+
+// -----------------------------------------------
+// Desktop ≥1024px : les réglages de la séance restent sous les yeux à gauche
+// pendant qu'on construit les blocs à droite, avec les actions au même endroit.
+// Aucune classe supplémentaire : les sections sont placées par colonne.
+// -----------------------------------------------
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1240px;
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .page-header,
+  .loading-state {
+    grid-column: 1 / -1;
+  }
+
+  // La première section est « Informations » : nom, sport, type, objectifs.
+  .form-section:first-of-type {
+    grid-column: 1;
+    position: sticky;
+    top: 1.5rem;
+  }
+
+  .form-section:not(:first-of-type) {
+    grid-column: 2;
+  }
+
+  .bottom-actions {
+    grid-column: 1;
+    position: sticky;
+    bottom: 1.5rem;
+  }
+}
