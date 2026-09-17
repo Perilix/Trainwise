@@ -1,0 +1,15 @@
+{
+  "/api": {
+    "target": "https://trainwise-backend-rnd4.onrender.com",
+    "secure": true,
+    "changeOrigin": true,
+    "logLevel": "warn"
+  },
+  "/socket.io": {
+    "target": "https://trainwise-backend-rnd4.onrender.com",
+    "secure": true,
+    "changeOrigin": true,
+    "ws": true,
+    "logLevel": "warn"
+  }
+}
