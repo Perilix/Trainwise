@@ -8,7 +8,7 @@ export { Chip, type ChipTone } from './chip';
 export { Divider } from './divider';
 export { FeelingSlider } from './feeling-slider';
 export { Field } from './field';
-export { GlassSurface, liquidGlass, type GlassIntensity } from './glass-surface';
+export { GlassSurface, glassBackdrop, liquidGlass, type GlassIntensity } from './glass-surface';
 export { Icon, ICON_NAMES, type IconName } from './icon';
 export { IconButton } from './icon-button';
 export { Screen } from './screen';

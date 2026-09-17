@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { BackBar, Button, FormError, Screen, StateView, Text } from '@/components/ui';
+import { BackBar, Button, Field, FormError, Screen, StateView, Text } from '@/components/ui';
 import type { PlannedSessionDetail } from '@/features/athlete/types';
 import { useShareSession } from '@/features/chat/share-session';
 import { useCoachActions, useCoachPlannedSession } from '@/features/coach/queries';
@@ -13,16 +13,17 @@ import { addDays } from '@/lib/dates';
 import { formatDayLong, formatDecimal, formatHoursMinutes, parseDay, toIsoDay } from '@/lib/format';
 import { layout } from '@/theme/tokens';
 
-type Mode = 'idle' | 'duplicate' | 'delete';
+type Mode = 'idle' | 'duplicate' | 'delete' | 'template';
 
 export default function CoachPlannedSessionScreen() {
   const { id, planId } = useLocalSearchParams<{ id: string; planId: string }>();
   const router = useRouter();
   const { data: session, loading, error, refetch } = useCoachPlannedSession(id, planId);
-  const { duplicateAthleteSession, deleteAthleteSession } = useCoachActions();
+  const { duplicateAthleteSession, deleteAthleteSession, saveSessionAsTemplate } = useCoachActions();
   const shareSession = useShareSession();
   const [mode, setMode] = useState<Mode>('idle');
   const [targetDate, setTargetDate] = useState<string | null>(null);
+  const [templateName, setTemplateName] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -60,6 +61,24 @@ export default function CoachPlannedSessionScreen() {
       setNotice(`Séance dupliquée au ${formatDayLong(target).toLowerCase()}.`);
     } catch (reason) {
       setActionError(reason instanceof Error ? reason.message : 'Duplication impossible.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Reprise dans la bibliothèque : la séance reste au planning de l'athlète.
+  const saveToLibrary = async () => {
+    const name = (templateName ?? session.title).trim();
+    if (!name) return setActionError('Donne un nom à la séance type.');
+    setBusy(true);
+    setActionError(null);
+    try {
+      await saveSessionAsTemplate(id, session.id, name);
+      setMode('idle');
+      setTemplateName(null);
+      setNotice(`« ${name} » est dans ta bibliothèque.`);
+    } catch (reason) {
+      setActionError(reason instanceof Error ? reason.message : 'Enregistrement impossible.');
     } finally {
       setBusy(false);
     }
@@ -116,6 +135,17 @@ export default function CoachPlannedSessionScreen() {
         </View>
       </View>
     );
+  } else if (mode === 'template') {
+    footer = (
+      <View style={styles.footer}>
+        <Field label="Nom dans la bibliothèque" value={templateName ?? session.title} onChangeText={setTemplateName} />
+        <FormError message={actionError} />
+        <View style={styles.actions}>
+          <Button label="Annuler" variant="secondary" disabled={busy} onPress={() => changeMode('idle')} style={styles.flex} />
+          <Button label={busy ? 'Enregistrement…' : 'Enregistrer'} icon="folder" disabled={busy} onPress={saveToLibrary} style={styles.flex} />
+        </View>
+      </View>
+    );
   } else if (mode === 'delete') {
     footer = (
       <View style={styles.footer}>
@@ -148,6 +178,7 @@ export default function CoachPlannedSessionScreen() {
           <Button label={busy ? 'Envoi…' : 'Envoyer'} variant="secondary" size="sm" icon="message" disabled={busy} onPress={share} style={styles.flex} />
           <Button label="Dupliquer" variant="secondary" size="sm" icon="copy" onPress={() => changeMode('duplicate')} style={styles.flex} />
         </View>
+        <Button label="Enregistrer dans ma bibliothèque" variant="secondary" size="sm" icon="folder" fullWidth onPress={() => changeMode('template')} />
         <Button label="Supprimer du planning" variant="danger" size="sm" icon="x" fullWidth onPress={() => changeMode('delete')} />
       </View>
     );

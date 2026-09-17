@@ -1,18 +1,34 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { useMemo } from 'react';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, Icon, IconButton, StateView, Text } from '@/components/ui';
 import { useCoachChat } from '@/features/athlete/coach-chat';
+import { usePlannedSession } from '@/features/athlete/queries';
+import type { CitedSession } from '@/features/athlete/types';
 import { ChatThread } from '@/features/chat/chat-thread';
+import { SessionPreview } from '@/features/sessions/session-preview';
 import { useTheme } from '@/theme/theme-provider';
 
 export default function CoachChatScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const chat = useCoachChat();
+  const { width } = useWindowDimensions();
 
   useFocusEffect(chat.markRead);
+
+  // La bulle citée occupe 80 % de la largeur, moins les marges de la carte.
+  const previewWidth = Math.round(width * 0.8) - 44;
+  const CitedSessionBody = useMemo(
+    () =>
+      function AthleteCitedSessionBody({ session }: { session: CitedSession }) {
+        const { data } = usePlannedSession(session.id);
+        return data ? <SessionPreview session={data} width={previewWidth} /> : null;
+      },
+    [previewWidth],
+  );
 
   if (!chat.peer) {
     return (
@@ -38,6 +54,7 @@ export default function CoachChatScreen() {
       chat={chat}
       offlineLabel="Ton coach"
       headerRight={<IconButton icon="calendar" size={44} glass accessibilityLabel="Ouvrir le planning" onPress={() => router.push('/planning')} />}
+      CitedSessionBody={CitedSessionBody}
       onOpenSession={(session) =>
         session.kind === 'run'
           ? router.push({ pathname: '/sortie/[id]', params: { id: session.id } })

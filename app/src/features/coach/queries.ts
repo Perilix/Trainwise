@@ -43,7 +43,7 @@ import {
   sampleStrengthDone,
   sampleSubscriptionRequests,
 } from './sample-data';
-import type { TemplatePayload } from './templates';
+import { plannedToTemplatePayload, type TemplatePayload } from './templates';
 
 const athletePath = (id: string) => `/api/coach/athletes/${encodeURIComponent(id)}`;
 
@@ -259,6 +259,13 @@ export function useCoachActions() {
       await assignToAthletes(templateId, [athleteId], isoDay);
     },
     assignTemplateToAthletes: assignToAthletes,
+    /** Reprend une séance déjà planifiée dans la bibliothèque, allures remises en zones. */
+    async saveSessionAsTemplate(athleteId: string, planId: string, name: string) {
+      if (!live) return;
+      const planned = await api<ApiPlannedRunDetail>(`${athletePath(athleteId)}/planning/${encodeURIComponent(planId)}`);
+      await api('/api/coach/session-templates', { method: 'POST', body: plannedToTemplatePayload(planned, name) });
+      invalidateApiCache();
+    },
     async createTemplate(payload: TemplatePayload) {
       if (!live) return;
       await api('/api/coach/session-templates', { method: 'POST', body: payload });

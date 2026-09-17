@@ -10,6 +10,7 @@ import type {
   ApiPaceConfig,
   ApiPaceSource,
   ApiPlanExercise,
+  ApiPlannedRunDetail,
   ApiRunBlock,
   ApiRunBlockStep,
   ApiSessionTemplate,
@@ -126,6 +127,47 @@ export function templateToDetail(template: ApiSessionTemplate): PlannedSessionDe
 // Les exercices peuplés reviennent en objets : l'API attend leurs identifiants.
 const withExerciseId = (item?: ApiPlanExercise): ApiPlanExercise | undefined =>
   item?.exercise ? { ...item, exercise: typeof item.exercise === 'string' ? item.exercise : item.exercise._id } : undefined;
+
+/** Séance planifiée → séance type : l'allure repasse en zone ou % de VMA, sinon en allure fixe. */
+function toTemplatePace(pace: string | null | undefined, source: ApiPaceSource | null | undefined): ApiPaceConfig {
+  if (source?.zone) return { mode: 'zone', zone: source.zone, vmaPercent: source.vmaPercent ?? null };
+  if (source?.vmaPercent) return { mode: 'vmaPercent', vmaPercent: source.vmaPercent };
+  return pace ? { mode: 'absolute', absolute: pace } : null;
+}
+
+function toTemplateStepFromPlanned(step: ApiRunBlockStep): ApiTemplateRunBlockStep {
+  const { pace, recoveryPace, paceSource, recoveryPaceSource, ...rest } = step;
+  return { ...rest, pace: toTemplatePace(pace, paceSource), recoveryPace: toTemplatePace(recoveryPace, recoveryPaceSource) };
+}
+
+/**
+ * Corps d'une séance type reprise d'une séance planifiée : les allures calculées pour
+ * l'athlète redeviennent des zones, pour se recalculer chez le prochain.
+ */
+export function plannedToTemplatePayload(planned: ApiPlannedRunDetail, name: string): TemplatePayload {
+  const running = planned.activityType === 'running';
+  const plan = planned.strengthPlan;
+  return {
+    name,
+    description: planned.description,
+    sport: planned.activityType,
+    sessionType: planned.sessionType,
+    targetDistance: planned.targetDistance,
+    targetDuration: planned.targetDuration,
+    runBlocks: running
+      ? (planned.runBlocks ?? []).map((block) => ({ ...toTemplateStepFromPlanned(block), children: block.children?.map(toTemplateStepFromPlanned) }))
+      : [],
+    strengthPlan:
+      running || !plan
+        ? null
+        : {
+            ...plan,
+            exercises: plan.exercises?.map(withExerciseId).filter((item): item is ApiPlanExercise => Boolean(item)),
+            circuit: plan.circuit ? { ...plan.circuit, exercises: plan.circuit.exercises?.map(withExerciseId).filter((item): item is ApiPlanExercise => Boolean(item)) } : undefined,
+            superset: plan.superset ? { ...plan.superset, pairs: plan.superset.pairs?.map((pair) => ({ a: withExerciseId(pair.a), b: withExerciseId(pair.b) })) } : undefined,
+          },
+  };
+}
 
 /** Copie d'une séance type, prête à être recréée. */
 export function templateCopyPayload(template: ApiSessionTemplate): TemplatePayload {

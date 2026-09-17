@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useRef, useState, type ComponentType, type ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -19,9 +19,13 @@ type Props = {
   onBack?: () => void;
   /** Ouvre la séance citée dans un message (sans ce prop, la carte n'est pas cliquable). */
   onOpenSession?: (session: CitedSession) => void;
+  /** Bouton « + » du champ de saisie : citer une séance dans la conversation. */
+  onCite?: () => void;
+  /** Déroulé affiché sous la carte d'une séance citée (le composant va chercher la séance). */
+  CitedSessionBody?: ComponentType<{ session: CitedSession }>;
 };
 
-export function ChatThread({ chat, offlineLabel, headerRight, onBack, onOpenSession }: Props) {
+export function ChatThread({ chat, offlineLabel, headerRight, onBack, onOpenSession, onCite, CitedSessionBody }: Props) {
   const { colors } = useTheme();
   const [draft, setDraft] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -97,7 +101,11 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack, onOpenSess
                   ]}>
                   <Text style={{ color: message.fromMe ? colors.onPrimary : colors.ink }}>{message.text}</Text>
                 </View>
-                {message.session ? <SessionCard session={message.session} onPress={onOpenSession ? () => onOpenSession(message.session!) : undefined} /> : null}
+                {message.session ? (
+                  <SessionCard session={message.session} onPress={onOpenSession ? () => onOpenSession(message.session!) : undefined}>
+                    {CitedSessionBody && message.session.kind === 'planned' ? <CitedSessionBody session={message.session} /> : null}
+                  </SessionCard>
+                ) : null}
                 {message.sending || message.timeLabel ? (
                   <Text variant="caption" color="text3" style={styles.time}>
                     {message.sending ? 'Envoi…' : message.timeLabel}
@@ -125,6 +133,7 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack, onOpenSess
         ) : null}
 
         <View style={[styles.composer, { backgroundColor: colors.surface, borderTopColor: colors.border, marginBottom: tabSpace }]}>
+          {onCite ? <IconButton icon="plus" size={40} bordered accessibilityLabel="Citer une séance" onPress={onCite} /> : null}
           <TextInput
             accessibilityLabel="Message"
             placeholder="Écrire un message…"
@@ -149,7 +158,7 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack, onOpenSess
   );
 }
 
-function SessionCard({ session, onPress }: { session: CitedSession; onPress?: () => void }) {
+function SessionCard({ session, onPress, children }: { session: CitedSession; onPress?: () => void; children?: ReactNode }) {
   const { colors } = useTheme();
   const running = session.sport !== 'strength';
   return (
@@ -159,27 +168,31 @@ function SessionCard({ session, onPress }: { session: CitedSession; onPress?: ()
       disabled={!onPress}
       onPress={onPress}
       style={({ pressed }) => [styles.sessionCard, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && { backgroundColor: colors.subtle }]}>
-      <View style={[styles.sessionTile, { backgroundColor: running ? colors.accentSoft : colors.subtle }]}>
-        <Icon name={running ? 'route' : 'dumbbell'} size={18} color={running ? colors.accentInk : colors.primary} />
-      </View>
-      <View style={styles.flex}>
-        <Text variant="h3" numberOfLines={2}>
-          {session.title}
-        </Text>
-        {session.meta ? (
-          <Text variant="small" tabular numberOfLines={1}>
-            {session.meta}
+      <View style={styles.sessionHeader}>
+        <View style={[styles.sessionTile, { backgroundColor: running ? colors.accentSoft : colors.subtle }]}>
+          <Icon name={running ? 'route' : 'dumbbell'} size={18} color={running ? colors.accentInk : colors.primary} />
+        </View>
+        <View style={styles.flex}>
+          <Text variant="h3" numberOfLines={2}>
+            {session.title}
           </Text>
-        ) : null}
+          {session.meta ? (
+            <Text variant="small" tabular numberOfLines={1}>
+              {session.meta}
+            </Text>
+          ) : null}
+        </View>
+        {onPress ? <Icon name="chevronRight" size={18} color={colors.text3} /> : null}
       </View>
-      {onPress ? <Icon name="chevronRight" size={18} color={colors.text3} /> : null}
+      {children}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  sessionCard: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderWidth: 1, borderRadius: radius.md },
+  sessionCard: { gap: 10, padding: 10, borderWidth: 1, borderRadius: radius.md },
+  sessionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   sessionTile: { width: 36, height: 36, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
   centered: { textAlign: 'center' },
   header: { height: 64, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, borderBottomWidth: 1 },
