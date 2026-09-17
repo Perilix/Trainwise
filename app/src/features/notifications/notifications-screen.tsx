@@ -1,8 +1,8 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { BackBar, Button, Chip, Icon, Screen, Section, Segmented, StateView, Text, type IconName } from '@/components/ui';
+import { BackBar, Button, Chip, ChoicePill, Icon, Screen, Section, StateView, Text, type IconName } from '@/components/ui';
 import { useAthleteActions, useNotifications } from '@/features/athlete/queries';
 import type { AthleteNotification, NotificationCategory, NotificationKind } from '@/features/athlete/types';
 import { isCoach, useSession } from '@/features/auth/session';
@@ -17,6 +17,14 @@ const SECTIONS: { key: NotificationCategory; label: string }[] = [
   { key: 'priority', label: 'Prioritaires' },
   { key: 'training', label: 'Entraînements' },
   { key: 'account', label: 'Compte' },
+];
+
+type Filter = 'all' | 'unread' | NotificationCategory;
+
+const FILTERS: { key: Filter; label: string }[] = [
+  { key: 'all', label: 'Toutes' },
+  { key: 'unread', label: 'Non lues' },
+  ...SECTIONS.map((section) => ({ key: section.key as Filter, label: section.label })),
 ];
 
 const KIND_STYLE: Record<NotificationKind, { icon: IconName; background: keyof Palette; foreground: keyof Palette }> = {
@@ -44,12 +52,17 @@ export function NotificationsScreen() {
   const { user } = useSession();
   const { data, loading, error, refetch } = useNotifications();
   const { markNotificationRead, markAllNotificationsRead } = useAthleteActions();
-  const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  // Un seul filtre : tout, les non lues, ou une section. Aucune n'est à plus d'un tap.
+  const [filter, setFilter] = useState<Filter>('all');
   const coach = isCoach(user);
 
   const notifications = data ?? [];
   const unreadCount = notifications.filter((item) => item.unread).length;
-  const visible = filter === 'unread' ? notifications.filter((item) => item.unread) : notifications;
+  const visible =
+    filter === 'all' ? notifications : filter === 'unread' ? notifications.filter((item) => item.unread) : notifications.filter((item) => item.category === filter);
+  const sections = filter === 'all' || filter === 'unread' ? SECTIONS : SECTIONS.filter((section) => section.key === filter);
+  const countOf = (key: Filter) =>
+    key === 'all' ? notifications.length : key === 'unread' ? unreadCount : notifications.filter((item) => item.category === key).length;
 
   const markAll = async () => {
     await markAllNotificationsRead().catch(() => undefined);
@@ -68,28 +81,31 @@ export function NotificationsScreen() {
 
       {data ? (
         <>
-          <Section style={styles.filter}>
-            <Segmented
-              options={[
-                { value: 'all', label: `Toutes · ${notifications.length}` },
-                { value: 'unread', label: `Non lues · ${unreadCount}` },
-              ]}
-              value={filter}
-              onChange={setFilter}
-            />
-          </Section>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
+            {FILTERS.map((option) => (
+              <ChoicePill
+                key={option.key}
+                role="radio"
+                label={`${option.label} · ${countOf(option.key)}`}
+                selected={filter === option.key}
+                onPress={() => setFilter(option.key)}
+              />
+            ))}
+          </ScrollView>
 
           {visible.length ? (
-            SECTIONS.map((section) => {
+            sections.map((section) => {
               const items = visible.filter((item) => item.category === section.key);
               if (!items.length) return null;
               const unread = items.filter((item) => item.unread).length;
               return (
                 <Section key={section.key} style={styles.group}>
-                  <View style={styles.groupHeader}>
-                    <Text variant="sectionTitle">{section.label}</Text>
-                    {unread ? <Chip label={String(unread)} tone="danger" /> : null}
-                  </View>
+                  {sections.length > 1 ? (
+                    <View style={styles.groupHeader}>
+                      <Text variant="sectionTitle">{section.label}</Text>
+                      {unread ? <Chip label={String(unread)} tone="danger" /> : null}
+                    </View>
+                  ) : null}
                   <View style={[styles.list, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                     {items.map((item, index) => (
                       <NotificationRow key={item.id} item={item} divided={index > 0} onPress={() => open(item)} />
@@ -100,7 +116,9 @@ export function NotificationsScreen() {
             })
           ) : (
             <Section>
-              <Text variant="body2">{filter === 'unread' ? 'Tout est lu, aucune notification en attente.' : 'Aucune notification pour le moment.'}</Text>
+              <Text variant="body2">
+                {filter === 'unread' ? 'Tout est lu, aucune notification en attente.' : 'Aucune notification dans cette catégorie.'}
+              </Text>
             </Section>
           )}
         </>
@@ -144,7 +162,7 @@ function NotificationRow({ item, divided, onPress }: { item: AthleteNotification
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  filter: { paddingBottom: 16 },
+  filters: { gap: 8, paddingHorizontal: 16, paddingBottom: 16 },
   group: { paddingBottom: 16 },
   groupHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
   list: { borderRadius: radius.lg, borderWidth: 1, overflow: 'hidden' },
