@@ -165,20 +165,25 @@ type StravaStatus = { connected: boolean; initialImport: StravaImportResult | nu
  * pour pouvoir annoncer un nombre de séances. Au-delà du délai, il continue
  * sans nous et l'athlète verra ses séances arriver.
  */
-const waitForInitialImport = async (): Promise<StravaImportResult> => {
+const waitForInitialImport = async (onProgress?: (result: StravaImportResult) => void): Promise<StravaImportResult> => {
   const deadline = Date.now() + 90_000;
+  let last: StravaImportResult = { status: 'running', imported: 0, skipped: 0 };
 
   while (Date.now() < deadline) {
     const status = await api<StravaStatus>('/api/strava/status').catch(() => null);
     const initial = status?.initialImport;
-    if (initial && initial.status !== 'running') {
-      invalidateApiCache();
-      return initial;
+    if (initial) {
+      last = initial;
+      onProgress?.(initial);
+      if (initial.status !== 'running') {
+        invalidateApiCache();
+        return initial;
+      }
     }
     await new Promise((resolve) => setTimeout(resolve, 2000));
   }
 
-  return { status: 'running', imported: 0, skipped: 0 };
+  return { ...last, status: 'running' };
 };
 
 export function useAthleteActions() {
@@ -230,7 +235,7 @@ export function useAthleteActions() {
      * Ouvre l'autorisation Strava, puis suit l'import de l'historique lancé par
      * le serveur. Renvoie `null` si l'athlète a abandonné l'autorisation.
      */
-    async connectStrava(): Promise<StravaImportResult | null> {
+    async connectStrava(onProgress?: (result: StravaImportResult) => void): Promise<StravaImportResult | null> {
       if (!live) return null;
       const returnTo = stravaReturnUrl();
       const { authUrl } = await api<{ authUrl: string }>('/api/strava/auth-url', { query: { returnTo } });
@@ -238,7 +243,7 @@ export function useAthleteActions() {
       if (result.type !== 'success' || !result.url.includes('strava=success')) return null;
 
       invalidateApiCache();
-      return waitForInitialImport();
+      return waitForInitialImport(onProgress);
     },
     /** Délie le compte Strava : l'API révoque aussi l'autorisation côté Strava. */
     async disconnectStrava() {

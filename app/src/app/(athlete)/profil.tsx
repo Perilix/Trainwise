@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { Avatar, BackBar, Button, Card, Chip, Icon, IconButton, Screen, Section, SectionHeader, StateView, Text, type IconName } from '@/components/ui';
-import { useAthleteActions, useAthleteProfile } from '@/features/athlete/queries';
+import { useAthleteActions, useAthleteProfile, type StravaImportResult } from '@/features/athlete/queries';
+import { StravaImportModal } from '@/features/athlete/strava-import-modal';
 import { useSession } from '@/features/auth/session';
 import { onAppEvent } from '@/lib/app-events';
 import { formatDayShort, formatDecimal } from '@/lib/format';
@@ -19,25 +20,22 @@ export default function ProfileScreen() {
   const { data: profile, loading, error, refetch } = useAthleteProfile();
   const { connectStrava, disconnectStrava } = useAthleteActions();
   const [stravaBusy, setStravaBusy] = useState(false);
+  const [stravaImport, setStravaImport] = useState<StravaImportResult | null>(null);
 
   // Liaison : autorisation Strava dans le navigateur système, puis import de l'historique.
   const linkStrava = async () => {
     setStravaBusy(true);
     try {
-      const result = await connectStrava();
-      if (!result) return;
+      // La fenêtre d'import s'ouvre dès le retour de Strava et suit l'avancement.
+      const result = await connectStrava((progress) => setStravaImport(progress));
+      if (!result) {
+        setStravaImport(null);
+        return;
+      }
+      setStravaImport(result);
       refetch();
-
-      const seances = `${result.imported} séance${result.imported > 1 ? 's' : ''}`;
-      const message = {
-        done: `${seances} importée${result.imported > 1 ? 's' : ''} depuis ton historique. Les prochaines arriveront toutes seules.`,
-        partial: `${seances} importée${result.imported > 1 ? 's' : ''}. Strava limite le nombre de requêtes : le reste de ton historique suivra.`,
-        running: 'Ton historique est en cours d’import, tes séances vont apparaître petit à petit.',
-        error: 'Compte relié, mais l’import de l’historique a échoué. Tes prochaines sorties seront quand même importées.',
-      }[result.status];
-
-      Alert.alert('Strava connecté', message);
     } catch (reason) {
+      setStravaImport(null);
       Alert.alert('Strava', reason instanceof Error ? reason.message : 'Connexion impossible.');
     } finally {
       setStravaBusy(false);
@@ -157,6 +155,8 @@ export default function ProfileScreen() {
           </Card>
         </Section>
       ) : null}
+
+      <StravaImportModal result={stravaImport} onClose={() => setStravaImport(null)} />
 
       <Section style={styles.tight}>
         <Card padding={0} style={styles.linksCard}>

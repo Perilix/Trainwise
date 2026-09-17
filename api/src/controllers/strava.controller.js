@@ -513,6 +513,9 @@ const runInitialImport = async (userId) => {
         }
       }
 
+      // Compteurs publiés au fil de l'eau pour que l'app suive la progression.
+      await setInitialImport(userId, { imported, skipped });
+
       if (data.length < INITIAL_IMPORT_PAGE_SIZE) break;
     }
 
