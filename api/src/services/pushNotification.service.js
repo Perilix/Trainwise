@@ -138,6 +138,9 @@ async function sendPushNotification(userId, notification) {
     const user = await User.findById(userId).select('pushToken pushPlatform');
 
     if (!user || !user.pushToken) {
+      // Silencieux jusqu'ici : impossible de distinguer « appareil jamais enregistré »
+      // d'un envoi qui échoue plus loin.
+      console.warn(`🔕 [push] aucun jeton pour ${userId} — appareil jamais enregistré, ou autorisation refusée`);
       return { success: false, error: 'No push token' };
     }
 
