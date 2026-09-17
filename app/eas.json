@@ -13,7 +13,8 @@
       "env": {
         "EXPO_PUBLIC_DEMO": "0",
         "EXPO_PUBLIC_API_URL": "https://trainwise-backend-rnd4.onrender.com",
-        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "1002254054572-e2q9cnogfc92tbul70jf0n9qg22klqu8.apps.googleusercontent.com"
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "1002254054572-e2q9cnogfc92tbul70jf0n9qg22klqu8.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "1002254054572-tj73eb65c0mhv2ppgf9t3848aoak6fi3.apps.googleusercontent.com"
       }
     },
     "preview": {
@@ -24,7 +25,8 @@
       "env": {
         "EXPO_PUBLIC_DEMO": "0",
         "EXPO_PUBLIC_API_URL": "https://trainwise-backend-rnd4.onrender.com",
-        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "1002254054572-e2q9cnogfc92tbul70jf0n9qg22klqu8.apps.googleusercontent.com"
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "1002254054572-e2q9cnogfc92tbul70jf0n9qg22klqu8.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "1002254054572-tj73eb65c0mhv2ppgf9t3848aoak6fi3.apps.googleusercontent.com"
       }
     },
     "production": {
@@ -32,7 +34,8 @@
       "env": {
         "EXPO_PUBLIC_DEMO": "0",
         "EXPO_PUBLIC_API_URL": "https://trainwise-backend-rnd4.onrender.com",
-        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "1002254054572-e2q9cnogfc92tbul70jf0n9qg22klqu8.apps.googleusercontent.com"
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "1002254054572-e2q9cnogfc92tbul70jf0n9qg22klqu8.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "1002254054572-tj73eb65c0mhv2ppgf9t3848aoak6fi3.apps.googleusercontent.com"
       }
     }
   },
