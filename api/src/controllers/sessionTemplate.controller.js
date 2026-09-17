@@ -248,6 +248,12 @@ exports.createTemplateFromPlanning = async (req, res) => {
   }
 };
 
+// À partir de trois séances affectées d'un coup, on annonce la semaine plutôt que chaque séance.
+const WEEK_NOTIFICATION_THRESHOLD = 3;
+
+const longDay = (date) => new Date(date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+const dayMonth = (date) => new Date(date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+
 exports.assignTemplate = async (req, res) => {
   try {
     const { id } = req.params;
@@ -277,6 +283,7 @@ exports.assignTemplate = async (req, res) => {
     const athleteMap = new Map(athletes.map(a => [a._id.toString(), a]));
 
     const created = [];
+    const byAthlete = new Map(athleteIds.map(athleteId => [athleteId.toString(), []]));
     for (const assign of assignments) {
       const athleteIdStr = assign.athleteId.toString();
       if (!validAthleteIds.has(athleteIdStr)) continue;
@@ -366,19 +373,39 @@ exports.assignTemplate = async (req, res) => {
       });
 
       created.push(planned);
+      byAthlete.get(athleteIdStr).push(planned);
+    }
 
-      const sessionDate = new Date(assign.date).toLocaleDateString('fr-FR', {
-        weekday: 'long', day: 'numeric', month: 'long'
-      });
-      await createNotification({
-        recipient: assign.athleteId,
-        sender: req.user._id,
-        type: 'session',
-        action: 'session_created',
-        title: 'Nouvelle séance planifiée',
-        message: `${req.user.firstName} ${req.user.lastName} a planifié "${template.name}" pour le ${sessionDate}`,
-        actionUrl: '/planning'
-      });
+    // Une séance affectée = une notification ; plusieurs d'un coup = la semaine publiée,
+    // pour ne pas remplir le centre de notifications d'une même action du coach.
+    const coachName = `${req.user.firstName} ${req.user.lastName}`;
+    for (const [athleteId, sessions] of byAthlete) {
+      if (!sessions.length) continue;
+      if (sessions.length >= WEEK_NOTIFICATION_THRESHOLD) {
+        const days = sessions.map(session => new Date(session.date)).sort((a, b) => a - b);
+        await createNotification({
+          recipient: athleteId,
+          sender: req.user._id,
+          type: 'session',
+          action: 'week_published',
+          title: 'Ton programme est disponible',
+          message: `${coachName} vient de publier ${sessions.length} séances, du ${dayMonth(days[0])} au ${dayMonth(days[days.length - 1])}`,
+          actionUrl: '/planning'
+        });
+        continue;
+      }
+
+      for (const session of sessions) {
+        await createNotification({
+          recipient: athleteId,
+          sender: req.user._id,
+          type: 'session',
+          action: 'session_created',
+          title: 'Nouvelle séance planifiée',
+          message: `${coachName} a planifié "${template.name}" pour le ${longDay(session.date)}`,
+          actionUrl: '/planning'
+        });
+      }
     }
 
     template.usageCount = (template.usageCount || 0) + created.length;

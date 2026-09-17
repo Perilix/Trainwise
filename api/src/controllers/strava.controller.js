@@ -8,6 +8,7 @@ const { athleteHasCoach } = require('../services/coachRelation.service');
 const { getUpcomingCompetitionsForContext } = require('../utils/competitions');
 const { reconstructBlocksFromLaps } = require('../utils/stravaReconstruct');
 const { buildStravaData } = require('../utils/stravaMetrics');
+const { notifyRecords } = require('../services/personalRecord.service');
 
 const STRAVA_AUTH_URL = 'https://www.strava.com/oauth/authorize';
 const STRAVA_TOKEN_URL = 'https://www.strava.com/oauth/token';
@@ -964,8 +965,10 @@ const processWebhookEvent = async (event) => {
       action: 'strava_auto_import',
       title: 'Activité Strava synchronisée 🏃',
       message: `${detail.name} (${run.distance} km) a été synchronisée — viens la détailler !`,
-      actionUrl: '/dashboard'
+      actionUrl: `/run/${run._id}`
     });
+
+    await notifyRecords(run);
   } else if (STRAVA_STRENGTH_TYPES.includes(activityType)) {
     const result = await importStrengthActivity(user._id, detail, accessToken, detail);
     if (result.status === 'imported') {

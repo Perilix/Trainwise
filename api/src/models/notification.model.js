@@ -13,7 +13,11 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['invitation', 'invitation_response', 'session', 'message', 'friend', 'reengagement', 'athlete_alert', 'subscription_request'],
+    enum: [
+      'invitation', 'invitation_response', 'session', 'message', 'friend', 'reengagement', 'athlete_alert', 'subscription_request',
+      // Ajoutés avec le centre de notifications trié : échéance de course, record personnel, abonnement.
+      'competition', 'achievement', 'subscription'
+    ],
     required: true
   },
   action: {

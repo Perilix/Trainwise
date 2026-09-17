@@ -555,6 +555,20 @@ exports.updateAthleteSession = async (req, res) => {
       return res.status(404).json({ error: 'Séance non trouvée' });
     }
 
+    // L'athlète a peut-être déjà lu l'ancienne version : il doit savoir qu'elle a changé.
+    const sessionDate = new Date(plannedRun.date).toLocaleDateString('fr-FR', {
+      weekday: 'long', day: 'numeric', month: 'long'
+    });
+    await createNotification({
+      recipient: athleteId,
+      sender: req.user._id,
+      type: 'session',
+      action: 'session_updated',
+      title: 'Séance modifiée',
+      message: `${req.user.firstName} ${req.user.lastName} a modifié ta séance du ${sessionDate}`,
+      actionUrl: '/planning'
+    });
+
     res.json(plannedRun);
   } catch (error) {
     res.status(400).json({ error: error.message });

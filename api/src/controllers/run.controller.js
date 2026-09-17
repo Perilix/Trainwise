@@ -5,6 +5,7 @@ const CoachAthlete = require('../models/coachAthlete.model');
 const { autoCompletePlannedSessions } = require('../services/planningAutoComplete');
 const { createNotification } = require('./notification.controller');
 const { athleteHasCoach } = require('../services/coachRelation.service');
+const { notifyRecords } = require('../services/personalRecord.service');
 const { getUpcomingCompetitionsForContext } = require('../utils/competitions');
 const { mapRunBlockPlain } = require('../utils/runBlockMapper');
 const aiAnalysis = require('../services/aiAnalysis.service');
@@ -81,6 +82,8 @@ exports.createRun = async (req, res) => {
         { $set: { fcmax: run.maxHeartRate } }
       );
     }
+
+    await notifyRecords(run);
 
     // Compléter automatiquement les séances planifiées du même jour
     // Récupère les séances effacées pour : (1) figer un snapshot dans le Run, (2) notifier le coach

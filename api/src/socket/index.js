@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
 const Message = require('../models/message.model');
 const Conversation = require('../models/conversation.model');
-const { sendPushNotification } = require('../services/pushNotification.service');
+const Notification = require('../models/notification.model');
 
 let io;
 
@@ -131,22 +131,26 @@ const initializeSocket = (httpServer) => {
           conversation: updatedConversation
         });
 
-        // Envoyer notification push aux participants offline
-        conversation.participants.forEach(async (participantId) => {
+        // Notifier les participants hors ligne : le centre de notifications garde une
+        // ligne par interlocuteur (la précédente non lue est remplacée, pas empilée),
+        // et `createNotification` envoie le push au passage.
+        const { createNotification } = require('../controllers/notification.controller');
+        const preview = type === 'text' ? content : `A envoyé ${type === 'image' ? 'une image' : 'un fichier'}`;
+        for (const participantId of conversation.participants) {
           const pId = participantId.toString();
-          // Ne pas envoyer au sender et seulement aux utilisateurs offline
-          if (pId !== userId && !isUserOnline(pId)) {
-            await sendPushNotification(pId, {
-              title: `${socket.user.firstName} ${socket.user.lastName}`,
-              body: type === 'text' ? content : `A envoyé ${type === 'image' ? 'une image' : 'un fichier'}`,
-              data: {
-                type: 'message',
-                conversationId: conversationId.toString(),
-                actionUrl: `/chat/${conversationId}`
-              }
-            });
-          }
-        });
+          if (pId === userId || isUserOnline(pId)) continue;
+
+          await Notification.deleteMany({ recipient: pId, sender: userId, type: 'message', read: false });
+          await createNotification({
+            recipient: pId,
+            sender: userId,
+            type: 'message',
+            action: 'message_received',
+            title: `Nouveau message de ${socket.user.firstName}`,
+            message: preview,
+            actionUrl: `/chat/${conversationId}`
+          });
+        }
 
       } catch (error) {
         console.error('Error sending message:', error);

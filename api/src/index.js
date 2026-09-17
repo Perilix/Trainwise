@@ -144,6 +144,9 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/trainwise
     // Jobs planifiés (séances manquées + alertes coach sur statut athlète)
     require('./jobs/athleteAlert.job').start();
 
+    // Jobs planifiés (séance du jour, ressenti à compléter, compétition qui approche)
+    require('./jobs/trainingReminder.job').start();
+
     httpServer.listen(PORT);
   })
   .catch(err => {

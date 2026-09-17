@@ -51,6 +51,9 @@ const runSchema = new mongoose.Schema({
   // Ressenti
   feeling: { type: Number, min: 1, max: 10 }, // 1-10
 
+  // Date de la relance « ajoute ton ressenti » : empêche de la renvoyer chaque jour
+  feedbackReminderAt: { type: Date, default: null },
+
   // Notes
   notes: { type: String },
 

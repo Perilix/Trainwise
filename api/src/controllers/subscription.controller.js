@@ -1,6 +1,7 @@
 const User = require('../models/user.model');
 const ProcessedWebhookEvent = require('../models/processedWebhookEvent.model');
 const { emitTrainCoinsUpdate } = require('../socket/index');
+const { createNotification } = require('./notification.controller');
 
 // Produits RevenueCat → coins offerts
 const COIN_PRODUCTS = {
@@ -15,6 +16,12 @@ const PRO_PRODUCTS = {
   trainwise_pro_monthly: 31,
   trainwise_pro_annual: 366,
 };
+
+const formatDay = (date) => new Date(date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+/** Trace de l'abonnement dans le centre de notifications, section Compte. */
+const notifySubscription = (userId, action, title, message) =>
+  createNotification({ recipient: userId, sender: null, type: 'subscription', action, title, message, actionUrl: '/profile' });
 
 // GET /api/subscription/status
 exports.getStatus = async (req, res) => {
@@ -80,10 +87,17 @@ exports.revenueCatWebhook = async (req, res) => {
             : new Date(Date.now() + PRO_PRODUCTS[product_id] * 24 * 60 * 60 * 1000);
           await user.save({ validateBeforeSave: false });
           emitTrainCoinsUpdate(user._id, { trainCoins: user.trainCoins, subscriptionStatus: 'pro', subscriptionExpiry: user.subscriptionExpiry });
+          await notifySubscription(
+            user._id,
+            type === 'RENEWAL' ? 'subscription_renewed' : 'subscription_started',
+            type === 'RENEWAL' ? 'Abonnement renouvelé' : 'Paiement effectué',
+            `Ton abonnement Pro est actif jusqu'au ${formatDay(user.subscriptionExpiry)}.`
+          );
         } else if (COIN_PRODUCTS[product_id] !== undefined) {
           user.trainCoins += COIN_PRODUCTS[product_id];
           await user.save({ validateBeforeSave: false });
           emitTrainCoinsUpdate(user._id, { trainCoins: user.trainCoins });
+          await notifySubscription(user._id, 'coins_purchased', 'Paiement effectué', `${COIN_PRODUCTS[product_id]} TrainCoins ont été crédités sur ton compte.`);
         }
         break;
       }
@@ -95,6 +109,15 @@ exports.revenueCatWebhook = async (req, res) => {
           user.subscriptionStatus = 'free';
           await user.save({ validateBeforeSave: false });
           emitTrainCoinsUpdate(user._id, { trainCoins: user.trainCoins, subscriptionStatus: 'free' });
+          // Un problème de paiement se corrige, une expiration se constate : deux messages.
+          await notifySubscription(
+            user._id,
+            type === 'BILLING_ISSUE' ? 'billing_issue' : 'subscription_ended',
+            type === 'BILLING_ISSUE' ? 'Problème de paiement' : 'Abonnement terminé',
+            type === 'BILLING_ISSUE'
+              ? 'Le renouvellement de ton abonnement Pro a échoué. Vérifie ton moyen de paiement pour ne pas perdre l\'accès.'
+              : 'Ton abonnement Pro est arrivé à échéance. Tes données restent là, tu peux le reprendre quand tu veux.'
+          );
         }
         break;
       }
@@ -104,6 +127,7 @@ exports.revenueCatWebhook = async (req, res) => {
           user.trainCoins += COIN_PRODUCTS[product_id];
           await user.save({ validateBeforeSave: false });
           emitTrainCoinsUpdate(user._id, { trainCoins: user.trainCoins });
+          await notifySubscription(user._id, 'coins_purchased', 'Paiement effectué', `${COIN_PRODUCTS[product_id]} TrainCoins ont été crédités sur ton compte.`);
         }
         break;
       }
