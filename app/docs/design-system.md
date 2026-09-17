@@ -195,12 +195,20 @@ Nom de l'interlocuteur en `h2` (nom propre = Gulfs), bulles : `brand` pour soi, 
 l'autre. Champ de saisie sur la gouttière de 16 px ; bouton d'envoi `accent` quand il y a du texte,
 `subtle` sinon. Dans un onglet, le champ se place au-dessus de la barre flottante.
 
-### 6.10 Icônes
+### 6.10 Carte des sorties
+
+Le détail d'une sortie affiche le parcours sur une carte native (`expo-maps` :
+Plans sur iOS, Google Maps sur Android), tracé en `accent`, dans un cadre au rayon `md`.
+La carte n'existe ni sur le web ni dans Expo Go : on y retombe sur le tracé dessiné
+(`RoutePreview`), qui sert aussi aux sorties sans GPS et aux vignettes de la liste —
+une carte native par ligne coûterait trop cher au défilement.
+
+### 6.11 Icônes
 
 Un seul jeu : `src/components/ui/icon.tsx`, au trait, 24 px, épaisseur 1,75 (2 à 2,2 si actif).
 Jamais d'icône pleine, jamais d'emoji.
 
-### 6.11 Deux exceptions assumées
+### 6.12 Deux exceptions assumées
 
 - **La flamme de la série** est la seule icône pleine de l'app, avec son dégradé orange : c'est une
   signature de marque, héritée de l'ancienne app.

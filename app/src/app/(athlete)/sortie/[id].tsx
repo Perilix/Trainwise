@@ -2,7 +2,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
-import { RoutePreview } from '@/components/charts/route-preview';
+import { RouteMap } from '@/components/charts/route-map';
 import { BackBar, Card, Chip, FeelingSlider, IconButton, Screen, Section, StateView, Text } from '@/components/ui';
 import { useAthleteActions, useRunDetail } from '@/features/athlete/queries';
 import { RunDetailBody, RunHero } from '@/features/sessions/run-detail-body';
@@ -59,7 +59,7 @@ export default function RunDetailScreen() {
       </Section>
 
       <Section style={styles.tight}>
-        <RoutePreview width={contentWidth} height={180} polyline={run.polyline} />
+        <RouteMap width={contentWidth} height={200} polyline={run.polyline} />
       </Section>
 
       <RunDetailBody run={run} chartWidth={contentWidth - 32} feeling={feeling} feelingCard={feelingCard} />
