@@ -709,3 +709,279 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+// ===============================================================
+// Bibliothèque — mise en page desktop des maquettes (≥1024px).
+// Préfixe `lib-` : la vue mobile vit dans l'autre branche du gabarit.
+// ===============================================================
+@media (min-width: 1024px) {
+  .container { max-width: none; padding: calc(var(--navbar-height, 0px) + 36px) 40px 40px; }
+}
+
+.lib-cols {
+  --lib-navy: #003554;
+  --lib-ink: #051923;
+  --lib-muted: #5A6878;
+  --lib-faint: #7D8793;
+  --lib-line: #E7E2D9;
+  --lib-line-strong: #D3CCBF;
+  --lib-surface: #FFFFFF;
+  --lib-bg: #F6F4F0;
+  --lib-accent-soft: #E3F4FD;
+  --lib-accent-ink: #0077B6;
+
+  display: grid;
+  grid-template-columns: 380px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+  margin-top: 20px;
+  font-family: 'Poppins', sans-serif;
+  color: var(--lib-ink);
+}
+
+.lib-list {
+  background: var(--lib-surface);
+  border: 1px solid var(--lib-line);
+  border-radius: 16px;
+  padding: 8px;
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+}
+
+.lib-group {
+  font-size: 11px; line-height: 16px; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--lib-faint);
+  margin: 14px 0 6px; padding: 0 12px;
+
+  &:first-child { margin-top: 6px; }
+}
+
+.lib-item {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  background: none;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+
+  &:hover { background: var(--lib-bg); }
+
+  // Séance affichée : fond teinté et liseré, comme la maquette.
+  &.on {
+    background: var(--lib-bg);
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 8px; bottom: 8px;
+      width: 3px; border-radius: 999px;
+      background: var(--lib-accent-ink);
+    }
+  }
+}
+
+.lib-item-icon {
+  width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--lib-accent-soft); color: var(--lib-accent-ink); font-size: 13px;
+}
+
+.lib-item-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.lib-item-name { font-size: 14px; line-height: 20px; font-weight: 600; }
+.lib-muted { font-size: 13px; line-height: 18px; color: var(--lib-muted); font-weight: 400; }
+.lib-uses { font-size: 12px; color: var(--lib-faint); flex-shrink: 0; }
+
+.lib-detail {
+  background: var(--lib-surface);
+  border: 1px solid var(--lib-line);
+  border-radius: 16px;
+  padding: 22px;
+}
+
+.lib-detail-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap;
+}
+
+.lib-badges { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.lib-badge {
+  display: inline-flex; align-items: center; height: 26px; padding: 0 10px;
+  border-radius: 999px; background: #EFEBE4; color: var(--lib-muted);
+  font-size: 12px; font-weight: 600; white-space: nowrap;
+
+  &.accent { background: var(--lib-accent-soft); color: var(--lib-accent-ink); }
+  &.warn { background: #FDF0D5; color: #B45309; }
+}
+
+.lib-actions { display: flex; gap: 8px; }
+
+.lib-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 40px; padding: 0 14px; border-radius: 10px;
+  border: 1px solid var(--lib-line-strong); background: var(--lib-surface); color: var(--lib-ink);
+  font-family: inherit; font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer;
+
+  &:hover { background: var(--lib-bg); }
+  &.lib-btn-solid { background: var(--lib-navy); border-color: var(--lib-navy); color: #fff; }
+  &.lib-btn-solid:hover { background: #00293f; }
+  i { font-size: 13px; }
+}
+
+.lib-title { font-size: 26px; line-height: 34px; font-weight: 600; letter-spacing: -0.02em; margin: 16px 0 0; }
+.lib-description { font-size: 14px; line-height: 21px; color: var(--lib-muted); margin: 6px 0 0; max-width: 62ch; }
+
+.lib-panel {
+  margin-top: 18px;
+  padding: 18px;
+  background: var(--lib-bg);
+  border-radius: 14px;
+}
+
+.lib-stats { display: flex; gap: 32px; flex-wrap: wrap; margin-bottom: 16px; }
+.lib-stat { display: flex; flex-direction: column; gap: 2px; }
+.lib-stat strong { font-size: 20px; line-height: 28px; font-weight: 600; }
+
+.lib-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; margin-top: 22px; }
+
+.lib-section {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  font-size: 15px; line-height: 22px; font-weight: 600; margin: 0 0 10px;
+}
+
+.lib-block {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  background: var(--lib-bg);
+  border-radius: 12px;
+  border-left: 3px solid var(--lib-line-strong);
+
+  &.role-main { border-left-color: var(--lib-accent-ink); }
+}
+
+.lib-block-title { font-size: 14px; line-height: 20px; font-weight: 600; }
+.lib-reps { color: var(--lib-accent-ink); }
+
+.lib-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 84px 58px 84px;
+  gap: 12px;
+  align-items: center;
+  padding: 9px 0;
+  border-top: 1px solid var(--lib-line);
+  font-size: 13px;
+}
+
+.lib-row-head {
+  border-top: none;
+
+  span {
+    font-size: 10px; line-height: 14px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--lib-faint);
+  }
+}
+
+// Le prénom cède la place avant de chevaucher la colonne VMA.
+.lib-athlete {
+  display: flex; align-items: center; gap: 8px; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.lib-avatar {
+  width: 26px; height: 26px; border-radius: 999px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--lib-accent-soft); color: var(--lib-accent-ink);
+  font-size: 10px; font-weight: 600;
+}
+
+// Sous 1400px, deux colonnes de détail deviennent illisibles.
+@media (max-width: 1399px) {
+  .lib-cols { grid-template-columns: 320px minmax(0, 1fr); }
+  .lib-two { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+}
+
+// En-tête, onglets et filtres de la bibliothèque, version desktop.
+@media (min-width: 1024px) {
+  .page-header {
+    h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 28px;
+      line-height: 36px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: #051923;
+    }
+
+    .btn-primary {
+      height: 48px;
+      padding: 0 20px;
+      border-radius: 12px;
+      background: #003554;
+      font-family: 'Poppins', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+
+      &:hover { background: #00293f; }
+    }
+  }
+
+  .library-tabs {
+    gap: 24px;
+    border-bottom: 1px solid #E7E2D9;
+
+    .tab {
+      font-family: 'Poppins', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: #7D8793;
+      border-bottom: 2px solid transparent;
+
+      &.active { color: #051923; border-bottom-color: #003554; }
+    }
+
+    .tab-count { font-size: 12px; font-weight: 600; color: #7D8793; margin-left: 4px; vertical-align: super; }
+  }
+
+  // Segment de sport + recherche sur une même ligne, comme la maquette.
+  .lib-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 18px;
+
+    .sport-filter { margin: 0; gap: 0; background: #EFEBE4; border-radius: 12px; padding: 4px; }
+
+    .chip {
+      height: 36px;
+      padding: 0 18px;
+      border: none;
+      border-radius: 9px;
+      background: none;
+      font-family: 'Poppins', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: #5A6878;
+
+      &.active { background: #FFFFFF; color: #051923; box-shadow: 0 1px 2px rgba(5, 25, 35, 0.08); }
+    }
+
+    .filters-bar { margin: 0; flex: 0 1 380px; }
+
+    .search-box input {
+      height: 44px;
+      border: 1px solid #E7E2D9;
+      border-radius: 12px;
+      background: #FFFFFF;
+      font-family: 'Poppins', sans-serif;
+      font-size: 14px;
+    }
+  }
+}

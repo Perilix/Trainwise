@@ -26,20 +26,32 @@
       class="tab"
       [class.active]="activeTab() === 'exercises'"
       (click)="setTab('exercises')"
-    >Exercices</button>
+    >Exercices <span class="tab-count">{{ exercises().length }}</span></button>
     <button
       class="tab"
       [class.active]="activeTab() === 'templates'"
       (click)="setTab('templates')"
-    >Séances</button>
+    >Séances <span class="tab-count">{{ templates().length }}</span></button>
   </div>
 
   <!-- Sport filter (visible sur l'onglet séances) -->
   @if (activeTab() === 'templates') {
-    <div class="sport-filter">
-      <button class="chip" [class.active]="sportFilter() === 'all'" (click)="setSportFilter('all')">Tous</button>
-      <button class="chip" [class.active]="sportFilter() === 'running'" (click)="setSportFilter('running')">Course</button>
-      <button class="chip" [class.active]="sportFilter() === 'strength'" (click)="setSportFilter('strength')">Muscu</button>
+    <div class="lib-toolbar">
+      <div class="sport-filter">
+        <button class="chip" [class.active]="sportFilter() === 'all'" (click)="setSportFilter('all')">Tous</button>
+        <button class="chip" [class.active]="sportFilter() === 'running'" (click)="setSportFilter('running')">Course</button>
+        <button class="chip" [class.active]="sportFilter() === 'strength'" (click)="setSportFilter('strength')">Muscu</button>
+      </div>
+      <div class="filters-bar">
+        <div class="search-box">
+          <input
+            type="text"
+            placeholder="Rechercher une séance..."
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event)"
+          >
+        </div>
+      </div>
     </div>
   }
 
@@ -67,17 +79,6 @@
             <option [value]="equip">{{ getEquipmentLabel(equip) }}</option>
           }
         </select>
-      </div>
-    </div>
-  } @else {
-    <div class="filters-bar">
-      <div class="search-box">
-        <input
-          type="text"
-          placeholder="Rechercher une séance..."
-          [ngModel]="searchQuery()"
-          (ngModelChange)="searchQuery.set($event)"
-        >
       </div>
     </div>
   }
@@ -156,6 +157,150 @@
       </div>
     }
   }
+  } @else if (isDesktop()) {
+    <!-- Onglet Séances, mise en page des maquettes desktop -->
+    @if (isLoadingTemplates()) {
+      <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Chargement...</p>
+      </div>
+    } @else if (filteredTemplates().length === 0) {
+      <div class="empty-state">
+        <p>Aucune séance dans votre bibliothèque.</p>
+        <button class="btn-secondary" (click)="createTemplate()">Créer une séance</button>
+      </div>
+    } @else {
+      <div class="lib-cols">
+        <!-- Liste, groupée par type -->
+        <aside class="lib-list">
+          @for (group of templateGroups(); track group.label) {
+            <h3 class="lib-group">{{ group.label }}</h3>
+            @for (tpl of group.templates; track tpl._id) {
+              <button class="lib-item" [class.on]="shownTemplate()?._id === tpl._id" (click)="selectTemplate(tpl)">
+                <span class="lib-item-icon">
+                  <i class="fa-solid" [class.fa-person-running]="tpl.sport === 'running'" [class.fa-dumbbell]="tpl.sport === 'strength'"></i>
+                </span>
+                <span class="lib-item-text">
+                  <span class="lib-item-name">{{ tpl.name }}</span>
+                  <span class="lib-muted">{{ templateSummary(tpl) }}</span>
+                  @if (blocksOf(tpl).length) {
+                    <app-workout-profile [blocks]="blocksOf(tpl)" [compact]="true"></app-workout-profile>
+                  }
+                </span>
+                @if (tpl.usageCount) { <span class="lib-uses">{{ tpl.usageCount }}×</span> }
+              </button>
+            }
+          }
+        </aside>
+
+        <!-- Détail de la séance choisie -->
+        @if (shownTemplate(); as tpl) {
+          <section class="lib-detail">
+            <div class="lib-detail-head">
+              <div class="lib-badges">
+                <span class="lib-badge accent">{{ sportLabel(tpl.sport) }}</span>
+                <span class="lib-badge">{{ sessionTypeLabel(tpl.sessionType) }}</span>
+                @if (tpl.usageCount) {
+                  <span class="lib-muted">Utilisée {{ tpl.usageCount }} fois</span>
+                }
+              </div>
+              <div class="lib-actions">
+                <button class="lib-btn" (click)="duplicateTemplate(tpl)"><i class="fa-regular fa-copy"></i>Dupliquer</button>
+                <button class="lib-btn" (click)="editTemplate(tpl)"><i class="fa-solid fa-pen"></i>Modifier</button>
+                <button class="lib-btn lib-btn-solid" (click)="openAssignModal(tpl)"><i class="fa-solid fa-user-group"></i>Assigner</button>
+              </div>
+            </div>
+
+            <h2 class="lib-title">{{ tpl.name }}</h2>
+            @if (tpl.description) { <p class="lib-description">{{ tpl.description }}</p> }
+
+            @if (blocksOf(tpl).length) {
+              <div class="lib-panel">
+                <div class="lib-stats">
+                  <div class="lib-stat">
+                    <span class="lib-muted">Distance</span>
+                    <strong>{{ tpl.targetDistance ? '≈ ' + (tpl.targetDistance | number:'1.0-1') + ' km' : '—' }}</strong>
+                  </div>
+                  <div class="lib-stat">
+                    <span class="lib-muted">Durée</span>
+                    <strong>{{ tpl.targetDuration ? '≈ ' + tpl.targetDuration + ' min' : '—' }}</strong>
+                  </div>
+                  @if (referenceLabel(tpl)) {
+                    <div class="lib-stat">
+                      <span class="lib-muted">Bloc de référence</span>
+                      <strong>{{ referenceLabel(tpl) }}</strong>
+                    </div>
+                  }
+                </div>
+                <app-workout-profile [blocks]="blocksOf(tpl)"></app-workout-profile>
+              </div>
+
+              <div class="lib-two">
+                <div>
+                  <h3 class="lib-section">Structure</h3>
+                  @for (block of tpl.runBlocks; track $index) {
+                    <div class="lib-block role-{{ block.role }}">
+                      <span class="lib-block-title">
+                        {{ blockTitle(block) }}@if (block.repetitions > 1) { <span class="lib-reps">× {{ block.repetitions }}</span> }
+                      </span>
+                      <span class="lib-muted">
+                        {{ block.description || blockPace(block) }}@if (block.description && blockPace(block)) { · {{ blockPace(block) }} }
+                      </span>
+                      @if (block.recoveryDuration || block.recoveryDistance) {
+                        <span class="lib-muted">Récup · {{ block.recoveryDuration || block.recoveryDistance + ' km' }}</span>
+                      }
+                    </div>
+                  }
+                </div>
+
+                <div>
+                  <h3 class="lib-section">
+                    Allures individualisées
+                    <span class="lib-muted">calculées depuis la VMA</span>
+                  </h3>
+                  @if (!referenceBlock(tpl) || athletes().length === 0) {
+                    <p class="lib-muted">Aucune allure à calculer : la séance ne cale pas ses blocs sur la VMA.</p>
+                  } @else {
+                    <div class="lib-row lib-row-head">
+                      <span>Athlète</span><span>VMA</span><span>{{ referenceLabel(tpl) }}</span><span>Allure</span>
+                    </div>
+                    @for (athlete of athletes(); track athlete._id) {
+                      <div class="lib-row">
+                        <span class="lib-athlete">
+                          <span class="lib-avatar">{{ getInitials(athlete.firstName, athlete.lastName) }}</span>
+                          {{ athlete.firstName }}
+                        </span>
+                        <span class="lib-muted">{{ athlete.vma ? (athlete.vma | number:'1.0-1') + ' km/h' : '—' }}</span>
+                        <strong>{{ athleteSplit(tpl, athlete) || '—' }}</strong>
+                        <span>
+                          @if (athletePace(tpl, athlete)) {
+                            {{ athletePace(tpl, athlete) }} /km
+                          } @else {
+                            <span class="lib-badge warn">VMA manquante</span>
+                          }
+                        </span>
+                      </div>
+                    }
+                  }
+                </div>
+              </div>
+            } @else if (tpl.strengthPlan) {
+              <div class="lib-panel">
+                <h3 class="lib-section">Exercices</h3>
+                @for (entry of tpl.strengthPlan.exercises; track $index) {
+                  <div class="lib-block">
+                    <span class="lib-block-title">{{ getExerciseLabel(entry.exercise) }}</span>
+                    <span class="lib-muted">
+                      {{ entry.targetSets || '?' }} × {{ entry.targetReps || '?' }}@if (entry.targetWeight) { · {{ entry.targetWeight }} kg }
+                    </span>
+                  </div>
+                }
+              </div>
+            }
+          </section>
+        }
+      </div>
+    }
   } @else {
     <!-- Onglet Séances -->
     @if (isLoadingTemplates()) {

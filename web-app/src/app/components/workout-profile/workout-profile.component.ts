@@ -142,7 +142,9 @@ export class WorkoutProfileComponent {
   }
 
   private paceMinPerKm(pace?: string | null): number | null {
-    if (!pace) return null;
+    // Les blocs de modèle portent une allure structurée (objet) et non une
+    // chaîne : on ne la devine pas ici, l'appelant doit la résoudre avant.
+    if (!pace || typeof pace !== 'string') return null;
     const m = /^(\d+):(\d{1,2})$/.exec(pace.trim());
     if (!m) return null;
     const min = parseInt(m[1], 10);

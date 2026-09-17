@@ -5,20 +5,40 @@ import { Router, RouterLink } from '@angular/router';
 import { ExerciseService } from '../../../services/exercise.service';
 import { SessionTemplateService } from '../../../services/session-template.service';
 import { Exercise, MuscleGroup, Equipment, Difficulty, MUSCLE_GROUP_LABELS, EQUIPMENT_LABELS, DIFFICULTY_LABELS } from '../../../interfaces/strength.interfaces';
-import { SessionTemplate, Sport } from '../../../interfaces/session-template.interfaces';
+import { SessionTemplate, Sport, TemplateRunBlock, PaceConfig, PaceZone, PaceZoneKey } from '../../../interfaces/session-template.interfaces';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
 import { TemplateAssignmentModalComponent } from '../../../components/template-assignment-modal/template-assignment-modal.component';
+import { WorkoutProfileComponent } from '../../../components/workout-profile/workout-profile.component';
+import { CoachService } from '../../../services/coach.service';
+import { Athlete } from '../../../interfaces/coach.interfaces';
+import { RunBlock } from '../../../services/run.service';
 
 type LibraryTab = 'exercises' | 'templates';
+
+/** Un groupe de séances de la bibliothèque, par type. */
+interface TemplateGroup {
+  label: string;
+  templates: SessionTemplate[];
+}
 
 @Component({
   selector: 'app-exercises-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavbarComponent, TemplateAssignmentModalComponent],
+  imports: [CommonModule, FormsModule, NavbarComponent, TemplateAssignmentModalComponent, WorkoutProfileComponent],
   templateUrl: './exercises-management.component.html',
   styleUrl: './exercises-management.component.scss'
 })
 export class ExercisesManagementComponent implements OnInit {
+  // Au-delà de 1024px, la bibliothèque prend la mise en page des maquettes :
+  // liste de séances à gauche, séance détaillée à droite.
+  isDesktop = signal(typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches);
+
+  /** Séance affichée dans le panneau de détail (desktop). */
+  selectedTemplate = signal<SessionTemplate | null>(null);
+
+  /** Athlètes du coach, pour les allures individualisées. */
+  athletes = signal<Athlete[]>([]);
+
   // Tabs
   activeTab = signal<LibraryTab>('exercises');
   sportFilter = signal<'all' | Sport>('all');
@@ -111,12 +131,189 @@ export class ExercisesManagementComponent implements OnInit {
   constructor(
     private exerciseService: ExerciseService,
     private sessionTemplateService: SessionTemplateService,
+    private coachService: CoachService,
     private router: Router
   ) {}
 
   ngOnInit() {
+    if (typeof window !== 'undefined') {
+      window.matchMedia('(min-width: 1024px)').addEventListener('change', event => this.isDesktop.set(event.matches));
+    }
     this.loadExercises();
     this.loadTemplates();
+    this.sessionTemplateService.getPaceZones().subscribe({
+      next: zones => this.zones.set(zones ?? []),
+      error: () => {}
+    });
+    // Les allures individualisées ont besoin de la VMA de chaque athlète.
+    this.coachService.getAthletes().subscribe({
+      next: list => this.athletes.set(list ?? []),
+      error: () => {}
+    });
+  }
+
+  // ===== Bibliothèque desktop : liste groupée + détail =====
+
+  /** Les séances filtrées, rangées par type — l'ordre des groupes suit la liste. */
+  templateGroups = computed<TemplateGroup[]>(() => {
+    const groups = new Map<string, SessionTemplate[]>();
+    for (const template of this.filteredTemplates()) {
+      const label = this.sessionTypeLabel(template.sessionType);
+      const bucket = groups.get(label);
+      if (bucket) bucket.push(template);
+      else groups.set(label, [template]);
+    }
+    return [...groups.entries()].map(([label, templates]) => ({ label, templates }));
+  });
+
+  selectTemplate(template: SessionTemplate) {
+    this.selectedTemplate.set(template);
+  }
+
+  /** La séance affichée, ou la première de la liste tant qu'on n'a rien choisi. */
+  shownTemplate = computed<SessionTemplate | null>(() => {
+    const chosen = this.selectedTemplate();
+    const visible = this.filteredTemplates();
+    // Une séance filtrée hors liste ne doit pas rester affichée.
+    if (chosen && visible.some(t => t._id === chosen._id)) return chosen;
+    return visible[0] ?? null;
+  });
+
+  /** VMA de référence des aperçus, comme dans l'éditeur de séance. */
+  previewVma = signal(16);
+
+  /**
+   * Blocs d'une séance au format de la timeline.
+   *
+   * Un modèle porte une allure *structurée* (% VMA, zone, ou absolue) là où la
+   * timeline attend une chaîne « m:ss » : on la résout ici depuis la VMA
+   * d'aperçu, sans quoi la timeline reçoit un objet et se casse.
+   */
+  blocksOf(template: SessionTemplate | null): RunBlock[] {
+    const convert = (block: TemplateRunBlock): RunBlock => ({
+      ...block,
+      pace: this.resolvePace(block.pace),
+      recoveryPace: this.resolvePace(block.recoveryPace),
+      children: block.children?.map(convert),
+    }) as unknown as RunBlock;
+    return (template?.runBlocks ?? []).map(convert);
+  }
+
+  /** Une consigne d'allure ramenée à « m:ss » par kilomètre, ou null. */
+  private resolvePace(pace: PaceConfig | null | undefined): string | null {
+    if (!pace) return null;
+    if (pace.mode === 'absolute') return pace.absolute ?? null;
+    const percent = pace.mode === 'vmaPercent' ? pace.vmaPercent : this.zonePercent(pace.zone);
+    if (!percent) return null;
+    const speedKmh = (this.previewVma() * percent) / 100;
+    return speedKmh > 0 ? this.clock(3600 / speedKmh) : null;
+  }
+
+  /** Pourcentage de VMA au centre d'une zone, d'après le référentiel du serveur. */
+  private zonePercent(zone: PaceZoneKey | null | undefined): number | null {
+    if (!zone) return null;
+    return this.zones().find(z => z.key === zone)?.defaultPercent ?? null;
+  }
+
+  zones = signal<PaceZone[]>([]);
+
+  /** « ≈ 11,8 km · ≈ 1 h 01 », d'après ce que la séance déclare. */
+  templateSummary(template: SessionTemplate): string {
+    const parts: string[] = [];
+    if (template.targetDistance) parts.push(`≈ ${this.fr(template.targetDistance)} km`);
+    if (template.targetDuration) parts.push(`≈ ${this.duration(template.targetDuration)}`);
+    if (!parts.length && template.strengthPlan?.exercises?.length) {
+      parts.push(`${template.strengthPlan.exercises.length} exercices`);
+    }
+    return parts.join(' · ');
+  }
+
+  /** Le bloc d'effort de référence : celui sur lequel se calent les allures. */
+  referenceBlock(template: SessionTemplate | null): TemplateRunBlock | null {
+    const blocks = template?.runBlocks ?? [];
+    const mains = blocks.filter(b => b.role === 'main');
+    const flattened = mains.flatMap(b => (b.children?.length ? b.children : [b]));
+    return flattened.find(b => b.pace?.mode === 'vmaPercent' && b.pace.vmaPercent) ?? flattened[0] ?? null;
+  }
+
+  referenceLabel(template: SessionTemplate | null): string {
+    const block = this.referenceBlock(template);
+    if (!block) return '';
+    if (block.mode === 'distance' && block.distance) return `${Math.round(block.distance * 1000)} m`;
+    if (block.duration) return `${block.duration} min`;
+    return 'Effort';
+  }
+
+  /**
+   * Allure d'un athlète sur un bloc, en secondes par kilomètre.
+   * `null` si l'allure ne dépend pas de la VMA ou si la VMA manque.
+   */
+  private paceSecPerKm(block: TemplateRunBlock | null, vma: number | null | undefined): number | null {
+    if (!block || !vma) return null;
+    const percent = block.pace?.mode === 'vmaPercent' ? block.pace.vmaPercent : null;
+    if (!percent) return null;
+    const speedKmh = (vma * percent) / 100;
+    return speedKmh > 0 ? 3600 / speedKmh : null;
+  }
+
+  /** Allure de l'athlète sur le bloc de référence, « 3:32 ». */
+  athletePace(template: SessionTemplate | null, athlete: Athlete): string | null {
+    const seconds = this.paceSecPerKm(this.referenceBlock(template), athlete.vma);
+    return seconds ? this.clock(seconds) : null;
+  }
+
+  /** Temps mis par l'athlète pour couvrir le bloc de référence, « 1:25 ». */
+  athleteSplit(template: SessionTemplate | null, athlete: Athlete): string | null {
+    const block = this.referenceBlock(template);
+    const seconds = this.paceSecPerKm(block, athlete.vma);
+    if (!seconds || !block?.distance) return null;
+    return this.clock(seconds * block.distance);
+  }
+
+  private clock(seconds: number): string {
+    const total = Math.round(seconds);
+    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+  }
+
+  private duration(minutes: number): string {
+    const h = Math.floor(minutes / 60);
+    const m = Math.round(minutes % 60);
+    return h > 0 ? `${h} h ${String(m).padStart(2, '0')}` : `${m} min`;
+  }
+
+  private fr(value: number): string {
+    return value.toLocaleString('fr-FR', { maximumFractionDigits: 1 });
+  }
+
+  getInitials(firstName: string, lastName: string): string {
+    return `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase();
+  }
+
+  /** Nom d'un exercice, qu'il soit peuplé ou réduit à son identifiant. */
+  getExerciseLabel(exercise: string | Exercise): string {
+    if (typeof exercise === 'string') {
+      return this.exercises().find(e => e._id === exercise)?.name ?? 'Exercice';
+    }
+    return exercise?.name ?? 'Exercice';
+  }
+
+  /** Libellé d'un bloc dans la structure : « Échauffement · 20 min ». */
+  blockTitle(block: TemplateRunBlock): string {
+    const role = block.role === 'warmup' ? 'Échauffement' : block.role === 'cooldown' ? 'Retour au calme' : 'Effort';
+    const measure = block.mode === 'distance' && block.distance
+      ? `${this.fr(block.distance)} km`
+      : block.duration ? `${block.duration} min` : '';
+    return measure ? `${role} · ${measure}` : role;
+  }
+
+  /** Sous-titre d'un bloc : sa consigne d'allure. */
+  blockPace(block: TemplateRunBlock): string {
+    const pace = block.pace;
+    if (!pace) return '';
+    if (pace.mode === 'absolute' && pace.absolute) return `${pace.absolute} /km`;
+    if (pace.mode === 'vmaPercent' && pace.vmaPercent) return `${pace.vmaPercent} % VMA`;
+    if (pace.mode === 'zone' && pace.zone) return `Zone ${pace.zone}`;
+    return '';
   }
 
   // ===== Templates =====
