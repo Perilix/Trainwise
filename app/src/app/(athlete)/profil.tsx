@@ -95,7 +95,7 @@ export default function ProfileScreen() {
         <Text variant="h1" style={styles.flex}>
           Profil
         </Text>
-        <IconButton icon="settings" accessibilityLabel="Paramètres" />
+        <IconButton icon="settings" accessibilityLabel="Mon compte" onPress={() => router.push('/compte')} />
       </View>
 
       <Section style={styles.tight}>
@@ -116,7 +116,7 @@ export default function ProfileScreen() {
 
       <Section style={styles.tight}>
         <Card>
-          <SectionHeader title="Profil sportif" actionLabel="Modifier" />
+          <SectionHeader title="Profil sportif" actionLabel="Modifier" onAction={() => router.push('/profil-sportif')} />
           <View style={styles.facts}>
             {facts.map((fact) => (
               <View key={fact.label} style={styles.fact}>
@@ -130,11 +130,11 @@ export default function ProfileScreen() {
         </Card>
       </Section>
 
-      {profile.competitions.length ? (
-        <Section style={styles.tight}>
-          <Card>
-            <SectionHeader title="Compétitions" actionLabel="Ajouter" />
-            {profile.competitions.map((competition, index) => {
+      <Section style={styles.tight}>
+        <Card>
+          <SectionHeader title="Compétitions" actionLabel="Ajouter" onAction={() => router.push('/competitions')} />
+          {profile.competitions.length ? (
+            profile.competitions.map((competition, index) => {
               const main = competition.priority === 'A';
               return (
                 <View key={competition.id} style={[styles.competition, index > 0 && { borderTopWidth: 1, borderTopColor: colors.border }]}>
@@ -151,10 +151,14 @@ export default function ProfileScreen() {
                   <Chip label={competition.weeksLeftLabel} />
                 </View>
               );
-            })}
-          </Card>
-        </Section>
-      ) : null}
+            })
+          ) : (
+            <Text variant="body2" style={styles.emptyCompetitions}>
+              Aucune course prévue. Ajoute ton prochain objectif pour que ton coach cale ta préparation dessus.
+            </Text>
+          )}
+        </Card>
+      </Section>
 
       <StravaImportModal result={stravaImport} onClose={() => setStravaImport(null)} />
 
@@ -244,6 +248,7 @@ const styles = StyleSheet.create({
   userCard: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   facts: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 14, marginTop: 14 },
   fact: { width: '50%', gap: 2 },
+  emptyCompetitions: { marginTop: 12 },
   competition: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
   priority: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   linksCard: { paddingHorizontal: 16 },

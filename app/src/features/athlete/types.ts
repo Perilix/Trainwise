@@ -178,6 +178,7 @@ export type Competition = {
   id: string;
   name: string;
   date: string;
+  discipline?: string;
   priority: 'A' | 'B' | 'C';
   goal?: string;
   weeksLeftLabel: string;

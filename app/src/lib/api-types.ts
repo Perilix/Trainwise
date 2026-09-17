@@ -14,6 +14,12 @@ export type ApiUser = {
   fcmax?: number;
   height?: number;
   weight?: number;
+  /** Blessures ou contraintes, en texte libre. */
+  injuries?: string;
+  /** Jours d'entraînement possibles : 'lundi', 'mardi'… */
+  availableDays?: string[];
+  /** Créneau préféré : 'matin', 'midi', 'soir'. */
+  preferredTime?: string;
   hasCompletedOnboarding?: boolean;
   // Profil coach
   disciplines?: string[];
@@ -296,6 +302,7 @@ export type ApiCompetition = {
   _id: string;
   name: string;
   date: string;
+  discipline?: string;
   targetTime: string | null;
   priority: 'A' | 'B' | 'C';
   status: 'upcoming' | 'completed' | 'cancelled';

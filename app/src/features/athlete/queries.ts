@@ -12,6 +12,7 @@ import type {
   ApiNotification,
   ApiPlannedRunDetail,
   ApiRun,
+  ApiUser,
   ApiStrengthSession,
   ApiStravaStatus,
 } from '@/lib/api-types';
@@ -195,8 +196,13 @@ const finishImport = (result: StravaImportResult) => {
   if (result.imported > 0) emitAppEvent('sessions:changed');
 };
 
+/** Champs du profil sportif modifiables depuis l'app. */
+export type SportProfilePatch = Pick<ApiUser, 'runningLevel' | 'weeklyFrequency' | 'vma' | 'fcmax' | 'height' | 'weight' | 'injuries' | 'availableDays' | 'preferredTime'>;
+
+export type CompetitionPayload = { name: string; date: string; discipline: string; targetTime?: string | null; priority: 'A' | 'B' | 'C' };
+
 export function useAthleteActions() {
-  const { status } = useSession();
+  const { status, user, updateUser } = useSession();
   const live = status === 'signedIn';
 
   const setSessionStatus = async (id: string, next: 'planned' | 'completed' | 'skipped') => {
@@ -259,6 +265,46 @@ export function useAthleteActions() {
       if (!live) return;
       await api('/api/strava/disconnect', { method: 'DELETE' });
       invalidateApiCache();
+    },
+    /** Profil sportif : niveau, fréquence, mensurations, contraintes. */
+    async updateSportProfile(patch: SportProfilePatch) {
+      if (!user) return;
+      if (!live) {
+        updateUser({ ...user, ...patch });
+        return;
+      }
+      updateUser(await api<ApiUser>('/api/auth/profile', { method: 'PATCH', body: patch }));
+    },
+    async saveCompetition(id: string | null, payload: CompetitionPayload) {
+      if (!live) return;
+      await api(id ? `/api/competitions/${encodeURIComponent(id)}` : '/api/competitions', { method: id ? 'PATCH' : 'POST', body: payload });
+      invalidateApiCache();
+    },
+    async deleteCompetition(id: string) {
+      if (!live) return;
+      await api(`/api/competitions/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      invalidateApiCache();
+    },
+    async updateIdentity(patch: { firstName: string; lastName: string }) {
+      if (!user) return;
+      if (!live) {
+        updateUser({ ...user, ...patch });
+        return;
+      }
+      updateUser(await api<ApiUser>('/api/auth/profile', { method: 'PATCH', body: patch }));
+    },
+    async changeEmail(email: string, password: string) {
+      if (!user || !live) return;
+      const { email: saved } = await api<{ email: string }>('/api/auth/email', { method: 'PATCH', body: { email, password } });
+      updateUser({ ...user, email: saved });
+    },
+    async changePassword(currentPassword: string, newPassword: string) {
+      if (!live) return;
+      await api('/api/auth/password', { method: 'PATCH', body: { currentPassword, newPassword } });
+    },
+    async deleteAccount() {
+      if (!live) return;
+      await api('/api/auth/account', { method: 'DELETE' });
     },
     async markNotificationRead(id: string) {
       if (!live) return;

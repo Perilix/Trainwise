@@ -282,6 +282,66 @@ exports.resetToursSeen = async (req, res) => {
   }
 };
 
+// Changer son mot de passe depuis l'app (l'ancien fait office de preuve d'identité)
+exports.changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Mot de passe actuel et nouveau mot de passe requis' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Le nouveau mot de passe doit contenir au moins 6 caractères' });
+    }
+
+    const user = await User.findById(req.user._id).select('+password');
+
+    // Compte créé via Google ou Apple : il n'y a pas encore de mot de passe à confirmer.
+    if (user.password && !(await user.comparePassword(currentPassword))) {
+      return res.status(401).json({ error: 'Mot de passe actuel incorrect' });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ message: 'Mot de passe modifié' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Changer son adresse email, confirmée par le mot de passe
+exports.changeEmail = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const normalized = (email || '').trim().toLowerCase();
+
+    if (!/^\S+@\S+\.\S+$/.test(normalized)) {
+      return res.status(400).json({ error: 'Email invalide' });
+    }
+
+    const user = await User.findById(req.user._id).select('+password');
+    if (user.password && !(await user.comparePassword(password || ''))) {
+      return res.status(401).json({ error: 'Mot de passe incorrect' });
+    }
+    if (normalized === user.email) {
+      return res.json({ email: user.email });
+    }
+
+    const taken = await User.findOne({ email: normalized, _id: { $ne: user._id } });
+    if (taken) {
+      return res.status(400).json({ error: 'Cet email est déjà utilisé' });
+    }
+
+    user.email = normalized;
+    await user.save();
+
+    res.json({ email: user.email });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Update user profile
 exports.updateProfile = async (req, res) => {
   try {

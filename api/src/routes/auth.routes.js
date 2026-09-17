@@ -412,6 +412,52 @@ router.delete('/avatar', protect, authController.deleteAvatar);
  *       500:
  *         description: Server error
  */
+/**
+ * @swagger
+ * /api/auth/password:
+ *   patch:
+ *     summary: Changer son mot de passe
+ *     tags: [Auth]
+ *     security: [{ bearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [currentPassword, newPassword]
+ *             properties:
+ *               currentPassword: { type: string }
+ *               newPassword: { type: string, minLength: 6 }
+ *     responses:
+ *       200: { description: Mot de passe modifié }
+ *       401: { description: Mot de passe actuel incorrect }
+ */
+router.patch('/password', protect, authController.changePassword);
+
+/**
+ * @swagger
+ * /api/auth/email:
+ *   patch:
+ *     summary: Changer son adresse email
+ *     tags: [Auth]
+ *     security: [{ bearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email: { type: string }
+ *               password: { type: string, description: Mot de passe actuel }
+ *     responses:
+ *       200: { description: Email modifié }
+ *       400: { description: Email invalide ou déjà utilisé }
+ */
+router.patch('/email', protect, authController.changeEmail);
+
 router.delete('/account', protect, authController.deleteAccount);
 
 module.exports = router;

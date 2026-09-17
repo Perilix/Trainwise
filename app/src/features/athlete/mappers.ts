@@ -374,6 +374,7 @@ export function buildProfile(user: ApiUser, competitions: ApiCompetition[], stra
           id: competition._id,
           name: competition.name,
           date: competition.day,
+          discipline: competition.discipline ?? undefined,
           priority: competition.priority,
           goal: competition.targetTime ?? undefined,
           weeksLeftLabel: days === 0 ? 'Aujourd’hui' : days < 7 ? `Dans ${days} j` : `Dans ${Math.round(days / 7)} sem.`,
