@@ -70,7 +70,7 @@ export function StravaImportModal({ result, onClose }: Props) {
 const styles = StyleSheet.create({
   backdrop: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20, paddingVertical: 28 },
   // La carte reste pleine : du texte sur du verre par-dessus un fond flouté perdrait en lisibilité.
-  card: { width: '100%', maxWidth: 340, borderRadius: radius.xl, borderWidth: 1, padding: 24, alignItems: 'center' },
+  card: { zIndex: 1, width: '100%', maxWidth: 340, borderRadius: radius.xl, borderWidth: 1, padding: 24, alignItems: 'center' },
   badge: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
   title: { marginTop: 16, textAlign: 'center' },
   body: { marginTop: 8, textAlign: 'center' },

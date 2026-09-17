@@ -5,6 +5,7 @@ import { SvgXml } from 'react-native-svg';
 
 import { Avatar, BRAND, Button, Card, Chip, GlassSurface, Icon, IconButton, Screen, Section, SectionHeader, StateView, Text } from '@/components/ui';
 import { AthleteAppBar } from '@/features/athlete/athlete-app-bar';
+import { PlannedMatchPrompt } from '@/features/athlete/planned-match-prompt';
 import { useAthleteHome } from '@/features/athlete/queries';
 import { onAppEvent } from '@/lib/app-events';
 import type { Activity, PlannedSession, WeekDay } from '@/features/athlete/types';
@@ -32,6 +33,8 @@ export default function AthleteHomeScreen() {
   return (
     <Screen tabs>
       <AthleteAppBar />
+      {/* Sorties importées tombant sur une séance prévue : on propose le rapprochement. */}
+      <PlannedMatchPrompt />
 
       <Section style={styles.greeting}>
         <View style={styles.flex}>
