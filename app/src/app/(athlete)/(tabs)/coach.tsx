@@ -11,6 +11,8 @@ import { ChatThread } from '@/features/chat/chat-thread';
 import { SessionPreview } from '@/features/sessions/session-preview';
 import { useTheme } from '@/theme/theme-provider';
 
+import { useHideTabBar } from './_layout';
+
 export default function CoachChatScreen() {
   const router = useRouter();
   const { colors } = useTheme();
@@ -18,6 +20,8 @@ export default function CoachChatScreen() {
   const { width } = useWindowDimensions();
 
   useFocusEffect(chat.markRead);
+  // Le fil prend tout l'écran : la barre d'onglets s'efface, on revient par la flèche.
+  useHideTabBar(Boolean(chat.peer));
 
   // La bulle citée occupe 80 % de la largeur, moins les marges de la carte.
   const previewWidth = Math.round(width * 0.8) - 44;
@@ -53,6 +57,7 @@ export default function CoachChatScreen() {
     <ChatThread
       chat={chat}
       offlineLabel="Ton coach"
+      onBack={() => router.navigate('/')}
       headerRight={<IconButton icon="calendar" size={44} glass accessibilityLabel="Ouvrir le planning" onPress={() => router.push('/planning')} />}
       CitedSessionBody={CitedSessionBody}
       onOpenSession={(session) =>

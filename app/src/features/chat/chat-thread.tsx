@@ -1,6 +1,6 @@
-import { useRef, useState, type ComponentType, type ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react';
+import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar, Icon, IconButton, TAB_BAR_HEIGHT, TAB_BAR_MARGIN, Text } from '@/components/ui';
 import type { CitedSession } from '@/features/athlete/types';
@@ -15,7 +15,7 @@ type Props = {
   /** Texte de présence quand l'interlocuteur n'est pas en ligne. */
   offlineLabel: string;
   headerRight?: ReactNode;
-  /** Écran empilé (bouton retour, marge basse) plutôt qu'onglet. */
+  /** Bouton retour dans l'en-tête ; sans lui, le fil vit sous la barre d'onglets. */
   onBack?: () => void;
   /** Ouvre la séance citée dans un message (sans ce prop, la carte n'est pas cliquable). */
   onOpenSession?: (session: CitedSession) => void;
@@ -31,7 +31,19 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack, onOpenSess
   const [submitting, setSubmitting] = useState(false);
   const [sendFailure, setSendFailure] = useState<string | null>(null);
   const scrollRef = useRef<ScrollView>(null);
+  const insets = useSafeAreaInsets();
+  // Clavier ouvert : la barre de saisie colle au clavier, sans la marge de la barre d'accueil.
+  const [keyboardUp, setKeyboardUp] = useState(false);
   const peer = chat.peer;
+
+  useEffect(() => {
+    const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => setKeyboardUp(true));
+    const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setKeyboardUp(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   if (!peer) return null;
 
@@ -53,13 +65,13 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack, onOpenSess
     if (value) chat.notifyTyping();
   };
 
-  // Sans bouton retour, le fil vit dans un onglet : on dégage la hauteur de la barre flottante.
+  // Dans un onglet qui garde sa barre flottante, on lui dégage sa hauteur.
   const tabSpace = onBack ? 0 : TAB_BAR_HEIGHT + TAB_BAR_MARGIN * 2;
   const errorText = sendFailure ?? chat.sendError;
   const canSend = draft.trim().length > 0 && !submitting;
 
   return (
-    <SafeAreaView edges={onBack ? ['top', 'bottom'] : ['top']} style={[styles.flex, { backgroundColor: colors.bg }]}>
+    <SafeAreaView edges={['top']} style={[styles.flex, { backgroundColor: colors.bg }]}>
       <View style={[styles.header, onBack && styles.headerWithBack, { borderBottomColor: colors.border }]}>
         {onBack ? <IconButton icon="chevronLeft" size={44} glass accessibilityLabel="Retour" onPress={onBack} /> : null}
         <Avatar initials={peer.initials} size={38} tone={onBack ? 'accent' : 'violet'} />
@@ -132,7 +144,12 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack, onOpenSess
           </View>
         ) : null}
 
-        <View style={[styles.composer, { backgroundColor: colors.surface, borderTopColor: colors.border, marginBottom: tabSpace }]}>
+        <View
+          style={[
+            styles.composer,
+            // La barre de saisie couvre elle-même la zone de la barre d'accueil : pas de bande vide sous elle.
+            { backgroundColor: colors.surface, borderTopColor: colors.border, marginBottom: tabSpace, paddingBottom: keyboardUp || tabSpace ? 10 : insets.bottom + 10 },
+          ]}>
           {onCite ? <IconButton icon="plus" size={40} bordered accessibilityLabel="Citer une séance" onPress={onCite} /> : null}
           <TextInput
             accessibilityLabel="Message"
