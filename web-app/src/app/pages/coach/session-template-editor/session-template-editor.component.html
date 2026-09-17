@@ -7,7 +7,11 @@
         <button class="ste-back" (click)="cancel()"><i class="fa-solid fa-chevron-left"></i>Bibliothèque</button>
       }
       <h1>{{ templateId() ? 'Modifier' : 'Nouvelle' }} séance</h1>
-      <p class="subtitle">Définissez une séance réutilisable, avec des allures basées sur la VMA de chaque athlète.</p>
+      @if (sport() === 'running') {
+        <p class="subtitle">Définissez une séance réutilisable, avec des allures basées sur la VMA de chaque athlète.</p>
+      } @else {
+        <p class="subtitle">Séance muscu réutilisable : exercices, circuit et super-set.</p>
+      }
     </div>
     @if (isDesktop()) {
       <div class="ste-head-actions">
@@ -377,6 +381,60 @@
       </div>
     }
 
+    <!-- Rail muscu : ce que pèse la séance, et de quoi la garnir. -->
+    @if (isDesktop() && sport() === 'strength') {
+      <aside class="ste-rail">
+        <section class="ste-card">
+          <h3>Résumé</h3>
+          <div class="ste-summary">
+            <div>
+              <span class="ste-muted">Durée estimée</span>
+              <strong>≈ {{ strengthSummary().minutes }} min</strong>
+            </div>
+            <div>
+              <span class="ste-muted">Exercices</span>
+              <strong>{{ strengthSummary().exercises }}</strong>
+            </div>
+            <div>
+              <span class="ste-muted">Séries totales</span>
+              <strong>{{ strengthSummary().sets }}</strong>
+            </div>
+            <div>
+              <span class="ste-muted">Sections</span>
+              <strong>{{ strengthSummary().sections }}</strong>
+            </div>
+          </div>
+          <p class="ste-muted ste-note">Estimation d'une minute par série, récupération comprise.</p>
+        </section>
+
+        <section class="ste-card">
+          <h3>Choisir un exercice</h3>
+          <input class="ste-search" type="search" placeholder="Rechercher…"
+                 [ngModel]="exerciseSearch()" (ngModelChange)="exerciseSearch.set($event)">
+          <div class="ste-chips">
+            <button class="ste-chip" [class.on]="exerciseMuscle() === ''" (click)="exerciseMuscle.set('')">Tous</button>
+            @for (muscle of pickableMuscles(); track muscle) {
+              <button class="ste-chip" [class.on]="exerciseMuscle() === muscle" (click)="exerciseMuscle.set(muscle)">
+                {{ muscleLabel(muscle) }}
+              </button>
+            }
+          </div>
+          @for (exercise of pickableExercises(); track exercise._id) {
+            <div class="ste-pick">
+              <span class="ste-pick-text">
+                <span class="ste-pick-name">{{ exercise.name }}</span>
+                <span class="ste-muted">{{ muscleLabel(exercise.primaryMuscle || '') }}</span>
+              </span>
+              <button class="ste-pick-add" (click)="pickExercise(exercise._id)" title="Ajouter à la séance">+</button>
+            </div>
+          }
+          @if (pickableExercises().length === 0) {
+            <p class="ste-muted">Aucun exercice ne correspond.</p>
+          }
+        </section>
+      </aside>
+    }
+
     <!-- Rail d'aperçu : ce que la séance donnera, pour la VMA de référence
          puis pour chaque athlète. Course uniquement. -->
     @if (isDesktop() && sport() === 'running') {
@@ -433,7 +491,7 @@
           </section>
         }
 
-        @if (zones().length > 0) {
+        @if (zones().length > 0 && sport() === 'running') {
           <section class="ste-card">
             <h3>Intensité</h3>
             @for (zone of zones(); track zone.key) {

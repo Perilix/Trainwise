@@ -11,7 +11,7 @@ import {
   SessionTemplate, Sport, SessionType, TemplateRunBlock, PaceConfig,
   PaceZone, StrengthExerciseEntry, StrengthCircuit, StrengthSuperset
 } from '../../../interfaces/session-template.interfaces';
-import { Exercise } from '../../../interfaces/strength.interfaces';
+import { Exercise, MUSCLE_GROUP_LABELS } from '../../../interfaces/strength.interfaces';
 import { CoachService } from '../../../services/coach.service';
 import { Athlete } from '../../../interfaces/coach.interfaces';
 import { parseDecimalInput } from '../../../utils/decimal.util';
@@ -421,6 +421,65 @@ export class SessionTemplateEditorComponent implements OnInit {
   }
 
   // ===== Strength =====
+  // ===== Rail muscu (desktop) : résumé et choix d'exercice =====
+
+  exerciseSearch = signal('');
+  exerciseMuscle = signal<string>('');
+
+  /** Les exercices proposés par le rail, filtrés par nom et par muscle. */
+  pickableExercises = computed(() => {
+    const search = this.exerciseSearch().toLowerCase().trim();
+    const muscle = this.exerciseMuscle();
+    return this.exercises().filter(exercise => {
+      if (muscle && exercise.primaryMuscle !== muscle && !exercise.muscleGroups?.includes(muscle as any)) return false;
+      if (search && !exercise.name.toLowerCase().includes(search)) return false;
+      return true;
+    });
+  });
+
+  /** Les muscles réellement représentés dans la bibliothèque. */
+  pickableMuscles = computed(() => {
+    const muscles = new Set<string>();
+    for (const exercise of this.exercises()) {
+      if (exercise.primaryMuscle) muscles.add(exercise.primaryMuscle);
+    }
+    return [...muscles];
+  });
+
+  /** Chiffres du résumé : ce que la séance représente une fois assemblée. */
+  strengthSummary(): { exercises: number; sets: number; sections: number; minutes: number } {
+    const simple = this.strengthExercises();
+    const circuit = this.strengthCircuit();
+    const superset = this.strengthSuperset();
+
+    const simpleSets = simple.reduce((total, entry) => total + (entry.targetSets ?? 0), 0);
+    const circuitSets = (circuit?.exercises?.length ?? 0) * (circuit?.rounds ?? 0);
+    const supersetSets = (superset?.pairs?.length ?? 0) * 2 * (superset?.sets ?? 0);
+
+    const exercises = simple.length + (circuit?.exercises?.length ?? 0) + (superset?.pairs?.length ?? 0) * 2;
+    const sections = [simple.length > 0, !!circuit?.exercises?.length, !!superset?.pairs?.length].filter(Boolean).length;
+    const sets = simpleSets + circuitSets + supersetSets;
+
+    // Estimation volontairement grossière : une série ≈ une minute, repos compris.
+    return { exercises, sets, sections, minutes: sets };
+  }
+
+  /** Ajoute au plan l'exercice choisi dans le rail. */
+  pickExercise(exerciseId: string) {
+    this.strengthExercises.update(list => [...list, {
+      exercise: exerciseId,
+      targetSets: 3,
+      targetReps: '8-12',
+      targetWeight: undefined,
+      targetRest: '60s',
+      notes: ''
+    }]);
+  }
+
+  muscleLabel(muscle: string): string {
+    return MUSCLE_GROUP_LABELS[muscle as keyof typeof MUSCLE_GROUP_LABELS] ?? muscle;
+  }
+
   addStrengthExercise() {
     const next = [...this.strengthExercises(), {
       exercise: '',

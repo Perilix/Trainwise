@@ -424,9 +424,37 @@ main {
   }
 }
 
-// Desktop ≥1024px : élargir le contenu (sidebar active)
+// Desktop ≥1024px : la carte d'identité tient dans une colonne, le profil
+// coach dans l'autre — la page tenait sinon sur une seule colonne étroite.
 @media (min-width: 1024px) {
   .container {
-    max-width: 1000px;
+    max-width: none;
+    padding: calc(var(--navbar-height, 0px) + 36px) 40px 40px;
   }
+
+  .page-header h1 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 28px;
+    line-height: 36px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  main {
+    display: grid;
+    grid-template-columns: 360px minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+    align-content: start;
+  }
+
+  .user-card {
+    grid-column: 1;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .coach-profile-section { grid-column: 2; grid-row: 1 / span 2; margin: 0; }
+  .logout-section { grid-column: 1; margin: 0; }
 }
