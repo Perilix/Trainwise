@@ -1,5 +1,5 @@
 export { AppBar } from './app-bar';
-export { Avatar, type AvatarTone } from './avatar';
+export { Avatar, avatarToneFor, type AvatarTone } from './avatar';
 export { BRAND } from './brand-svg';
 export { BackBar } from './back-bar';
 export { Button, type ButtonVariant } from './button';

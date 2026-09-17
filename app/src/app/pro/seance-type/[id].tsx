@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { Avatar, BackBar, Button, Card, Chip, FormError, Screen, Section, StateView, Text } from '@/components/ui';
+import { Avatar, avatarToneFor, BackBar, Button, Card, Chip, FormError, Screen, Section, StateView, Text } from '@/components/ui';
 import { SESSION_TYPE_LABELS } from '@/features/athlete/mappers';
 import { useCoachActions, useCoachAthleteList } from '@/features/coach/queries';
 import { mainPercent, templateCopyPayload, templateToDetail, useTemplate } from '@/features/coach/templates';
@@ -126,7 +126,7 @@ export default function TemplateDetailScreen() {
               const pace = paceFromPercent(athlete.vma, main.percent);
               return (
                 <View key={athlete.id} style={[styles.athlete, index > 0 && { borderTopWidth: 1, borderTopColor: colors.border }]}>
-                  <Avatar initials={athlete.initials} size={32} tone="accent" />
+                  <Avatar initials={athlete.initials} size={32} tone={avatarToneFor(athlete.id)} />
                   <View style={styles.flex}>
                     <Text variant="h3">{athlete.name}</Text>
                     <Text variant="caption" color={athlete.vma ? 'text2' : 'warningInk'}>

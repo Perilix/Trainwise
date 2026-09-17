@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { Avatar, BackBar, Button, Card, Chip, Field, FormError, Icon, IconButton, Screen, Section, Stat, StateView, Text } from '@/components/ui';
+import { Avatar, avatarToneFor, BackBar, Button, Card, Chip, Field, FormError, Icon, IconButton, Screen, Section, Stat, StateView, Text } from '@/components/ui';
 import { useAthleteFiche, useCoachActions } from '@/features/coach/queries';
 import { ATHLETE_STATUS_STYLE } from '@/features/coach/status';
 import type { AthleteFiche } from '@/features/coach/types';
@@ -85,7 +85,7 @@ export default function AthleteFicheScreen() {
 
       <Section style={styles.header}>
         <View style={styles.identity}>
-          <Avatar initials={fiche.initials} size={56} tone="accent" />
+          <Avatar initials={fiche.initials} size={56} tone={avatarToneFor(id)} />
           <View style={styles.flex}>
             <Text variant="h1" style={styles.name}>
               {fiche.name}

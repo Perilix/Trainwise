@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Avatar, BackBar, Button, Card, FormError, Icon, Screen, Section, StateView, Text } from '@/components/ui';
+import { Avatar, avatarToneFor, BackBar, Button, Card, FormError, Icon, Screen, Section, StateView, Text } from '@/components/ui';
 import { useCoachActions, useCoachAthleteList } from '@/features/coach/queries';
 import { mainPercent, useTemplate } from '@/features/coach/templates';
 import { DateStepper } from '@/features/sessions/date-stepper';
@@ -91,7 +91,7 @@ export default function AssignTemplateScreen() {
                     accessibilityLabel={athlete.name}
                     onPress={() => toggle(athlete.id)}
                     style={[styles.athlete, index > 0 && { borderTopWidth: 1, borderTopColor: colors.border }]}>
-                    <Avatar initials={athlete.initials} size={40} tone="accent" />
+                    <Avatar initials={athlete.initials} size={40} tone={avatarToneFor(athlete.id)} />
                     <View style={styles.flex}>
                       <Text variant="h3">{athlete.name}</Text>
                       {main ? (

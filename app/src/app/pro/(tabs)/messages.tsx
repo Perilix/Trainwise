@@ -1,7 +1,7 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Avatar, Card, Screen, Section, StateView, Text } from '@/components/ui';
+import { Avatar, avatarToneFor, Card, Screen, Section, StateView, Text } from '@/components/ui';
 import type { ConversationRow } from '@/features/chat/conversations';
 import { useCoachConversations } from '@/features/coach/queries';
 import { useSocketEvent } from '@/features/realtime/socket-provider';
@@ -60,7 +60,7 @@ function ConversationItem({ conversation, divided, onPress }: { conversation: Co
       onPress={onPress}
       style={[styles.item, divided && { borderTopWidth: 1, borderTopColor: colors.border }]}>
       <View>
-        <Avatar initials={conversation.initials} size={44} tone="accent" />
+        <Avatar initials={conversation.initials} size={44} tone={avatarToneFor(conversation.peerId)} />
         {conversation.online ? <View style={[styles.online, { backgroundColor: colors.success, borderColor: colors.surface }]} /> : null}
       </View>
       <View style={styles.text}>

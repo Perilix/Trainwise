@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 
 import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Avatar, Icon, IconButton, TAB_BAR_HEIGHT, TAB_BAR_MARGIN, Text } from '@/components/ui';
+import { Avatar, avatarToneFor, Icon, IconButton, TAB_BAR_HEIGHT, TAB_BAR_MARGIN, Text } from '@/components/ui';
 import type { CitedSession } from '@/features/athlete/types';
 import { useTheme } from '@/theme/theme-provider';
 import { radius } from '@/theme/tokens';
@@ -17,6 +17,8 @@ type Props = {
   headerRight?: ReactNode;
   /** Bouton retour dans l'en-tête ; sans lui, le fil vit sous la barre d'onglets. */
   onBack?: () => void;
+  /** Qui est en face : un coach porte le violet, un athlète sa couleur propre. */
+  peerRole?: 'coach' | 'athlete';
   /** Ouvre la séance citée dans un message (sans ce prop, la carte n'est pas cliquable). */
   onOpenSession?: (session: CitedSession) => void;
   /** Bouton « + » du champ de saisie : citer une séance dans la conversation. */
@@ -25,7 +27,7 @@ type Props = {
   CitedSessionBody?: ComponentType<{ session: CitedSession }>;
 };
 
-export function ChatThread({ chat, offlineLabel, headerRight, onBack, onOpenSession, onCite, CitedSessionBody }: Props) {
+export function ChatThread({ chat, offlineLabel, headerRight, onBack, peerRole = 'athlete', onOpenSession, onCite, CitedSessionBody }: Props) {
   const { colors } = useTheme();
   const [draft, setDraft] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -35,6 +37,7 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack, onOpenSess
   // Clavier ouvert : la barre de saisie colle au clavier, sans la marge de la barre d'accueil.
   const [keyboardUp, setKeyboardUp] = useState(false);
   const peer = chat.peer;
+  const fromCoach = peerRole === 'coach';
 
   useEffect(() => {
     const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => setKeyboardUp(true));
@@ -74,7 +77,7 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack, onOpenSess
     <SafeAreaView edges={['top']} style={[styles.flex, { backgroundColor: colors.bg }]}>
       <View style={[styles.header, onBack && styles.headerWithBack, { borderBottomColor: colors.border }]}>
         {onBack ? <IconButton icon="chevronLeft" size={44} glass accessibilityLabel="Retour" onPress={onBack} /> : null}
-        <Avatar initials={peer.initials} size={38} tone={onBack ? 'accent' : 'violet'} />
+        <Avatar initials={peer.initials} size={38} tone={fromCoach ? 'violet' : avatarToneFor(peer.id)} />
         <View style={styles.flex}>
           <Text variant="h2" numberOfLines={1}>
             {peer.name}

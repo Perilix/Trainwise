@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { Avatar, BackBar, Button, Card, Chip, Field, FormError, Screen, Section, SectionHeader, Text } from '@/components/ui';
+import { Avatar, avatarToneFor, BackBar, Button, Card, Chip, Field, FormError, Screen, Section, SectionHeader, Text } from '@/components/ui';
 import { InviteCodeCard } from '@/features/coach/invite-code-card';
 import { useCoachActions, useInviteOverview } from '@/features/coach/queries';
 import type { AthleteSearchRow, PackageType } from '@/features/coach/types';
@@ -103,7 +103,7 @@ export default function InviteAthleteScreen() {
                 const invited = invitedIds.includes(row.id) || row.state === 'pending';
                 return (
                   <View key={row.id} style={[styles.result, index > 0 && { borderTopWidth: 1, borderTopColor: colors.border }]}>
-                    <Avatar initials={row.initials} size={40} tone="accent" />
+                    <Avatar initials={row.initials} size={40} tone={avatarToneFor(row.id)} />
                     <View style={styles.flex}>
                       <Text variant="h3" numberOfLines={1}>
                         {row.name}
@@ -137,7 +137,7 @@ export default function InviteAthleteScreen() {
           <Card padding={0} style={styles.list}>
             {overview.pending.map((invitation, index) => (
               <View key={invitation.id} style={[styles.result, index > 0 && { borderTopWidth: 1, borderTopColor: colors.border }]}>
-                <Avatar initials={invitation.initials} size={40} tone="accent" />
+                <Avatar initials={invitation.initials} size={40} tone={avatarToneFor(invitation.id)} />
                 <View style={styles.flex}>
                   <Text variant="h3">{invitation.name}</Text>
                   <Text variant="small">{invitation.sentLabel}</Text>

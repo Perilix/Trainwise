@@ -58,6 +58,7 @@ export default function CoachChatScreen() {
       chat={chat}
       offlineLabel="Ton coach"
       onBack={() => router.navigate('/')}
+      peerRole="coach"
       headerRight={<IconButton icon="calendar" size={44} glass accessibilityLabel="Ouvrir le planning" onPress={() => router.push('/planning')} />}
       CitedSessionBody={CitedSessionBody}
       onOpenSession={(session) =>

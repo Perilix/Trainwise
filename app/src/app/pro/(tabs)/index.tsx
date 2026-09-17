@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Avatar, Button, Card, Field, FormError, Icon, IconButton, Screen, Section, SectionHeader, StateView, Text } from '@/components/ui';
+import { Avatar, avatarToneFor, Button, Card, Field, FormError, Icon, IconButton, Screen, Section, SectionHeader, StateView, Text } from '@/components/ui';
 import { useCoachActions, useCoachHome } from '@/features/coach/queries';
 import { ATHLETE_STATUS_STYLE } from '@/features/coach/status';
 import type { CoachAthleteRow, SubscriptionRequestRow } from '@/features/coach/types';
@@ -154,7 +154,7 @@ function RequestRow({ request, divided, busy, onAccept, onDecline, onMessage }: 
   return (
     <View style={[styles.request, divided && { borderTopWidth: 1, borderTopColor: colors.border }]}>
       <View style={styles.row}>
-        <Avatar initials={request.initials} size={40} tone="accent" />
+        <Avatar initials={request.initials} size={40} tone={avatarToneFor(request.id)} />
         <View style={styles.flex}>
           <Text variant="h3">{request.name}</Text>
           <Text variant="small">{request.requestedLabel}</Text>
@@ -179,7 +179,7 @@ function AthleteRow({ athlete, divided, onPress }: { athlete: CoachAthleteRow; d
       onPress={onPress}
       style={[styles.athlete, divided && { borderTopWidth: 1, borderTopColor: colors.border }]}>
       <View>
-        <Avatar initials={athlete.initials} size={40} tone="accent" />
+        <Avatar initials={athlete.initials} size={40} tone={avatarToneFor(athlete.id)} />
         <View style={[styles.statusDot, { backgroundColor: colors[status.color], borderColor: colors.surface }]} />
       </View>
       <View style={styles.athleteText}>
