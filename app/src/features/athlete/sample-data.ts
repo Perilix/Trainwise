@@ -1,5 +1,7 @@
 // Données d'exemple (celles de la maquette), utilisées par le mode démo.
-import type { ApiPlannedRunDetail } from '@/lib/api-types';
+import type { ApiPlannedRunDetail, ApiRunBlock } from '@/lib/api-types';
+
+import { blocksToSegments, describeBlocks } from './run-blocks';
 
 import type {
   Activity,
@@ -186,6 +188,13 @@ const splits: KmSplit[] = paces.map((pace, i) => ({
   elevation: elevations[i] * (i % 3 === 2 ? -1 : 1),
 }));
 
+// Tours Strava d'une sortie longue : 20 min d'échauffement, 15 km au train, 10 min de retour au calme.
+const SAMPLE_DONE_BLOCKS: ApiRunBlock[] = [
+  { role: 'warmup', mode: 'duration', duration: 20, pace: '5:52', order: 0 },
+  { role: 'main', mode: 'distance', distance: 15, pace: '5:14', order: 1 },
+  { role: 'cooldown', mode: 'duration', duration: 10, pace: '6:05', order: 2 },
+];
+
 const longRun: RunDetail = {
   id: 'run-2026-08-31',
   date: '2026-08-31',
@@ -205,6 +214,10 @@ const longRun: RunDetail = {
   coachName: 'Camille',
   notes: 'Jambes lourdes au départ, bonnes sensations après le km 8.',
   splits,
+  // Déroulé réalisé reconstruit depuis les tours Strava : l'athlète peut le corriger.
+  blocks: describeBlocks(SAMPLE_DONE_BLOCKS, 16.5),
+  segments: blocksToSegments(SAMPLE_DONE_BLOCKS, 16.5),
+  blocksAuto: true,
   paceZones: [
     { label: 'Récupération', minutes: 8 },
     { label: 'Endurance', minutes: 61 },

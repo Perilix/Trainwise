@@ -256,6 +256,10 @@ export type ApiRun = {
   stravaActivityId: number | null;
   /** Tracé encodé (format Google polyline) quand la sortie a un GPS. */
   polyline?: string | null;
+  /** Déroulé réalisé : reconstruit depuis les tours Strava, puis modifiable par l'athlète. */
+  runBlocks?: ApiRunBlock[];
+  /** Vrai tant que les blocs viennent de la reconstruction automatique. */
+  blocksAutoReconstructed?: boolean;
   /** Ce que le coach avait prévu, figé au moment où la sortie a été rattachée. */
   plannedSnapshot?: {
     title: string | null;

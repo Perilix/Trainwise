@@ -15,7 +15,7 @@ import type {
 import { addDays, daysBetween, isoWeek, startOfWeek } from '@/lib/dates';
 import { formatDayMonthYear, formatDayShort, formatMonthName, formatMonthShort, formatMonthYear, formatTime, paceToSeconds, parseDay, toIsoDay } from '@/lib/format';
 
-import { estimateFromBlocks } from './run-blocks';
+import { blocksToSegments, describeBlocks, estimateFromBlocks } from './run-blocks';
 import type {
   Activity,
   AthleteHome,
@@ -133,7 +133,7 @@ export function mapStrength(session: ApiStrengthSession): Activity {
 
 const byMostRecent = (a: Activity, b: Activity) => b.date.localeCompare(a.date) || (b.startTime ?? '').localeCompare(a.startTime ?? '');
 
-export function mapRunDetail(run: ApiRun, coachName?: string): RunDetail {
+export function mapRunDetail(run: ApiRun, coachName?: string, vma?: number): RunDetail {
   const strava = run.stravaData;
   // Le dernier split partiel (moins de 500 m) fausserait l'allure : on l'écarte.
   const splits: KmSplit[] = (strava?.splits ?? [])
@@ -157,8 +157,14 @@ export function mapRunDetail(run: ApiRun, coachName?: string): RunDetail {
   const notes = run.notes && name && run.notes.startsWith(name) ? run.notes.slice(name.length).trim() : run.notes?.trim();
   const byCoach = Boolean(run.plannedSnapshot?.coach);
 
+  // Déroulé réalisé : reconstruit des tours Strava, ou saisi par l'athlète.
+  const runBlocks = run.runBlocks ?? [];
+
   return {
     ...mapRun(run),
+    blocks: describeBlocks(runBlocks, vma),
+    segments: blocksToSegments(runBlocks, vma),
+    blocksAuto: Boolean(run.blocksAutoReconstructed),
     plannedBy: run.plannedSnapshot ? (byCoach ? 'coach' : 'athlete') : undefined,
     coachName: byCoach ? coachName : undefined,
     maxHr: run.maxHeartRate ?? strava?.maxHeartrate ?? undefined,

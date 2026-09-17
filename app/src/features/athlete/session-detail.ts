@@ -1,13 +1,9 @@
 // Séance planifiée détaillée : blocs de course (profil d'intensité, déroulé) et plan de musculation.
-import type { ApiPlanExercise, ApiPlannedRunDetail, ApiRunBlock, ApiRunBlockStep } from '@/lib/api-types';
-import { PACE_ZONES } from '@/lib/pace-zones';
-import { formatDuration } from '@/lib/sessions';
+import type { ApiPlanExercise, ApiPlannedRunDetail } from '@/lib/api-types';
 
 import { mapPlanned } from './mappers';
-import { blocksToSegments, fallbackPct, orderedBlocks, parseDurationText, stepPct } from './run-blocks';
-import type { ExerciseBlockRef, PlanExercise, PlannedSessionDetail, RunBlockView, StrengthPlanView } from './types';
-
-const ROLE_LABELS = { warmup: 'Échauffement', main: 'Corps de séance', cooldown: 'Retour au calme' } as const;
+import { blocksToSegments, describeBlocks } from './run-blocks';
+import type { ExerciseBlockRef, PlanExercise, PlannedSessionDetail, StrengthPlanView } from './types';
 
 export const MUSCLE_LABELS: Record<string, string> = {
   chest: 'Pectoraux',
@@ -23,56 +19,6 @@ export const MUSCLE_LABELS: Record<string, string> = {
   calves: 'Mollets',
   full_body: 'Corps complet',
 };
-
-const formatDistance = (km: number) => (km < 1 ? `${Math.round(km * 1000)} m` : `${String(Number(km.toFixed(2))).replace('.', ',')} km`);
-
-function recoveryLabel(step: ApiRunBlockStep) {
-  const detail = step.recoveryDescription?.trim();
-  const suffix = detail ? ` · ${detail}` : '';
-  if (step.recoveryMode === 'duration' && step.recoveryDuration) {
-    const seconds = parseDurationText(step.recoveryDuration);
-    return `Récup ${seconds ? formatDuration(seconds) : step.recoveryDuration}${suffix}`;
-  }
-  if (step.recoveryMode === 'distance' && step.recoveryDistance) {
-    return `Récup ${formatDistance(step.recoveryDistance)}${step.recoveryPace ? ` à ${step.recoveryPace} /km` : ''}${suffix}`;
-  }
-  return detail ? `Récup · ${detail}` : undefined;
-}
-
-/** Sans allure calculée (séance type, VMA inconnue) : zone et % de VMA. */
-function zoneLabel(step: ApiRunBlockStep) {
-  const source = step.paceSource;
-  const zone = source?.zone ? PACE_ZONES[source.zone] : undefined;
-  const percent = source?.vmaPercent ?? zone?.percent;
-  return [zone?.label, percent ? `${percent} % VMA` : null].filter(Boolean).join(' · ') || undefined;
-}
-
-export function describeBlocks(blocks: ApiRunBlock[], vma?: number): RunBlockView[] {
-  const segments = blocksToSegments(blocks, vma);
-
-  return orderedBlocks(blocks).map((block, index) => {
-    const group = Boolean(block.children?.length);
-    const steps = (group ? (block.children ?? []) : [block]).map((step, stepIndex) => ({
-      key: `${index}-${stepIndex}`,
-      label: step.mode === 'duration' ? formatDuration((step.duration ?? 0) * 60) : formatDistance(step.distance ?? 0),
-      paceLabel: step.pace ? `${step.pace} /km` : zoneLabel(step),
-      recoveryLabel: group ? recoveryLabel(step) : undefined,
-      note: group ? step.description?.trim() || undefined : undefined,
-      pct: stepPct(step, vma, fallbackPct(block.role)),
-    }));
-
-    return {
-      key: String(index),
-      role: block.role,
-      roleLabel: ROLE_LABELS[block.role],
-      repetitions: Math.max(1, block.repetitions ?? 1),
-      steps,
-      recoveryLabel: recoveryLabel(block),
-      note: block.description?.trim() || undefined,
-      durationSec: segments.filter((segment) => segment.block === index).reduce((sum, segment) => sum + segment.sec, 0),
-    };
-  });
-}
 
 function planExercise(item: ApiPlanExercise | undefined, key: string, block: ExerciseBlockRef): PlanExercise | null {
   if (!item?.exercise) return null;
