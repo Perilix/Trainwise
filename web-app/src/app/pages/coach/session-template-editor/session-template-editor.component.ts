@@ -12,6 +12,8 @@ import {
   PaceZone, StrengthExerciseEntry, StrengthCircuit, StrengthSuperset
 } from '../../../interfaces/session-template.interfaces';
 import { Exercise } from '../../../interfaces/strength.interfaces';
+import { CoachService } from '../../../services/coach.service';
+import { Athlete } from '../../../interfaces/coach.interfaces';
 import { parseDecimalInput } from '../../../utils/decimal.util';
 
 @Component({
@@ -22,6 +24,13 @@ import { parseDecimalInput } from '../../../utils/decimal.util';
   styleUrl: './session-template-editor.component.scss'
 })
 export class SessionTemplateEditorComponent implements OnInit {
+  // Au-delà de 1024px, l'éditeur prend la mise en page des maquettes :
+  // le formulaire à gauche, un rail d'aperçu à droite.
+  isDesktop = signal(typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches);
+
+  /** Athlètes du coach, pour projeter la séance sur leurs VMA. */
+  athletes = signal<Athlete[]>([]);
+
   templateId = signal<string | null>(null);
   isLoading = signal(false);
   isSaving = signal(false);
@@ -79,10 +88,18 @@ export class SessionTemplateEditorComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private templateService: SessionTemplateService,
-    private exerciseService: ExerciseService
+    private exerciseService: ExerciseService,
+    private coachService: CoachService
   ) {}
 
   ngOnInit() {
+    if (typeof window !== 'undefined') {
+      window.matchMedia('(min-width: 1024px)').addEventListener('change', event => this.isDesktop.set(event.matches));
+    }
+    this.coachService.getAthletes().subscribe({
+      next: list => this.athletes.set(list ?? []),
+      error: () => {}
+    });
     this.templateService.getPaceZones().subscribe({
       next: (z) => this.zones.set(z),
       error: (err) => console.error('zones load failed', err)
@@ -150,6 +167,161 @@ export class SessionTemplateEditorComponent implements OnInit {
   // ===== Run blocks (éditeur partagé) =====
   onBlocksChange(blocks: RunBlock[]) {
     this.editorBlocks.set(blocks);
+  }
+
+  // ===== Rail d'aperçu (desktop) =====
+
+  /** Les blocs à plat : un groupe « Répéter » est représenté par ses étapes. */
+  private flatBlocks(): RunBlock[] {
+    return this.editorBlocks().flatMap(block => (block.children?.length ? block.children : [block]));
+  }
+
+  /** Une ligne d'aperçu par bloc : son nom, sa mesure, son allure. */
+  previewLines(): { label: string; measure: string; pace: string | null }[] {
+    return this.editorBlocks().flatMap(block => {
+      const reps = block.repetitions && block.repetitions > 1 ? block.repetitions : 1;
+      const units = block.children?.length ? block.children : [block];
+      const lines = units.map(unit => ({
+        label: this.blockLabel(unit, reps, block),
+        measure: this.blockMeasure(unit),
+        pace: this.paceOf(unit),
+      }));
+      // La récupération d'un bloc répété mérite sa propre ligne.
+      const withRecovery = units.find(unit => unit.recoveryMode);
+      if (withRecovery) {
+        lines.push({
+          label: 'Récupération',
+          measure: withRecovery.recoveryMode === 'duration'
+            ? String(withRecovery.recoveryDuration ?? '')
+            : `${withRecovery.recoveryDistance ?? 0} km`,
+          pace: this.paceOf(withRecovery, true),
+        });
+      }
+      return lines;
+    });
+  }
+
+  private blockLabel(unit: RunBlock, reps: number, parent: RunBlock): string {
+    if (unit.role === 'warmup') return 'Échauffement';
+    if (unit.role === 'cooldown') return 'Retour au calme';
+    const measure = this.blockMeasure(unit);
+    return reps > 1 ? `${reps} × ${measure}` : (unit.description?.trim() || measure || 'Effort');
+  }
+
+  private blockMeasure(block: RunBlock): string {
+    if (block.mode === 'distance' && block.distance) {
+      return block.distance < 1 ? `${Math.round(block.distance * 1000)} m` : `${this.fr(block.distance)} km`;
+    }
+    return block.duration ? `${block.duration} min` : '';
+  }
+
+  /** Allure d'un bloc à la VMA d'aperçu, « 3:32 ». */
+  private paceOf(block: RunBlock, recovery = false): string | null {
+    const source = recovery ? block.recoveryPaceSource : block.paceSource;
+    const direct = recovery ? block.recoveryPace : block.pace;
+    if (source?.vmaPercent) return this.computePaceString(source.vmaPercent);
+    return typeof direct === 'string' ? direct : null;
+  }
+
+  /** Le bloc sur lequel se projettent les athlètes : le premier effort calé sur la VMA. */
+  referenceBlock(): RunBlock | null {
+    const mains = this.flatBlocks().filter(b => b.role === 'main');
+    return mains.find(b => b.paceSource?.vmaPercent) ?? mains[0] ?? null;
+  }
+
+  referenceLabel(): string {
+    const block = this.referenceBlock();
+    return block ? this.blockMeasure(block) : '';
+  }
+
+  /** Temps de l'athlète sur le bloc de référence, d'après sa VMA. */
+  athleteSplit(athlete: Athlete): string | null {
+    const block = this.referenceBlock();
+    const percent = block?.paceSource?.vmaPercent;
+    if (!block?.distance || !percent || !athlete.vma) return null;
+    const speedKmh = (athlete.vma * percent) / 100;
+    if (speedKmh <= 0) return null;
+    return this.clock((3600 / speedKmh) * block.distance);
+  }
+
+  /** Distance totale de la séance, répétitions comprises. */
+  totalDistanceKm(): number {
+    return this.editorBlocks().reduce((total, block) => {
+      const reps = Math.max(1, block.repetitions || 1);
+      const units = block.children?.length ? block.children : [block];
+      const perRep = units.reduce((sum, unit) => {
+        const effort = unit.mode === 'distance' ? (unit.distance || 0) : this.kmFromDuration(unit);
+        const recovery = unit.recoveryMode === 'distance' ? (unit.recoveryDistance || 0) : 0;
+        return sum + effort + recovery;
+      }, 0);
+      return total + perRep * reps;
+    }, 0);
+  }
+
+  /** Durée totale estimée, en minutes. */
+  totalDurationMin(): number {
+    return this.editorBlocks().reduce((total, block) => {
+      const reps = Math.max(1, block.repetitions || 1);
+      const units = block.children?.length ? block.children : [block];
+      const perRep = units.reduce((sum, unit) => {
+        const effort = unit.mode === 'duration' ? (unit.duration || 0) : this.minFromDistance(unit);
+        const recovery = unit.recoveryMode === 'duration' ? this.minutesOf(unit.recoveryDuration) : 0;
+        return sum + effort + recovery;
+      }, 0);
+      return total + perRep * reps;
+    }, 0);
+  }
+
+  private minFromDistance(block: RunBlock): number {
+    const pace = this.paceMinutes(this.paceOf(block));
+    return (block.distance || 0) * (pace ?? 5);
+  }
+
+  private kmFromDuration(block: RunBlock): number {
+    const pace = this.paceMinutes(this.paceOf(block));
+    return pace && pace > 0 ? (block.duration || 0) / pace : 0;
+  }
+
+  private paceMinutes(pace: string | null): number | null {
+    if (!pace) return null;
+    const match = /^(\d+):(\d{1,2})$/.exec(pace.trim());
+    return match ? parseInt(match[1], 10) + parseInt(match[2], 10) / 60 : null;
+  }
+
+  /** « 1'15 », « 90s », « 1:30 » → minutes décimales. */
+  private minutesOf(value: string | null | undefined): number {
+    if (!value) return 0;
+    const clock = /^(\d+):(\d{1,2})$/.exec(value.trim());
+    if (clock) return parseInt(clock[1], 10) + parseInt(clock[2], 10) / 60;
+    const quote = /^(\d+)['’](\d{1,2})?/.exec(value.trim());
+    if (quote) return parseInt(quote[1], 10) + (parseInt(quote[2] ?? '0', 10) || 0) / 60;
+    const seconds = /^(\d+)\s*s$/.exec(value.trim());
+    if (seconds) return parseInt(seconds[1], 10) / 60;
+    const minutes = /^(\d+)/.exec(value.trim());
+    return minutes ? parseInt(minutes[1], 10) : 0;
+  }
+
+  durationLabel(minutes: number): string {
+    const h = Math.floor(minutes / 60);
+    const m = Math.round(minutes % 60);
+    return h > 0 ? `${h} h ${String(m).padStart(2, '0')}` : `${m} min`;
+  }
+
+  stepVma(delta: number) {
+    this.previewVma.update(value => Math.min(30, Math.max(8, Math.round((value + delta) * 10) / 10)));
+  }
+
+  getInitials(firstName: string, lastName: string): string {
+    return `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase();
+  }
+
+  private clock(seconds: number): string {
+    const total = Math.round(seconds);
+    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+  }
+
+  private fr(value: number): string {
+    return value.toLocaleString('fr-FR', { maximumFractionDigits: 1 });
   }
 
   // --- Conversion template (PaceConfig) → éditeur (pace string + paceSource) ---

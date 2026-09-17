@@ -3,9 +3,20 @@
 <div class="container">
   <header class="page-header">
     <div class="header-content">
+      @if (isDesktop()) {
+        <button class="ste-back" (click)="cancel()"><i class="fa-solid fa-chevron-left"></i>Bibliothèque</button>
+      }
       <h1>{{ templateId() ? 'Modifier' : 'Nouvelle' }} séance</h1>
       <p class="subtitle">Définissez une séance réutilisable, avec des allures basées sur la VMA de chaque athlète.</p>
     </div>
+    @if (isDesktop()) {
+      <div class="ste-head-actions">
+        <button class="btn-secondary" (click)="cancel()">Annuler</button>
+        <button class="btn-primary" (click)="save()" [disabled]="isSaving()">
+          <i class="fa-solid fa-check"></i>{{ isSaving() ? 'Enregistrement...' : 'Enregistrer' }}
+        </button>
+      </div>
+    }
   </header>
 
   @if (error()) {
@@ -357,11 +368,84 @@
       </section>
     }
 
-    <div class="bottom-actions">
-      <button class="btn-secondary" (click)="cancel()">Annuler</button>
-      <button class="btn-primary" (click)="save()" [disabled]="isSaving()">
-        {{ isSaving() ? 'Enregistrement...' : 'Enregistrer' }}
-      </button>
-    </div>
+    @if (!isDesktop()) {
+      <div class="bottom-actions">
+        <button class="btn-secondary" (click)="cancel()">Annuler</button>
+        <button class="btn-primary" (click)="save()" [disabled]="isSaving()">
+          {{ isSaving() ? 'Enregistrement...' : 'Enregistrer' }}
+        </button>
+      </div>
+    }
+
+    <!-- Rail d'aperçu : ce que la séance donnera, pour la VMA de référence
+         puis pour chaque athlète. Course uniquement. -->
+    @if (isDesktop() && sport() === 'running') {
+      <aside class="ste-rail">
+        <section class="ste-card">
+          <h3>Aperçu pour VMA</h3>
+          <div class="ste-vma">
+            <button (click)="stepVma(-0.5)" title="Diminuer">−</button>
+            <input type="number" min="8" max="30" step="0.5" [ngModel]="previewVma()" (ngModelChange)="previewVma.set($event)">
+            <button (click)="stepVma(0.5)" title="Augmenter">+</button>
+            <span class="ste-muted">km/h</span>
+          </div>
+
+          @if (previewLines().length === 0) {
+            <p class="ste-muted">Ajoutez des blocs pour voir les allures.</p>
+          } @else {
+            @for (line of previewLines(); track $index) {
+              <div class="ste-line">
+                <span class="ste-line-label">{{ line.label }}</span>
+                <span class="ste-line-values">
+                  <strong>{{ line.pace ? line.pace + ' /km' : '—' }}</strong>
+                  <span class="ste-muted">{{ line.measure }}</span>
+                </span>
+              </div>
+            }
+            <div class="ste-totals">
+              <div>
+                <span class="ste-muted">Distance</span>
+                <strong>≈ {{ totalDistanceKm() | number:'1.0-1' }} km</strong>
+              </div>
+              <div>
+                <span class="ste-muted">Durée</span>
+                <strong>≈ {{ durationLabel(totalDurationMin()) }}</strong>
+              </div>
+            </div>
+          }
+        </section>
+
+        @if (referenceBlock() && athletes().length > 0) {
+          <section class="ste-card">
+            <h3>{{ referenceLabel() }} pour vos athlètes</h3>
+            @for (athlete of athletes(); track athlete._id) {
+              <div class="ste-athlete">
+                <span class="ste-avatar">{{ getInitials(athlete.firstName, athlete.lastName) }}</span>
+                <span class="ste-athlete-name">{{ athlete.firstName }} {{ athlete.lastName }}</span>
+                @if (athlete.vma) {
+                  <span class="ste-muted">{{ athlete.vma | number:'1.0-1' }} km/h</span>
+                  <strong>{{ athleteSplit(athlete) || '—' }}</strong>
+                } @else {
+                  <span class="ste-warn">VMA manquante</span>
+                }
+              </div>
+            }
+          </section>
+        }
+
+        @if (zones().length > 0) {
+          <section class="ste-card">
+            <h3>Intensité</h3>
+            @for (zone of zones(); track zone.key) {
+              <div class="ste-zone">
+                <span class="ste-zone-swatch" [style.opacity]="zone.defaultPercent / 110"></span>
+                <span class="ste-zone-label">{{ zone.label }}</span>
+                <span class="ste-muted">{{ zone.minPercent }} – {{ zone.maxPercent }} %</span>
+              </div>
+            }
+          </section>
+        }
+      </aside>
+    }
   }
 </div>
