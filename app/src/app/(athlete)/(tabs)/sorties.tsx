@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { DistanceBars } from '@/components/charts/distance-bars';
@@ -7,6 +7,7 @@ import { RoutePreview } from '@/components/charts/route-preview';
 import { Card, Chip, Divider, Screen, Section, SectionHeader, Segmented, Stat, StateView, Text } from '@/components/ui';
 import { AthleteAppBar } from '@/features/athlete/athlete-app-bar';
 import { useRunsOverview } from '@/features/athlete/queries';
+import { onAppEvent } from '@/lib/app-events';
 import type { Activity, RunsPeriod } from '@/features/athlete/types';
 import { formatClock, formatDayShort, formatDecimal, formatHoursMinutes, formatPace } from '@/lib/format';
 import { layout } from '@/theme/tokens';
@@ -17,6 +18,8 @@ export default function RunsScreen() {
   const { width } = useWindowDimensions();
   const [period, setPeriod] = useState<RunsPeriod>('month');
   const { data, loading, error, refetch } = useRunsOverview(period);
+
+  useEffect(() => onAppEvent('sessions:changed', refetch), [refetch]);
 
   const previewWidth = width - layout.gutter * 2 - 16;
 

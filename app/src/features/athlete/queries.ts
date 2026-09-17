@@ -15,6 +15,7 @@ import type {
   ApiStrengthSession,
   ApiStravaStatus,
 } from '@/lib/api-types';
+import { emitAppEvent } from '@/lib/app-events';
 import { startOfWeek } from '@/lib/dates';
 import { useSessionQuery } from '@/features/auth/use-session-query';
 import { getConversations } from '@/features/chat/conversations';
@@ -176,14 +177,22 @@ const waitForInitialImport = async (onProgress?: (result: StravaImportResult) =>
       last = initial;
       onProgress?.(initial);
       if (initial.status !== 'running') {
-        invalidateApiCache();
+        finishImport(initial);
         return initial;
       }
     }
     await new Promise((resolve) => setTimeout(resolve, 2000));
   }
 
+  // Délai dépassé : le serveur continue, mais ce qui est déjà importé doit s'afficher.
+  finishImport(last);
   return { ...last, status: 'running' };
+};
+
+/** Vide le cache et réveille les écrans montés, qui gardent sinon leurs anciennes données. */
+const finishImport = (result: StravaImportResult) => {
+  invalidateApiCache();
+  if (result.imported > 0) emitAppEvent('sessions:changed');
 };
 
 export function useAthleteActions() {
