@@ -37,7 +37,7 @@ export default function CoachChatScreen() {
     <ChatThread
       chat={chat}
       offlineLabel="Ton coach"
-      headerRight={<IconButton icon="calendar" accessibilityLabel="Ouvrir le planning" onPress={() => router.push('/planning')} />}
+      headerRight={<IconButton icon="calendar" size={44} glass accessibilityLabel="Ouvrir le planning" onPress={() => router.push('/planning')} />}
       onOpenSession={(session) =>
         session.kind === 'run'
           ? router.push({ pathname: '/sortie/[id]', params: { id: session.id } })

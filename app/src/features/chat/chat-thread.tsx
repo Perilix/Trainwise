@@ -57,7 +57,7 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack, onOpenSess
   return (
     <SafeAreaView edges={onBack ? ['top', 'bottom'] : ['top']} style={[styles.flex, { backgroundColor: colors.bg }]}>
       <View style={[styles.header, onBack && styles.headerWithBack, { borderBottomColor: colors.border }]}>
-        {onBack ? <IconButton icon="chevronLeft" size={44} accessibilityLabel="Retour" onPress={onBack} /> : null}
+        {onBack ? <IconButton icon="chevronLeft" size={44} glass accessibilityLabel="Retour" onPress={onBack} /> : null}
         <Avatar initials={peer.initials} size={38} tone={onBack ? 'accent' : 'violet'} />
         <View style={styles.flex}>
           <Text variant="h2" numberOfLines={1}>

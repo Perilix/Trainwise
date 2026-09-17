@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react';
-import { ScrollView, View, type StyleProp, type ViewStyle } from 'react-native';
+import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/theme/theme-provider';
 
+import { GlassSurface } from './glass-surface';
 import { TAB_BAR_HEIGHT, TAB_BAR_MARGIN } from './tab-bar';
 
 type Props = {
@@ -29,7 +30,12 @@ export function Screen({ children, scroll = true, tabs, edges = ['top'], content
       ) : (
         <View style={[{ flex: 1, paddingBottom: tabs ? bottom : 0 }, contentStyle]}>{children}</View>
       )}
-      {footer}
+      {/* La barre d'action flotte : le contenu défile dessous, en transparence. */}
+      {footer ? (
+        <GlassSurface radius={0} sheen={false} interactive={false} style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }}>
+          {footer}
+        </GlassSurface>
+      ) : null}
     </SafeAreaView>
   );
 }

@@ -49,7 +49,7 @@ export default function RunDetailScreen() {
 
   return (
     <Screen>
-      <BackBar right={<IconButton icon="moreV" accessibilityLabel="Plus d’actions" />} />
+      <BackBar right={<IconButton icon="moreV" size={44} glass accessibilityLabel="Plus d’actions" />} />
 
       <Section style={styles.tight}>
         <RunHero run={run}>

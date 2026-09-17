@@ -1,3 +1,4 @@
+import { BlurView } from 'expo-blur';
 import { ActivityIndicator, Modal, StyleSheet, View } from 'react-native';
 
 import { Button, Icon, Text } from '@/components/ui';
@@ -15,7 +16,7 @@ const plural = (count: number) => `${count} séance${count > 1 ? 's' : ''}`;
 
 /** Suivi de l'import de l'historique Strava, juste après la connexion du compte. */
 export function StravaImportModal({ result, onClose }: Props) {
-  const { colors } = useTheme();
+  const { colors, scheme } = useTheme();
   if (!result) return null;
 
   const running = result.status === 'running';
@@ -33,7 +34,10 @@ export function StravaImportModal({ result, onClose }: Props) {
 
   return (
     <Modal visible transparent animationType="fade" statusBarTranslucent onRequestClose={running ? undefined : onClose}>
-      <View style={[styles.backdrop, { backgroundColor: 'rgba(5, 25, 35, 0.55)' }]}>
+      <View style={styles.backdrop}>
+        {/* L'écran reste visible derrière, flouté : la fenêtre se pose dessus au lieu de le masquer. */}
+        <BlurView intensity={40} tint={scheme === 'dark' ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(5, 25, 35, 0.35)' }]} />
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={[styles.badge, { backgroundColor: failed ? colors.dangerSoft : colors.stravaSoft }]}>
             {running ? (
@@ -65,6 +69,7 @@ export function StravaImportModal({ result, onClose }: Props) {
 
 const styles = StyleSheet.create({
   backdrop: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20, paddingVertical: 28 },
+  // La carte reste pleine : du texte sur du verre par-dessus un fond flouté perdrait en lisibilité.
   card: { width: '100%', maxWidth: 340, borderRadius: radius.xl, borderWidth: 1, padding: 24, alignItems: 'center' },
   badge: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
   title: { marginTop: 16, textAlign: 'center' },

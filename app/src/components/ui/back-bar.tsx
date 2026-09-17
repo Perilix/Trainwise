@@ -15,7 +15,7 @@ export function BackBar({ title, right, onBack }: Props) {
   const router = useRouter();
   return (
     <View style={styles.bar}>
-      <IconButton icon="chevronLeft" size={44} accessibilityLabel="Retour" onPress={onBack ?? (() => router.back())} />
+      <IconButton icon="chevronLeft" size={44} glass accessibilityLabel="Retour" onPress={onBack ?? (() => router.back())} />
       <Text variant="h2" numberOfLines={1} style={styles.title}>
         {title}
       </Text>

@@ -43,11 +43,11 @@ export default function ProfileScreen() {
   return (
     <Screen>
       <View style={styles.header}>
-        <IconButton icon="chevronLeft" size={44} accessibilityLabel="Retour" onPress={() => router.back()} />
+        <IconButton icon="chevronLeft" size={44} glass accessibilityLabel="Retour" onPress={() => router.back()} />
         <Text variant="h1" style={styles.flex}>
           Profil
         </Text>
-        <IconButton icon="settings" accessibilityLabel="Mon compte" onPress={() => router.push('/compte')} />
+        <IconButton icon="settings" size={44} glass accessibilityLabel="Mon compte" onPress={() => router.push('/compte')} />
       </View>
 
       <Section style={styles.tight}>
