@@ -61,6 +61,12 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
         color: #003554;
       }
 
+      /* Les discussions de groupe : un repère franc dans une liste de visages. */
+      .danger {
+        background: var(--danger-soft, #fbe9e7);
+        color: var(--danger);
+      }
+
       .online {
         position: absolute;
         right: 0;
@@ -76,7 +82,7 @@ export class AvatarComponent {
   readonly initials = input('');
   readonly src = input<string | null | undefined>(null);
   readonly size = input(40);
-  readonly tone = input<'violet' | 'accent' | 'subtle' | 'brand'>('accent');
+  readonly tone = input<'violet' | 'accent' | 'subtle' | 'brand' | 'danger'>('accent');
   readonly online = input(false);
 
   readonly fontSize = computed(() => Math.max(11, Math.round(this.size() * 0.36)));

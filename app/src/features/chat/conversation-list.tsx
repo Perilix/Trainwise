@@ -27,7 +27,7 @@ export function ConversationList({ rows, onOpen }: Props) {
             onPress={() => onOpen(row)}
             style={[styles.row, index > 0 ? { borderTopWidth: 1, borderTopColor: colors.border } : null]}>
             <View>
-              <Avatar initials={row.initials} size={44} tone={row.kind === 'group' ? 'primary' : avatarToneFor(row.peerId)} />
+              <Avatar initials={row.initials} size={44} tone={row.kind === 'group' ? 'personRed' : avatarToneFor(row.peerId)} />
               {row.online ? <View style={[styles.online, { backgroundColor: colors.success, borderColor: colors.surface }]} /> : null}
             </View>
             <View style={styles.text}>

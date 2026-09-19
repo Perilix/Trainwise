@@ -58,7 +58,7 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
           } @else {
             @for (row of filtered(); track row.conversationId) {
               <button type="button" class="conv" [class.on]="row.conversationId === activeId()" (click)="select(row)">
-                <tw-avatar [initials]="row.initials" [tone]="row.kind === 'group' ? 'subtle' : 'accent'" [size]="44" [online]="row.online" />
+                <tw-avatar [initials]="row.initials" [tone]="row.kind === 'group' ? 'danger' : 'accent'" [size]="44" [online]="row.online" />
                 <div class="grow stack">
                   <div class="line">
                     @if (row.kind === 'group') {
@@ -86,7 +86,7 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
       <section class="thread">
         @if (active(); as peer) {
           <header class="thread-head">
-            <tw-avatar [initials]="peer.initials" [tone]="peer.kind === 'group' ? 'subtle' : 'accent'" [size]="44" [online]="peer.online" />
+            <tw-avatar [initials]="peer.initials" [tone]="peer.kind === 'group' ? 'danger' : 'accent'" [size]="44" [online]="peer.online" />
             <div class="grow stack">
               <span class="h3">{{ peer.name }}</span>
               <div class="line">
@@ -114,7 +114,10 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
               }
               <div class="bubble-wrap" [class.mine]="message.fromMe">
                 @if (active()?.kind === 'group' && !message.fromMe && message.senderName) {
-                  <span class="caption sender">{{ message.senderName }}</span>
+                  <span class="sender">
+                    <tw-avatar [initials]="message.senderInitials ?? ''" tone="accent" [size]="22" />
+                    <span class="caption">{{ message.senderName }}</span>
+                  </span>
                 }
                 <div class="bubble" [class.mine]="message.fromMe">
                   @if (message.session; as session) {
@@ -272,8 +275,11 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
       }
 
       .sender {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0 2px 3px;
         color: var(--accent-ink);
-        padding: 0 4px 2px;
       }
 
       .filters {

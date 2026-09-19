@@ -260,6 +260,7 @@ export type ChatMessage = {
   text: string;
   /** Qui parle — affiché dans les discussions de groupe uniquement. */
   senderName?: string;
+  senderInitials?: string;
   timeLabel?: string;
   dayLabel?: string;
   sending?: boolean; // envoyé, pas encore confirmé par le serveur

@@ -77,7 +77,7 @@ function ConversationItem({ conversation, divided, onPress }: { conversation: Co
       onPress={onPress}
       style={[styles.item, divided && { borderTopWidth: 1, borderTopColor: colors.border }]}>
       <View>
-        <Avatar initials={conversation.initials} size={44} tone={conversation.kind === 'group' ? 'primary' : avatarToneFor(conversation.peerId)} />
+        <Avatar initials={conversation.initials} size={44} tone={conversation.kind === 'group' ? 'personRed' : avatarToneFor(conversation.peerId)} />
         {conversation.online ? <View style={[styles.online, { backgroundColor: colors.success, borderColor: colors.surface }]} /> : null}
       </View>
       <View style={styles.text}>

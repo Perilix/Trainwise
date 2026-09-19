@@ -550,6 +550,7 @@ export function mapMessages(messages: ApiMessage[], myId: string, now: Date): Ch
       id: message._id,
       fromMe: senderId === myId,
       senderName: sender ? `${sender.firstName} ${sender.lastName ?? ''}`.trim() : undefined,
+      senderInitials: sender ? initialsOf(sender.firstName, sender.lastName) : undefined,
       text: message.type === 'text' || message.type === 'session' ? message.content : message.type === 'image' ? 'Photo' : `Document · ${message.content}`,
       timeLabel: formatTime(created),
       dayLabel,

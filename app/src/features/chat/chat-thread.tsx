@@ -114,9 +114,12 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack, peerRole =
               ) : null}
               <View style={[styles.bubbleWrap, message.fromMe ? styles.mine : styles.theirs, message.sending && styles.sending]}>
                 {showSenders && !message.fromMe && message.senderName ? (
-                  <Text variant="caption" color="accentInk" style={styles.sender}>
-                    {message.senderName}
-                  </Text>
+                  <View style={styles.sender}>
+                    <Avatar initials={message.senderInitials ?? ''} size={22} tone={avatarToneFor(message.senderName)} />
+                    <Text variant="caption" color="accentInk">
+                      {message.senderName}
+                    </Text>
+                  </View>
                 ) : null}
                 <View
                   style={[
@@ -235,7 +238,7 @@ const styles = StyleSheet.create({
   messageBlock: { gap: 10 },
   dayPill: { alignSelf: 'center', height: 24, paddingHorizontal: 10, borderRadius: radius.pill, justifyContent: 'center' },
   bubbleWrap: { maxWidth: '80%', gap: 4 },
-  sender: { paddingHorizontal: 4 },
+  sender: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 2, paddingBottom: 1 },
   mine: { alignSelf: 'flex-end', alignItems: 'flex-end' },
   theirs: { alignSelf: 'flex-start', alignItems: 'flex-start' },
   sending: { opacity: 0.6 },
