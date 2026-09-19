@@ -107,8 +107,10 @@ import { StateViewComponent } from '../../ui/state-view.component';
                     Aucun prélèvement en cours
                   }
                 </span>
-                @if (state.subscription.planId !== 'decouverte') {
+                @if (state.subscription.managed) {
                   <button class="link" type="button" [disabled]="leaving()" (click)="openPortal()">Gérer l'abonnement</button>
+                } @else if (state.subscription.planId !== 'decouverte') {
+                  <span class="caption muted-3">Plan offert</span>
                 }
               </div>
             </section>
@@ -180,7 +182,7 @@ import { StateViewComponent } from '../../ui/state-view.component';
                     <span class="h3">{{ card.brand }} •••• {{ card.last4 }}</span>
                     <span class="small muted">Expire {{ card.expires }}</span>
                   </div>
-                  <button class="link" type="button" (click)="openPortal()">Modifier</button>
+                  <button class="link" type="button" [disabled]="leaving()" (click)="openPortal()">Modifier</button>
                 </div>
               } @else {
                 <p class="small muted mt-sm">

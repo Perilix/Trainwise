@@ -23,6 +23,28 @@ const userSchema = new mongoose.Schema({
   subscriptionStatus: { type: String, enum: ['free', 'pro'], default: 'free' },
   subscriptionExpiry: { type: Date, default: null },
   revenueCatUserId: { type: String, default: null },
+  // Abonnement coach (Stripe). Écrit par le webhook côté API, ou posé à la main
+  // depuis ce back-office pour offrir un plan.
+  coachBilling: {
+    customerId: { type: String, default: null },
+    subscriptionId: { type: String, default: null },
+    planId: { type: String, default: 'decouverte' },
+    cycle: { type: String, enum: ['monthly', 'yearly'], default: 'monthly' },
+    status: { type: String, enum: ['active', 'trialing', 'past_due', 'canceled', 'incomplete'], default: 'active' },
+    currentPeriodEnd: { type: Date, default: null },
+    cancelAtPeriodEnd: { type: Boolean, default: false }
+  },
+  // Seuils d'alerte du coach (plan Studio).
+  coachAlertRules: {
+    inactivityOrange: { type: Number, default: 7 },
+    inactivityRed: { type: Number, default: 14 },
+    skippedOrange: { type: Number, default: 1 },
+    skippedRed: { type: Number, default: 3 },
+    feelingOrange: { type: Number, default: 7 },
+    feelingRed: { type: Number, default: 4 },
+    volumeDropEnabled: { type: Boolean, default: true },
+    volumeDropPercent: { type: Number, default: 50 }
+  },
   strava: {
     athleteId: { type: Number, default: null }
   },

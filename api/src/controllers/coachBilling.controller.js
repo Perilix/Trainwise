@@ -77,7 +77,9 @@ exports.getBilling = async (req, res) => {
         cycle: billing.cycle || 'monthly',
         status: billing.status || 'active',
         renewsOn: billing.currentPeriodEnd || null,
-        cancelAtPeriodEnd: Boolean(billing.cancelAtPeriodEnd)
+        cancelAtPeriodEnd: Boolean(billing.cancelAtPeriodEnd),
+        // Un plan offert depuis le back-office n'a rien à gérer chez Stripe.
+        managed: Boolean(billing.subscriptionId)
       },
       usage: {
         athletes,

@@ -852,6 +852,12 @@ tbody tr:hover { background: #f8fafc; }
   border-color: rgba(239, 68, 68, 0.2);
 }
 
+.alert-warning {
+  background: rgba(245, 158, 11, 0.08);
+  color: #92400e;
+  border-color: rgba(245, 158, 11, 0.22);
+}
+
 /* ════════════════════════════
    BACK LINK
 ════════════════════════════ */
