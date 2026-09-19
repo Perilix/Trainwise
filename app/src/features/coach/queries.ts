@@ -15,6 +15,7 @@ import type {
   ApiCalendarData,
   ApiCoachAthlete,
   ApiCoachAthleteDetail,
+  ApiCoachBilling,
   ApiCoachGroup,
   ApiCoachStats,
   ApiCompetition,
@@ -43,6 +44,7 @@ import {
   sampleCoachRun,
   sampleCoachStats,
   sampleAlertRules,
+  sampleCoachBilling,
   sampleCoachGroups,
   sampleInviteCode,
   sampleWeeklyStats,
@@ -199,6 +201,17 @@ export function useInviteOverview() {
     },
     () => buildInviteOverview(sampleInviteCode, samplePendingInvitations),
   );
+}
+
+/**
+ * Abonnement du coach, en lecture seule.
+ *
+ * On n'affiche que l'état : l'abonnement se souscrit et se change sur le web,
+ * par Stripe. Vendre un abonnement depuis une app iOS impose l'achat intégré
+ * d'Apple et sa commission — ce n'est pas une décision technique.
+ */
+export function useCoachBilling() {
+  return useSessionQuery('coach:billing', async () => api<ApiCoachBilling>('/api/coach/billing'), () => sampleCoachBilling);
 }
 
 /** Groupes d'athlètes : une étiquette, un athlète peut en porter plusieurs. */

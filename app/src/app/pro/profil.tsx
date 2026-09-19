@@ -5,6 +5,7 @@ import { Avatar, BackBar, Button, Card, Chip, Icon, Screen, Section, SectionHead
 import { useSession } from '@/features/auth/session';
 import { InviteCodeCard } from '@/features/coach/invite-code-card';
 import { DIPLOMA_OPTIONS, DISCIPLINE_OPTIONS, optionLabel } from '@/features/coach/profile-options';
+import { PlanCard } from '@/features/coach/plan-card';
 import { useInviteOverview } from '@/features/coach/queries';
 import { AppearanceCard } from '@/features/settings/appearance-card';
 import { initialsOf } from '@/features/athlete/mappers';
@@ -80,6 +81,10 @@ export default function CoachProfileScreen() {
             </View>
           </View>
         </Card>
+      </Section>
+
+      <Section style={styles.tight}>
+        <PlanCard />
       </Section>
 
       <Section style={styles.tight}>

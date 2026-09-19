@@ -3,6 +3,7 @@ import type { ChatMessage } from '@/features/athlete/types';
 import { sampleCoachThread, samplePlannedDetails, sampleRuns } from '@/features/athlete/sample-data';
 import type {
   ApiAlertRulesState,
+  ApiCoachBilling,
   ApiCoachGroup,
   ApiWeeklyStats,
   ApiCoachAthlete,
@@ -403,4 +404,17 @@ export const sampleWeeklyStats: ApiWeeklyStats = {
   ],
   totals: { planned: 54, done: 45 },
   completionRate: 87,
+};
+
+/** Abonnement affiché en mode démo. */
+export const sampleCoachBilling: ApiCoachBilling = {
+  configured: true,
+  plans: [
+    { id: 'decouverte', name: 'Découverte', athletes: 3, groups: 0, customAlerts: false },
+    { id: 'coach', name: 'Coach', athletes: 15, groups: 3, customAlerts: false },
+    { id: 'studio', name: 'Studio', athletes: 40, groups: null, customAlerts: true },
+    { id: 'club', name: 'Club', athletes: null, groups: null, customAlerts: true },
+  ],
+  subscription: { planId: 'coach', cycle: 'monthly', status: 'active', renewsOn: '2026-10-19T00:00:00.000Z', cancelAtPeriodEnd: false, managed: true },
+  usage: { athletes: 4, athleteLimit: 15, groups: 2, groupLimit: 3 },
 };

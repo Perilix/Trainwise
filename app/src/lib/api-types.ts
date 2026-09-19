@@ -116,6 +116,21 @@ export type ApiCoachGroup = {
   athletes: { id: string; firstName: string; lastName: string }[];
 };
 
+/** Abonnement du coach (GET /api/coach/billing). Le mobile ne fait que l'afficher. */
+export type ApiCoachBilling = {
+  configured: boolean;
+  plans: { id: string; name: string; athletes: number | null; groups: number | null; customAlerts: boolean }[];
+  subscription: {
+    planId: string;
+    cycle: 'monthly' | 'yearly';
+    status: 'active' | 'trialing' | 'past_due' | 'canceled' | 'incomplete';
+    renewsOn: string | null;
+    cancelAtPeriodEnd: boolean;
+    managed: boolean;
+  };
+  usage: { athletes: number; athleteLimit: number | null; groups: number; groupLimit: number | null };
+};
+
 /** Planifié et réalisé, semaine par semaine (GET /api/coach/stats/weekly). */
 export type ApiWeeklyStats = {
   weeks: { label: string; planned: number; done: number }[];
