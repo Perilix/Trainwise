@@ -1,11 +1,25 @@
-import { StyleSheet, View } from 'react-native';
+import { Linking, StyleSheet, View } from 'react-native';
 
-import { Card, Chip, Icon, Text } from '@/components/ui';
+import { Button, Card, Chip, Icon, Text } from '@/components/ui';
 import { formatDayShort } from '@/lib/format';
 import { useTheme } from '@/theme/theme-provider';
 import { radius } from '@/theme/tokens';
 
 import { useCoachBilling } from './queries';
+
+/**
+ * Le bouton qui renvoie vers la gestion de l'abonnement sur le site.
+ *
+ * Il parle de *gérer*, jamais de souscrire : c'est la gestion de compte d'un
+ * service multiplateforme, pas une incitation à acheter hors achat intégré.
+ * La règle anti-incitation d'Apple (App Review Guidelines 3.1.1) a été
+ * assouplie aux États-Unis puis en Europe en 2025, mais elle bouge encore.
+ * Si un review le refuse, passer cette constante à `false` suffit : la carte
+ * garde son état affiché, sans lien.
+ */
+const SHOW_MANAGE_BUTTON = true;
+
+const MANAGE_URL = 'https://www.trainwise-app.com/coach/abonnement';
 
 /**
  * L'abonnement du coach, en lecture seule.
@@ -76,7 +90,17 @@ export function PlanCard() {
         </Text>
       ) : null}
 
-      <Text variant="caption">Votre abonnement se gère depuis le site, sur un ordinateur.</Text>
+      {SHOW_MANAGE_BUTTON ? (
+        <Button
+          label="Gérer mon abonnement"
+          variant="secondary"
+          icon="plug"
+          fullWidth
+          onPress={() => Linking.openURL(MANAGE_URL).catch(() => undefined)}
+        />
+      ) : (
+        <Text variant="caption">Votre abonnement se gère depuis le site, sur un ordinateur.</Text>
+      )}
     </Card>
   );
 }
