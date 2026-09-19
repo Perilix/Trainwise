@@ -4,6 +4,7 @@ const Conversation = require('../models/conversation.model');
 const Message = require('../models/message.model');
 const User = require('../models/user.model');
 const { createNotification } = require('./notification.controller');
+const { leaveConversation } = require('../socket/index');
 const { groupRoom } = require('../services/coachPlan.service');
 
 // Ce que l'app affiche d'un membre : de quoi dessiner une pastille et un nom.
@@ -65,7 +66,11 @@ const syncConversation = async (group, coach, allowed) => {
       return user ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Un athlète';
     };
     for (const id of arrived) await postSystemMessage(conversation, coach._id, `${nameOf(id)} a rejoint la discussion.`);
-    for (const id of left) await postSystemMessage(conversation, coach._id, `${nameOf(id)} a quitté la discussion.`);
+    for (const id of left) {
+      await postSystemMessage(conversation, coach._id, `${nameOf(id)} a quitté la discussion.`);
+      // Ses écrans ouverts sortent du salon : la discussion se referme aussitôt.
+      leaveConversation(id, conversation._id);
+    }
   }
 
   await conversation.save();

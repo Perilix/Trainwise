@@ -211,8 +211,12 @@ const initializeSocket = (httpServer) => {
     });
 
     // Handle joining a conversation room
-    socket.on('conversation:join', (data) => {
+    socket.on('conversation:join', async (data) => {
       const { conversationId } = data;
+      // On ne rejoint que ce dont on fait partie : l'identifiant seul ne suffit
+      // pas, et un athlète retiré d'un groupe cesse d'entendre le fil.
+      const allowed = await Conversation.exists({ _id: conversationId, participants: socket.user._id });
+      if (!allowed) return socket.emit('error', { message: 'Conversation non trouvee' });
       socket.join(`conversation:${conversationId}`);
     });
 
@@ -277,10 +281,29 @@ const emitTrainCoinsUpdate = (userId, data) => {
   io.to(`user:${userId.toString()}`).emit('traincoin:update', data);
 };
 
+/**
+ * Sort un utilisateur d'une conversation, tout de suite.
+ *
+ * Les vérifications côté requêtes suffisent à lui refuser l'accès, mais ses
+ * onglets déjà ouverts resteraient dans le salon et continueraient de recevoir
+ * les messages jusqu'à leur fermeture.
+ */
+const leaveConversation = (userId, conversationId) => {
+  if (!io) return;
+  const sockets = connectedUsers.get(userId.toString());
+  if (!sockets) return;
+  const room = `conversation:${conversationId}`;
+  for (const id of sockets) {
+    io.sockets.sockets.get(id)?.leave(room);
+  }
+  io.to(`user:${userId.toString()}`).emit('conversation:removed', { conversationId: conversationId.toString() });
+};
+
 module.exports = {
   initializeSocket,
   getIO,
   isUserOnline,
   getOnlineUsers,
-  emitTrainCoinsUpdate
+  emitTrainCoinsUpdate,
+  leaveConversation
 };

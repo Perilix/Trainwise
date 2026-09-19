@@ -3,6 +3,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { BackBar, Screen, StateView } from '@/components/ui';
 import { ChatThread } from '@/features/chat/chat-thread';
 import { useGroupChat } from '@/features/chat/group-chat';
+import { useSocketEvent } from '@/features/realtime/socket-provider';
 
 /**
  * La discussion d'un groupe, vue par l'athlète.
@@ -16,6 +17,12 @@ export default function AthleteGroupChatScreen() {
   const chat = useGroupChat({ conversationId: conversation, name: nom ?? 'Groupe' });
 
   useFocusEffect(chat.markRead);
+
+  // Retiré du groupe : la discussion se referme plutôt que de rester ouverte
+  // sur un fil auquel on n'a plus accès.
+  useSocketEvent<{ conversationId: string }>('conversation:removed', (payload) => {
+    if (payload.conversationId === conversation) router.back();
+  });
 
   if (!chat.peer) {
     return (

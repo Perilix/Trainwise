@@ -802,6 +802,17 @@ export class MessagesPage {
       this.markRead();
     });
 
+    // Retiré d'un groupe : la discussion se referme sous nos yeux plutôt que
+    // de rester ouverte sur un fil auquel on n'a plus accès.
+    this.socket.on<{ conversationId: string }>('conversation:removed', (payload) => {
+      if (this.activeId() === payload.conversationId) {
+        this.activeId.set(null);
+        this.activePeer.set(null);
+        this.messages.set([]);
+      }
+      this.conversations.reload(true);
+    });
+
     this.socket.on<{ conversationId: string }>('typing:start', (payload) => {
       if (payload.conversationId === this.activeId()) this.typing.set(true);
     });
