@@ -637,6 +637,8 @@ export class MessagesPage {
 
   /** Ouvre directement la conversation avec cet athlète (lien depuis la fiche). */
   readonly athlete = input<string | undefined>(undefined);
+  /** Conversation à ouvrir d'office, par exemple celle d'un groupe. */
+  readonly conversation = input<string | undefined>(undefined);
 
   readonly conversations = load(() => this.chat.conversations$());
 
@@ -725,8 +727,12 @@ export class MessagesPage {
         this.openCoachConversation();
         return;
       }
+      const wantedConversation = this.conversation();
       const wanted = this.athlete();
-      const target = (wanted && rows.find((row) => row.peerId === wanted)) ?? rows[0];
+      const target =
+        (wantedConversation && rows.find((row) => row.conversationId === wantedConversation)) ??
+        (wanted && rows.find((row) => row.peerId === wanted)) ??
+        rows[0];
       if (target) this.select(target);
     });
   }

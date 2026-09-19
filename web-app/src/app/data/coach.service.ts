@@ -51,6 +51,13 @@ export class CoachService {
     return this.api.patch<ApiCoachGroup>(`/api/coach/groups/${encodeURIComponent(id)}`, body).pipe(this.refresh());
   }
 
+  /** La discussion du groupe : une conversation à plusieurs, pas N messages. */
+  openGroupConversation(id: string) {
+    return this.api
+      .post<{ conversationId: string; name: string; participants: number }>(`/api/coach/groups/${encodeURIComponent(id)}/conversation`, {})
+      .pipe(this.refresh());
+  }
+
   deleteGroup(id: string) {
     return this.api.delete(`/api/coach/groups/${encodeURIComponent(id)}`).pipe(this.refresh());
   }
@@ -200,9 +207,19 @@ export class CoachService {
     return this.api.delete(`/api/coach/session-templates/${encodeURIComponent(id)}`).pipe(this.refresh());
   }
 
+  /**
+   * Planifie une séance type pour plusieurs athlètes le même jour.
+   *
+   * L'API attend une assignation par athlète — c'est ce qui lui permet de
+   * résoudre l'allure de chacun selon sa VMA. La date est posée à midi : à
+   * minuit, le fuseau du serveur peut faire basculer la séance d'un jour.
+   */
   assignTemplate(templateId: string, body: { athleteIds: string[]; date: string }) {
+    const date = `${body.date}T12:00:00.000Z`;
     return this.api
-      .post(`/api/coach/session-templates/${encodeURIComponent(templateId)}/assign`, body)
+      .post(`/api/coach/session-templates/${encodeURIComponent(templateId)}/assign`, {
+        assignments: body.athleteIds.map((athleteId) => ({ athleteId, date, paceOverrides: {} })),
+      })
       .pipe(this.refresh());
   }
 

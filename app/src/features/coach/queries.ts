@@ -17,6 +17,7 @@ import type {
   ApiCoachAthleteDetail,
   ApiCoachBilling,
   ApiCoachGroup,
+  ApiMessage,
   ApiCoachStats,
   ApiCompetition,
   ApiPackageType,
@@ -212,6 +213,30 @@ export function useInviteOverview() {
  */
 export function useCoachBilling() {
   return useSessionQuery('coach:billing', async () => api<ApiCoachBilling>('/api/coach/billing'), () => sampleCoachBilling);
+}
+
+/**
+ * La discussion d'un groupe : une vraie conversation à plusieurs.
+ *
+ * Le serveur crée la conversation à la première ouverture, puis la garde
+ * alignée sur les membres du groupe — on la demande donc à chaque entrée.
+ */
+export function useGroupChat(groupId: string, groupName: string) {
+  return useDirectChat({
+    key: `coach:group-chat:${groupId}`,
+    loadPeer: async () => null,
+    loadConversation: async () => {
+      const { conversationId } = await api<{ conversationId: string }>(`/api/coach/groups/${encodeURIComponent(groupId)}/conversation`, { method: 'POST' });
+      const { messages } = await api<{ messages: ApiMessage[] }>(`/api/chat/conversations/${conversationId}/messages`, { query: { limit: 50 } });
+      return {
+        // Le « peer » d'un groupe, c'est le groupe lui-même : un nom et des initiales.
+        peer: { id: groupId, firstName: groupName, name: groupName, initials: groupName.slice(0, 2).toUpperCase(), online: false },
+        conversationId,
+        messages,
+      };
+    },
+    demo: () => ({ peer: null, messages: [] }),
+  });
 }
 
 /** Groupes d'athlètes : une étiquette, un athlète peut en porter plusieurs. */

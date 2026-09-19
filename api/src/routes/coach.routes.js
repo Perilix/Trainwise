@@ -39,6 +39,7 @@ router.put('/alert-rules', billingController.setAlertRules);
 router.get('/groups', groupController.listGroups);
 router.post('/groups', groupController.createGroup);
 router.patch('/groups/:id', groupController.updateGroup);
+router.post('/groups/:id/conversation', groupController.openConversation);
 router.delete('/groups/:id', groupController.deleteGroup);
 
 router.get('/stats', coachController.getCoachStats);

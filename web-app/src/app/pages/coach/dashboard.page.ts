@@ -113,9 +113,25 @@ const GROUP_COLORS = (Object.keys(GROUP_TINT) as GroupColor[]).map((id) => ({
                   <div class="group-actions">
                     <button class="btn btn-ghost btn-sm grow" type="button" (click)="showGroup(group)">
                       <tw-icon name="friends" [size]="16" [strokeWidth]="2" />
-                      Voir les athlètes
+                      Voir
+                    </button>
+                    <button
+                      class="btn btn-ghost btn-sm grow"
+                      type="button"
+                      [disabled]="!group.athletes.length || busyGroup() === group.id"
+                      (click)="messageGroup(group)"
+                    >
+                      <tw-icon name="chat" [size]="16" [strokeWidth]="2" />
+                      Message
+                    </button>
+                    <button class="btn btn-ghost btn-sm grow" type="button" [disabled]="!group.athletes.length" (click)="openPlan(group)">
+                      <tw-icon name="calendar" [size]="16" [strokeWidth]="2" />
+                      Planifier
                     </button>
                   </div>
+                  @if (groupActionError() && busyGroup() === group.id) {
+                    <p class="err small">{{ groupActionError() }}</p>
+                  }
                 </section>
               }
 
@@ -285,6 +301,63 @@ const GROUP_COLORS = (Object.keys(GROUP_TINT) as GroupColor[]).map((id) => ({
               <button class="btn btn-ghost" type="button" (click)="closeGroup()">Annuler</button>
               <button class="btn btn-primary" type="button" [disabled]="!groupName().trim() || savingGroup()" (click)="saveGroup()">
                 {{ savingGroup() ? 'Enregistrement…' : editing() ? 'Enregistrer' : 'Créer le groupe' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (planGroup(); as group) {
+        <div class="scrim" (click)="closePlan()">
+          <div class="modal card" (click)="$event.stopPropagation()">
+            <div class="spread">
+              <span class="h2">Planifier pour {{ group.name }}</span>
+              <button class="icon-btn" type="button" (click)="closePlan()" aria-label="Fermer">
+                <tw-icon name="close" [size]="18" />
+              </button>
+            </div>
+            <p class="small muted mt-sm">
+              La même séance pour les {{ group.athletes.length }} athlètes du groupe. Chacun la reçoit à son allure, calculée depuis sa VMA.
+            </p>
+
+            <div class="field mt">
+              <label for="plan-date">Date</label>
+              <input id="plan-date" class="input" type="date" [value]="planDate()" (change)="planDate.set(value($event))" />
+            </div>
+
+            <div class="picker-head">
+              <span class="caption muted grow">Séance de la bibliothèque</span>
+            </div>
+            @if (templates.loading()) {
+              <tw-state kind="loading" />
+            } @else {
+              <div class="picker scroll-y">
+                @for (template of runTemplates(); track template._id) {
+                  <button type="button" class="pick" [class.on]="planTemplate() === template._id" (click)="planTemplate.set(template._id)">
+                    <span class="box round" [class.on]="planTemplate() === template._id"></span>
+                    <span class="stack grow min">
+                      <span class="h3 truncate">{{ template.name }}</span>
+                      <span class="caption muted truncate">{{ template.description || template.sessionType }}</span>
+                    </span>
+                  </button>
+                } @empty {
+                  <p class="small muted pad">Aucune séance type. Créez-en une depuis la bibliothèque.</p>
+                }
+              </div>
+            }
+
+            @if (planError()) {
+              <p class="err small">{{ planError() }}</p>
+            }
+            @if (planDone()) {
+              <p class="ok small">{{ planDone() }}</p>
+            }
+
+            <div class="modal-actions">
+              <span class="grow"></span>
+              <button class="btn btn-ghost" type="button" (click)="closePlan()">Fermer</button>
+              <button class="btn btn-primary" type="button" [disabled]="!planTemplate() || !planDate() || planning()" (click)="assignToGroup(group)">
+                {{ planning() ? 'Planification…' : 'Planifier' }}
               </button>
             </div>
           </div>
@@ -566,6 +639,31 @@ const GROUP_COLORS = (Object.keys(GROUP_TINT) as GroupColor[]).map((id) => ({
         max-width: 240px;
       }
 
+      .box.round {
+        border-radius: var(--r-pill);
+      }
+
+      .box.round.on::after {
+        content: '';
+        width: 8px;
+        height: 8px;
+        border-radius: var(--r-pill);
+        background: #fff;
+      }
+
+      .stack.min {
+        min-width: 0;
+      }
+
+      .pick.on {
+        background: var(--subtle);
+      }
+
+      .pad {
+        padding: 12px 14px;
+        margin: 0;
+      }
+
       .danger-text {
         color: var(--danger);
       }
@@ -755,6 +853,21 @@ export class CoachDashboardPage {
     return term ? groups.filter((group) => group.name.toLowerCase().includes(term)) : groups;
   });
 
+  readonly templates = load(() => this.coach.templates$());
+
+  /** Seules les séances de course se planifient à l'allure de chacun. */
+  readonly runTemplates = computed(() => (this.templates.data() ?? []).filter((template) => template.sport === 'running'));
+
+  readonly busyGroup = signal<string | null>(null);
+  readonly groupActionError = signal('');
+
+  readonly planGroup = signal<CoachGroup | null>(null);
+  readonly planDate = signal(new Date().toISOString().slice(0, 10));
+  readonly planTemplate = signal<string | null>(null);
+  readonly planning = signal(false);
+  readonly planError = signal('');
+  readonly planDone = signal('');
+
   readonly search = signal('');
   readonly inviteOpen = signal(false);
   readonly inviteEmail = signal('');
@@ -869,6 +982,53 @@ export class CoachDashboardPage {
         this.groups.reload(true);
       },
       error: () => this.savingGroup.set(false),
+    });
+  }
+
+  /** Ouvre la discussion du groupe : une conversation à plusieurs, pas N messages. */
+  messageGroup(group: CoachGroup) {
+    if (this.busyGroup()) return;
+    this.busyGroup.set(group.id);
+    this.groupActionError.set('');
+    this.coach.openGroupConversation(group.id).subscribe({
+      next: ({ conversationId }) => {
+        this.busyGroup.set(null);
+        void this.router.navigate(['/messages'], { queryParams: { conversation: conversationId } });
+      },
+      error: (err: unknown) => {
+        this.groupActionError.set(err instanceof ApiError ? err.message : 'Discussion impossible.');
+        setTimeout(() => this.busyGroup.set(null), 2500);
+      },
+    });
+  }
+
+  openPlan(group: CoachGroup) {
+    this.planGroup.set(group);
+    this.planTemplate.set(null);
+    this.planError.set('');
+    this.planDone.set('');
+  }
+
+  closePlan() {
+    this.planGroup.set(null);
+  }
+
+  /** La même séance pour tout le groupe : le serveur résout l'allure de chacun. */
+  assignToGroup(group: CoachGroup) {
+    const templateId = this.planTemplate();
+    if (!templateId || this.planning()) return;
+    this.planning.set(true);
+    this.planError.set('');
+    this.planDone.set('');
+    this.coach.assignTemplate(templateId, { athleteIds: group.athletes.map((athlete) => athlete.id), date: this.planDate() }).subscribe({
+      next: () => {
+        this.planning.set(false);
+        this.planDone.set(`Séance planifiée pour ${group.athletes.length} athlète${group.athletes.length > 1 ? 's' : ''}.`);
+      },
+      error: (err: unknown) => {
+        this.planning.set(false);
+        this.planError.set(err instanceof ApiError ? err.message : 'Planification impossible.');
+      },
     });
   }
 

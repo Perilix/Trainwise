@@ -1,5 +1,7 @@
 const CoachAthlete = require('../models/coachAthlete.model');
 const CoachGroup = require('../models/coachGroup.model');
+const Conversation = require('../models/conversation.model');
+const { createNotification } = require('./notification.controller');
 const { groupRoom } = require('../services/coachPlan.service');
 
 // Ce que l'app affiche d'un membre : de quoi dessiner une pastille et un nom.
@@ -111,6 +113,67 @@ exports.updateGroup = async (req, res) => {
   } catch (error) {
     if (error.code === 11000) return res.status(409).json({ error: 'Vous avez déjà un groupe de ce nom.' });
     res.status(400).json({ error: error.message });
+  }
+};
+
+/**
+ * POST /api/coach/groups/:id/conversation
+ *
+ * La discussion du groupe : une vraie conversation à plusieurs, pas N messages
+ * individuels. Elle se crée à la première demande, puis se met à jour — un
+ * athlète ajouté au groupe rejoint la conversation, un athlète retiré en sort,
+ * et le renommage du groupe la suit.
+ */
+exports.openConversation = async (req, res) => {
+  try {
+    const group = await CoachGroup.findOne({ _id: req.params.id, coach: req.user._id });
+    if (!group) return res.status(404).json({ error: 'Groupe non trouvé' });
+
+    const allowed = await followedIds(req.user._id);
+    const members = (group.athletes || []).map(String).filter((id) => allowed.has(id));
+    if (!members.length) {
+      return res.status(400).json({ error: 'Ce groupe n\'a aucun athlète avec qui discuter.' });
+    }
+
+    const participants = [req.user._id.toString(), ...members];
+    let conversation = group.conversation ? await Conversation.findById(group.conversation) : null;
+
+    if (!conversation) {
+      conversation = await Conversation.create({ type: 'group', name: group.name, participants });
+      group.conversation = conversation._id;
+      await group.save();
+
+      // Un athlète n'a pas demandé cette conversation : on le prévient.
+      await Promise.all(
+        members.map((athleteId) =>
+          createNotification({
+            recipient: athleteId,
+            sender: req.user._id,
+            type: 'message',
+            action: 'group_conversation_created',
+            title: `Discussion « ${group.name} »`,
+            message: `${req.user.firstName} vous a ajouté à la discussion du groupe ${group.name}.`,
+            actionUrl: `/chat/${conversation._id}`
+          })
+        )
+      );
+    } else {
+      // Les membres font foi : la conversation suit le groupe.
+      const before = conversation.participants.map(String).sort().join(',');
+      conversation.participants = participants;
+      conversation.name = group.name;
+      if (before !== participants.slice().sort().join(',')) {
+        // Un ancien membre ne doit plus traîner de compteur de non-lus.
+        for (const id of conversation.unreadCounts.keys()) {
+          if (!participants.includes(id)) conversation.unreadCounts.delete(id);
+        }
+      }
+      await conversation.save();
+    }
+
+    res.json({ conversationId: conversation._id, name: conversation.name, participants: participants.length });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 };
 

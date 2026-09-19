@@ -38,7 +38,14 @@ const coachGroupSchema = new mongoose.Schema(
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
       }
-    ]
+    ],
+    // Conversation de groupe, créée à la première discussion. Elle survit aux
+    // changements de membres : on ajuste ses participants, on n'en refait pas.
+    conversation: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Conversation',
+      default: null
+    }
   },
   { timestamps: true }
 );

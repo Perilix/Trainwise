@@ -23,6 +23,11 @@ type Options = {
   /** Interlocuteur, à partir des conversations existantes (null : pas d'interlocuteur). */
   loadPeer: (conversations: ApiConversation[]) => Promise<ApiUserRef | null>;
   demo: () => { peer: ChatPeer | null; messages: ChatMessage[] };
+  /**
+   * Conversation déjà connue — celle d'un groupe : il n'y a pas d'interlocuteur
+   * à résoudre, et elle existe avant qu'un message ne soit écrit.
+   */
+  loadConversation?: () => Promise<ChatData>;
 };
 
 const TYPING_IDLE_MS = 2500;
@@ -30,7 +35,7 @@ const TYPING_IDLE_MS = 2500;
 const senderIdOf = (message: ApiMessage) => (typeof message.sender === 'string' ? message.sender : message.sender._id);
 
 /** Conversation directe : historique, messages en direct, envoi, « écrit… » et accusés de lecture. */
-export function useDirectChat({ key, loadPeer, demo }: Options) {
+export function useDirectChat({ key, loadPeer, demo, loadConversation }: Options) {
   const { status, user } = useSession();
   const socket = useSocket();
   const myId = user?.id ?? '';
@@ -38,6 +43,7 @@ export function useDirectChat({ key, loadPeer, demo }: Options) {
   const query = useSessionQuery<ChatData>(
     key,
     async () => {
+      if (loadConversation) return loadConversation();
       const conversations = await getConversations();
       const peer = await loadPeer(conversations);
       if (!peer) return { peer: null, conversationId: null, messages: [] };

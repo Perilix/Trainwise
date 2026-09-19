@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Avatar, avatarToneFor, Button, Card, Field, FormError, Icon, IconButton, Screen, Section, SectionHeader, Segmented, StateView, Text } from '@/components/ui';
 import { tintOf } from '@/features/coach/group-colors';
 import { InviteCodeCard } from '@/features/coach/invite-code-card';
+import { PlanGroupModal } from '@/features/coach/plan-group-modal';
 import { useCoachActions, useCoachGroups, useCoachHome, useInviteOverview } from '@/features/coach/queries';
 import { ATHLETE_STATUS_STYLE } from '@/features/coach/status';
 import type { CoachAthleteRow, CoachGroup, SubscriptionRequestRow } from '@/features/coach/types';
@@ -24,6 +25,8 @@ export default function CoachHomeScreen() {
   /** Groupe sur lequel la liste d'athlètes est filtrée, depuis l'onglet Groupes. */
   const [groupFilter, setGroupFilter] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  /** Groupe dont on planifie la séance : la fenêtre s'ouvre dessus. */
+  const [planning, setPlanning] = useState<CoachGroup | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -162,18 +165,33 @@ export default function CoachHomeScreen() {
                 setTab('athletes');
               }}
               onEdit={() => router.push({ pathname: '/pro/groupe', params: { id: group.id } })}
+              onMessage={() => router.push({ pathname: '/pro/groupe-discussion', params: { id: group.id, nom: group.name } })}
+              onPlan={() => setPlanning(group)}
             />
           ))}
           <Pressable accessibilityRole="button" onPress={() => router.push('/pro/groupe')} style={styles.newGroupWrap}>
             <NewGroupCard />
           </Pressable>
+          <PlanGroupModal group={planning} onClose={() => setPlanning(null)} />
         </Section>
       )}
     </Screen>
   );
 }
 
-function GroupCard({ group, onOpen, onEdit }: { group: CoachGroup; onOpen: () => void; onEdit: () => void }) {
+function GroupCard({
+  group,
+  onOpen,
+  onEdit,
+  onMessage,
+  onPlan,
+}: {
+  group: CoachGroup;
+  onOpen: () => void;
+  onEdit: () => void;
+  onMessage: () => void;
+  onPlan: () => void;
+}) {
   const { colors } = useTheme();
   const tint = tintOf(group.color);
   const subtitle = group.race ? [group.race.name, group.race.countdown ?? group.race.dateLabel].filter(Boolean).join(' · ') : 'Aucune course visée';
@@ -211,7 +229,11 @@ function GroupCard({ group, onOpen, onEdit }: { group: CoachGroup; onOpen: () =>
         </Text>
       </View>
 
-      <Button label="Voir les athlètes" variant="secondary" size="sm" icon="users" fullWidth onPress={onOpen} />
+      <View style={styles.groupActions}>
+        <Button label="Voir" variant="secondary" size="sm" icon="users" onPress={onOpen} style={styles.flex} />
+        <Button label="Message" variant="secondary" size="sm" icon="message" disabled={!group.athletes.length} onPress={onMessage} style={styles.flex} />
+        <Button label="Planifier" variant="secondary" size="sm" icon="calendar" disabled={!group.athletes.length} onPress={onPlan} style={styles.flex} />
+      </View>
     </Card>
   );
 }
@@ -320,6 +342,7 @@ const styles = StyleSheet.create({
   statusDot: { position: 'absolute', right: -1, bottom: -1, width: 12, height: 12, borderRadius: 6, borderWidth: 2 },
   groupHint: { marginTop: 4, marginBottom: 12 },
   groupCard: { gap: 14, marginBottom: 12 },
+  groupActions: { flexDirection: 'row', gap: 8 },
   groupTile: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   members: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   more: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
