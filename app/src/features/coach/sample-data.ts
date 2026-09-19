@@ -3,6 +3,8 @@ import type { ChatMessage } from '@/features/athlete/types';
 import { sampleCoachThread, samplePlannedDetails, sampleRuns } from '@/features/athlete/sample-data';
 import type {
   ApiAlertRulesState,
+  ApiCoachGroup,
+  ApiWeeklyStats,
   ApiCoachAthlete,
   ApiCoachAthleteDetail,
   ApiCoachStats,
@@ -369,4 +371,36 @@ export const sampleAlertRules: ApiAlertRulesState = {
   },
   editable: false,
   planName: 'Découverte',
+};
+
+/** Deux groupes d'exemple pour le mode démo. */
+export const sampleCoachGroups: ApiCoachGroup[] = [
+  {
+    id: 'grp-marathon',
+    name: 'Marathon de Lyon',
+    color: 'indigo',
+    race: { name: 'Marathon de Lyon', date: '2026-10-04T08:00:00.000Z' },
+    athletes: [
+      { id: 'ath-1', firstName: 'Camille', lastName: 'Rey' },
+      { id: 'ath-2', firstName: 'Nicolas', lastName: 'Perrin' },
+    ],
+  },
+  {
+    id: 'grp-piste',
+    name: 'Groupe piste',
+    color: 'turquoise',
+    race: null,
+    athletes: [{ id: 'ath-3', firstName: 'Léa', lastName: 'Fournier' }],
+  },
+];
+
+export const sampleWeeklyStats: ApiWeeklyStats = {
+  weeks: [
+    { label: 'S36', planned: 12, done: 11 },
+    { label: 'S37', planned: 14, done: 12 },
+    { label: 'S38', planned: 13, done: 13 },
+    { label: 'S39', planned: 15, done: 9 },
+  ],
+  totals: { planned: 54, done: 45 },
+  completionRate: 87,
 };

@@ -1,6 +1,6 @@
 // Modèles de vue de l'espace coach.
 import type { Sport } from '@/features/athlete/types';
-import type { ApiAthleteStatus, ApiPackageType } from '@/lib/api-types';
+import type { ApiAthleteStatus, ApiPackageType, GroupColor } from '@/lib/api-types';
 
 export type AthleteStatus = ApiAthleteStatus;
 export type PackageType = ApiPackageType;
@@ -16,6 +16,15 @@ export type CoachAthleteRow = {
 };
 
 export type CoachAthleteLite = { id: string; name: string; initials: string; vma?: number };
+
+/** Groupe d'athlètes du coach : une étiquette, pas un dossier. */
+export type CoachGroup = {
+  id: string;
+  name: string;
+  color: GroupColor;
+  race?: { name: string; dateLabel?: string; countdown?: string };
+  athletes: { id: string; name: string; initials: string }[];
+};
 
 export type SubscriptionRequestRow = {
   id: string;

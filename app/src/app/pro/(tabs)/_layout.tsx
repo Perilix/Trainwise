@@ -10,8 +10,8 @@ import { useIsDesktop } from '@/lib/use-layout';
 const COACH_TABS: readonly TabItem[] = [
   { name: 'index', label: 'Accueil', icon: 'home' },
   { name: 'bibliotheque', label: 'Bibliothèque', icon: 'folder' },
+  { name: 'stats', label: 'Stats', icon: 'chart' },
   { name: 'messages', label: 'Messages', icon: 'message' },
-  { name: 'profil', label: 'Profil', icon: 'user' },
 ];
 
 export default function CoachTabsLayout() {
@@ -27,8 +27,8 @@ export default function CoachTabsLayout() {
     <Tabs tabBar={(props) => (desktop ? null : <TabBar {...props} items={items} />)} screenOptions={{ headerShown: false }}>
       <Tabs.Screen name="index" />
       <Tabs.Screen name="bibliotheque" />
+      <Tabs.Screen name="stats" />
       <Tabs.Screen name="messages" />
-      <Tabs.Screen name="profil" />
     </Tabs>
   );
 }

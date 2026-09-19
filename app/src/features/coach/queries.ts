@@ -15,6 +15,7 @@ import type {
   ApiCalendarData,
   ApiCoachAthlete,
   ApiCoachAthleteDetail,
+  ApiCoachGroup,
   ApiCoachStats,
   ApiCompetition,
   ApiPackageType,
@@ -27,9 +28,11 @@ import type {
   ApiSubscriptionRequest,
   ApiUser,
   ApiUserSearchResult,
+  ApiWeeklyStats,
+  GroupColor,
 } from '@/lib/api-types';
 
-import { buildAthleteFiche, buildCoachHome, buildInviteOverview, mapAthleteList, mapSearchResults } from './mappers';
+import { buildAthleteFiche, buildCoachHome, buildInviteOverview, mapAthleteList, mapGroups, mapSearchResults } from './mappers';
 import {
   COACH_SAMPLE_NOW,
   sampleAthleteCompetitions,
@@ -40,7 +43,9 @@ import {
   sampleCoachRun,
   sampleCoachStats,
   sampleAlertRules,
+  sampleCoachGroups,
   sampleInviteCode,
+  sampleWeeklyStats,
   samplePendingInvitations,
   sampleSearchResults,
   sampleStrengthDone,
@@ -196,6 +201,24 @@ export function useInviteOverview() {
   );
 }
 
+/** Groupes d'athlètes : une étiquette, un athlète peut en porter plusieurs. */
+export function useCoachGroups() {
+  return useSessionQuery(
+    'coach:groups',
+    async () => mapGroups(await cachedGet<ApiCoachGroup[]>('/api/coach/groups'), new Date()),
+    () => mapGroups(sampleCoachGroups, COACH_SAMPLE_NOW),
+  );
+}
+
+/** Planifié et réalisé, semaine par semaine, pour l'écran Stats. */
+export function useWeeklyStats(weeks: number) {
+  return useSessionQuery(
+    `coach:weekly:${weeks}`,
+    async () => api<ApiWeeklyStats>('/api/coach/stats/weekly', { query: { weeks } }),
+    () => sampleWeeklyStats,
+  );
+}
+
 /** Seuils d'alerte du coach : ils décident quand un athlète passe en orange, puis en rouge. */
 export function useAlertRules() {
   return useSessionQuery('coach:alert-rules', async () => api<ApiAlertRulesState>('/api/coach/alert-rules'), () => sampleAlertRules);
@@ -228,6 +251,22 @@ export function useCoachActions() {
       const state = await api<ApiAlertRulesState>('/api/coach/alert-rules', { method: 'PUT', body: rules });
       invalidateApiCache();
       return state;
+    },
+    async createGroup(body: { name: string; color: GroupColor; athletes: string[]; raceName?: string; raceDate?: string }) {
+      if (!live) return;
+      await api('/api/coach/groups', { method: 'POST', body });
+      invalidateApiCache();
+    },
+    async updateGroup(id: string, body: { name: string; color: GroupColor; athletes: string[]; raceName?: string | null; raceDate?: string | null }) {
+      if (!live) return;
+      await api(`/api/coach/groups/${encodeURIComponent(id)}`, { method: 'PATCH', body });
+      invalidateApiCache();
+    },
+    /** Supprimer le groupe ne touche pas aux athlètes : ils restent suivis. */
+    async deleteGroup(id: string) {
+      if (!live) return;
+      await api(`/api/coach/groups/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      invalidateApiCache();
     },
     async generateInviteCode() {
       if (!live) return sampleInviteCode;

@@ -29,8 +29,8 @@ export function CoachSidebar({ unreadMessages }: { unreadMessages?: number }) {
   const entries: Entry[] = [
     { href: '/pro', label: 'Accueil', icon: 'home' },
     { href: '/pro/bibliotheque', label: 'Bibliothèque', icon: 'folder' },
+    { href: '/pro/stats', label: 'Stats', icon: 'chart' },
     { href: '/pro/messages', label: 'Messages', icon: 'message', badge: unreadMessages },
-    { href: '/pro/profil', label: 'Profil', icon: 'user' },
   ];
 
   // `/pro` est le préfixe de tout l'espace : il n'est actif que sur lui-même.

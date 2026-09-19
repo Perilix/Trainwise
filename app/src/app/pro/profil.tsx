@@ -1,13 +1,12 @@
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Avatar, Button, Card, Chip, Icon, Screen, Section, SectionHeader, Text } from '@/components/ui';
+import { Avatar, BackBar, Button, Card, Chip, Icon, Screen, Section, SectionHeader, Text } from '@/components/ui';
 import { useSession } from '@/features/auth/session';
 import { InviteCodeCard } from '@/features/coach/invite-code-card';
 import { DIPLOMA_OPTIONS, DISCIPLINE_OPTIONS, optionLabel } from '@/features/coach/profile-options';
 import { useInviteOverview } from '@/features/coach/queries';
 import { AppearanceCard } from '@/features/settings/appearance-card';
-import { MainAppBar } from '@/features/shell/main-app-bar';
 import { initialsOf } from '@/features/athlete/mappers';
 import { useTheme } from '@/theme/theme-provider';
 
@@ -23,11 +22,8 @@ export default function CoachProfileScreen() {
   const diplomas = user.diplomas ?? [];
 
   return (
-    <Screen tabs>
-      <MainAppBar />
-      <Section style={styles.heading}>
-        <Text variant="h1">Profil</Text>
-      </Section>
+    <Screen>
+      <BackBar title="Profil" />
 
       <Section style={styles.tight}>
         <Card style={styles.userCard}>
@@ -112,7 +108,6 @@ export default function CoachProfileScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  heading: { paddingTop: 4, paddingBottom: 14 },
   tight: { paddingBottom: 12 },
   userCard: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   link: { flexDirection: 'row', alignItems: 'center', gap: 12 },

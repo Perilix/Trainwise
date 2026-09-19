@@ -2,6 +2,7 @@ import { initialsOf } from '@/features/athlete/mappers';
 import type {
   ApiCoachAthlete,
   ApiCoachAthleteDetail,
+  ApiCoachGroup,
   ApiCoachStats,
   ApiCompetition,
   ApiPackageType,
@@ -10,10 +11,10 @@ import type {
   ApiSubscriptionRequest,
   ApiUserSearchResult,
 } from '@/lib/api-types';
-import { addDays, startOfWeek } from '@/lib/dates';
+import { addDays, daysBetween, startOfWeek } from '@/lib/dates';
 import { formatDayMonthYear, formatDayShort, formatDecimal, formatHoursMinutes, toIsoDay } from '@/lib/format';
 
-import type { AthleteFiche, AthleteSearchRow, AthleteStatus, CoachAthleteLite, CoachHome, InviteOverview } from './types';
+import type { AthleteFiche, AthleteSearchRow, AthleteStatus, CoachAthleteLite, CoachGroup, CoachHome, InviteOverview } from './types';
 
 export const PACKAGE_LABELS: Record<ApiPackageType, string> = { invited: 'Invité', bronze: 'Suivi', silver: 'Perf', gold: 'Élite' };
 export const PACKAGE_PRICES: Partial<Record<ApiPackageType, string>> = { bronze: '49,99 €', silver: '79,99 €', gold: '149,99 €' };
@@ -203,4 +204,30 @@ export function mapSearchResults(results: ApiUserSearchResult[]): AthleteSearchR
             ? 'taken'
             : 'available',
   }));
+}
+
+/** Groupes du coach, avec le compte à rebours de la course visée. */
+export function mapGroups(groups: ApiCoachGroup[], now: Date): CoachGroup[] {
+  return groups.map((group) => {
+    const date = group.race?.date ? new Date(group.race.date) : null;
+    const days = date ? daysBetween(now, date) : null;
+    return {
+      id: group.id,
+      name: group.name,
+      color: group.color ?? 'bleu',
+      race: group.race?.name
+        ? {
+            name: group.race.name,
+            dateLabel: date ? formatDayShort(toIsoDay(date)) : undefined,
+            // Une course passée n'a plus de compte à rebours à afficher.
+            countdown: days !== null && days >= 0 ? (days === 0 ? 'Aujourd’hui' : `J-${days}`) : undefined,
+          }
+        : undefined,
+      athletes: group.athletes.map((athlete) => ({
+        id: athlete.id,
+        name: `${athlete.firstName} ${athlete.lastName}`.trim(),
+        initials: initialsOf(athlete.firstName, athlete.lastName),
+      })),
+    };
+  });
 }

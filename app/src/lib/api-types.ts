@@ -104,6 +104,25 @@ export type ApiSubscriptionRequest = { _id: string; athlete: ApiUserRef | null; 
 
 export type ApiPendingInvitation = { _id: string; athlete: ApiUserRef | null; invitedAt: string; inviteMethod: 'code' | 'direct' };
 
+/** Repère visuel d'un groupe, choisi par le coach. */
+export type GroupColor = 'bleu' | 'indigo' | 'turquoise' | 'rose' | 'sable' | 'ardoise';
+
+/** Groupe d'athlètes (GET /api/coach/groups). */
+export type ApiCoachGroup = {
+  id: string;
+  name: string;
+  color: GroupColor;
+  race: { name: string; date: string | null } | null;
+  athletes: { id: string; firstName: string; lastName: string }[];
+};
+
+/** Planifié et réalisé, semaine par semaine (GET /api/coach/stats/weekly). */
+export type ApiWeeklyStats = {
+  weeks: { label: string; planned: number; done: number }[];
+  totals: { planned: number; done: number };
+  completionRate: number;
+};
+
 /** Seuils d'alerte du coach : à partir de quand un athlète passe en orange, puis en rouge. */
 export type ApiAlertRules = {
   inactivityOrange: number;
