@@ -40,6 +40,8 @@ export type Billing = {
     status: 'active' | 'trialing' | 'past_due' | 'canceled' | 'incomplete';
     renewsOn: string | null;
     cancelAtPeriodEnd: boolean;
+    /** Faux pour un plan offert : il n'y a pas d'abonnement Stripe à gérer. */
+    managed: boolean;
   };
   usage: { athletes: number; athleteLimit: number | null; groups: number; groupLimit: number | null };
   card: { brand: string; last4: string; expires: string } | null;

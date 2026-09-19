@@ -8,6 +8,92 @@
   </div>
 </div>
 
+<% if (saved) { %>
+  <div class="alert alert-success"><i class="fa-solid fa-circle-check"></i> Plan mis à jour.</div>
+<% } %>
+<% if (blocked) { %>
+  <div class="alert alert-warning"><i class="fa-solid fa-lock"></i> Ce coach paie un abonnement Stripe : son plan ne se change pas depuis ici.</div>
+<% } %>
+
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-header">
+    <span class="card-title"><i class="fa-solid fa-crown" style="color:#b88a00;margin-right:6px;"></i>Abonnement</span>
+    <% const pc = planColors[plan.id] || planColors.decouverte; %>
+    <span class="badge" style="background:<%= pc.bg %>;color:<%= pc.ink %>;"><%= plan.name %></span>
+  </div>
+  <div class="card-body">
+
+    <div class="field-list" style="margin-bottom:18px;">
+      <div class="field-row">
+        <span class="field-label"><i class="fa-solid fa-users"></i> Athlètes suivis</span>
+        <span class="field-value" style="<%= plan.athletes !== null && accepted > plan.athletes ? 'color:var(--danger);font-weight:700;' : '' %>">
+          <%= accepted %><%= plan.athletes === null ? ' (sans limite)' : ' / ' + plan.athletes %>
+        </span>
+      </div>
+      <div class="field-row">
+        <span class="field-label"><i class="fa-solid fa-layer-group"></i> Groupes</span>
+        <span class="field-value"><%= groupCount %><%= plan.groups === null ? ' (sans limite)' : ' / ' + plan.groups %></span>
+      </div>
+      <div class="field-row">
+        <span class="field-label"><i class="fa-solid fa-bell"></i> Alertes sur mesure</span>
+        <span class="field-value"><%= plan.customAlerts ? 'Oui' : 'Non' %></span>
+      </div>
+      <div class="field-row">
+        <span class="field-label"><i class="fa-solid fa-circle-info"></i> État</span>
+        <span class="field-value">
+          <%= statusLabels[billing.status] || 'Actif' %><% if (granted) { %> — posé depuis le back-office<% } else if (billing.subscriptionId) { %> — abonnement Stripe<% } %>
+        </span>
+      </div>
+      <% if (billing.currentPeriodEnd) { %>
+      <div class="field-row">
+        <span class="field-label"><i class="fa-solid fa-calendar"></i> Jusqu'au</span>
+        <span class="field-value"><%= new Date(billing.currentPeriodEnd).toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' }) %></span>
+      </div>
+      <% } %>
+    </div>
+
+    <% if (billing.subscriptionId) { %>
+      <div class="alert alert-warning" style="margin:0;">
+        <i class="fa-solid fa-lock"></i>
+        Ce coach a un abonnement Stripe en cours. Il se modifie depuis Stripe, pas d'ici : le prochain webhook écraserait le réglage et le coach continuerait d'être prélevé.
+      </div>
+    <% } else { %>
+      <form method="POST" action="/coaches/<%= coach._id %>/plan">
+        <p style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;">Poser un plan à la main</p>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Plan</label>
+            <select name="planId" class="form-control">
+              <% plans.forEach(p => { %>
+                <option value="<%= p.id %>" <%= plan.id === p.id ? 'selected' : '' %>>
+                  <%= p.name %><%= p.monthly ? ' — ' + p.monthly + ' €/mois' : ' — gratuit' %>
+                </option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Facturation affichée</label>
+            <select name="cycle" class="form-control">
+              <option value="monthly" <%= billing.cycle !== 'yearly' ? 'selected' : '' %>>Mensuelle</option>
+              <option value="yearly" <%= billing.cycle === 'yearly' ? 'selected' : '' %>>Annuelle</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Jusqu'au <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0;">(vide = sans échéance)</span></label>
+            <input type="date" name="until" class="form-control" value="<%= billing.currentPeriodEnd ? new Date(billing.currentPeriodEnd).toISOString().slice(0,10) : '' %>">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-save"><i class="fa-solid fa-check"></i> Enregistrer</button>
+        </div>
+        <p class="text-small text-muted" style="margin-top:10px;">
+          Aucun paiement n'est créé : le plan est simplement offert. Le coach garde la possibilité de souscrire pour de vrai, ce qui remplacera ce réglage.
+        </p>
+      </form>
+    <% } %>
+  </div>
+</div>
+
 <div class="card">
   <div class="table-wrap">
     <table>
