@@ -1,8 +1,9 @@
 // Modèles de vue de l'espace coach.
 import type { Sport } from './athlete.types';
-import type { ApiAthleteStatus, ApiPackageType } from '../core/api-types';
+import type { ApiAthleteStatus, ApiPackageType, GroupColor } from '../core/api-types';
 
 export type AthleteStatus = ApiAthleteStatus;
+export type { GroupColor };
 export type PackageType = ApiPackageType;
 
 export type CoachAthleteRow = {
@@ -17,6 +18,15 @@ export type CoachAthleteRow = {
   level?: string;
   /** Prochaine compétition, colonne « Prochaine course » du tableau. */
   nextRace?: { name: string; meta: string };
+};
+
+/** Groupe d'athlètes du coach : une étiquette, pas un dossier. */
+export type CoachGroup = {
+  id: string;
+  name: string;
+  color: GroupColor;
+  race?: { name: string; dateLabel?: string; countdown?: string };
+  athletes: { id: string; name: string; initials: string }[];
 };
 
 export type CoachAthleteLite = { id: string; name: string; initials: string; vma?: number };

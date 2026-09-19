@@ -2,6 +2,7 @@ const User = require('../models/user.model');
 const CoachAthlete = require('../models/coachAthlete.model');
 const { createNotification } = require('./notification.controller');
 const { sendPushNotification } = require('../services/pushNotification.service');
+const { athleteRoom } = require('../services/coachPlan.service');
 
 // Obtenir les invitations en attente pour l'athlète
 exports.getPendingInvitations = async (req, res) => {
@@ -30,6 +31,15 @@ exports.acceptInvitation = async (req, res) => {
 
     if (existingCoach) {
       return res.status(400).json({ error: 'Vous avez déjà un coach. Quittez-le d\'abord pour en accepter un nouveau.' });
+    }
+
+    const invited = await CoachAthlete.findOne({ _id: invitationId, athlete: req.user._id, status: 'pending' });
+    if (invited) {
+      // Le plan du coach a pu se remplir depuis l'envoi de l'invitation.
+      const room = await athleteRoom(invited.coach);
+      if (!room.ok) {
+        return res.status(402).json({ error: 'Ce coach a atteint le nombre d\'athlètes de son abonnement.' });
+      }
     }
 
     const invitation = await CoachAthlete.findOneAndUpdate(
@@ -146,6 +156,11 @@ exports.joinViaCode = async (req, res) => {
 
     if (!coach) {
       return res.status(404).json({ error: 'Code d\'invitation invalide' });
+    }
+
+    const room = await athleteRoom(coach._id);
+    if (!room.ok) {
+      return res.status(402).json({ error: 'Ce coach a atteint le nombre d\'athlètes de son abonnement.' });
     }
 
     // Vérifier s'il y a déjà une relation

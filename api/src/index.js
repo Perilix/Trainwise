@@ -80,6 +80,15 @@ app.use((req, res, next) => {
   next();
 });
 
+// Le webhook Stripe se vérifie sur le corps brut : il passe donc avant
+// express.json, et avant le compteur de requêtes — un 429 ferait réessayer
+// Stripe pour rien.
+app.post(
+  '/api/stripe/webhook',
+  express.raw({ type: 'application/json' }),
+  require('./controllers/coachBilling.controller').webhook
+);
+
 // Rate limit global — 200 req/min par IP
 app.use('/api', rateLimit({
   windowMs: 60 * 1000,

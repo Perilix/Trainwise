@@ -4,16 +4,19 @@ import { AuthService } from '../../core/auth.service';
 import { load } from '../../core/load';
 import { ThemeService, type ThemeMode } from '../../core/theme.service';
 import { CoachService } from '../../data/coach.service';
+import { RouterLink } from '@angular/router';
+
+import { AlertRulesComponent } from '../../ui/alert-rules.component';
 import { AvatarComponent } from '../../ui/avatar.component';
 import { IconComponent } from '../../ui/icon.component';
+import { InviteCodeComponent } from '../../ui/invite-code.component';
 import { PageHeaderComponent } from '../../ui/page-header.component';
-import { StateViewComponent } from '../../ui/state-view.component';
 
 @Component({
   selector: 'tw-coach-profile',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AvatarComponent, IconComponent, PageHeaderComponent, StateViewComponent],
+  imports: [AlertRulesComponent, AvatarComponent, IconComponent, InviteCodeComponent, PageHeaderComponent, RouterLink],
   template: `
     <main class="page">
       <tw-page-header title="Profil coach" subtitle="Votre fiche, votre code d'invitation et vos réglages." />
@@ -110,31 +113,22 @@ import { StateViewComponent } from '../../ui/state-view.component';
         </div>
 
         <div class="col">
+          <a class="card card-pad plan" routerLink="/coach/abonnement">
+            <span class="tile"><tw-icon name="crown" [size]="20" /></span>
+            <div class="stack grow">
+              <span class="h3">Abonnement</span>
+              <span class="small muted">Votre plan, vos athlètes et vos factures</span>
+            </div>
+            <tw-icon name="chevron-right" [size]="18" />
+          </a>
+
           <section class="card card-pad">
             <span class="h2">Code d'invitation</span>
-            @if (invitations.data(); as invite) {
-              @if (invite.code) {
-                <div class="code">
-                  <div class="stack grow">
-                    <span class="caption muted">À transmettre à vos athlètes</span>
-                    <span class="code-value num">{{ invite.code }}</span>
-                  </div>
-                  <button class="icon-btn" type="button" (click)="copy(invite.code!)" aria-label="Copier">
-                    <tw-icon name="copy" [size]="18" />
-                  </button>
-                </div>
-              } @else {
-                <tw-state kind="empty" icon="mail" message="Aucun code pour l'instant." />
-              }
-              <button class="btn btn-ghost btn-block mt" type="button" (click)="newCode()">
-                <tw-icon name="refresh" [size]="18" [strokeWidth]="2" />
-                Générer un nouveau code
-              </button>
-              <span class="caption muted mt-sm">L'ancien code cesse de fonctionner dès qu'un nouveau est généré.</span>
-            } @else {
-              <tw-state kind="loading" />
-            }
+            <p class="small muted mt-sm">C'est ce que vos athlètes saisissent pour vous rejoindre.</p>
+            <tw-invite-code class="mt" [code]="invitations.data()?.code ?? null" (changed)="invitations.reload(true)" />
           </section>
+
+          <tw-alert-rules />
 
           <section class="card card-pad">
             <span class="h2">Invitations en attente</span>
@@ -268,6 +262,33 @@ import { StateViewComponent } from '../../ui/state-view.component';
         font-weight: 600;
       }
 
+      .plan {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--ink);
+      }
+
+      .plan:hover .h3 {
+        color: var(--accent);
+      }
+
+      .plan .tile {
+        width: 40px;
+        height: 40px;
+        border-radius: var(--r-md);
+        background: var(--violet-soft);
+        color: var(--violet-ink);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .plan tw-icon:last-child {
+        color: var(--text3);
+      }
+
       .code {
         display: flex;
         align-items: center;
@@ -377,14 +398,6 @@ export class CoachProfilePage {
       },
       error: () => this.saving.set(false),
     });
-  }
-
-  newCode() {
-    this.coach.generateInviteCode().subscribe({ next: () => this.invitations.reload(true) });
-  }
-
-  copy(code: string) {
-    void navigator.clipboard?.writeText(code);
   }
 
   value(event: Event) {

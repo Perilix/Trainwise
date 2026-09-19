@@ -242,6 +242,7 @@ export class SidebarComponent {
   private readonly coachNav: NavItem[] = [
     { label: 'Accueil', icon: 'home', link: '/coach' },
     { label: 'Bibliothèque', icon: 'folder', link: '/coach/bibliotheque' },
+    { label: 'Stats', icon: 'chart', link: '/coach/stats' },
     { label: 'Messages', icon: 'chat', link: '/messages', badge: () => this.badges.unreadMessages() },
   ];
 

@@ -4,6 +4,7 @@ import { Observable, forkJoin, map, tap } from 'rxjs';
 import type {
   ApiCalendarData,
   ApiCoachAthlete,
+  ApiCoachGroup,
   ApiCoachAthleteDetail,
   ApiCoachStats,
   ApiCompetition,
@@ -15,10 +16,11 @@ import type {
   ApiStrengthSessionDetail,
   ApiSubscriptionRequest,
   ApiUserSearchResult,
+  GroupColor,
 } from '../core/api-types';
 import { ApiService } from '../core/api.service';
 import { mapRunDetail } from '../domain/athlete.mappers';
-import { buildAthleteFiche, buildCoachHome, buildInviteOverview, mapAthleteList, mapSearchResults } from '../domain/coach.mappers';
+import { buildAthleteFiche, buildCoachHome, buildInviteOverview, mapAthleteList, mapGroups, mapSearchResults } from '../domain/coach.mappers';
 import { mapPlannedDetail } from '../domain/session-detail';
 
 @Injectable({ providedIn: 'root' })
@@ -33,6 +35,33 @@ export class CoachService {
       athletes: this.api.cachedGet<ApiCoachAthlete[]>('/api/coach/athletes'),
       requests: this.api.getOr<ApiSubscriptionRequest[]>('/api/coach/subscription-requests', []),
     }).pipe(map(({ stats, athletes, requests }) => buildCoachHome(stats, athletes, requests)));
+  }
+
+  // ---------- Groupes ----------
+
+  groups$() {
+    return this.api.cachedGet<ApiCoachGroup[]>('/api/coach/groups').pipe(map((groups) => mapGroups(groups, new Date())));
+  }
+
+  createGroup(body: { name: string; color?: GroupColor; athletes: string[]; raceName?: string; raceDate?: string }) {
+    return this.api.post<ApiCoachGroup>('/api/coach/groups', body).pipe(this.refresh());
+  }
+
+  updateGroup(id: string, body: { name?: string; color?: GroupColor; athletes?: string[]; raceName?: string | null; raceDate?: string | null }) {
+    return this.api.patch<ApiCoachGroup>(`/api/coach/groups/${encodeURIComponent(id)}`, body).pipe(this.refresh());
+  }
+
+  deleteGroup(id: string) {
+    return this.api.delete(`/api/coach/groups/${encodeURIComponent(id)}`).pipe(this.refresh());
+  }
+
+  /** Planifié / réalisé semaine par semaine, pour l'écran Stats. */
+  weeklyStats$(weeks = 8) {
+    return this.api.cachedGet<{
+      weeks: { start: string; label: string; planned: number; done: number }[];
+      totals: { planned: number; done: number };
+      completionRate: number | null;
+    }>(`/api/coach/stats/weekly?weeks=${weeks}`);
   }
 
   athletes$() {
@@ -116,6 +145,16 @@ export class CoachService {
 
   generateInviteCode() {
     return this.api.post<{ code: string }>('/api/coach/invite/code').pipe(this.refresh());
+  }
+
+  /** Disponibilité d'un code pendant la frappe. L'API renvoie le code normalisé. */
+  checkInviteCode$(code: string) {
+    return this.api.get<{ code: string; available: boolean; error?: string }>('/api/coach/invite/code/check', { code });
+  }
+
+  /** Le coach choisit son code : l'ancien cesse alors de fonctionner. */
+  setInviteCode(code: string) {
+    return this.api.put<{ code: string }>('/api/coach/invite/code', { code }).pipe(this.refresh());
   }
 
   inviteByEmail(email: string) {

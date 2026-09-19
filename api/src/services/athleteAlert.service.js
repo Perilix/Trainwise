@@ -1,5 +1,6 @@
 const PlannedRun = require('../models/plannedRun.model');
 const CoachAthlete = require('../models/coachAthlete.model');
+const User = require('../models/user.model');
 const { computeAthleteStatus, isWorse } = require('./athleteStatus.service');
 const { createNotification } = require('../controllers/notification.controller');
 
@@ -70,18 +71,26 @@ async function checkStatusChanges(now = new Date()) {
 
   const summary = { checked: 0, degraded: 0, alertsSent: 0, alertsSkipped: 0 };
 
-  // Un athlète peut apparaître dans plusieurs relations : ne calcule qu'une fois
+  // Les seuils appartiennent au coach : deux coachs peuvent voir le même athlète
+  // différemment. Le cache porte donc sur le couple coach-athlète.
   const statusCache = new Map();
+  const rulesCache = new Map();
 
   for (const rel of relations) {
     if (!rel.athlete) continue;
     summary.checked++;
 
-    const athleteId = rel.athlete._id.toString();
-    let statusData = statusCache.get(athleteId);
+    const coachId = rel.coach.toString();
+    if (!rulesCache.has(coachId)) {
+      const coach = await User.findById(coachId).select('coachAlertRules').lean();
+      rulesCache.set(coachId, coach?.coachAlertRules || null);
+    }
+
+    const key = `${coachId}:${rel.athlete._id}`;
+    let statusData = statusCache.get(key);
     if (!statusData) {
-      statusData = await computeAthleteStatus(rel.athlete._id, now);
-      statusCache.set(athleteId, statusData);
+      statusData = await computeAthleteStatus(rel.athlete._id, now, rulesCache.get(coachId));
+      statusCache.set(key, statusData);
     }
 
     const previous = rel.athleteStatus;
