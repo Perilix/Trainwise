@@ -1,59 +1,39 @@
-# Frontend
+# Trainwise — web (desktop)
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.1.0.
+Application Angular 20 qui sert la version **ordinateur** de Trainwise. Le mobile, lui,
+est l'app Expo dans `app/` ; les deux parlent au même backend (`api/`).
 
-## Development server
-
-To start a local development server, run:
-
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Démarrer
 
 ```bash
-ng generate component component-name
+npm install
+npm start          # http://localhost:4200
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+`proxy.conf.json` relaie `/api` et `/socket.io` vers l'API de production : rien à
+configurer pour développer. En production, `src/environments/environment.prod.ts`
+pointe directement sur l'API.
 
 ```bash
-ng generate --help
+npm run build      # dist/frontend/browser (ce que le Dockerfile sert via nginx)
+npm run typecheck
 ```
 
-## Building
+## Organisation
 
-To build the project run:
+| Dossier | Contenu |
+| --- | --- |
+| `src/app/core` | API, session, gardes, thème clair/sombre, socket, formats FR |
+| `src/app/domain` | Modèles de vue et calculs **partagés avec l'app Expo** (`app/src/features`, `app/src/lib`) |
+| `src/app/ui` | Icônes au trait, graphiques SVG, primitives (carte, puce, avatar, stat…) |
+| `src/app/layout` | Barre latérale et cadre de l'application |
+| `src/app/pages` | Un dossier par espace : `athlete`, `coach`, `chat`, `shared`, `auth` |
 
-```bash
-ng build
-```
+## Règles
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- **Aucune couleur en dur** dans un composant : tout passe par les variables CSS de
+  `src/styles.scss` (jetons de `app/docs/design-system.md`, clair et sombre).
+- Le code métier vit dans `app/src/…` et se recopie dans `src/app/domain/` : corriger
+  d'abord côté Expo, puis reporter, pour que les deux clients restent d'accord.
+- Navy = action et structure, bleu = données et navigation, violet = le coach,
+  vert = fait, orange = Strava, rouge = non-lu.

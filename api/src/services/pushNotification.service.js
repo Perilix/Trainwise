@@ -21,7 +21,7 @@ function initializeFirebase() {
     const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
 
     if (!serviceAccount) {
-      console.warn('⚠️  Firebase credentials not configured. Push notifications to legacy FCM tokens will not work.');
+      console.warn('Firebase credentials not configured. Push notifications to legacy FCM tokens will not work.');
       return;
     }
 
@@ -36,7 +36,7 @@ function initializeFirebase() {
 
     firebaseInitialized = true;
   } catch (error) {
-    console.error('❌ Error initializing Firebase Admin:', error.message);
+    console.error('Error initializing Firebase Admin:', error.message);
   }
 }
 
@@ -70,7 +70,7 @@ async function sendExpoPush(userId, token, notification) {
   const ticket = Array.isArray(tickets) ? tickets[0] : tickets;
 
   if (ticket?.status === 'error') {
-    console.error('❌ Expo push error:', ticket.message, ticket.details);
+    console.error('Expo push error:', ticket.message, ticket.details);
     if (ticket.details?.error === 'DeviceNotRegistered') {
       await clearPushToken(userId, token);
     }
@@ -140,7 +140,7 @@ async function sendPushNotification(userId, notification) {
     if (!user || !user.pushToken) {
       // Silencieux jusqu'ici : impossible de distinguer « appareil jamais enregistré »
       // d'un envoi qui échoue plus loin.
-      console.warn(`🔕 [push] aucun jeton pour ${userId} — appareil jamais enregistré, ou autorisation refusée`);
+      console.warn(`[push] aucun jeton pour ${userId} — appareil jamais enregistré, ou autorisation refusée`);
       return { success: false, error: 'No push token' };
     }
 
@@ -150,7 +150,7 @@ async function sendPushNotification(userId, notification) {
     return await sendFcmPush(userId, user.pushToken, notification);
   } catch (error) {
     const errData = error.response?.data || error.message;
-    console.error('❌ Error sending push notification:', errData);
+    console.error('Error sending push notification:', errData);
     return { success: false, error: errData };
   }
 }

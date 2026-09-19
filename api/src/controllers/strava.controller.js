@@ -987,6 +987,39 @@ const processWebhookEvent = async (event) => {
   }
 };
 
+/**
+ * POST /api/runs/:id/blocks/rebuild — recalcule le déroulé d'une sortie à partir
+ * des tours Strava. Utile quand la détection s'est améliorée, ou quand l'athlète
+ * a rattaché la sortie à une séance prévue après coup : on peut alors caler les
+ * tours sur le squelette du coach.
+ */
+exports.rebuildRunBlocks = async (req, res) => {
+  try {
+    const run = await Run.findOne({ _id: req.params.id, user: req.user._id });
+    if (!run) return res.status(404).json({ error: 'Course non trouvée' });
+    if (!run.stravaActivityId) return res.status(400).json({ error: 'Cette sortie ne vient pas de Strava' });
+
+    const user = await User.findById(req.user._id).select('+strava.accessToken +strava.refreshToken');
+    if (!user?.strava?.athleteId) return res.status(400).json({ error: 'Compte Strava non connecté' });
+
+    const accessToken = await refreshTokenIfNeeded(user);
+    const { data: detail } = await axios.get(`${STRAVA_API_URL}/activities/${run.stravaActivityId}`, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+
+    const blocks = reconstructBlocksFromLaps(detail.laps, run.plannedSnapshot?.runBlocks);
+    if (!blocks.length) return res.status(422).json({ error: 'Les tours de cette activité ne permettent pas de reconstruire le déroulé' });
+
+    run.runBlocks = blocks;
+    run.blocksAutoReconstructed = true;
+    await run.save();
+    res.json(run);
+  } catch (error) {
+    console.error('[Strava] recalcul du déroulé:', error.response?.status || error.message);
+    res.status(500).json({ error: 'Recalcul impossible' });
+  }
+};
+
 // Exporté pour les tests / déclenchement manuel
 exports.processWebhookEvent = processWebhookEvent;
 

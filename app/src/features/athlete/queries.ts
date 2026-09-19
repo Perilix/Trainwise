@@ -242,6 +242,9 @@ export type SportProfilePatch = Pick<ApiUser, 'runningLevel' | 'weeklyFrequency'
 
 export type CompetitionPayload = { name: string; date: string; discipline: string; targetTime?: string | null; priority: 'A' | 'B' | 'C' };
 
+/** Profil renseigné à la mise en route : le profil sportif, plus ce qui n'existe qu'ici. */
+export type OnboardingPatch = SportProfilePatch & { disciplines?: string[]; strengthGoal?: string; strengthFrequency?: number };
+
 /** Sortie réalisée saisie à la main depuis une séance prévue. */
 export type DoneRunPayload = { date: string; distanceKm?: number; durationMin?: number; feeling?: number; notes?: string; sessionType?: string };
 
@@ -344,6 +347,23 @@ export function useAthleteActions() {
       if (!live) return;
       await api('/api/strava/disconnect', { method: 'DELETE' });
       invalidateApiCache();
+    },
+    /** Fin de la mise en route : le profil et la première compétition, en une fois. */
+    async completeOnboarding(patch: OnboardingPatch, competition?: CompetitionPayload) {
+      if (!user) return;
+      if (!live) {
+        updateUser({ ...user, ...patch, hasCompletedOnboarding: true });
+        return;
+      }
+      updateUser(await api<ApiUser>('/api/auth/profile', { method: 'PATCH', body: { ...patch, hasCompletedOnboarding: true } }));
+      if (competition) await api('/api/competitions', { method: 'POST', body: competition }).catch(() => undefined);
+      invalidateApiCache();
+    },
+    /** Visite guidée vue : elle ne se rouvrira plus, sur aucun appareil. */
+    async markTourSeen(pageId: string) {
+      if (!user) return;
+      updateUser({ ...user, toursSeen: [...(user.toursSeen ?? []), pageId] });
+      if (live) await api('/api/auth/tours', { method: 'POST', body: { pageId } }).catch(() => undefined);
     },
     /** Profil sportif : niveau, fréquence, mensurations, contraintes. */
     async updateSportProfile(patch: SportProfilePatch) {

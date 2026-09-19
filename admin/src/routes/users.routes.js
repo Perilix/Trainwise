@@ -201,8 +201,9 @@ router.post('/:id/impersonate', requireAuth, async (req, res) => {
 
   const token = jwt.sign({ id: user._id.toString() }, JWT_SECRET, { expiresIn: '1h' });
 
-  console.log(
-    `[IMPERSONATE] admin=${req.session.adminName || req.session.adminId} → user=${user.email} (${user._id}) role=${user.role} target=${target}`
+  // Trace d'audit : une connexion à la place d'un utilisateur doit rester traçable.
+  process.stdout.write(
+    `[IMPERSONATE] admin=${req.session.adminName || req.session.adminId} -> user=${user.email} (${user._id}) role=${user.role} target=${target}\n`
   );
 
   const redirectUrl = `${targetUrl.replace(/\/$/, '')}/impersonate#token=${encodeURIComponent(token)}`;

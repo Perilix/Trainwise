@@ -25,9 +25,7 @@ exports.createNotification = async ({ recipient, sender, type, action, title, me
     }
 
     // Envoyer une notification push si l'utilisateur est hors ligne
-    if (isUserOnline(recipient.toString())) {
-      console.log(`🔕 [push] ${recipient} est connecté (socket ouvert) — pas de push pour « ${title} »`);
-    } else {
+    if (!isUserOnline(recipient.toString())) {
       await sendPushNotification(recipient, {
         title,
         body: message,

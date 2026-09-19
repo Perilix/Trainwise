@@ -3,12 +3,12 @@
  * Usage: MONGODB_URI=... node scripts/make-admin.js your@email.com
  */
 
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
 const mongoose = require('mongoose');
 
 const email = process.argv[2];
 if (!email) {
-  console.error('Usage: node scripts/make-admin.js your@email.com');
+  process.stderr.write(`Usage: node scripts/make-admin.js your@email.com\n`);
   process.exit(1);
 }
 
@@ -21,9 +21,9 @@ mongoose.connect(uri).then(async () => {
   );
 
   if (result.matchedCount === 0) {
-    console.error(`❌ Aucun utilisateur trouvé avec l'email : ${email}`);
+    process.stderr.write(`Aucun utilisateur trouvé avec l'email : ${email}\n`);
   } else {
-    console.log(`✅ ${email} est maintenant admin.`);
+    process.stdout.write(`${email} est maintenant admin.\n`);
   }
 
   await mongoose.disconnect();

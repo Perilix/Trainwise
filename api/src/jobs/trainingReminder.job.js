@@ -10,7 +10,7 @@ function start() {
     try {
       await runDaily();
     } catch (e) {
-      console.error('❌ [rappels] erreur run quotidien:', e);
+      console.error('[rappels] erreur run quotidien:', e);
     }
   }, { timezone: TIMEZONE });
 }

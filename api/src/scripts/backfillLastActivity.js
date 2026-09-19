@@ -6,7 +6,7 @@
 //
 //   node src/scripts/backfillLastActivity.js
 //
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
 const mongoose = require('mongoose');
 const User = require('../models/user.model');
 const Run = require('../models/run.model');
@@ -14,10 +14,10 @@ const StrengthSession = require('../models/strengthSession.model');
 
 async function main() {
   await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/trainwise');
-  console.log('Connecté à MongoDB');
+  process.stdout.write(`Connecté à MongoDB\n`);
 
   const users = await User.find().select('_id').lean();
-  console.log(`${users.length} utilisateurs à traiter…`);
+  process.stdout.write(`${users.length} utilisateurs à traiter…\n`);
 
   let updated = 0;
   for (const u of users) {
@@ -34,11 +34,11 @@ async function main() {
     updated++;
   }
 
-  console.log(`✅ Backfill terminé : ${updated} utilisateurs mis à jour.`);
+  process.stdout.write(`Backfill terminé : ${updated} utilisateurs mis à jour.\n`);
   await mongoose.disconnect();
 }
 
 main().catch(err => {
-  console.error('❌ Erreur backfill:', err);
+  console.error('Erreur backfill:', err);
   process.exit(1);
 });

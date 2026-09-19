@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 
 import { usePushNotifications } from '@/features/notifications/use-push-notifications';
+import { Onboarding } from '@/features/onboarding/onboarding';
 import { SocketProvider } from '@/features/realtime/socket-provider';
 import { useTheme } from '@/theme/theme-provider';
 
@@ -12,6 +13,8 @@ export default function AthleteLayout() {
   return (
     <SocketProvider>
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }} />
+      {/* Premier lancement : mise en route puis visite guidée, par-dessus les écrans. */}
+      <Onboarding />
     </SocketProvider>
   );
 }

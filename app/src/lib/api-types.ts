@@ -21,6 +21,8 @@ export type ApiUser = {
   /** Créneau préféré : 'matin', 'midi', 'soir'. */
   preferredTime?: string;
   hasCompletedOnboarding?: boolean;
+  /** Visites guidées déjà vues, par identifiant d'écran. */
+  toursSeen?: string[];
   // Profil coach
   disciplines?: string[];
   diplomas?: string[];

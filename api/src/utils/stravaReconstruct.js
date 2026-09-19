@@ -13,6 +13,18 @@
 
 const round2 = (n) => Math.round(n * 100) / 100;
 const avg = (arr) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0);
+/** Dispersion relative (écart-type / moyenne), pour comparer distances et durées. */
+const spreadRatio = (values) => {
+  const mean = avg(values);
+  if (!mean) return Infinity;
+  return Math.sqrt(avg(values.map(v => (v - mean) ** 2))) / mean;
+};
+const median = (arr) => {
+  if (!arr.length) return 0;
+  const sorted = [...arr].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+};
 
 /** Vitesse m/s → allure "m:ss" /km. */
 function speedToPaceStr(speedMs) {
@@ -37,19 +49,76 @@ function secondsToRecoveryText(sec) {
   return s === 0 ? `${m}min` : `${m}min${String(s).padStart(2, '0')}`;
 }
 
-/** Détermine le seuil effort/facile via le plus grand écart entre allures triées. */
-function effortThreshold(paces) {
-  const sorted = [...paces].sort((a, b) => a - b);
-  let bestGap = 0;
-  let cut = sorted[0];
-  for (let i = 1; i < sorted.length; i++) {
-    const gap = sorted[i] - sorted[i - 1];
-    if (gap > bestGap) {
-      bestGap = gap;
-      cut = (sorted[i] + sorted[i - 1]) / 2;
+/**
+ * Sépare les allures en deux groupes (effort / facile) par k-moyennes à une
+ * dimension, pondérées par la durée du tour.
+ *
+ * Le plus grand écart entre allures triées, utilisé avant, se laissait piéger
+ * par une valeur isolée : un retour au calme à 7:49 créait le plus grand trou
+ * du jeu, et le seuil tombait au-dessus de l'échauffement — des kilomètres à
+ * 6:10 se retrouvaient classés « effort » avec des 400 m à 3:35. Les
+ * k-moyennes minimisent la dispersion dans chaque groupe : un point isolé ne
+ * déplace plus la frontière.
+ */
+function splitByPace(entries) {
+  const paces = entries.map(e => e.pace);
+  let fast = Math.min(...paces);
+  let slow = Math.max(...paces);
+
+  const weightedMean = (group) => {
+    const total = group.reduce((sum, e) => sum + e.weight, 0);
+    return total > 0 ? group.reduce((sum, e) => sum + e.pace * e.weight, 0) / total : avg(group.map(e => e.pace));
+  };
+
+  for (let step = 0; step < 20; step++) {
+    const fastGroup = [];
+    const slowGroup = [];
+    for (const entry of entries) {
+      (Math.abs(entry.pace - fast) <= Math.abs(entry.pace - slow) ? fastGroup : slowGroup).push(entry);
     }
+    if (!fastGroup.length || !slowGroup.length) break;
+
+    const nextFast = weightedMean(fastGroup);
+    const nextSlow = weightedMean(slowGroup);
+    if (Math.abs(nextFast - fast) < 0.5 && Math.abs(nextSlow - slow) < 0.5) {
+      fast = nextFast;
+      slow = nextSlow;
+      break;
+    }
+    fast = nextFast;
+    slow = nextSlow;
   }
-  return { cut, spread: sorted[sorted.length - 1] - sorted[0] };
+
+  return { cut: (fast + slow) / 2, fast, slow };
+}
+
+/**
+ * Fusionne les tours minuscules dans le précédent : un appui sur le bouton lap
+ * produit parfois un tour de 60 m, qui n'est pas une étape de la séance.
+ */
+function mergeMicroLaps(laps) {
+  const MICRO_DISTANCE_M = 120;
+  const MICRO_TIME_S = 30;
+  const merged = [];
+
+  for (const lap of laps) {
+    const distance = lap.distance || 0;
+    const time = lap.moving_time || lap.elapsed_time || 0;
+    const previous = merged[merged.length - 1];
+
+    if (previous && distance < MICRO_DISTANCE_M && time < MICRO_TIME_S) {
+      previous.distance = (previous.distance || 0) + distance;
+      previous.moving_time = (previous.moving_time || 0) + (lap.moving_time || 0);
+      previous.elapsed_time = (previous.elapsed_time || 0) + (lap.elapsed_time || 0);
+      const movingTime = previous.moving_time || previous.elapsed_time;
+      if (movingTime > 0) previous.average_speed = previous.distance / movingTime;
+      continue;
+    }
+
+    merged.push({ ...lap });
+  }
+
+  return merged;
 }
 
 /** Construit un step "effort" depuis un lap (mode distance). */
@@ -61,7 +130,7 @@ function effortStep(lap, order) {
     duration: null,
     pace: speedToPaceStr(lap.average_speed),
     repetitions: 1,
-    description: 'Effort',
+    description: '',
     recoveryMode: null,
     recoveryDistance: null,
     recoveryDuration: null,
@@ -76,7 +145,54 @@ function attachRecovery(step, lap) {
   step.recoveryMode = 'duration';
   step.recoveryDuration = secondsToRecoveryText(lap.moving_time || lap.elapsed_time);
   step.recoveryPace = speedToPaceStr(lap.average_speed);
-  step.recoveryDescription = 'Récup';
+  step.recoveryDescription = '';
+}
+
+/**
+ * Répétition représentative d'une série homogène : la moyenne des tours, pas le
+ * premier. Sur 12 × 400 m, le premier tour est souvent le plus long et le plus
+ * lent — le prendre pour modèle décrivait mal la séance.
+ */
+function averageEffort(effortLaps, recoveryLaps) {
+  const distances = effortLaps.map(l => l.distance || 0);
+  const times = effortLaps.map(l => l.moving_time || l.elapsed_time || 0);
+  const distM = avg(distances);
+  const timeS = avg(times);
+
+  // Séance au chrono (10 × 1 min 30) ou à la distance (10 × 400 m) ? C'est la
+  // grandeur la plus régulière d'un tour à l'autre qui dit comment elle a été
+  // courue — l'autre varie avec le terrain.
+  const byTime = spreadRatio(times) * 1.3 + 0.002 < spreadRatio(distances);
+
+  const step = {
+    role: 'main',
+    mode: byTime ? 'duration' : 'distance',
+    // À la dizaine de mètres / aux 5 secondes près : une moyenne à 407,3 m ou
+    // à 1 min 27,4 s n'a pas de sens sur le terrain.
+    distance: byTime ? null : round2(Math.round(distM / 10) * 10 / 1000),
+    duration: byTime ? round2((Math.round(timeS / 5) * 5) / 60) : null,
+    pace: timeS > 0 ? speedToPaceStr(distM / timeS) : null,
+    repetitions: 1,
+    description: '',
+    recoveryMode: null,
+    recoveryDistance: null,
+    recoveryDuration: null,
+    recoveryPace: null,
+    recoveryDescription: '',
+    order: 0
+  };
+
+  if (recoveryLaps.length) {
+    // Médiane : une récup rallongée une fois (lacet, feu rouge, discussion) ne
+    // doit pas décrire toute la série.
+    const recoveryTime = median(recoveryLaps.map(l => l.moving_time || l.elapsed_time || 0));
+    const recoveryDist = median(recoveryLaps.map(l => l.distance || 0));
+    step.recoveryMode = 'duration';
+    step.recoveryDuration = secondsToRecoveryText(Math.round(recoveryTime / 5) * 5);
+    step.recoveryPace = recoveryTime > 0 ? speedToPaceStr(recoveryDist / recoveryTime) : null;
+  }
+
+  return step;
 }
 
 /** Bloc échauffement / retour au calme à partir d'un ou plusieurs laps faciles fusionnés. */
@@ -110,12 +226,22 @@ const isGroup = (b) => Array.isArray(b.children) && b.children.length > 0;
 /** Classe chaque lap en effort / facile et détecte une course continue. */
 function classifyLaps(laps) {
   if (laps.length <= 1) return { isEffort: laps.map(() => false), continuous: true };
-  const paces = laps.map(l => paceSecPerKm(l.average_speed));
-  const { cut, spread } = effortThreshold(paces);
-  return {
-    isEffort: laps.map(l => paceSecPerKm(l.average_speed) <= cut),
-    continuous: spread < 25
-  };
+
+  const entries = laps.map(l => ({
+    pace: paceSecPerKm(l.average_speed),
+    weight: Math.max(1, l.moving_time || l.elapsed_time || 1)
+  }));
+  const paces = entries.map(e => e.pace).filter(Number.isFinite);
+  if (paces.length < 2) return { isEffort: laps.map(() => false), continuous: true };
+
+  // Moins de 25 s/km d'amplitude : allure régulière, il n'y a pas d'intervalles.
+  if (Math.max(...paces) - Math.min(...paces) < 25) return { isEffort: laps.map(() => false), continuous: true };
+
+  const { cut, fast, slow } = splitByPace(entries);
+  // Deux groupes trop proches : c'est une allure qui dérive, pas une alternance.
+  if (slow - fast < 20) return { isEffort: laps.map(() => false), continuous: true };
+
+  return { isEffort: entries.map(e => e.pace <= cut), continuous: false };
 }
 
 /**
@@ -126,8 +252,9 @@ function classifyLaps(laps) {
  *        comparaison prévu↔réalisé propre. Sinon, détection autonome.
  * @returns {Array} runBlocks (compatibles modèle RunBlock, avec groupes via children)
  */
-function reconstructBlocksFromLaps(laps, plannedBlocks) {
-  if (!Array.isArray(laps) || laps.length === 0) return [];
+function reconstructBlocksFromLaps(rawLaps, plannedBlocks) {
+  if (!Array.isArray(rawLaps) || rawLaps.length === 0) return [];
+  const laps = mergeMicroLaps(rawLaps);
 
   // Si on a un plan coach → on s'aligne dessus (10×500 prévu rempli depuis 10×550 réels)
   if (Array.isArray(plannedBlocks) && plannedBlocks.length) {
@@ -167,13 +294,17 @@ function reconstructBlocksFromLaps(laps, plannedBlocks) {
 
   // Corps : du 1er au dernier effort → on apparie effort + (lap facile suivant = récup)
   const intervalSteps = [];
+  const effortLaps = [];
+  const recoveryLaps = [];
   let i = firstEffort;
   while (i <= lastEffort) {
     if (isEffort[i]) {
       const step = effortStep(laps[i], 0);
+      effortLaps.push(laps[i]);
       // récup = lap facile juste après (s'il y en a un et qu'il est dans le corps)
       if (i + 1 <= lastEffort && !isEffort[i + 1]) {
         attachRecovery(step, laps[i + 1]);
+        recoveryLaps.push(laps[i + 1]);
         i += 2;
       } else {
         i += 1;
@@ -192,8 +323,8 @@ function reconstructBlocksFromLaps(laps, plannedBlocks) {
   } else if (intervalSteps.length > 1) {
     const distances = intervalSteps.map(s => s.distance || 0);
     if (homogeneous(distances)) {
-      // Efforts homogènes → groupe « Répéter ×N » (1 enfant répété)
-      const child = { ...intervalSteps[0], order: 0 };
+      // Efforts homogènes → groupe « Répéter ×N » (1 enfant, la répétition moyenne)
+      const child = { ...averageEffort(effortLaps, recoveryLaps), order: 0 };
       blocks.push({
         role: 'main',
         mode: 'distance',
@@ -306,7 +437,7 @@ function reconstructAgainstPlan(laps, plannedBlocks) {
       step.recoveryMode = 'duration';
       step.recoveryDuration = secondsToRecoveryText(avg(recLaps.map(l => l.moving_time || l.elapsed_time || 0)));
       step.recoveryPace = speedToPaceStr(avg(recLaps.map(l => l.average_speed).filter(Boolean)));
-      step.recoveryDescription = 'Récup';
+      step.recoveryDescription = '';
     }
     return step;
   };
