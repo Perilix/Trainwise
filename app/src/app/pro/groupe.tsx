@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { Avatar, BackBar, Button, Card, Field, FormError, Icon, Screen, Section, StateView, Text } from '@/components/ui';
-import { GROUP_COLORS } from '@/features/coach/group-colors';
+import { GROUP_COLORS, tintOf } from '@/features/coach/group-colors';
 import { useCoachActions, useCoachGroups, useCoachHome } from '@/features/coach/queries';
 import type { GroupColor } from '@/lib/api-types';
 import { emitAppEvent } from '@/lib/app-events';
@@ -116,19 +116,21 @@ export default function CoachGroupScreen() {
               Couleur
             </Text>
             <View style={styles.swatches}>
-              {GROUP_COLORS.map((choice) => (
-                <Pressable
-                  key={choice.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={choice.label}
-                  onPress={() => setColor(choice.id)}
-                  style={[
-                    styles.swatch,
-                    { backgroundColor: choice.dot },
-                    color === choice.id ? { borderColor: colors.ink, borderWidth: 3 } : null,
-                  ]}
-                />
-              ))}
+              {GROUP_COLORS.map((choice) => {
+                const tint = tintOf(choice.id);
+                const on = color === choice.id;
+                return (
+                  <Pressable
+                    key={choice.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={choice.label}
+                    accessibilityState={{ selected: on }}
+                    onPress={() => setColor(choice.id)}
+                    style={[styles.swatch, { backgroundColor: tint.soft, borderColor: on ? tint.ink : 'transparent' }]}>
+                    {on ? <Icon name="check" size={16} color={tint.ink} strokeWidth={2.5} /> : null}
+                  </Pressable>
+                );
+              })}
             </View>
           </View>
 
@@ -198,7 +200,7 @@ const styles = StyleSheet.create({
   gap: { gap: 14 },
   label: { marginBottom: 6 },
   swatches: { flexDirection: 'row', gap: 10 },
-  swatch: { width: 36, height: 36, borderRadius: 18, borderWidth: 0 },
+  swatch: { width: 38, height: 38, borderRadius: 19, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   pickerHead: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginBottom: 8 },
   list: { overflow: 'hidden' },
   pick: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 10 },

@@ -1,28 +1,44 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useMemo } from 'react';
-import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Avatar, Button, Icon, IconButton, StateView, Text } from '@/components/ui';
+import { Button, Icon, IconButton, Screen, Section, Segmented, StateView, Text } from '@/components/ui';
 import { useCoachChat } from '@/features/athlete/coach-chat';
-import { useAthleteGroupConversations, usePlannedSession } from '@/features/athlete/queries';
+import { useAthleteConversations, usePlannedSession } from '@/features/athlete/queries';
 import type { CitedSession } from '@/features/athlete/types';
+import { ConversationList } from '@/features/chat/conversation-list';
 import { ChatThread } from '@/features/chat/chat-thread';
 import { SessionPreview } from '@/features/sessions/session-preview';
 import { useTheme } from '@/theme/theme-provider';
 
 import { useHideTabBar } from './_layout';
 
+const FILTERS = [
+  { value: 'tous', label: 'Tous' },
+  { value: 'coach', label: 'Mon coach' },
+  { value: 'groupes', label: 'Groupes' },
+] as const;
+
 export default function CoachChatScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const chat = useCoachChat();
-  const { data: groups } = useAthleteGroupConversations();
+  const { data: conversations, refetch: refetchConversations } = useAthleteConversations();
   const { width } = useWindowDimensions();
+  const [filter, setFilter] = useState<(typeof FILTERS)[number]['value']>('tous');
+  /** Le fil du coach, ouvert depuis la liste. */
+  const [coachOpen, setCoachOpen] = useState(false);
+
+  const groups = (conversations ?? []).filter((row) => row.kind === 'group');
+  // Tant qu'il n'appartient à aucun groupe, l'athlète n'a qu'une discussion :
+  // la liste ne lui apprendrait rien, on l'envoie droit à son coach.
+  const showList = groups.length > 0 && !coachOpen;
 
   useFocusEffect(chat.markRead);
+  useFocusEffect(refetchConversations);
   // Le fil prend tout l'écran : la barre d'onglets s'efface, on revient par la flèche.
-  useHideTabBar(Boolean(chat.peer));
+  useHideTabBar(Boolean(chat.peer) && !showList);
 
   // La bulle citée occupe 80 % de la largeur, moins les marges de la carte.
   const previewWidth = Math.round(width * 0.8) - 44;
@@ -54,33 +70,41 @@ export default function CoachChatScreen() {
     );
   }
 
+  if (showList) {
+    const rows = (conversations ?? []).filter((row) => (filter === 'tous' ? true : filter === 'groupes' ? row.kind === 'group' : row.kind === 'direct'));
+    return (
+      <Screen tabs>
+        <Section style={styles.heading}>
+          <Text variant="h1">Messages</Text>
+        </Section>
+        <Section style={styles.tight}>
+          <Segmented options={FILTERS} value={filter} onChange={setFilter} />
+        </Section>
+        <Section>
+          {rows.length ? (
+            <ConversationList
+              rows={rows}
+              onOpen={(row) =>
+                row.kind === 'group'
+                  ? router.push({ pathname: '/discussion', params: { conversation: row.conversationId, nom: row.name } })
+                  : setCoachOpen(true)
+              }
+            />
+          ) : (
+            <Text variant="body2">Aucune discussion pour l’instant.</Text>
+          )}
+        </Section>
+      </Screen>
+    );
+  }
+
   return (
     <ChatThread
       chat={chat}
       offlineLabel="Ton coach"
-      onBack={() => router.navigate('/')}
+      onBack={() => (groups.length ? setCoachOpen(false) : router.navigate('/'))}
       peerRole="coach"
       headerRight={<IconButton icon="calendar" size={44} glass accessibilityLabel="Ouvrir le planning" onPress={() => router.push('/planning')} />}
-      above={
-        groups && groups.length ? (
-          <View style={styles.groups}>
-            {groups.map((group) => (
-              <Pressable
-                key={group.conversationId}
-                accessibilityRole="button"
-                accessibilityLabel={`Discussion ${group.name}${group.unread ? `, ${group.unread} non lus` : ''}`}
-                onPress={() => router.push({ pathname: '/discussion', params: { conversation: group.conversationId, nom: group.name } })}
-                style={[styles.groupChip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Avatar initials={group.initials} size={24} tone="primary" />
-                <Text variant="small" numberOfLines={1}>
-                  {group.name}
-                </Text>
-                {group.unread ? <View style={[styles.dot, { backgroundColor: colors.danger }]} /> : null}
-              </Pressable>
-            ))}
-          </View>
-        ) : null
-      }
       CitedSessionBody={CitedSessionBody}
       onOpenSession={(session) =>
         session.kind === 'run'
@@ -96,7 +120,6 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 32 },
   centered: { textAlign: 'center' },
   joinButton: { marginTop: 14 },
-  groups: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, paddingBottom: 10 },
-  groupChip: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6, paddingRight: 12, paddingLeft: 6, borderRadius: 999, borderWidth: 1 },
-  dot: { width: 8, height: 8, borderRadius: 4 },
+  heading: { gap: 2, paddingTop: 4, paddingBottom: 14 },
+  tight: { paddingBottom: 12 },
 });

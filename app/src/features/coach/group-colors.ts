@@ -21,7 +21,6 @@ export const GROUP_TINT: Record<GroupColor, { soft: string; ink: string }> = {
 export const GROUP_COLORS = (Object.keys(GROUP_TINT) as GroupColor[]).map((id) => ({
   id,
   label: id[0].toUpperCase() + id.slice(1),
-  dot: GROUP_TINT[id].ink,
 }));
 
 export const tintOf = (color: GroupColor) => GROUP_TINT[color] ?? GROUP_TINT.bleu;

@@ -31,7 +31,6 @@ const GROUP_TINT: Record<GroupColor, { soft: string; ink: string }> = {
 const GROUP_COLORS = (Object.keys(GROUP_TINT) as GroupColor[]).map((id) => ({
   id,
   label: id[0].toUpperCase() + id.slice(1),
-  dot: GROUP_TINT[id].ink,
 }));
 
 @Component({
@@ -244,11 +243,17 @@ const GROUP_COLORS = (Object.keys(GROUP_TINT) as GroupColor[]).map((id) => ({
                     type="button"
                     class="swatch"
                     [class.on]="color() === choice.id"
-                    [style.background]="choice.dot"
+                    [style.background]="tint(choice.id).soft"
+                    [style.border-color]="tint(choice.id).ink"
+                    [style.color]="tint(choice.id).ink"
                     [attr.aria-label]="choice.label"
                     [title]="choice.label"
                     (click)="color.set(choice.id)"
-                  ></button>
+                  >
+                    @if (color() === choice.id) {
+                      <tw-icon name="check" [size]="15" [strokeWidth]="2.5" />
+                    }
+                  </button>
                 }
               </div>
             </div>
@@ -591,18 +596,27 @@ const GROUP_COLORS = (Object.keys(GROUP_TINT) as GroupColor[]).map((id) => ({
       }
 
       .swatch {
-        width: 30px;
-        height: 30px;
+        width: 34px;
+        height: 34px;
         border-radius: var(--r-pill);
+        border: 1.5px solid transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         cursor: pointer;
-        box-shadow: 0 0 0 0 transparent;
-        transition: box-shadow 0.12s ease;
+        transition:
+          transform 0.12s ease,
+          box-shadow 0.12s ease;
+      }
+
+      .swatch:hover {
+        transform: scale(1.06);
       }
 
       .swatch.on {
         box-shadow:
           0 0 0 2px var(--surface),
-          0 0 0 4px var(--ink);
+          0 0 0 3px currentColor;
       }
 
       /* Ajouter un groupe depuis la grille elle-même, à la place qu'il occupera. */

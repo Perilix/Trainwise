@@ -416,11 +416,7 @@ export function useAthleteActions() {
   };
 }
 
-/** Les discussions de groupe auxquelles l'athlète appartient. */
-export function useAthleteGroupConversations() {
-  return useSessionQuery(
-    'athlete:group-conversations',
-    async () => mapConversationRows(await getConversations(), new Date()).filter((row) => row.kind === 'group'),
-    () => [],
-  );
+/** Toutes les discussions de l'athlète : son coach et ses groupes. */
+export function useAthleteConversations() {
+  return useSessionQuery('athlete:conversations', async () => mapConversationRows(await getConversations(), new Date()), () => []);
 }
