@@ -29,6 +29,51 @@ const LEGACY = { indigo: 'violet', turquoise: 'vert', sable: 'jaune', ardoise: '
 
 const keepColor = (raw) => (COLORS.includes(raw) ? raw : LEGACY[raw] || 'bleu');
 
+/**
+ * Aligne la conversation du groupe sur ses membres.
+ *
+ * Un athlète ajouté au groupe rejoint la discussion, un athlète retiré en
+ * sort, et le renommage du groupe la suit. Sans cet appel à chaque
+ * modification, un athlète ajouté après coup ne verrait jamais la discussion.
+ */
+const syncConversation = async (group, coach, allowed) => {
+  if (!group.conversation) return null;
+  const conversation = await Conversation.findById(group.conversation);
+  if (!conversation) return null;
+
+  const before = new Set(conversation.participants.map(String));
+  const participants = [String(coach._id), ...(group.athletes || []).map(String).filter((id) => allowed.has(id))];
+
+  conversation.participants = participants;
+  conversation.name = group.name;
+  // Un ancien membre ne doit plus traîner de compteur de non-lus.
+  for (const id of conversation.unreadCounts.keys()) {
+    if (!participants.includes(id)) conversation.unreadCounts.delete(id);
+  }
+  await conversation.save();
+
+  // Les nouveaux venus n'ont pas demandé cette discussion : on les prévient.
+  await Promise.all(
+    participants
+      .filter((id) => !before.has(id) && id !== String(coach._id))
+      .map((athleteId) => notifyGroupChat(athleteId, coach, group.name, conversation._id))
+  );
+
+  return conversation;
+};
+
+/** Prévient un athlète qu'il vient d'entrer dans la discussion d'un groupe. */
+const notifyGroupChat = (athleteId, coach, groupName, conversationId) =>
+  createNotification({
+    recipient: athleteId,
+    sender: coach._id,
+    type: 'message',
+    action: 'group_conversation_created',
+    title: `Discussion « ${groupName} »`,
+    message: `${coach.firstName} vous a ajouté à la discussion du groupe ${groupName}.`,
+    actionUrl: `/chat/${conversationId}`
+  });
+
 const shape = (group) => ({
   id: group._id,
   name: group.name,
@@ -113,6 +158,8 @@ exports.updateGroup = async (req, res) => {
     }
 
     await group.save();
+    // La discussion du groupe suit ses membres, sans attendre qu'on la rouvre.
+    await syncConversation(group, req.user, await followedIds(req.user._id));
     await group.populate('athletes', ATHLETE_FIELDS);
     res.json(shape(group.toObject()));
   } catch (error) {
@@ -148,32 +195,9 @@ exports.openConversation = async (req, res) => {
       group.conversation = conversation._id;
       await group.save();
 
-      // Un athlète n'a pas demandé cette conversation : on le prévient.
-      await Promise.all(
-        members.map((athleteId) =>
-          createNotification({
-            recipient: athleteId,
-            sender: req.user._id,
-            type: 'message',
-            action: 'group_conversation_created',
-            title: `Discussion « ${group.name} »`,
-            message: `${req.user.firstName} vous a ajouté à la discussion du groupe ${group.name}.`,
-            actionUrl: `/chat/${conversation._id}`
-          })
-        )
-      );
+      await Promise.all(members.map((athleteId) => notifyGroupChat(athleteId, req.user, group.name, conversation._id)));
     } else {
-      // Les membres font foi : la conversation suit le groupe.
-      const before = conversation.participants.map(String).sort().join(',');
-      conversation.participants = participants;
-      conversation.name = group.name;
-      if (before !== participants.slice().sort().join(',')) {
-        // Un ancien membre ne doit plus traîner de compteur de non-lus.
-        for (const id of conversation.unreadCounts.keys()) {
-          if (!participants.includes(id)) conversation.unreadCounts.delete(id);
-        }
-      }
-      await conversation.save();
+      conversation = await syncConversation(group, req.user, allowed);
     }
 
     res.json({ conversationId: conversation._id, name: conversation.name, participants: participants.length });
