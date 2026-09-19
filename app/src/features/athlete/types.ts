@@ -240,6 +240,8 @@ export type ChatMessage = {
   id: string;
   fromMe: boolean;
   text: string;
+  /** Qui parle — affiché dans les discussions de groupe uniquement. */
+  senderName?: string;
   timeLabel?: string;
   dayLabel?: string;
   sending?: boolean; // envoyé, pas encore confirmé par le serveur

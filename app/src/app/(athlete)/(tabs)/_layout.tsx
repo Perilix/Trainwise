@@ -8,7 +8,7 @@ import { onAppEvent } from '@/lib/app-events';
 
 const ATHLETE_TABS: readonly TabItem[] = [
   { name: 'index', label: 'Accueil', icon: 'home' },
-  { name: 'coach', label: 'Coach', icon: 'message' },
+  { name: 'coach', label: 'Messages', icon: 'message' },
   { name: 'planning', label: 'Planning', icon: 'calendar' },
   { name: 'sorties', label: 'Sorties', icon: 'route' },
 ];

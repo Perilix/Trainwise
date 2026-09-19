@@ -62,7 +62,7 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
                 <div class="grow stack">
                   <div class="line">
                     @if (row.kind === 'group') {
-                      <tw-icon name="friends" [size]="14" />
+                      <tw-icon class="group-mark" name="friends" [size]="14" />
                     }
                     <span class="h3 grow truncate">{{ row.name }}</span>
                     <span class="caption muted-3">{{ row.timeLabel }}</span>
@@ -91,7 +91,7 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
               <span class="h3">{{ peer.name }}</span>
               <div class="line">
                 @if (peer.kind === 'group') {
-                  <tw-icon name="friends" [size]="14" />
+                  <tw-icon class="group-mark" name="friends" [size]="14" />
                   <span class="caption muted">{{ typing() ? 'quelqu’un écrit…' : (peer.members ?? 0) + ' participants' }}</span>
                 } @else {
                   <span class="dot" [style.background]="peer.online ? 'var(--success)' : 'var(--text3)'"></span>
@@ -113,6 +113,9 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
                 <div class="day">{{ message.dayLabel }}</div>
               }
               <div class="bubble-wrap" [class.mine]="message.fromMe">
+                @if (active()?.kind === 'group' && !message.fromMe && message.senderName) {
+                  <span class="caption sender">{{ message.senderName }}</span>
+                }
                 <div class="bubble" [class.mine]="message.fromMe">
                   @if (message.session; as session) {
                     <button type="button" class="quoted" (click)="openSession(session)">
@@ -262,6 +265,15 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
         line-height: 30px;
         font-weight: 600;
         letter-spacing: -0.01em;
+      }
+
+      .group-mark {
+        color: var(--danger);
+      }
+
+      .sender {
+        color: var(--accent-ink);
+        padding: 0 4px 2px;
       }
 
       .filters {

@@ -32,7 +32,7 @@ export function ConversationList({ rows, onOpen }: Props) {
             </View>
             <View style={styles.text}>
               <View style={styles.titleRow}>
-                {row.kind === 'group' ? <Icon name="users" size={14} color={colors.text2} /> : null}
+                {row.kind === 'group' ? <Icon name="users" size={14} color={colors.danger} /> : null}
                 <Text variant="h3" numberOfLines={1} style={styles.flex}>
                   {row.name}
                 </Text>

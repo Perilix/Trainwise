@@ -26,5 +26,5 @@ export default function AthleteGroupChatScreen() {
     );
   }
 
-  return <ChatThread chat={chat} offlineLabel="Groupe" onBack={() => router.back()} />;
+  return <ChatThread chat={chat} offlineLabel="Groupe" showSenders onBack={() => router.back()} />;
 }

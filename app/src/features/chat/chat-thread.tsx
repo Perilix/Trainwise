@@ -27,9 +27,11 @@ type Props = {
   CitedSessionBody?: ComponentType<{ session: CitedSession }>;
   /** Bandeau glissé entre l'en-tête et le fil — les discussions de groupe, côté athlète. */
   above?: ReactNode;
+  /** Discussion à plusieurs : chaque bulle porte le nom de qui l'a écrite. */
+  showSenders?: boolean;
 };
 
-export function ChatThread({ chat, offlineLabel, headerRight, onBack, peerRole = 'athlete', onOpenSession, onCite, CitedSessionBody, above }: Props) {
+export function ChatThread({ chat, offlineLabel, headerRight, onBack, peerRole = 'athlete', onOpenSession, onCite, CitedSessionBody, above, showSenders }: Props) {
   const { colors } = useTheme();
   const [draft, setDraft] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -111,6 +113,11 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack, peerRole =
                 </View>
               ) : null}
               <View style={[styles.bubbleWrap, message.fromMe ? styles.mine : styles.theirs, message.sending && styles.sending]}>
+                {showSenders && !message.fromMe && message.senderName ? (
+                  <Text variant="caption" color="accentInk" style={styles.sender}>
+                    {message.senderName}
+                  </Text>
+                ) : null}
                 <View
                   style={[
                     styles.bubble,
@@ -228,6 +235,7 @@ const styles = StyleSheet.create({
   messageBlock: { gap: 10 },
   dayPill: { alignSelf: 'center', height: 24, paddingHorizontal: 10, borderRadius: radius.pill, justifyContent: 'center' },
   bubbleWrap: { maxWidth: '80%', gap: 4 },
+  sender: { paddingHorizontal: 4 },
   mine: { alignSelf: 'flex-end', alignItems: 'flex-end' },
   theirs: { alignSelf: 'flex-start', alignItems: 'flex-start' },
   sending: { opacity: 0.6 },
