@@ -10,6 +10,13 @@
   <% } %>
 </div>
 
+<% if (saved) { %>
+  <div class="alert alert-success"><i class="fa-solid fa-circle-check"></i> Plan mis à jour.</div>
+<% } %>
+<% if (blocked) { %>
+  <div class="alert alert-warning"><i class="fa-solid fa-lock"></i> Ce coach paie un abonnement Stripe : son plan ne se change pas depuis ici.</div>
+<% } %>
+
 <div class="card">
   <div class="table-wrap">
     <table>
@@ -41,8 +48,21 @@
           </td>
           <td>
             <% const pc = planColors[c.plan.id] || planColors.decouverte; %>
-            <span class="badge" style="background:<%= pc.bg %>;color:<%= pc.ink %>;"><%= c.plan.name %></span>
-            <% if (c.granted) { %><span class="text-small text-muted" title="Plan posé depuis le back-office">offert</span><% } %>
+            <% if (c.managed) { %>
+              <span class="badge" style="background:<%= pc.bg %>;color:<%= pc.ink %>;"><%= c.plan.name %></span>
+              <span class="text-small text-muted" title="Abonnement Stripe : se modifie chez Stripe"><i class="fa-solid fa-lock"></i></span>
+            <% } else { %>
+              <form method="POST" action="/coaches/<%= c._id %>/plan" style="margin:0;">
+                <input type="hidden" name="from" value="list">
+                <select name="planId" onchange="this.form.submit()"
+                        style="font-weight:600;font-size:0.78rem;padding:0.25rem 0.5rem;border-radius:8px;border:1px solid rgba(0,0,0,0.08);cursor:pointer;background:<%= pc.bg %>;color:<%= pc.ink %>;">
+                  <% plans.forEach(p => { %>
+                    <option value="<%= p.id %>" <%= c.plan.id === p.id ? 'selected' : '' %>><%= p.name %></option>
+                  <% }); %>
+                </select>
+              </form>
+              <% if (c.granted) { %><span class="text-small text-muted" title="Plan posé depuis le back-office">offert</span><% } %>
+            <% } %>
           </td>
           <td style="font-weight:700;color:<%= c.overLimit ? 'var(--danger, #ef4444)' : 'var(--success)' %>;">
             <%= c.accepted %><% if (c.plan.athletes !== null) { %><span class="text-muted text-small"> / <%= c.plan.athletes %></span><% } %>
