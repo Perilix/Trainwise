@@ -105,7 +105,7 @@ export type ApiSubscriptionRequest = { _id: string; athlete: ApiUserRef | null; 
 export type ApiPendingInvitation = { _id: string; athlete: ApiUserRef | null; invitedAt: string; inviteMethod: 'code' | 'direct' };
 
 /** Repère visuel d'un groupe, choisi par le coach. */
-export type GroupColor = 'bleu' | 'indigo' | 'turquoise' | 'rose' | 'sable' | 'ardoise';
+export type GroupColor = 'rouge' | 'bleu' | 'vert' | 'jaune' | 'orange' | 'violet' | 'rose';
 
 /** Groupe d'athlètes (GET /api/coach/groups). */
 export type ApiCoachGroup = {

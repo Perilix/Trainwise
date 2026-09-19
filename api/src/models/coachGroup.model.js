@@ -26,11 +26,15 @@ const coachGroupSchema = new mongoose.Schema(
       name: { type: String, trim: true, default: null },
       date: { type: Date, default: null }
     },
-    // Repère visuel choisi par le coach. On reste hors du code couleur de l'app
-    // (violet = coach, orange = Strava, rouge = non-lu, vert = fait).
+    // Repère visuel choisi par le coach. Les teintes sont pastel : elles
+    // étiquettent, elles ne signalent pas — de quoi cohabiter avec le code
+    // couleur de l'app sans s'y confondre.
+    //
+    // Les quatre dernières valeurs sont l'ancienne palette : elles restent
+    // acceptées pour les groupes déjà en base, mais ne sont plus proposées.
     color: {
       type: String,
-      enum: ['bleu', 'indigo', 'turquoise', 'rose', 'sable', 'ardoise'],
+      enum: ['rouge', 'bleu', 'vert', 'jaune', 'orange', 'violet', 'rose', 'indigo', 'turquoise', 'sable', 'ardoise'],
       default: 'bleu'
     },
     athletes: [

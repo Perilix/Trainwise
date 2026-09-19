@@ -21,13 +21,18 @@ const keepFollowed = (raw, allowed) => {
     .filter((id) => allowed.has(id) && !seen.has(id) && seen.add(id));
 };
 
-const COLORS = ['bleu', 'indigo', 'turquoise', 'rose', 'sable', 'ardoise'];
-const keepColor = (raw) => (COLORS.includes(raw) ? raw : 'bleu');
+const COLORS = ['rouge', 'bleu', 'vert', 'jaune', 'orange', 'violet', 'rose'];
+
+// L'ancienne palette, rendue dans la nouvelle : un groupe déjà créé garde un
+// repère proche de celui que le coach avait choisi.
+const LEGACY = { indigo: 'violet', turquoise: 'vert', sable: 'jaune', ardoise: 'bleu' };
+
+const keepColor = (raw) => (COLORS.includes(raw) ? raw : LEGACY[raw] || 'bleu');
 
 const shape = (group) => ({
   id: group._id,
   name: group.name,
-  color: group.color || 'bleu',
+  color: keepColor(group.color),
   race: group.race?.name ? { name: group.race.name, date: group.race.date } : null,
   athletes: (group.athletes || []).map((athlete) => ({
     id: athlete._id,

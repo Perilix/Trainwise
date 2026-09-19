@@ -379,7 +379,7 @@ export const sampleCoachGroups: ApiCoachGroup[] = [
   {
     id: 'grp-marathon',
     name: 'Marathon de Lyon',
-    color: 'indigo',
+    color: 'violet',
     race: { name: 'Marathon de Lyon', date: '2026-10-04T08:00:00.000Z' },
     athletes: [
       { id: 'ath-1', firstName: 'Camille', lastName: 'Rey' },
@@ -389,7 +389,7 @@ export const sampleCoachGroups: ApiCoachGroup[] = [
   {
     id: 'grp-piste',
     name: 'Groupe piste',
-    color: 'turquoise',
+    color: 'vert',
     race: null,
     athletes: [{ id: 'ath-3', firstName: 'Léa', lastName: 'Fournier' }],
   },

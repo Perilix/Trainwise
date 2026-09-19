@@ -46,7 +46,7 @@ export type ApiStatusData = {
 export type ApiPackageType = 'invited' | 'bronze' | 'silver' | 'gold';
 
 /** Repère visuel d'un groupe, choisi par le coach. */
-export type GroupColor = 'bleu' | 'indigo' | 'turquoise' | 'rose' | 'sable' | 'ardoise';
+export type GroupColor = 'rouge' | 'bleu' | 'vert' | 'jaune' | 'orange' | 'violet' | 'rose';
 
 /** Groupe d'athlètes (GET /api/coach/groups). */
 export type ApiCoachGroup = {
