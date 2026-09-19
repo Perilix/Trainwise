@@ -268,6 +268,18 @@ export function useCoachActions() {
       await api(`/api/coach/groups/${encodeURIComponent(id)}`, { method: 'DELETE' });
       invalidateApiCache();
     },
+    /** Le code est-il libre ? Le serveur valide aussi la forme. */
+    async checkInviteCode(code: string) {
+      if (!live) return { code, available: true };
+      return api<{ code: string; available: boolean; error?: string }>('/api/coach/invite/code/check', { query: { code } });
+    },
+    /** Le coach choisit son code : l'ancien cesse alors de fonctionner. */
+    async setInviteCode(code: string) {
+      if (!live) return code;
+      const response = await api<{ code: string }>('/api/coach/invite/code', { method: 'PUT', body: { code } });
+      invalidateApiCache();
+      return response.code;
+    },
     async generateInviteCode() {
       if (!live) return sampleInviteCode;
       return (await api<{ code: string }>('/api/coach/invite/code', { method: 'POST', body: {} })).code;

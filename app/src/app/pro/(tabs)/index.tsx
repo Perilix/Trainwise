@@ -84,17 +84,6 @@ export default function CoachHomeScreen() {
         <Button label="Inviter un athlète" icon="plus" fullWidth onPress={() => router.push('/pro/inviter')} />
       </Section>
 
-      <Section>
-        <Card padding={12}>
-          <View style={styles.statsGrid}>
-            <StatTile label="Athlètes" value={String(data.stats.athletes)} />
-            <StatTile label="Invitations" value={String(data.stats.pendingInvitations)} />
-            <StatTile label="Séances / sem." value={String(data.stats.sessionsThisWeek)} />
-            <StatTile label="Séances créées" value={data.stats.sessionsTotal.toLocaleString('fr-FR')} />
-          </View>
-        </Card>
-      </Section>
-
       {data.requests.length ? (
         <Section>
           <View style={styles.requestsTitle}>
@@ -243,20 +232,6 @@ function NewGroupCard() {
   );
 }
 
-function StatTile({ label, value }: { label: string; value: string }) {
-  const { colors } = useTheme();
-  return (
-    <View style={[styles.statTile, { backgroundColor: colors.subtle }]}>
-      <Text variant="stat" tabular>
-        {value}
-      </Text>
-      <Text variant="overline" style={styles.statTileLabel}>
-        {label}
-      </Text>
-    </View>
-  );
-}
-
 function CountBadge({ count }: { count: number }) {
   const { colors } = useTheme();
   return (
@@ -331,9 +306,6 @@ const styles = StyleSheet.create({
   shrink: { flexShrink: 1 },
   heading: { gap: 2, paddingTop: 4, paddingBottom: 14 },
   tight: { paddingBottom: 16 },
-  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  statTileLabel: { fontSize: 10, letterSpacing: 0.5 },
-  statTile: { flexBasis: '47%', flexGrow: 1, alignItems: 'center', paddingVertical: 12, borderRadius: radius.md, gap: 2 },
   requestsTitle: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   requestError: { marginTop: 12 },
   badge: { minWidth: 22, height: 22, paddingHorizontal: 6, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
