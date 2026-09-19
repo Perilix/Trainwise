@@ -30,7 +30,7 @@ const conversationSchema = new mongoose.Schema({
     },
     type: {
       type: String,
-      enum: ['text', 'image', 'document', 'session'],
+      enum: ['text', 'image', 'document', 'session', 'system'],
       default: 'text'
     }
   },

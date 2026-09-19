@@ -1,6 +1,8 @@
 const CoachAthlete = require('../models/coachAthlete.model');
 const CoachGroup = require('../models/coachGroup.model');
 const Conversation = require('../models/conversation.model');
+const Message = require('../models/message.model');
+const User = require('../models/user.model');
 const { createNotification } = require('./notification.controller');
 const { groupRoom } = require('../services/coachPlan.service');
 
@@ -44,22 +46,46 @@ const syncConversation = async (group, coach, allowed) => {
   const before = new Set(conversation.participants.map(String));
   const participants = [String(coach._id), ...(group.athletes || []).map(String).filter((id) => allowed.has(id))];
 
+  const arrived = participants.filter((id) => !before.has(id) && id !== String(coach._id));
+  const left = [...before].filter((id) => !participants.includes(id) && id !== String(coach._id));
+
   conversation.participants = participants;
   conversation.name = group.name;
   // Un ancien membre ne doit plus traîner de compteur de non-lus.
   for (const id of conversation.unreadCounts.keys()) {
     if (!participants.includes(id)) conversation.unreadCounts.delete(id);
   }
+
+  // Le fil raconte qui entre et qui sort : sans ça, un message d'un inconnu
+  // tombe du ciel.
+  if (arrived.length || left.length) {
+    const names = await User.find({ _id: { $in: [...arrived, ...left] } }).select('firstName lastName').lean();
+    const nameOf = (id) => {
+      const user = names.find((item) => String(item._id) === id);
+      return user ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Un athlète';
+    };
+    for (const id of arrived) await postSystemMessage(conversation, coach._id, `${nameOf(id)} a rejoint la discussion.`);
+    for (const id of left) await postSystemMessage(conversation, coach._id, `${nameOf(id)} a quitté la discussion.`);
+  }
+
   await conversation.save();
 
   // Les nouveaux venus n'ont pas demandé cette discussion : on les prévient.
-  await Promise.all(
-    participants
-      .filter((id) => !before.has(id) && id !== String(coach._id))
-      .map((athleteId) => notifyGroupChat(athleteId, coach, group.name, conversation._id))
-  );
+  await Promise.all(arrived.map((athleteId) => notifyGroupChat(athleteId, coach, group.name, conversation._id)));
 
   return conversation;
+};
+
+/**
+ * Pose une ligne dans le fil : « Untel a rejoint la discussion ».
+ *
+ * C'est un message de type `system` : il appartient à la conversation, pas à
+ * une personne, et s'affiche au centre sans bulle. Il ne compte pas comme non
+ * lu — personne n'a à y répondre.
+ */
+const postSystemMessage = async (conversation, coachId, content) => {
+  await Message.create({ conversation: conversation._id, sender: coachId, content, type: 'system' });
+  conversation.lastMessage = { content, sender: coachId, sentAt: new Date(), type: 'system' };
 };
 
 /** Prévient un athlète qu'il vient d'entrer dans la discussion d'un groupe. */

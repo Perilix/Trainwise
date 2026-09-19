@@ -361,7 +361,7 @@ export type ApiConversation = {
   name?: string;
   participants?: ApiUserRef[];
   otherParticipant?: ApiUserRef & { isOnline: boolean };
-  lastMessage?: { content: string; type: 'text' | 'image' | 'document'; sentAt: string | null };
+  lastMessage?: { content: string; type: 'text' | 'image' | 'document' | 'session' | 'system'; sentAt: string | null };
   unreadCount: number;
 };
 
@@ -378,7 +378,7 @@ export type ApiSessionRef = {
 export type ApiMessage = {
   _id: string;
   content: string;
-  type: 'text' | 'image' | 'document' | 'session';
+  type: 'text' | 'image' | 'document' | 'session' | 'system';
   sender: ApiUserRef | string;
   sessionRef?: ApiSessionRef;
   createdAt: string;

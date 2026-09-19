@@ -240,6 +240,8 @@ export type ChatMessage = {
   id: string;
   fromMe: boolean;
   text: string;
+  /** Ligne posée par l'app — une arrivée, un départ — et non par une personne. */
+  system?: boolean;
   /** Qui parle — affiché dans les discussions de groupe uniquement. */
   senderName?: string;
   senderInitials?: string;

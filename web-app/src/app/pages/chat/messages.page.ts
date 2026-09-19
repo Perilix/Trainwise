@@ -112,6 +112,9 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
               @if (message.dayLabel) {
                 <div class="day">{{ message.dayLabel }}</div>
               }
+              @if (message.system) {
+                <span class="system caption">{{ message.text }}</span>
+              } @else {
               @let speaking = active()?.kind === 'group' && !message.fromMe;
               <div class="bubble-wrap" [class.mine]="message.fromMe" [class.speaking]="speaking">
                 @if (speaking && message.senderName) {
@@ -146,6 +149,7 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
                 </div>
                 <span class="time caption muted-3">{{ message.timeLabel }}</span>
               </div>
+              }
             } @empty {
               <tw-state kind="empty" icon="chat" message="Démarre la conversation." />
             }
@@ -279,6 +283,14 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
 
       .sender {
         color: var(--accent-ink);
+      }
+
+      /* Une arrivée, un départ : la conversation le dit, personne ne l'a écrit. */
+      .system {
+        align-self: center;
+        color: var(--text3);
+        text-align: center;
+        padding: 2px 0;
       }
 
       .filters {

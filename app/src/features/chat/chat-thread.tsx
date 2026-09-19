@@ -114,6 +114,11 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack, peerRole =
                   <Text variant="caption">{message.dayLabel}</Text>
                 </View>
               ) : null}
+              {message.system ? (
+                <Text variant="caption" style={styles.system}>
+                  {message.text}
+                </Text>
+              ) : (
               <View style={[styles.bubbleWrap, message.fromMe ? styles.mine : styles.theirs, message.sending && styles.sending]}>
                 {speaking(message) && message.senderName ? (
                   <Text variant="caption" color="accentInk" style={styles.sender}>
@@ -146,6 +151,7 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack, peerRole =
                   </Text>
                 ) : null}
               </View>
+              )}
             </View>
           ))}
           {chat.typing ? (
@@ -250,6 +256,8 @@ const styles = StyleSheet.create({
   /** Nom et heure se calent sur la bulle, pas sur la pastille. */
   indented: { paddingLeft: 46 },
   sender: { paddingLeft: 46 },
+  /** Une arrivée, un départ : la conversation le dit, personne ne l'a écrit. */
+  system: { alignSelf: 'center', textAlign: 'center', paddingVertical: 2 },
   mine: { alignSelf: 'flex-end', alignItems: 'flex-end' },
   theirs: { alignSelf: 'flex-start', alignItems: 'flex-start' },
   sending: { opacity: 0.6 },

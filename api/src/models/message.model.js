@@ -18,7 +18,9 @@ const messageSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['text', 'image', 'document', 'session'],
+    // 'system' : une ligne posée par l'app, pas par une personne — une arrivée
+    // ou un départ dans une discussion de groupe.
+    enum: ['text', 'image', 'document', 'session', 'system'],
     default: 'text'
   },
   // Séance citée dans le message (type 'session'). Figée à l'envoi : la carte
