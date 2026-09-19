@@ -112,34 +112,36 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack, peerRole =
                   <Text variant="caption">{message.dayLabel}</Text>
                 </View>
               ) : null}
-              <View style={[styles.bubbleWrap, message.fromMe ? styles.mine : styles.theirs, message.sending && styles.sending]}>
-                {showSenders && !message.fromMe && message.senderName ? (
-                  <View style={styles.sender}>
-                    <Avatar initials={message.senderInitials ?? ''} size={22} tone={avatarToneFor(message.senderName)} />
-                    <Text variant="caption" color="accentInk">
+              <View style={[styles.line, message.fromMe ? styles.mine : styles.theirs]}>
+                {showSenders && !message.fromMe ? (
+                  <Avatar initials={message.senderInitials ?? ''} size={28} tone={avatarToneFor(message.senderName ?? message.id)} />
+                ) : null}
+                <View style={[styles.bubbleWrap, message.fromMe ? styles.alignEnd : styles.alignStart, message.sending && styles.sending]}>
+                  {showSenders && !message.fromMe && message.senderName ? (
+                    <Text variant="caption" color="accentInk" style={styles.sender}>
                       {message.senderName}
                     </Text>
+                  ) : null}
+                  <View
+                    style={[
+                      styles.bubble,
+                      message.fromMe
+                        ? { backgroundColor: colors.primary, borderBottomRightRadius: 6 }
+                        : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderBottomLeftRadius: 6 },
+                    ]}>
+                    <Text style={{ color: message.fromMe ? colors.onPrimary : colors.ink }}>{message.text}</Text>
                   </View>
-                ) : null}
-                <View
-                  style={[
-                    styles.bubble,
-                    message.fromMe
-                      ? { backgroundColor: colors.primary, borderBottomRightRadius: 6 }
-                      : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderBottomLeftRadius: 6 },
-                  ]}>
-                  <Text style={{ color: message.fromMe ? colors.onPrimary : colors.ink }}>{message.text}</Text>
+                  {message.session ? (
+                    <SessionCard session={message.session} onPress={onOpenSession ? () => onOpenSession(message.session!) : undefined}>
+                      {CitedSessionBody && message.session.kind === 'planned' ? <CitedSessionBody session={message.session} /> : null}
+                    </SessionCard>
+                  ) : null}
+                  {message.sending || message.timeLabel ? (
+                    <Text variant="caption" color="text3" style={styles.time}>
+                      {message.sending ? 'Envoi…' : message.timeLabel}
+                    </Text>
+                  ) : null}
                 </View>
-                {message.session ? (
-                  <SessionCard session={message.session} onPress={onOpenSession ? () => onOpenSession(message.session!) : undefined}>
-                    {CitedSessionBody && message.session.kind === 'planned' ? <CitedSessionBody session={message.session} /> : null}
-                  </SessionCard>
-                ) : null}
-                {message.sending || message.timeLabel ? (
-                  <Text variant="caption" color="text3" style={styles.time}>
-                    {message.sending ? 'Envoi…' : message.timeLabel}
-                  </Text>
-                ) : null}
               </View>
             </View>
           ))}
@@ -237,8 +239,12 @@ const styles = StyleSheet.create({
   firstMessage: { marginBottom: 12 },
   messageBlock: { gap: 10 },
   dayPill: { alignSelf: 'center', height: 24, paddingHorizontal: 10, borderRadius: radius.pill, justifyContent: 'center' },
-  bubbleWrap: { maxWidth: '80%', gap: 4 },
-  sender: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 2, paddingBottom: 1 },
+  /** La ligne d'un message : la pastille de l'auteur à gauche, la bulle à droite. */
+  line: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, maxWidth: '85%' },
+  bubbleWrap: { flexShrink: 1, gap: 4 },
+  alignStart: { alignItems: 'flex-start' },
+  alignEnd: { alignItems: 'flex-end' },
+  sender: { paddingHorizontal: 4 },
   mine: { alignSelf: 'flex-end', alignItems: 'flex-end' },
   theirs: { alignSelf: 'flex-start', alignItems: 'flex-start' },
   sending: { opacity: 0.6 },

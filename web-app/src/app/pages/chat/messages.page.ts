@@ -112,36 +112,38 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
               @if (message.dayLabel) {
                 <div class="day">{{ message.dayLabel }}</div>
               }
-              <div class="bubble-wrap" [class.mine]="message.fromMe">
-                @if (active()?.kind === 'group' && !message.fromMe && message.senderName) {
-                  <span class="sender">
-                    <tw-avatar [initials]="message.senderInitials ?? ''" tone="accent" [size]="22" />
-                    <span class="caption">{{ message.senderName }}</span>
-                  </span>
+              <div class="line" [class.mine]="message.fromMe">
+                @if (active()?.kind === 'group' && !message.fromMe) {
+                  <tw-avatar class="speaker" [initials]="message.senderInitials ?? ''" tone="accent" [size]="28" />
                 }
-                <div class="bubble" [class.mine]="message.fromMe">
-                  @if (message.session; as session) {
-                    <button type="button" class="quoted" (click)="openSession(session)">
-                      <span class="q-head">
-                        <span class="q-tile"><tw-icon [name]="session.sport === 'strength' ? 'dumbbell' : 'run'" [size]="16" /></span>
-                        <span class="stack grow">
-                          <span class="h3 truncate">{{ session.title }}</span>
-                          @if (session.meta) {
-                            <span class="caption muted">{{ session.meta }}</span>
-                          }
+                <div class="bubble-wrap" [class.mine]="message.fromMe">
+                  @if (active()?.kind === 'group' && !message.fromMe && message.senderName) {
+                    <span class="caption sender">{{ message.senderName }}</span>
+                  }
+                  <div class="bubble" [class.mine]="message.fromMe">
+                    @if (message.session; as session) {
+                      <button type="button" class="quoted" (click)="openSession(session)">
+                        <span class="q-head">
+                          <span class="q-tile"><tw-icon [name]="session.sport === 'strength' ? 'dumbbell' : 'run'" [size]="16" /></span>
+                          <span class="stack grow">
+                            <span class="h3 truncate">{{ session.title }}</span>
+                            @if (session.meta) {
+                              <span class="caption muted">{{ session.meta }}</span>
+                            }
+                          </span>
                         </span>
-                      </span>
-                      @if (profileOf(session); as segments) {
-                        <tw-workout-profile class="q-profile" [segments]="segments" [height]="30" [gap]="1" />
-                      }
-                      <span class="q-open">Ouvrir la séance <tw-icon name="chevron-right" [size]="14" [strokeWidth]="2" /></span>
-                    </button>
-                  }
-                  @if (message.text) {
-                    <span class="text">{{ message.text }}</span>
-                  }
+                        @if (profileOf(session); as segments) {
+                          <tw-workout-profile class="q-profile" [segments]="segments" [height]="30" [gap]="1" />
+                        }
+                        <span class="q-open">Ouvrir la séance <tw-icon name="chevron-right" [size]="14" [strokeWidth]="2" /></span>
+                      </button>
+                    }
+                    @if (message.text) {
+                      <span class="text">{{ message.text }}</span>
+                    }
+                  </div>
+                  <span class="time caption muted-3">{{ message.timeLabel }}</span>
                 </div>
-                <span class="time caption muted-3">{{ message.timeLabel }}</span>
               </div>
             } @empty {
               <tw-state kind="empty" icon="chat" message="Démarre la conversation." />
@@ -275,10 +277,7 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
       }
 
       .sender {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 0 2px 3px;
+        padding: 0 4px 1px;
         color: var(--accent-ink);
       }
 
@@ -535,12 +534,28 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
         border-radius: var(--r-pill);
       }
 
+      /* La ligne d'un message : la pastille de l'auteur à gauche, la bulle à droite. */
+      .line {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        max-width: 75%;
+      }
+
+      .line.mine {
+        align-self: flex-end;
+      }
+
+      .speaker {
+        margin-bottom: 2px;
+      }
+
       .bubble-wrap {
         display: flex;
         flex-direction: column;
         align-items: flex-start;
         gap: 4px;
-        max-width: 70%;
+        min-width: 0;
         /* Le message se pose au lieu d'apparaître d'un coup — à l'envoi comme
            à la réception, et au chargement du fil. */
         animation: message-in 0.22s cubic-bezier(0.2, 0.8, 0.3, 1) both;
