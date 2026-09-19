@@ -1,12 +1,7 @@
-// Développement uniquement — remplacé par environment.prod.ts / .staging.ts au build.
-// URLs vides = même origine que `ng serve`, qui relaie /api et /socket.io vers le
-// backend (proxy.conf.json). On échappe ainsi à la liste CORS de l'API, qui ne
-// connaît que le port 4200 : le front tourne désormais sur n'importe quel port.
 export const environment = {
   production: false,
+  /** Vide en dev : les appels passent par le proxy Angular (proxy.conf.json). */
   apiUrl: '',
-  socketUrl: '',
-  revenueCatAppleApiKey: 'appl_JLaKtBAiYzdaNfDEFQwTFKEMlzI',
-  revenueCatGoogleApiKey: 'goog_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-  mapboxToken: ''
+  /** Identifiant client OAuth « Web » du projet Google (même projet que l'app mobile). */
+  googleClientId: '1002254054572-jsf91rqbs3l57v3icof18gnrran0dsfd.apps.googleusercontent.com',
 };

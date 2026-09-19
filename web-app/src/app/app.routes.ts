@@ -1,191 +1,178 @@
 import { Routes } from '@angular/router';
-import { authGuard, guestGuard, homeGuard } from './guards/auth.guard';
-import { coachGuard } from './guards/coach.guard';
-import { athleteGuard } from './guards/athlete.guard';
+
+import { athleteGuard, authGuard, coachGuard, guestGuard } from './core/guards';
+import { ShellComponent } from './layout/shell.component';
 
 export const routes: Routes = [
-  // Pages publiques (exigées par les stores — accessibles sans connexion)
+  { path: '', pathMatch: 'full', redirectTo: 'accueil' },
+
+  // ---- Écrans publics ----
   {
-    path: 'privacy',
-    loadComponent: () => import('./pages/legal/privacy.component').then(m => m.PrivacyComponent)
+    path: 'connexion',
+    canActivate: [guestGuard],
+    loadComponent: () => import('./pages/auth/login.page').then((m) => m.LoginPage),
   },
   {
-    path: 'support',
-    loadComponent: () => import('./pages/legal/support.component').then(m => m.SupportComponent)
+    path: 'inscription',
+    canActivate: [guestGuard],
+    loadComponent: () => import('./pages/auth/register.page').then((m) => m.RegisterPage),
   },
   {
-    path: 'about',
-    loadComponent: () => import('./pages/about/about.component').then(m => m.AboutComponent)
+    path: 'mot-de-passe-oublie',
+    canActivate: [guestGuard],
+    loadComponent: () => import('./pages/auth/forgot-password.page').then((m) => m.ForgotPasswordPage),
   },
 
-  // Routes Athlète (bloquées pour les coachs)
+  // ---- Application connectée ----
   {
     path: '',
-    loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent),
-    canActivate: [homeGuard, athleteGuard]
+    component: ShellComponent,
+    canActivate: [authGuard],
+    children: [
+      // Athlète
+      {
+        path: 'accueil',
+        canActivate: [athleteGuard],
+        loadComponent: () => import('./pages/athlete/home.page').then((m) => m.AthleteHomePage),
+      },
+      {
+        path: 'planning',
+        canActivate: [athleteGuard],
+        loadComponent: () => import('./pages/athlete/planning.page').then((m) => m.AthletePlanningPage),
+      },
+      {
+        path: 'sorties',
+        canActivate: [athleteGuard],
+        loadComponent: () => import('./pages/athlete/runs.page').then((m) => m.AthleteRunsPage),
+      },
+      {
+        path: 'sorties/nouvelle',
+        canActivate: [athleteGuard],
+        loadComponent: () => import('./pages/athlete/log-run.page').then((m) => m.LogRunPage),
+      },
+      {
+        path: 'sorties/:id/deroule',
+        canActivate: [athleteGuard],
+        loadComponent: () => import('./pages/athlete/run-blocks.page').then((m) => m.AthleteRunBlocksPage),
+      },
+      {
+        path: 'sorties/:id',
+        canActivate: [athleteGuard],
+        loadComponent: () => import('./pages/athlete/run-detail.page').then((m) => m.RunDetailPage),
+      },
+      {
+        path: 'seance/:id',
+        canActivate: [athleteGuard],
+        loadComponent: () => import('./pages/athlete/session-detail.page').then((m) => m.SessionDetailPage),
+      },
+      {
+        path: 'muscu/:id',
+        canActivate: [athleteGuard],
+        loadComponent: () => import('./pages/athlete/strength.page').then((m) => m.AthleteStrengthPage),
+      },
+      {
+        path: 'muscu-realisee/:id',
+        canActivate: [athleteGuard],
+        loadComponent: () => import('./pages/athlete/strength-done.page').then((m) => m.AthleteStrengthDonePage),
+      },
+      {
+        path: 'compte',
+        canActivate: [athleteGuard],
+        loadComponent: () => import('./pages/athlete/account.page').then((m) => m.AthleteAccountPage),
+      },
+      {
+        path: 'connecteurs',
+        canActivate: [athleteGuard],
+        loadComponent: () => import('./pages/athlete/connectors.page').then((m) => m.AthleteConnectorsPage),
+      },
+      {
+        path: 'profil',
+        canActivate: [athleteGuard],
+        loadComponent: () => import('./pages/athlete/profile.page').then((m) => m.AthleteProfilePage),
+      },
+
+      // Coach
+      {
+        path: 'coach',
+        canActivate: [coachGuard],
+        loadComponent: () => import('./pages/coach/dashboard.page').then((m) => m.CoachDashboardPage),
+      },
+      {
+        path: 'coach/profil',
+        canActivate: [coachGuard],
+        loadComponent: () => import('./pages/coach/profile.page').then((m) => m.CoachProfilePage),
+      },
+      {
+        path: 'coach/bibliotheque',
+        canActivate: [coachGuard],
+        loadComponent: () => import('./pages/coach/library.page').then((m) => m.CoachLibraryPage),
+      },
+      {
+        path: 'coach/bibliotheque/editeur',
+        canActivate: [coachGuard],
+        loadComponent: () => import('./pages/coach/session-editor.page').then((m) => m.CoachSessionEditorPage),
+      },
+      {
+        path: 'coach/bibliotheque/editeur/:id',
+        canActivate: [coachGuard],
+        loadComponent: () => import('./pages/coach/session-editor.page').then((m) => m.CoachSessionEditorPage),
+      },
+      {
+        path: 'coach/bibliotheque/muscu',
+        canActivate: [coachGuard],
+        loadComponent: () => import('./pages/coach/strength-editor.page').then((m) => m.CoachStrengthEditorPage),
+      },
+      {
+        path: 'coach/bibliotheque/muscu/:id',
+        canActivate: [coachGuard],
+        loadComponent: () => import('./pages/coach/strength-editor.page').then((m) => m.CoachStrengthEditorPage),
+      },
+      {
+        path: 'coach/exercices',
+        canActivate: [coachGuard],
+        loadComponent: () => import('./pages/coach/exercises.page').then((m) => m.CoachExercisesPage),
+      },
+      {
+        path: 'coach/athletes/:id',
+        canActivate: [coachGuard],
+        loadComponent: () => import('./pages/coach/athlete-detail.page').then((m) => m.CoachAthletePage),
+      },
+      {
+        path: 'coach/athletes/:id/planning',
+        canActivate: [coachGuard],
+        loadComponent: () => import('./pages/coach/athlete-planning.page').then((m) => m.CoachAthletePlanningPage),
+      },
+      {
+        path: 'coach/athletes/:id/seance/:planId',
+        canActivate: [coachGuard],
+        loadComponent: () => import('./pages/coach/athlete-planned.page').then((m) => m.CoachAthletePlannedPage),
+      },
+      {
+        path: 'coach/athletes/:id/sortie/:runId',
+        canActivate: [coachGuard],
+        loadComponent: () => import('./pages/coach/athlete-session.page').then((m) => m.CoachAthleteSessionPage),
+      },
+      {
+        path: 'coach/athletes/:id/muscu/:sessionId',
+        canActivate: [coachGuard],
+        loadComponent: () => import('./pages/coach/athlete-strength.page').then((m) => m.CoachAthleteStrengthPage),
+      },
+
+      // Écrans partagés par les deux rôles
+      {
+        path: 'messages',
+        loadComponent: () => import('./pages/chat/messages.page').then((m) => m.MessagesPage),
+      },
+      {
+        path: 'notifications',
+        loadComponent: () => import('./pages/shared/notifications.page').then((m) => m.NotificationsPage),
+      },
+      {
+        path: 'boutique',
+        loadComponent: () => import('./pages/shared/shop.page').then((m) => m.ShopPage),
+      },
+    ],
   },
-  {
-    path: 'analyse',
-    loadComponent: () => import('./pages/home/home.component').then(m => m.HomeComponent),
-    canActivate: [authGuard, athleteGuard]
-  },
-  {
-    path: 'profile',
-    loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent),
-    canActivate: [authGuard, athleteGuard]
-  },
-  {
-    path: 'settings',
-    loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: 'planning',
-    loadComponent: () => import('./pages/planning/planning.component').then(m => m.PlanningComponent),
-    canActivate: [authGuard, athleteGuard]
-  },
-  {
-    path: 'planning/running-detail/:sessionId',
-    loadComponent: () => import('./pages/running-plan-detail/running-plan-detail.component').then(m => m.RunningPlanDetailComponent),
-    canActivate: [authGuard, athleteGuard]
-  },
-  {
-    path: 'planning/muscu-detail/:sessionId',
-    loadComponent: () => import('./pages/muscu-plan-detail/muscu-plan-detail.component').then(m => m.MuscuPlanDetailComponent),
-    canActivate: [authGuard, athleteGuard]
-  },
-  {
-    path: 'strength/log',
-    loadComponent: () => import('./pages/strength-log/strength-log.component').then(m => m.StrengthLogComponent),
-    canActivate: [authGuard, athleteGuard]
-  },
-  {
-    path: 'sorties',
-    loadComponent: () => import('./pages/sorties/sorties.component').then(m => m.SortiesComponent),
-    canActivate: [authGuard, athleteGuard]
-  },
-  {
-    path: 'run/:id',
-    loadComponent: () => import('./pages/run-detail/run-detail.component').then(m => m.RunDetailComponent),
-    canActivate: [authGuard, athleteGuard]
-  },
-  {
-    path: 'friends',
-    loadComponent: () => import('./pages/friends/friends.component').then(m => m.FriendsComponent),
-    canActivate: [authGuard, athleteGuard]
-  },
-  {
-    path: 'shop',
-    loadComponent: () => import('./pages/shop/shop.component').then(m => m.ShopComponent),
-    canActivate: [authGuard, athleteGuard]
-  },
-  {
-    path: 'discover-coach',
-    loadComponent: () => import('./pages/discover-coach/discover-coach.component').then(m => m.DiscoverCoachComponent),
-    canActivate: [authGuard, athleteGuard]
-  },
-  {
-    path: 'user/:id',
-    loadComponent: () => import('./pages/user-profile/user-profile.component').then(m => m.UserProfileComponent),
-    canActivate: [authGuard, athleteGuard]
-  },
-  {
-    path: 'chat',
-    loadComponent: () => import('./pages/chat/conversations-list/conversations-list.component').then(m => m.ConversationsListComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: 'chat/:id',
-    loadComponent: () => import('./pages/chat/conversation-detail/conversation-detail.component').then(m => m.ConversationDetailComponent),
-    canActivate: [authGuard]
-  },
-  // Routes Coach
-  {
-    path: 'coach',
-    loadComponent: () => import('./pages/coach/coach-dashboard/coach-dashboard.component').then(m => m.CoachDashboardComponent),
-    canActivate: [authGuard, coachGuard]
-  },
-  {
-    path: 'coach/athletes/:id',
-    loadComponent: () => import('./pages/coach/athlete-detail/athlete-detail.component').then(m => m.AthleteDetailComponent),
-    canActivate: [authGuard, coachGuard]
-  },
-  {
-    path: 'coach/athletes/:id/planning',
-    loadComponent: () => import('./pages/coach/athlete-planning/athlete-planning.component').then(m => m.AthletePlanningComponent),
-    canActivate: [authGuard, coachGuard]
-  },
-  {
-    path: 'coach/athletes/:athleteId/muscu-detail/:sessionId',
-    loadComponent: () => import('./pages/coach/muscu-detail/muscu-detail.component').then(m => m.MuscuDetailComponent),
-    canActivate: [authGuard, coachGuard]
-  },
-  {
-    path: 'coach/athletes/:athleteId/running-detail/:sessionId',
-    loadComponent: () => import('./pages/coach/running-detail/running-detail.component').then(m => m.RunningDetailComponent),
-    canActivate: [authGuard, coachGuard]
-  },
-  {
-    path: 'coach/athletes/:athleteId/run/:runId',
-    loadComponent: () => import('./pages/coach/athlete-run-detail/athlete-run-detail.component').then(m => m.AthleteRunDetailComponent),
-    canActivate: [authGuard, coachGuard]
-  },
-  {
-    path: 'coach/exercises',
-    loadComponent: () => import('./pages/coach/exercises-management/exercises-management.component').then(m => m.ExercisesManagementComponent),
-    canActivate: [authGuard, coachGuard]
-  },
-  {
-    path: 'coach/session-templates/new',
-    loadComponent: () => import('./pages/coach/session-template-editor/session-template-editor.component').then(m => m.SessionTemplateEditorComponent),
-    canActivate: [authGuard, coachGuard]
-  },
-  {
-    path: 'coach/session-templates/:id/edit',
-    loadComponent: () => import('./pages/coach/session-template-editor/session-template-editor.component').then(m => m.SessionTemplateEditorComponent),
-    canActivate: [authGuard, coachGuard]
-  },
-  {
-    path: 'coach/profile',
-    loadComponent: () => import('./pages/coach/coach-profile/coach-profile.component').then(m => m.CoachProfileComponent),
-    canActivate: [authGuard, coachGuard]
-  },
-  {
-    path: 'login',
-    loadComponent: () => import('./pages/login/login.component').then(m => m.LoginComponent),
-    canActivate: [guestGuard]
-  },
-  {
-    path: 'register',
-    loadComponent: () => import('./pages/register/register.component').then(m => m.RegisterComponent),
-    canActivate: [guestGuard]
-  },
-  {
-    path: 'forgot-password',
-    loadComponent: () => import('./pages/forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent),
-    canActivate: [guestGuard]
-  },
-  {
-    path: 'reset-password/:token',
-    loadComponent: () => import('./pages/reset-password/reset-password.component').then(m => m.ResetPasswordComponent),
-    canActivate: [guestGuard]
-  },
-  {
-    path: 'impersonate',
-    loadComponent: () => import('./pages/impersonate/impersonate.component').then(m => m.ImpersonateComponent)
-  },
-  {
-    path: 'notifications',
-    loadComponent: () => import('./pages/notifications/notifications.component').then(m => m.NotificationsComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: 'beta/feedback',
-    loadComponent: () => import('./pages/beta-feedback/beta-feedback.component').then(m => m.BetaFeedbackComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: '**',
-    redirectTo: ''
-  }
+
+  { path: '**', redirectTo: 'accueil' },
 ];
