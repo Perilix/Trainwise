@@ -5,7 +5,7 @@
 // Usage :
 //   node src/scripts/backfillPlannedTitles.js          → aperçu, n'écrit rien
 //   node src/scripts/backfillPlannedTitles.js --apply  → applique
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
 const mongoose = require('mongoose');
 
 const PlannedRun = require('../models/plannedRun.model');
@@ -24,7 +24,7 @@ const apply = process.argv.includes('--apply');
     .lean();
 
   if (!planned.length) {
-    console.log('Rien à rattraper.');
+    process.stdout.write(`Rien à rattraper.\n`);
     await mongoose.disconnect();
     return;
   }
@@ -38,14 +38,14 @@ const apply = process.argv.includes('--apply');
   for (const item of planned) {
     const name = nameById.get(item.templateRef.toString());
     if (!name) continue;
-    console.log(`${new Date(item.date).toISOString().slice(0, 10)} → « ${name} »`);
+    process.stdout.write(`${new Date(item.date).toISOString().slice(0, 10)} → « ${name} »\n`);
     if (apply) {
       await PlannedRun.updateOne({ _id: item._id }, { title: name });
       updated++;
     }
   }
 
-  console.log(apply ? `\n${updated} séance(s) renommée(s).` : `\n${planned.length} séance(s) concernée(s). Relancer avec --apply pour écrire.`);
+  process.stdout.write(`${apply ? `\n${updated} séance(s) renommée(s).` : `\n${planned.length} séance(s) concernée(s). Relancer avec --apply pour écrire.`}\n`);
   await mongoose.disconnect();
 })().catch((error) => {
   console.error(error);

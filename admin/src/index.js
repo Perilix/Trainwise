@@ -42,7 +42,7 @@ app.use('/feedbacks', feedbacksRoutes);
 
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/trainwise')
   .then(() => {
-    console.log('Connected to MongoDB');
-    app.listen(PORT, () => console.log(`Trainwise Admin running on port ${PORT}`));
+    process.stdout.write(`Connected to MongoDB\n`);
+    app.listen(PORT, () => process.stdout.write(`Trainwise Admin running on port ${PORT}\n`));
   })
   .catch(err => console.error('MongoDB connection error:', err));

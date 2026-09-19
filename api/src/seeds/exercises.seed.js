@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
 
 const Exercise = require('../models/exercise.model');
 
@@ -182,11 +182,11 @@ const exercises = [
 async function seedExercises() {
   try {
     await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/trainwise');
-    console.log('Connected to MongoDB');
+    process.stdout.write(`Connected to MongoDB\n`);
 
     // Supprimer les exercices existants
     await Exercise.deleteMany({});
-    console.log('Exercices existants supprimés');
+    process.stdout.write(`Exercices existants supprimés\n`);
 
     // Insérer les exercices un par un pour que les hooks pre-save s'exécutent (génération slug)
     const created = [];
@@ -194,9 +194,9 @@ async function seedExercises() {
       const exercise = new Exercise(exerciseData);
       await exercise.save();
       created.push(exercise);
-      console.log(`  ✓ ${exercise.name} (${exercise.slug})`);
+      process.stdout.write(`  ${exercise.name} (${exercise.slug})\n`);
     }
-    console.log(`\n${created.length} exercices créés avec succès !`);
+    process.stdout.write(`\n${created.length} exercices créés avec succès !\n`);
 
     process.exit(0);
   } catch (error) {

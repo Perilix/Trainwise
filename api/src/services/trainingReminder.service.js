@@ -104,7 +104,6 @@ async function runDaily(now = new Date()) {
   const sessions = await remindTodaySessions(now);
   const feedback = await remindMissingFeedback(now);
   const competitions = await remindCompetitions(now);
-  console.log(`📣 [rappels] ${sessions} séance(s) du jour, ${feedback} ressenti(s) à compléter, ${competitions} échéance(s) de course`);
   return { sessions, feedback, competitions };
 }
 

@@ -9,7 +9,7 @@ function start() {
     try {
       await runDaily();
     } catch (e) {
-      console.error('❌ [reengagement] erreur run quotidien:', e);
+      console.error('[reengagement] erreur run quotidien:', e);
     }
   }, { timezone: TIMEZONE });
 
@@ -18,7 +18,7 @@ function start() {
     try {
       await runWeeklyRecap();
     } catch (e) {
-      console.error('❌ [reengagement] erreur récap hebdo:', e);
+      console.error('[reengagement] erreur récap hebdo:', e);
     }
   }, { timezone: TIMEZONE });
 }
