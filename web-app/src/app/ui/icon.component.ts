@@ -51,6 +51,8 @@ const PATHS: Record<string, string> = {
   copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/>',
   watch: '<rect x="6" y="6" width="12" height="12" rx="3"/><path d="M9.5 6V3.5h5V6M9.5 18v2.5h5V18M12 9.5V12l1.5 1"/>',
   heart: '<path d="M12 20.3 4.3 12.6a4.7 4.7 0 0 1 6.6-6.7l1.1 1 1.1-1a4.7 4.7 0 0 1 6.6 6.7z"/>',
+  ticket:
+    '<path d="M4 8V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 8v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-8z"/><path d="M12 6v3M12 15v3"/>',
   gauge: '<path d="m12 14 4-4"/><path d="M3.5 18a9.5 9.5 0 1 1 17 0"/>',
   ban: '<circle cx="12" cy="12" r="9"/><path d="m5.7 5.7 12.6 12.6"/>',
   trophy: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>',

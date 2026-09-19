@@ -1,19 +1,42 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
+import { ApiError } from '../../core/api.service';
 import { load } from '../../core/load';
 import { CoachService } from '../../data/coach.service';
 import { ATHLETE_STATUS_STYLE } from '../../domain/coach.status';
+import type { CoachGroup, GroupColor } from '../../domain/coach.types';
 import { AvatarComponent } from '../../ui/avatar.component';
 import { IconComponent } from '../../ui/icon.component';
+import { InviteCodeComponent } from '../../ui/invite-code.component';
 import { PageHeaderComponent } from '../../ui/page-header.component';
 import { StateViewComponent } from '../../ui/state-view.component';
+
+/**
+ * Les couleurs proposées pour un groupe. Elles restent en dehors du code
+ * couleur de l'app (violet = coach, orange = Strava, rouge = non-lu,
+ * vert = fait) : un groupe est un repère, pas un statut.
+ */
+const GROUP_TINT: Record<GroupColor, { soft: string; ink: string }> = {
+  bleu: { soft: '#E1F1FB', ink: '#0077B6' },
+  indigo: { soft: '#E7E9FA', ink: '#4F5BD5' },
+  turquoise: { soft: '#DEF2F1', ink: '#0E8F8C' },
+  rose: { soft: '#FAE7F0', ink: '#C0547F' },
+  sable: { soft: '#F3EBDC', ink: '#96702F' },
+  ardoise: { soft: '#E8ECEF', ink: '#4C5B66' },
+};
+
+const GROUP_COLORS = (Object.keys(GROUP_TINT) as GroupColor[]).map((id) => ({
+  id,
+  label: id[0].toUpperCase() + id.slice(1),
+  dot: GROUP_TINT[id].ink,
+}));
 
 @Component({
   selector: 'tw-coach-dashboard',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AvatarComponent, IconComponent, PageHeaderComponent, RouterLink, StateViewComponent],
+  imports: [AvatarComponent, IconComponent, InviteCodeComponent, PageHeaderComponent, RouterLink, StateViewComponent],
   template: `
     <main class="page">
       <tw-page-header title="Espace coach" subtitle="Gérez vos athlètes et leurs entraînements.">
@@ -34,17 +57,98 @@ import { StateViewComponent } from '../../ui/state-view.component';
           <button class="btn btn-ghost btn-sm" (click)="home.reload()">Réessayer</button>
         </tw-state>
       } @else if (home.data(); as data) {
-        <div class="kpis">
-          <div class="card kpi"><span class="small muted">Athlètes</span><span class="value num">{{ data.stats.athletes }}</span></div>
-          <div class="card kpi"><span class="small muted">Invitations en attente</span><span class="value num">{{ data.stats.pendingInvitations }}</span></div>
-          <div class="card kpi"><span class="small muted">Séances cette semaine</span><span class="value num">{{ data.stats.sessionsThisWeek }}</span></div>
-          <div class="card kpi"><span class="small muted">Séances totales</span><span class="value num">{{ data.stats.sessionsTotal }}</span></div>
+        <tw-invite-code [code]="invitations.data()?.code ?? null" (changed)="onCodeChanged()" />
+
+        <div class="tabs">
+          <button type="button" class="tab" [class.on]="tab() === 'athletes'" (click)="tab.set('athletes')">
+            Athlètes<span class="count num">{{ data.athletes.length }}</span>
+          </button>
+          <button type="button" class="tab" [class.on]="tab() === 'groups'" (click)="tab.set('groups')">
+            Groupes<span class="count num">{{ groups.data()?.length ?? 0 }}</span>
+          </button>
         </div>
 
+        @if (tab() === 'groups') {
+          <div class="group-head">
+            <div class="search wide">
+              <tw-icon name="search" [size]="16" />
+              <input placeholder="Rechercher un groupe" [value]="groupSearch()" (input)="groupSearch.set(value($event))" />
+            </div>
+            <span class="caption muted grow">Un athlète peut appartenir à plusieurs groupes.</span>
+            <button class="btn btn-primary btn-sm" type="button" (click)="openGroup(null)">
+              <tw-icon name="plus" [size]="17" [strokeWidth]="2" />
+              Nouveau groupe
+            </button>
+          </div>
+
+          @if (groups.loading()) {
+            <tw-state kind="loading" />
+          } @else {
+            <div class="groups">
+              @for (group of visibleGroups(); track group.id) {
+                <section class="card group">
+                  <div class="group-top">
+                    <span class="tile" [style.background]="tint(group.color).soft" [style.color]="tint(group.color).ink">
+                      <tw-icon name="friends" [size]="20" />
+                    </span>
+                    <div class="stack grow">
+                      <span class="h3">{{ group.name }}</span>
+                      <span class="small muted">{{ groupSubtitle(group) }}</span>
+                    </div>
+                    <button class="icon-btn" type="button" (click)="openGroup(group)" aria-label="Modifier le groupe">
+                      <tw-icon name="edit" [size]="17" />
+                    </button>
+                  </div>
+
+                  <div class="members">
+                    @for (member of group.athletes.slice(0, 5); track member.id) {
+                      <tw-avatar [initials]="member.initials" tone="accent" [size]="30" />
+                    }
+                    @if (group.athletes.length > 5) {
+                      <span class="more num">+{{ group.athletes.length - 5 }}</span>
+                    }
+                    <span class="small muted">{{ group.athletes.length }} athlète{{ group.athletes.length > 1 ? 's' : '' }}</span>
+                  </div>
+
+                  <div class="group-actions">
+                    <button class="btn btn-ghost btn-sm grow" type="button" (click)="showGroup(group)">
+                      <tw-icon name="friends" [size]="16" [strokeWidth]="2" />
+                      Voir les athlètes
+                    </button>
+                  </div>
+                </section>
+              }
+
+              <button type="button" class="card new-group" (click)="openGroup(null)">
+                <span class="plus"><tw-icon name="plus" [size]="20" [strokeWidth]="2" /></span>
+                <span class="h3">Nouveau groupe</span>
+                <span class="small muted">Rassemblez les athlètes qui visent la même course ou suivent le même plan.</span>
+              </button>
+            </div>
+          }
+        }
+
+        @if (tab() === 'athletes') {
         <div class="cols">
           <section class="card table">
             <div class="table-head">
-              <span class="h2">Mes athlètes</span>
+              @if (activeGroup(); as group) {
+                <div class="filter">
+                  <span class="h2">{{ group.name }}</span>
+                  <button
+                    class="chip"
+                    type="button"
+                    [style.background]="tint(group.color).soft"
+                    [style.color]="tint(group.color).ink"
+                    (click)="groupFilter.set(null)"
+                  >
+                    Groupe · {{ group.athletes.length }}
+                    <tw-icon name="close" [size]="13" [strokeWidth]="2" />
+                  </button>
+                </div>
+              } @else {
+                <span class="h2">Mes athlètes</span>
+              }
               <div class="search">
                 <tw-icon name="search" [size]="16" />
                 <input placeholder="Rechercher un athlète" [value]="search()" (input)="search.set(value($event))" />
@@ -95,63 +199,94 @@ import { StateViewComponent } from '../../ui/state-view.component';
             }
           </section>
 
-          <div class="side">
-            @if (data.requests.length) {
-              <section class="card card-pad">
-                <div class="title-row">
-                  <span class="h2">Demandes d'abonnement</span>
-                  <span class="chip chip-accent">{{ data.requests.length }}</span>
-                </div>
-                @for (request of data.requests; track request.id) {
-                  <div class="request">
-                    <div class="who">
-                      <tw-avatar [initials]="request.initials" tone="accent" [size]="40" />
-                      <div class="stack grow">
-                        <span class="h3">{{ request.name }}</span>
-                        <span class="small muted">{{ request.requestedLabel }}</span>
-                      </div>
-                      <span class="chip">{{ request.offer }}</span>
-                    </div>
-                    <div class="request-actions">
-                      <button class="btn btn-primary btn-sm grow" type="button" (click)="respond(request.id, true)">
-                        <tw-icon name="check" [size]="16" [strokeWidth]="2" />
-                        Accepter
-                      </button>
-                      <button class="btn btn-ghost btn-sm grow" type="button" (click)="respond(request.id, false)">Refuser</button>
-                    </div>
-                  </div>
+        </div>
+        }
+      }
+
+      @if (groupOpen()) {
+        <div class="scrim" (click)="closeGroup()">
+          <div class="modal card" (click)="$event.stopPropagation()">
+            <div class="spread">
+              <span class="h2">{{ editing() ? 'Modifier le groupe' : 'Nouveau groupe' }}</span>
+              <button class="icon-btn" type="button" (click)="closeGroup()" aria-label="Fermer">
+                <tw-icon name="close" [size]="18" />
+              </button>
+            </div>
+
+            <div class="field mt">
+              <label for="group-name">Nom du groupe</label>
+              <input id="group-name" class="input" placeholder="Marathon de Lyon" [value]="groupName()" (input)="groupName.set(value($event))" />
+            </div>
+
+            <div class="field mt-sm">
+              <label>Couleur</label>
+              <div class="swatches">
+                @for (choice of colors; track choice.id) {
+                  <button
+                    type="button"
+                    class="swatch"
+                    [class.on]="color() === choice.id"
+                    [style.background]="choice.dot"
+                    [attr.aria-label]="choice.label"
+                    [title]="choice.label"
+                    (click)="color.set(choice.id)"
+                  ></button>
                 }
-              </section>
+              </div>
+            </div>
+
+            <div class="two mt-sm">
+              <div class="field">
+                <label for="group-race">Course visée <span class="muted">— facultatif</span></label>
+                <input id="group-race" class="input" placeholder="Marathon de Lyon" [value]="raceName()" (input)="raceName.set(value($event))" />
+              </div>
+              <div class="field">
+                <label for="group-date">Date</label>
+                <input id="group-date" class="input" type="date" [value]="raceDate()" (change)="raceDate.set(value($event))" />
+              </div>
+            </div>
+
+            <div class="picker-head">
+              <span class="caption muted grow">Athlètes</span>
+              <span class="caption muted-3">
+                <span class="num">{{ picked().size }}</span> sélectionné{{ picked().size > 1 ? 's' : '' }} sur
+                <span class="num">{{ home.data()?.athletes?.length ?? 0 }}</span>
+              </span>
+            </div>
+            <div class="picker scroll-y">
+              @for (athlete of home.data()?.athletes ?? []; track athlete.id) {
+                <button type="button" class="pick" (click)="togglePick(athlete.id)">
+                  <span class="box" [class.on]="picked().has(athlete.id)">
+                    @if (picked().has(athlete.id)) {
+                      <tw-icon name="check" [size]="12" [strokeWidth]="3" />
+                    }
+                  </span>
+                  <tw-avatar [initials]="athlete.initials" tone="accent" [size]="30" />
+                  <span class="h3 grow">{{ athlete.name }}</span>
+                  <span class="caption muted">{{ athlete.level }}</span>
+                </button>
+              }
+            </div>
+
+            @if (groupError()) {
+              <p class="err small">
+                {{ groupError() }}
+                @if (groupBlocked()) {
+                  <a class="link" routerLink="/coach/abonnement" (click)="closeGroup()">Voir les plans</a>
+                }
+              </p>
             }
 
-            <section class="card card-pad">
-              <span class="h2">Invitations en attente</span>
-              @if (invitations.data(); as invite) {
-                @for (pending of invite.pending; track pending.id) {
-                  <div class="who mt">
-                    <tw-avatar [initials]="pending.initials" tone="subtle" [size]="40" />
-                    <div class="stack grow">
-                      <span class="h3">{{ pending.name }}</span>
-                      <span class="small muted">{{ pending.sentLabel }}</span>
-                    </div>
-                    <span class="chip chip-warn"><tw-icon name="clock" [size]="13" [strokeWidth]="2" />En attente</span>
-                  </div>
-                } @empty {
-                  <p class="body muted mt-sm">Aucune invitation en attente.</p>
-                }
-                @if (invite.code) {
-                  <div class="code">
-                    <div class="stack grow">
-                      <span class="caption muted">Code d'invitation</span>
-                      <span class="code-value num">{{ invite.code }}</span>
-                    </div>
-                    <button class="icon-btn" type="button" (click)="copyCode(invite.code!)" aria-label="Copier le code">
-                      <tw-icon name="copy" [size]="18" />
-                    </button>
-                  </div>
-                }
+            <div class="modal-actions">
+              @if (editing()) {
+                <button class="btn btn-ghost btn-sm danger-text" type="button" (click)="removeGroup()">Supprimer</button>
               }
-            </section>
+              <span class="grow"></span>
+              <button class="btn btn-ghost" type="button" (click)="closeGroup()">Annuler</button>
+              <button class="btn btn-primary" type="button" [disabled]="!groupName().trim() || savingGroup()" (click)="saveGroup()">
+                {{ savingGroup() ? 'Enregistrement…' : editing() ? 'Enregistrer' : 'Créer le groupe' }}
+              </button>
+            </div>
           </div>
         </div>
       }
@@ -195,28 +330,255 @@ import { StateViewComponent } from '../../ui/state-view.component';
         gap: 24px;
       }
 
-      .kpis {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 16px;
+
+
+
+      .tabs {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px;
+        border-radius: 14px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        align-self: flex-start;
       }
 
-      .kpi {
+      /* Onglet actif : pastille sobre et encre, jamais du bleu (DA). */
+      .tab {
+        height: 38px;
+        padding: 0 16px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text3);
+        cursor: pointer;
+      }
+
+      .tab.on {
+        background: var(--subtle);
+        color: var(--ink);
+        font-weight: 600;
+      }
+
+      .tab .count {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text3);
+      }
+
+      .tab.on .count {
+        color: var(--text2);
+      }
+
+      .filter {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .filter .chip {
+        cursor: pointer;
+      }
+
+      .group-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .search.wide {
+        width: 300px;
+      }
+
+      .groups {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        align-items: start;
+      }
+
+      .group {
         padding: 18px 20px;
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 14px;
       }
 
-      .kpi .value {
-        font-size: 28px;
-        line-height: 36px;
+      .group-top {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .tile {
+        width: 40px;
+        height: 40px;
+        border-radius: var(--r-md);
+        background: var(--subtle);
+        color: var(--text2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .members {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .more {
+        width: 30px;
+        height: 30px;
+        border-radius: var(--r-pill);
+        background: var(--subtle);
+        color: var(--text2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
         font-weight: 600;
+      }
+
+      .group-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border);
+      }
+
+      .two {
+        display: grid;
+        grid-template-columns: 1fr 140px;
+        gap: 12px;
+      }
+
+      .picker-head {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      .picker {
+        max-height: 260px;
+        margin-top: 4px;
+        border: 1px solid var(--border);
+        border-radius: var(--r-md);
+      }
+
+      .pick {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 9px 12px;
+        text-align: left;
+        cursor: pointer;
+        color: var(--ink);
+      }
+
+      .pick + .pick {
+        border-top: 1px solid var(--border);
+      }
+
+      .pick:hover {
+        background: var(--bg);
+      }
+
+      .box {
+        width: 18px;
+        height: 18px;
+        border-radius: 5px;
+        border: 1.5px solid var(--border-strong);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        color: #fff;
+      }
+
+      .box.on {
+        background: var(--brand);
+        border-color: var(--brand);
+      }
+
+      .swatches {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .swatch {
+        width: 30px;
+        height: 30px;
+        border-radius: var(--r-pill);
+        cursor: pointer;
+        box-shadow: 0 0 0 0 transparent;
+        transition: box-shadow 0.12s ease;
+      }
+
+      .swatch.on {
+        box-shadow:
+          0 0 0 2px var(--surface),
+          0 0 0 4px var(--ink);
+      }
+
+      /* Ajouter un groupe depuis la grille elle-même, à la place qu'il occupera. */
+      .new-group {
+        min-height: 168px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-align: center;
+        border-style: dashed;
+        background: none;
+        cursor: pointer;
+      }
+
+      .new-group:hover {
+        background: var(--surface);
+        border-color: var(--border-strong);
+      }
+
+      .new-group .plus {
+        width: 44px;
+        height: 44px;
+        border-radius: var(--r-pill);
+        background: var(--subtle);
+        color: var(--text2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 2px;
+      }
+
+      .new-group .small {
+        max-width: 240px;
+      }
+
+      .danger-text {
+        color: var(--danger);
+      }
+
+      @media (max-width: 1280px) {
+        .groups {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
       }
 
       .cols {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 360px;
+        grid-template-columns: minmax(0, 1fr);
         gap: 20px;
         align-items: start;
       }
@@ -308,47 +670,13 @@ import { StateViewComponent } from '../../ui/state-view.component';
         color: var(--ink);
       }
 
-      .side {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-      }
 
-      .title-row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
 
-      .request {
-        padding: 14px 0;
-      }
 
       .request + .request {
         border-top: 1px solid var(--border);
       }
 
-      .request-actions {
-        display: flex;
-        gap: 8px;
-        margin-top: 12px;
-      }
-
-      .code {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-top: 16px;
-        padding: 12px 14px;
-        border-radius: var(--r-md);
-        background: var(--subtle);
-      }
-
-      .code-value {
-        font-size: 18px;
-        font-weight: 600;
-        letter-spacing: 0.08em;
-      }
 
       .mt {
         margin-top: 14px;
@@ -398,6 +726,34 @@ export class CoachDashboardPage {
 
   readonly home = load(() => this.coach.home$());
   readonly invitations = load(() => this.coach.invitations$());
+  readonly groups = load(() => this.coach.groups$());
+
+  readonly tab = signal<'athletes' | 'groups'>('athletes');
+  readonly groupSearch = signal('');
+
+  readonly groupOpen = signal(false);
+  readonly editing = signal<CoachGroup | null>(null);
+  readonly groupName = signal('');
+  readonly color = signal<GroupColor>('bleu');
+  readonly raceName = signal('');
+  readonly raceDate = signal('');
+  readonly picked = signal<Set<string>>(new Set());
+  readonly savingGroup = signal(false);
+  readonly groupError = signal('');
+  /** Vrai quand c'est l'abonnement qui bloque : on propose alors les plans. */
+  readonly groupBlocked = signal(false);
+
+  readonly colors = GROUP_COLORS;
+
+  tint(color: GroupColor) {
+    return GROUP_TINT[color] ?? GROUP_TINT.bleu;
+  }
+
+  readonly visibleGroups = computed(() => {
+    const term = this.groupSearch().trim().toLowerCase();
+    const groups = this.groups.data() ?? [];
+    return term ? groups.filter((group) => group.name.toLowerCase().includes(term)) : groups;
+  });
 
   readonly search = signal('');
   readonly inviteOpen = signal(false);
@@ -405,9 +761,19 @@ export class CoachDashboardPage {
   readonly inviteError = signal('');
   readonly inviteDone = signal(false);
 
+  /** Groupe sur lequel la liste est filtrée, quand on arrive depuis l'onglet Groupes. */
+  readonly groupFilter = signal<string | null>(null);
+
+  readonly activeGroup = computed(() => (this.groups.data() ?? []).find((group) => group.id === this.groupFilter()) ?? null);
+
   readonly filtered = computed(() => {
     const term = this.search().trim().toLowerCase();
-    const athletes = this.home.data()?.athletes ?? [];
+    const group = this.activeGroup();
+    let athletes = this.home.data()?.athletes ?? [];
+    if (group) {
+      const members = new Set(group.athletes.map((athlete) => athlete.id));
+      athletes = athletes.filter((athlete) => members.has(athlete.id));
+    }
     if (!term) return athletes;
     return athletes.filter((athlete) => `${athlete.name} ${athlete.email}`.toLowerCase().includes(term));
   });
@@ -424,8 +790,86 @@ export class CoachDashboardPage {
     void this.router.navigate(['/coach/athletes', id], { queryParams: { vue: 'planning' } });
   }
 
-  respond(id: string, accept: boolean) {
-    this.coach.respondToRequest(id, accept).subscribe({ next: () => this.home.reload(true) });
+  groupSubtitle(group: CoachGroup) {
+    if (!group.race) return 'Aucune course visée';
+    return [group.race.name, group.race.countdown ?? group.race.dateLabel].filter(Boolean).join(' · ');
+  }
+
+  /** Voir les athlètes d'un groupe : on revient à la liste, filtrée sur eux. */
+  showGroup(group: CoachGroup) {
+    this.search.set('');
+    this.groupFilter.set(group.id);
+    this.tab.set('athletes');
+  }
+
+  openGroup(group: CoachGroup | null) {
+    this.editing.set(group);
+    this.groupName.set(group?.name ?? '');
+    this.color.set(group?.color ?? 'bleu');
+    this.raceName.set(group?.race?.name ?? '');
+    this.raceDate.set('');
+    this.picked.set(new Set(group?.athletes.map((athlete) => athlete.id) ?? []));
+    this.groupError.set('');
+    this.groupBlocked.set(false);
+    this.groupOpen.set(true);
+  }
+
+  closeGroup() {
+    this.groupOpen.set(false);
+    this.editing.set(null);
+  }
+
+  togglePick(id: string) {
+    this.picked.update((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  saveGroup() {
+    if (this.savingGroup()) return;
+    this.savingGroup.set(true);
+    this.groupError.set('');
+    this.groupBlocked.set(false);
+    const body = {
+      name: this.groupName().trim(),
+      color: this.color(),
+      athletes: [...this.picked()],
+      raceName: this.raceName().trim() || undefined,
+      raceDate: this.raceDate() || undefined,
+    };
+    const current = this.editing();
+    const request = current ? this.coach.updateGroup(current.id, body) : this.coach.createGroup(body);
+    request.subscribe({
+      next: () => {
+        this.savingGroup.set(false);
+        this.closeGroup();
+        this.groups.reload(true);
+      },
+      error: (err: unknown) => {
+        this.savingGroup.set(false);
+        this.groupBlocked.set(err instanceof ApiError && err.status === 402);
+        this.groupError.set(err instanceof ApiError ? err.message : 'Enregistrement impossible.');
+      },
+    });
+  }
+
+  /** Supprimer le groupe ne touche pas aux athlètes : ils restent suivis. */
+  removeGroup() {
+    const current = this.editing();
+    if (!current || this.savingGroup()) return;
+    this.savingGroup.set(true);
+    this.coach.deleteGroup(current.id).subscribe({
+      next: () => {
+        this.savingGroup.set(false);
+        this.closeGroup();
+        if (this.groupFilter() === current.id) this.groupFilter.set(null);
+        this.groups.reload(true);
+      },
+      error: () => this.savingGroup.set(false),
+    });
   }
 
   openInvite() {
@@ -443,16 +887,19 @@ export class CoachDashboardPage {
         this.invitations.reload(true);
         this.home.reload(true);
       },
-      error: () => this.inviteError.set("Cette adresse ne correspond à aucun compte Trainwise."),
+      // Le serveur sait pourquoi il refuse : plan plein, athlète déjà suivi…
+      error: (err: unknown) =>
+        this.inviteError.set(err instanceof ApiError ? err.message : 'Cette adresse ne correspond à aucun compte Trainwise.'),
     });
   }
 
+  /** Tirer un code au hasard reste possible depuis la fenêtre d'invitation. */
   newCode() {
     this.coach.generateInviteCode().subscribe({ next: () => this.invitations.reload(true) });
   }
 
-  copyCode(code: string) {
-    void navigator.clipboard?.writeText(code);
+  onCodeChanged() {
+    this.invitations.reload(true);
   }
 
   value(event: Event) {

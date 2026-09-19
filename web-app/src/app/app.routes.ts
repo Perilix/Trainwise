@@ -103,6 +103,16 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/coach/profile.page').then((m) => m.CoachProfilePage),
       },
       {
+        path: 'coach/abonnement',
+        canActivate: [coachGuard],
+        loadComponent: () => import('./pages/coach/billing.page').then((m) => m.CoachBillingPage),
+      },
+      {
+        path: 'coach/stats',
+        canActivate: [coachGuard],
+        loadComponent: () => import('./pages/coach/stats.page').then((m) => m.CoachStatsPage),
+      },
+      {
         path: 'coach/bibliotheque',
         canActivate: [coachGuard],
         loadComponent: () => import('./pages/coach/library.page').then((m) => m.CoachLibraryPage),

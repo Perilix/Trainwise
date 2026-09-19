@@ -7,6 +7,7 @@ const Competition = require('../models/competition.model');
 const crypto = require('crypto');
 const { createNotification } = require('./notification.controller');
 const { computeAthleteStatus, isWorse } = require('../services/athleteStatus.service');
+const { athleteRoom } = require('../services/coachPlan.service');
 
 // Générer un code d'invitation unique
 const generateUniqueCode = () => {
@@ -43,7 +44,7 @@ exports.getAthletes = async (req, res) => {
     }
 
     const athletes = await Promise.all(relationships.map(async (rel) => {
-      const statusData = await computeAthleteStatus(rel.athlete._id);
+      const statusData = await computeAthleteStatus(rel.athlete._id, now, req.user.coachAlertRules);
 
       return {
         _id: rel.athlete._id,
@@ -158,7 +159,7 @@ exports.getAthleteById = async (req, res) => {
     ].sort((a, b) => new Date(b.date) - new Date(a.date));
 
     // Statut courant (calcul à la volée) + évolution (historique persisté par le job)
-    const statusData = await computeAthleteStatus(athleteId);
+    const statusData = await computeAthleteStatus(athleteId, new Date(), req.user.coachAlertRules);
     const statusHistory = relationship.statusHistory || [];
     const lastChange = statusHistory[statusHistory.length - 1] || null;
     const previousEntry = statusHistory[statusHistory.length - 2] || null;
@@ -606,6 +607,80 @@ exports.deleteAthleteSession = async (req, res) => {
   }
 };
 
+// ── Code d'invitation choisi par le coach ──
+//
+// Le code est un identifiant public : l'athlète le tape à la main pour rejoindre
+// son coach. Il est donc normalisé (majuscules, tirets) pour que « camille-2026 »
+// et « CAMILLE-2026 » soient le même code, et vérifié avant d'être enregistré.
+const INVITE_CODE_MIN = 4;
+const INVITE_CODE_MAX = 16;
+const INVITE_CODE_SHAPE = /^[A-Z0-9][A-Z0-9-]*[A-Z0-9]$/;
+
+// Réservés : ce sont les codes qu'on taperait par erreur, ou qui laisseraient
+// croire à un compte officiel.
+const RESERVED_CODES = new Set([
+  'TRAINWISE', 'ADMIN', 'SUPPORT', 'CONTACT', 'COACH', 'ATHLETE', 'TEST', 'DEMO', 'NULL', 'UNDEFINED'
+]);
+
+/** Accents retirés, majuscules, espaces et soulignés en tirets, tirets doublés réduits. */
+const normalizeInviteCode = (raw) =>
+  String(raw || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toUpperCase()
+    .replace(/[\s_]+/g, '-')
+    .replace(/-{2,}/g, '-');
+
+/** Renvoie le motif du refus, ou null si le code est acceptable. */
+const inviteCodeProblem = (code) => {
+  if (code.length < INVITE_CODE_MIN) return `Le code doit faire au moins ${INVITE_CODE_MIN} caractères.`;
+  if (code.length > INVITE_CODE_MAX) return `Le code ne peut pas dépasser ${INVITE_CODE_MAX} caractères.`;
+  if (!INVITE_CODE_SHAPE.test(code)) return 'Lettres, chiffres et tirets uniquement, sans tiret au début ni à la fin.';
+  if (RESERVED_CODES.has(code)) return 'Ce code est réservé.';
+  return null;
+};
+
+/** Le code est-il libre ? Le sien ne compte pas comme pris. */
+const inviteCodeTaken = async (code, userId) => {
+  const holder = await User.findOne({ coachInviteCode: code }).select('_id');
+  return Boolean(holder) && holder._id.toString() !== userId.toString();
+};
+
+// GET /api/coach/invite/code/check?code=… — disponibilité, pendant la frappe
+exports.checkInviteCode = async (req, res) => {
+  try {
+    const code = normalizeInviteCode(req.query.code);
+    const problem = inviteCodeProblem(code);
+    if (problem) return res.json({ code, available: false, error: problem });
+
+    const taken = await inviteCodeTaken(code, req.user._id);
+    res.json({ code, available: !taken, error: taken ? 'Ce code est déjà pris.' : undefined });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// PUT /api/coach/invite/code — le coach choisit son code
+exports.setInviteCode = async (req, res) => {
+  try {
+    const code = normalizeInviteCode(req.body.code);
+    const problem = inviteCodeProblem(code);
+    if (problem) return res.status(400).json({ error: problem });
+
+    if (await inviteCodeTaken(code, req.user._id)) {
+      return res.status(409).json({ error: 'Ce code est déjà pris.' });
+    }
+
+    await User.findByIdAndUpdate(req.user._id, { coachInviteCode: code });
+    res.json({ code });
+  } catch (error) {
+    // Deux coachs qui enregistrent le même code en même temps : l'index unique tranche.
+    if (error.code === 11000) return res.status(409).json({ error: 'Ce code vient d\'être pris.' });
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Générer/régénérer le code d'invitation
 exports.generateInviteCode = async (req, res) => {
   try {
@@ -643,6 +718,15 @@ exports.sendDirectInvite = async (req, res) => {
 
     if (!athleteId) {
       return res.status(400).json({ error: 'ID de l\'athlète requis' });
+    }
+
+    // Inutile d'inviter si le plan n'a plus de place pour un athlète de plus.
+    const room = await athleteRoom(req.user._id);
+    if (!room.ok) {
+      return res.status(402).json({
+        error: `Le plan ${room.plan.name} couvre ${room.limit} athlètes. Changez de plan pour en inviter un de plus.`,
+        plan: 'upgrade'
+      });
     }
 
     // Vérifier que l'utilisateur existe et n'est pas un coach
@@ -762,6 +846,16 @@ exports.respondSubscriptionRequest = async (req, res) => {
     }).populate('athlete', 'firstName lastName');
     if (!request) {
       return res.status(404).json({ error: 'Demande introuvable' });
+    }
+
+    if (action === 'accept') {
+      const room = await athleteRoom(req.user._id);
+      if (!room.ok) {
+        return res.status(402).json({
+          error: `Le plan ${room.plan.name} couvre ${room.limit} athlètes. Changez de plan pour en accepter un de plus.`,
+          plan: 'upgrade'
+        });
+      }
     }
 
     request.status = action === 'accept' ? 'accepted' : 'rejected';
@@ -949,6 +1043,73 @@ exports.searchUsers = async (req, res) => {
 };
 
 // Statistiques du coach
+/**
+ * GET /api/coach/stats/weekly?weeks=8
+ *
+ * Séances planifiées et faites, semaine par semaine, pour les athlètes suivis.
+ * Les totaux d'un coach ne disent rien de sa semaine : c'est l'écart entre ce
+ * qui était prévu et ce qui a été fait qui l'intéresse.
+ */
+exports.getWeeklyStats = async (req, res) => {
+  try {
+    const weeks = Math.min(26, Math.max(4, Number(req.query.weeks) || 8));
+
+    // Lundi de la semaine en cours, puis on remonte de `weeks - 1` semaines.
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - ((start.getDay() + 6) % 7) - (weeks - 1) * 7);
+
+    const links = await CoachAthlete.find({ coach: req.user._id, status: 'accepted' }).select('athlete').lean();
+    const athletes = links.map((link) => link.athlete);
+
+    const rows = athletes.length
+      ? await PlannedRun.aggregate([
+          { $match: { user: { $in: athletes }, date: { $gte: start } } },
+          {
+            $group: {
+              _id: { year: { $isoWeekYear: '$date' }, week: { $isoWeek: '$date' } },
+              planned: { $sum: 1 },
+              done: { $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] } }
+            }
+          }
+        ])
+      : [];
+
+    const byKey = new Map(rows.map((row) => [`${row._id.year}-${row._id.week}`, row]));
+
+    // Une entrée par semaine, même vide : un trou dans la courbe est une information.
+    const series = Array.from({ length: weeks }, (_, index) => {
+      const monday = new Date(start);
+      monday.setDate(start.getDate() + index * 7);
+      const thursday = new Date(monday);
+      thursday.setDate(monday.getDate() + 3); // le jeudi tombe toujours dans la bonne semaine ISO
+      const year = thursday.getUTCFullYear();
+      const week = Math.ceil(((thursday - new Date(Date.UTC(year, 0, 1))) / 86400000 + 1) / 7);
+      const row = byKey.get(`${year}-${week}`);
+      return {
+        start: monday.toISOString().slice(0, 10),
+        label: `S${week}`,
+        planned: row ? row.planned : 0,
+        done: row ? row.done : 0
+      };
+    });
+
+    const totals = series.reduce((sum, item) => ({ planned: sum.planned + item.planned, done: sum.done + item.done }), { planned: 0, done: 0 });
+
+    res.json({
+      weeks: series,
+      totals,
+      // La semaine en cours est incomplète : on l'exclut du taux, sinon il s'effondre chaque lundi.
+      completionRate: (() => {
+        const past = series.slice(0, -1).reduce((sum, item) => ({ planned: sum.planned + item.planned, done: sum.done + item.done }), { planned: 0, done: 0 });
+        return past.planned ? Math.round((past.done / past.planned) * 100) : null;
+      })()
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 exports.getCoachStats = async (req, res) => {
   try {
     const [totalAthletes, pendingInvitations] = await Promise.all([

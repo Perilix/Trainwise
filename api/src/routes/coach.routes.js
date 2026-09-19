@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const coachController = require('../controllers/coach.controller');
+const groupController = require('../controllers/coachGroup.controller');
+const billingController = require('../controllers/coachBilling.controller');
 const { protect, coachOnly } = require('../middleware/auth.middleware');
 
 // Toutes les routes nécessitent une authentification + rôle coach
@@ -24,7 +26,24 @@ router.use(protect, coachOnly);
  *       500:
  *         description: Server error
  */
+// Abonnement du coach : les plans, le paiement et le portail client Stripe.
+router.get('/billing', billingController.getBilling);
+router.post('/billing/checkout', billingController.createCheckout);
+router.post('/billing/portal', billingController.createPortal);
+
+// Seuils d'alerte : à partir de quand un athlète passe en orange puis en rouge.
+router.get('/alert-rules', billingController.getAlertRules);
+router.put('/alert-rules', billingController.setAlertRules);
+
+// Groupes d'athlètes : une étiquette, un athlète peut en porter plusieurs.
+router.get('/groups', groupController.listGroups);
+router.post('/groups', groupController.createGroup);
+router.patch('/groups/:id', groupController.updateGroup);
+router.delete('/groups/:id', groupController.deleteGroup);
+
 router.get('/stats', coachController.getCoachStats);
+// Planifié / réalisé semaine par semaine, pour l'écran Stats.
+router.get('/stats/weekly', coachController.getWeeklyStats);
 
 /**
  * @swagger
@@ -509,6 +528,9 @@ router.get('/athletes/:athleteId/strength-history', coachController.getAthleteSt
  */
 router.get('/invite/code', coachController.getInviteCode);
 router.post('/invite/code', coachController.generateInviteCode);
+// Code choisi par le coach : vérification pendant la frappe, puis enregistrement.
+router.get('/invite/code/check', coachController.checkInviteCode);
+router.put('/invite/code', coachController.setInviteCode);
 
 /**
  * @swagger

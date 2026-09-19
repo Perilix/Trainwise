@@ -8,6 +8,21 @@ const STATUS_ORDER = { green: 0, orange: 1, red: 2 };
 // Volume hebdo habituel minimum (km) pour que la baisse de volume soit significative
 const VOLUME_DROP_MIN_BASELINE_KM = 10;
 
+// Seuils par défaut. Un coach abonné peut les redéfinir (plan Studio) ; sans
+// réglage, tout le monde garde ceux-là.
+const DEFAULT_RULES = {
+  inactivityOrange: 7,
+  inactivityRed: 14,
+  skippedOrange: 1,
+  skippedRed: 3,
+  feelingOrange: 7,
+  feelingRed: 4,
+  volumeDropEnabled: true,
+  volumeDropPercent: 50
+};
+
+const withDefaults = (rules) => ({ ...DEFAULT_RULES, ...(rules?.toObject ? rules.toObject() : rules || {}) });
+
 const isWorse = (a, b) => STATUS_ORDER[a] > STATUS_ORDER[b];
 
 // Calculer le statut d'un athlète (vert / orange / rouge).
@@ -16,7 +31,8 @@ const isWorse = (a, b) => STATUS_ORDER[a] > STATUS_ORDER[b];
 //   2. Séances sautées sur les 28 derniers jours
 //   3. Ressenti moyen des runs sur les 28 derniers jours
 //   4. Baisse de volume : km des 7 derniers jours vs moyenne hebdo des 3 semaines précédentes
-async function computeAthleteStatus(athleteId, now = new Date()) {
+async function computeAthleteStatus(athleteId, now = new Date(), coachRules = null) {
+  const rules = withDefaults(coachRules);
   const windowStart = new Date(now.getTime() - 28 * DAY);
   const sevenDaysAgo = new Date(now.getTime() - 7 * DAY);
 
@@ -58,14 +74,15 @@ async function computeAthleteStatus(athleteId, now = new Date()) {
     else baselineVolume += r.distance || 0;
   }
   const baselineWeeklyVolume = baselineVolume / 3;
-  const volumeDrop = baselineWeeklyVolume >= VOLUME_DROP_MIN_BASELINE_KM
-    && weeklyVolume < baselineWeeklyVolume * 0.5;
+  const volumeDrop = rules.volumeDropEnabled
+    && baselineWeeklyVolume >= VOLUME_DROP_MIN_BASELINE_KM
+    && weeklyVolume < baselineWeeklyVolume * (rules.volumeDropPercent / 100);
 
   // Statut par critère
-  const inactivityStatus = daysSince > 14 ? 'red' : daysSince > 7 ? 'orange' : 'green';
-  const skipStatus = skippedCount >= 3 ? 'red' : skippedCount >= 1 ? 'orange' : 'green';
+  const inactivityStatus = daysSince > rules.inactivityRed ? 'red' : daysSince > rules.inactivityOrange ? 'orange' : 'green';
+  const skipStatus = skippedCount >= rules.skippedRed ? 'red' : skippedCount >= rules.skippedOrange ? 'orange' : 'green';
   const feelingStatus = avgFeeling !== null
-    ? (avgFeeling < 4 ? 'red' : avgFeeling < 7 ? 'orange' : 'green')
+    ? (avgFeeling < rules.feelingRed ? 'red' : avgFeeling < rules.feelingOrange ? 'orange' : 'green')
     : 'green';
   const volumeStatus = volumeDrop ? 'orange' : 'green';
 
@@ -85,4 +102,4 @@ async function computeAthleteStatus(athleteId, now = new Date()) {
   };
 }
 
-module.exports = { computeAthleteStatus, isWorse, STATUS_ORDER };
+module.exports = { computeAthleteStatus, isWorse, STATUS_ORDER, DEFAULT_RULES };

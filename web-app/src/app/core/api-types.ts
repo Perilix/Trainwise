@@ -45,6 +45,18 @@ export type ApiStatusData = {
 
 export type ApiPackageType = 'invited' | 'bronze' | 'silver' | 'gold';
 
+/** Repère visuel d'un groupe, choisi par le coach. */
+export type GroupColor = 'bleu' | 'indigo' | 'turquoise' | 'rose' | 'sable' | 'ardoise';
+
+/** Groupe d'athlètes (GET /api/coach/groups). */
+export type ApiCoachGroup = {
+  id: string;
+  name: string;
+  color: GroupColor;
+  race: { name: string; date: string | null } | null;
+  athletes: { id: string; firstName: string; lastName: string }[];
+};
+
 export type ApiCoachStats = {
   totalAthletes: number;
   pendingInvitations: number;

@@ -74,25 +74,40 @@ const WEEKDAYS = ['Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.', 'Dim.'];
             </div>
             <div class="grid">
               @for (cell of cells(); track cell.iso) {
-                <button type="button" class="cell" [class.out]="!cell.inMonth" [class.selected]="cell.iso === selected()" (click)="selected.set(cell.iso)">
+                <div
+                  role="button"
+                  tabindex="0"
+                  class="cell"
+                  [class.out]="!cell.inMonth"
+                  [class.selected]="cell.iso === selected()"
+                  (click)="selected.set(cell.iso)"
+                  (keydown.enter)="selected.set(cell.iso)"
+                  (keydown.space)="selected.set(cell.iso)"
+                >
                   <span class="day" [class.today]="cell.isToday">{{ cell.day }}</span>
                   @for (session of cell.sessions; track session.id) {
-                    <span class="pill" [class.done]="session.status === 'done'" [class.coach]="session.plannedBy === 'coach'">
+                    <button
+                      type="button"
+                      class="pill"
+                      [class.done]="session.status === 'done'"
+                      [class.coach]="session.plannedBy === 'coach'"
+                      (click)="openSession(session.id); $event.stopPropagation()"
+                    >
                       <span class="pill-head">
                         <tw-icon [name]="session.sport === 'strength' ? 'dumbbell' : 'run'" [size]="12" [strokeWidth]="2" />
                         <span class="truncate">{{ session.title }}</span>
                       </span>
-                    </span>
+                    </button>
                   }
                   @for (activity of cell.activities; track activity.id) {
-                    <span class="pill done">
+                    <button type="button" class="pill done" (click)="openActivity(activity); $event.stopPropagation()">
                       <span class="pill-head">
                         <tw-icon [name]="activity.sport === 'strength' ? 'dumbbell' : 'run'" [size]="12" [strokeWidth]="2" />
                         <span class="truncate">{{ activity.title }}</span>
                       </span>
-                    </span>
+                    </button>
                   }
-                </button>
+                </div>
               }
             </div>
           </div>
@@ -352,6 +367,18 @@ const WEEKDAYS = ['Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.', 'Dim.'];
         min-width: 0;
       }
 
+      /* La pastille ouvre la séance ; le reste de la case sélectionne le jour. */
+      button.pill {
+        display: block;
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      button.pill:hover {
+        filter: brightness(0.96);
+      }
+
       .pill.coach {
         background: var(--violet-soft);
         color: var(--violet-ink);
@@ -588,6 +615,12 @@ export class CoachAthletePlanningPage {
 
   openRun(runId: string) {
     void this.router.navigate(['/coach/athletes', this.id(), 'sortie', runId]);
+  }
+
+  /** Une activité réalisée : la sortie ou la séance muscu, selon le sport. */
+  openActivity(activity: Activity) {
+    const segment = activity.sport === 'strength' ? 'muscu' : 'sortie';
+    void this.router.navigate(['/coach/athletes', this.id(), segment, activity.id]);
   }
 
   assignFromLibrary() {

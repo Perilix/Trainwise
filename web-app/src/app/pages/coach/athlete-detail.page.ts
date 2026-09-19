@@ -131,7 +131,7 @@ const TRENDS: Record<'improving' | 'declining' | 'stable', { label: string; icon
                 <span></span>
               </div>
               @for (activity of data.activities; track activity.id) {
-                <div class="act-row">
+                <button type="button" class="act-row" (click)="openActivity(activity.id, activity.sport)">
                   <div class="who small-who">
                     <span class="tile" [class.strength]="activity.sport === 'strength'">
                       <tw-icon [name]="activity.sport === 'strength' ? 'dumbbell' : 'run'" [size]="18" />
@@ -144,10 +144,8 @@ const TRENDS: Record<'improving' | 'declining' | 'stable', { label: string; icon
                   <span class="body num">{{ activity.value }}</span>
                   <span class="body num muted">—</span>
                   <span class="body num">{{ activity.feeling ? activity.feeling + ' /10' : '—' }}</span>
-                  <button class="icon-btn" type="button" (click)="openActivity(activity.id, activity.sport)" aria-label="Ouvrir">
-                    <tw-icon name="chevron-right" [size]="18" />
-                  </button>
-                </div>
+                  <tw-icon name="chevron-right" [size]="18" />
+                </button>
               } @empty {
                 <tw-state kind="empty" icon="run" message="Aucune activité récente." />
               }
@@ -379,6 +377,18 @@ const TRENDS: Record<'improving' | 'declining' | 'stable', { label: string; icon
         align-items: center;
         justify-content: space-between;
         padding: 16px 20px;
+      }
+
+      /* La ligne entière ouvre l'activité : viser le chevron n'était pas évident. */
+      button.act-row {
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+        color: inherit;
+      }
+
+      button.act-row:hover {
+        background: var(--bg);
       }
 
       .act-row {

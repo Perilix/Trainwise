@@ -168,6 +168,33 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  // Abonnement du coach à Trainwise (Stripe). C'est le webhook signé qui écrit
+  // ces champs : l'application ne fait que les lire.
+  coachBilling: {
+    customerId: { type: String, default: null },
+    subscriptionId: { type: String, default: null },
+    planId: { type: String, default: 'decouverte' },
+    cycle: { type: String, enum: ['monthly', 'yearly'], default: 'monthly' },
+    status: {
+      type: String,
+      enum: ['active', 'trialing', 'past_due', 'canceled', 'incomplete'],
+      default: 'active'
+    },
+    currentPeriodEnd: { type: Date, default: null },
+    cancelAtPeriodEnd: { type: Boolean, default: false }
+  },
+  // Seuils d'alerte du coach : à partir de quand un athlète passe en orange
+  // puis en rouge. Les valeurs par défaut sont celles du calcul historique.
+  coachAlertRules: {
+    inactivityOrange: { type: Number, default: 7, min: 1, max: 60 },
+    inactivityRed: { type: Number, default: 14, min: 1, max: 90 },
+    skippedOrange: { type: Number, default: 1, min: 1, max: 20 },
+    skippedRed: { type: Number, default: 3, min: 1, max: 30 },
+    feelingOrange: { type: Number, default: 7, min: 1, max: 10 },
+    feelingRed: { type: Number, default: 4, min: 1, max: 10 },
+    volumeDropEnabled: { type: Boolean, default: true },
+    volumeDropPercent: { type: Number, default: 50, min: 10, max: 90 }
+  },
   // Profil muscu
   strengthLevel: {
     type: String,
