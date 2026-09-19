@@ -1,0 +1,420 @@
+<title>RevenueCat × Trainwise</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --paper: #f6f7f4;
+    --surface: #ffffff;
+    --surface-2: #f0f2ee;
+    --ink: #1a2420;
+    --muted: #5c6b64;
+    --border: #e3e7e1;
+    --accent: #0d9d8b;
+    --accent-strong: #0a7d6f;
+    --accent-soft: #e4f4f1;
+    --warn: #b45c07;
+    --warn-soft: #fbf1e2;
+    --warn-border: #eccfa0;
+    --danger: #c23a3a;
+    --danger-soft: #fbecea;
+    --danger-border: #eec4c1;
+    --shadow: 0 1px 2px rgba(26,36,32,.04), 0 8px 24px rgba(26,36,32,.05);
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0f1512;
+      --surface: #161e1a;
+      --surface-2: #1c2621;
+      --ink: #e6ece8;
+      --muted: #93a49c;
+      --border: #27332d;
+      --accent: #2dd4bf;
+      --accent-strong: #5eead4;
+      --accent-soft: #123029;
+      --warn: #e0993f;
+      --warn-soft: #241a0f;
+      --warn-border: #4a3719;
+      --danger: #ec7b7b;
+      --danger-soft: #2a1615;
+      --danger-border: #4d2523;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0f1512;
+    --surface: #161e1a;
+    --surface-2: #1c2621;
+    --ink: #e6ece8;
+    --muted: #93a49c;
+    --border: #27332d;
+    --accent: #2dd4bf;
+    --accent-strong: #5eead4;
+    --accent-soft: #123029;
+    --warn: #e0993f;
+    --warn-soft: #241a0f;
+    --warn-border: #4a3719;
+    --danger: #ec7b7b;
+    --danger-soft: #2a1615;
+    --danger-border: #4d2523;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.4);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 0 20px 96px; }
+
+  /* Header */
+  header { padding: 56px 0 28px; }
+  .eyebrow {
+    font-size: .72rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--accent-strong); margin: 0 0 14px;
+  }
+  h1 {
+    font-size: clamp(1.9rem, 5vw, 2.6rem); line-height: 1.08; margin: 0 0 14px;
+    letter-spacing: -.02em; text-wrap: balance; font-weight: 800;
+  }
+  .lede { font-size: 1.06rem; color: var(--muted); margin: 0; max-width: 60ch; }
+
+  /* Mental model strip */
+  .model {
+    display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: stretch; gap: 8px;
+    margin: 30px 0 8px; padding: 18px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; box-shadow: var(--shadow);
+  }
+  .model .node { text-align: center; padding: 8px 6px; }
+  .model .node .k { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-strong); }
+  .model .node .t { font-size: .92rem; font-weight: 650; margin-top: 4px; }
+  .model .node .d { font-size: .78rem; color: var(--muted); margin-top: 3px; line-height: 1.35; }
+  .model .arrow { align-self: center; color: var(--muted); font-size: 1.1rem; }
+  @media (max-width: 640px) {
+    .model { grid-template-columns: 1fr; }
+    .model .arrow { transform: rotate(90deg); }
+  }
+
+  /* Progress */
+  .progress-bar { position: sticky; top: 0; z-index: 20; background: var(--paper); padding: 14px 0 12px; margin-bottom: 8px; }
+  .progress-inner { display: flex; align-items: center; gap: 14px; }
+  .track { flex: 1; height: 8px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 99px; overflow: hidden; }
+  .fill { height: 100%; width: 0%; background: var(--accent); border-radius: 99px; transition: width .35s cubic-bezier(.4,0,.2,1); }
+  .count { font-variant-numeric: tabular-nums; font-weight: 700; font-size: .9rem; color: var(--muted); white-space: nowrap; }
+  .count b { color: var(--ink); }
+
+  /* Phase */
+  .phase { margin-top: 34px; }
+  .phase-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 4px; }
+  .num {
+    flex: none; width: 34px; height: 34px; border-radius: 9px; background: var(--accent-soft);
+    color: var(--accent-strong); font-weight: 800; font-size: 1rem; display: grid; place-items: center;
+    font-variant-numeric: tabular-nums; align-self: center;
+  }
+  .phase h2 { font-size: 1.28rem; margin: 0; letter-spacing: -.01em; font-weight: 750; }
+  .phase .sub { color: var(--muted); font-size: .9rem; margin: 2px 0 0 48px; }
+
+  /* Steps */
+  .steps { list-style: none; margin: 16px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .step {
+    display: flex; gap: 14px; padding: 15px 17px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; box-shadow: var(--shadow); cursor: pointer; transition: border-color .15s, background .15s;
+  }
+  .step:hover { border-color: var(--accent); }
+  .step:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .box {
+    flex: none; width: 22px; height: 22px; border: 2px solid var(--border); border-radius: 6px; margin-top: 1px;
+    display: grid; place-items: center; transition: background .15s, border-color .15s; background: var(--surface);
+  }
+  .box svg { width: 13px; height: 13px; stroke: #fff; stroke-width: 3.5; fill: none; opacity: 0; transition: opacity .15s; }
+  .step.done .box { background: var(--accent); border-color: var(--accent); }
+  .step.done .box svg { opacity: 1; }
+  .step.done .body { opacity: .55; }
+  .step.done .body .txt { text-decoration: line-through; text-decoration-color: var(--muted); }
+  .body { flex: 1; min-width: 0; }
+  .body .txt { font-size: .96rem; font-weight: 550; }
+  .body .hint { font-size: .85rem; color: var(--muted); margin-top: 4px; }
+  code {
+    font-family: var(--mono); font-size: .84em; background: var(--surface-2); border: 1px solid var(--border);
+    padding: 1px 6px; border-radius: 5px; color: var(--ink); word-break: break-word;
+  }
+
+  /* Callouts */
+  .callout { border-radius: 12px; padding: 15px 17px; margin: 16px 0 0; font-size: .92rem; display: flex; gap: 13px; }
+  .callout .ic { flex: none; font-size: 1.15rem; line-height: 1.4; }
+  .callout .h { font-weight: 750; letter-spacing: -.01em; }
+  .callout p { margin: 5px 0 0; }
+  .callout.gotcha { background: var(--warn-soft); border: 1px solid var(--warn-border); }
+  .callout.gotcha .h { color: var(--warn); }
+  .callout.block { background: var(--danger-soft); border: 1px solid var(--danger-border); }
+  .callout.block .h { color: var(--danger); }
+  .callout.info { background: var(--accent-soft); border: 1px solid var(--border); }
+  .callout.info .h { color: var(--accent-strong); }
+
+  .product-table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: .86rem; }
+  .product-table th, .product-table td { text-align: left; padding: 9px 11px; border-bottom: 1px solid var(--border); }
+  .product-table th { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
+  .product-table td code { font-size: .82em; }
+  .table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); margin-top: 14px; box-shadow: var(--shadow); }
+  .table-scroll .product-table { margin: 0; }
+  .table-scroll th, .table-scroll td { white-space: nowrap; }
+
+  footer { margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--border); color: var(--muted); font-size: .84rem; }
+  .reset { background: none; border: 1px solid var(--border); color: var(--muted); font: inherit; font-size: .82rem;
+    padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+  .reset:hover { border-color: var(--danger); color: var(--danger); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Trainwise · iOS · mise en service des paiements</p>
+    <h1>Brancher RevenueCat, sans se perdre</h1>
+    <p class="lede">Le code de vente est déjà écrit et fonctionnel. Il ne manque que la config qui relie les trois dashboards. Suis les étapes dans l'ordre&nbsp;: chacune débloque la suivante.</p>
+
+    <div class="model" role="img" aria-label="Les trois couches : App Store Connect crée les produits, RevenueCat les regroupe, ton app et ton back vendent et créditent">
+      <div class="node">
+        <div class="k">Couche 1</div>
+        <div class="t">App Store Connect</div>
+        <div class="d">Crée les produits. Apple encaisse.</div>
+      </div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="node">
+        <div class="k">Couche 2</div>
+        <div class="t">RevenueCat</div>
+        <div class="d">Regroupe en Offering + Entitlement.</div>
+      </div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="node">
+        <div class="k">Couche 3</div>
+        <div class="t">App + Back Render</div>
+        <div class="d">Affiche, vend, crédite les coins.</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="progress-bar">
+    <div class="progress-inner">
+      <div class="track"><div class="fill" id="fill"></div></div>
+      <div class="count"><b id="done">0</b>/<span id="total">0</span> fait</div>
+    </div>
+  </div>
+
+  <!-- PHASE 0 -->
+  <section class="phase">
+    <div class="phase-head"><div class="num">0</div><h2>Prérequis à débloquer</h2></div>
+    <p class="sub">Sans ça, aucun produit ne pourra passer en vente. À vérifier en premier.</p>
+    <ul class="steps">
+      <li class="step" tabindex="0"><span class="box"><svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg></span>
+        <div class="body"><div class="txt">Accord <strong>Paid Apps</strong> signé et <em>actif</em></div>
+          <div class="hint">App Store Connect → <code>Business</code> → Agreements. Coordonnées bancaires + fiscalité renseignées. Tant que c'est « Pending », les produits restent bloqués.</div></div></li>
+      <li class="step" tabindex="0"><span class="box"><svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg></span>
+        <div class="body"><div class="txt">Bundle ID <code>com.trainwise.appli</code> confirmé</div>
+          <div class="hint">C'est l'identifiant que RevenueCat devra pointer. Il doit correspondre exactement à celui de l'app.</div></div></li>
+    </ul>
+    <div class="callout block"><span class="ic">🚧</span><div><div class="h">Si l'accord Paid Apps n'est pas actif, arrête-toi ici.</div><p>Tout le reste échouera silencieusement. C'est le blocage n°1 des premières mises en vente.</p></div></div>
+  </section>
+
+  <!-- PHASE 1 -->
+  <section class="phase">
+    <div class="phase-head"><div class="num">1</div><h2>App Store Connect · créer les 4 produits</h2></div>
+    <p class="sub">C'est ici qu'Apple « connaît » ce que tu vends. Les 4 IDs doivent être identiques au code, au caractère près.</p>
+
+    <div class="table-scroll">
+      <table class="product-table">
+        <thead><tr><th>Product ID</th><th>Type</th><th>Prix</th><th>Nom affiché</th></tr></thead>
+        <tbody>
+          <tr><td><code>trainwise_pro_monthly</code></td><td>Abo · 1 mois</td><td>9,99 €</td><td>Trainwise Pro Mensuel</td></tr>
+          <tr><td><code>trainwise_pro_annual</code></td><td>Abo · 1 an</td><td>59,99 €</td><td>Trainwise Pro Annuel</td></tr>
+          <tr><td><code>trainwise_coins_10</code></td><td>Consommable</td><td>2,99 €</td><td>Pack 10 TrainCoins</td></tr>
+          <tr><td><code>trainwise_coins_50</code></td><td>Consommable</td><td>9,99 €</td><td>Pack 50 TrainCoins</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ul class="steps">
+      <li class="step" tabindex="0"><span class="box"><svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg></span>
+        <div class="body"><div class="txt">Créer le <strong>Subscription Group</strong> « Trainwise Pro » + les 2 abos</div>
+          <div class="hint">Monetization → Subscriptions. Les 2 abos vont dans le <em>même</em> groupe (l'utilisateur ne peut en avoir qu'un actif).</div></div></li>
+      <li class="step" tabindex="0"><span class="box"><svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg></span>
+        <div class="body"><div class="txt">Créer les 2 <strong>consommables</strong> coins</div>
+          <div class="hint">Monetization → In-App Purchases → type « Consumable ».</div></div></li>
+      <li class="step" tabindex="0"><span class="box"><svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg></span>
+        <div class="body"><div class="txt">Ajouter une <strong>App Review Screenshot</strong> à chacun des 4 produits</div>
+          <div class="hint">C'est CE qui manquait au rejet 2.1(b). N'importe quel écran de l'app montrant l'achat (l'écran boutique). Sans capture, impossible de soumettre le produit.</div></div></li>
+      <li class="step" tabindex="0"><span class="box"><svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg></span>
+        <div class="body"><div class="txt">Générer une <strong>In-App Purchase Key</strong> (pour RevenueCat)</div>
+          <div class="hint">Users and Access → Integrations → In-App Purchase → « Generate ». Télécharge le fichier <code>.p8</code> : RevenueCat en a besoin pour valider les achats. (À défaut, l'« App-Specific Shared Secret » fait l'affaire.)</div></div></li>
+    </ul>
+  </section>
+
+  <!-- PHASE 2 -->
+  <section class="phase">
+    <div class="phase-head"><div class="num">2</div><h2>RevenueCat · le projet + l'app</h2></div>
+    <p class="sub">RevenueCat lit tes produits Apple grâce à la clé de l'étape précédente.</p>
+    <ul class="steps">
+      <li class="step" tabindex="0"><span class="box"><svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg></span>
+        <div class="body"><div class="txt">Créer le projet, puis <strong>+ App → App Store</strong></div>
+          <div class="hint">Renseigne le bundle ID <code>com.trainwise.appli</code>.</div></div></li>
+      <li class="step" tabindex="0"><span class="box"><svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg></span>
+        <div class="body"><div class="txt">Coller l'<strong>In-App Purchase Key</strong> (<code>.p8</code>) dans les réglages de l'app</div>
+          <div class="hint">Sans elle, RevenueCat ne peut pas confirmer les achats → le webhook ne partira jamais.</div></div></li>
+    </ul>
+  </section>
+
+  <!-- PHASE 3 -->
+  <section class="phase">
+    <div class="phase-head"><div class="num">3</div><h2>RevenueCat · Products, Entitlement, Offering</h2></div>
+    <p class="sub">L'étape qui embrouille tout le monde. Trois notions, dans cet ordre.</p>
+    <ul class="steps">
+      <li class="step" tabindex="0"><span class="box"><svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg></span>
+        <div class="body"><div class="txt"><strong>Products</strong> — importer les 4 depuis App Store Connect</div>
+          <div class="hint">RevenueCat propose l'import automatique. Vérifie que les 4 IDs apparaissent à l'identique.</div></div></li>
+      <li class="step" tabindex="0"><span class="box"><svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg></span>
+        <div class="body"><div class="txt"><strong>Entitlement</strong> — en créer UN, identifiant <code>pro</code></div>
+          <div class="hint">Attache-lui les 2 abos (<code>trainwise_pro_monthly</code>, <code>trainwise_pro_annual</code>). Les coins sont des consommables → on ne les attache PAS à un entitlement.</div></div></li>
+      <li class="step" tabindex="0"><span class="box"><svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg></span>
+        <div class="body"><div class="txt"><strong>Offering</strong> — en créer un, identifiant <code>default</code>, marqué « Current »</div>
+          <div class="hint">Ton code lit <code>offerings.current</code> : l'offering doit donc être celui par défaut.</div></div></li>
+      <li class="step" tabindex="0"><span class="box"><svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg></span>
+        <div class="body"><div class="txt">Ajouter 4 <strong>Packages</strong> à l'offering (un par produit)</div>
+          <div class="hint">Un package = un produit présenté dans la vitrine. Attention à leur identifiant → callout ci-dessous.</div></div></li>
+    </ul>
+
+    <div class="callout gotcha"><span class="ic">⚠️</span><div>
+      <div class="h">LE piège qui fait croire que « RevenueCat marche pas »</div>
+      <p>Ton code fait <code>packages.find(p =&gt; p.identifier === 'trainwise_pro_annual')</code>. Donc l'identifiant de chaque <strong>package</strong> doit être <strong>exactement le Product ID</strong> — <code>trainwise_pro_annual</code>, <code>trainwise_coins_10</code>, etc. <strong>Surtout PAS</strong> les identifiants par défaut de RevenueCat (<code>$rc_monthly</code>, <code>$rc_annual</code>). Si tu laisses les défauts, l'app ne trouvera aucun produit et la boutique restera vide.</p>
+    </div></div>
+  </section>
+
+  <!-- PHASE 4 -->
+  <section class="phase">
+    <div class="phase-head"><div class="num">4</div><h2>Les clés publiques → ton code</h2></div>
+    <p class="sub">C'est le fameux <code>appl_XXXX</code> encore en placeholder qui bloque tout aujourd'hui.</p>
+    <ul class="steps">
+      <li class="step" tabindex="0"><span class="box"><svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg></span>
+        <div class="body"><div class="txt">RevenueCat → <strong>API Keys</strong> → copier la clé publique Apple <code>appl_…</code></div>
+          <div class="hint">C'est la clé <em>publique</em> (SDK), pas la secret key. Idem pour Android : <code>goog_…</code>.</div></div></li>
+      <li class="step" tabindex="0"><span class="box"><svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg></span>
+        <div class="body"><div class="txt">Remplacer les placeholders dans <code>environment.prod.ts</code></div>
+          <div class="hint"><code>revenueCatAppleApiKey</code> et <code>revenueCatGoogleApiKey</code>. Pense aussi à <code>environment.ts</code> et <code>environment.staging.ts</code> si tu testes dessus.</div></div></li>
+    </ul>
+  </section>
+
+  <!-- PHASE 5 -->
+  <section class="phase">
+    <div class="phase-head"><div class="num">5</div><h2>Le webhook → ton back Render</h2></div>
+    <p class="sub">C'est lui qui crédite réellement les coins et active le Pro en base.</p>
+    <ul class="steps">
+      <li class="step" tabindex="0"><span class="box"><svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg></span>
+        <div class="body"><div class="txt">RevenueCat → <strong>Integrations → Webhooks</strong> → URL du webhook</div>
+          <div class="hint"><code>https://trainwise-backend-rnd4.onrender.com/api/subscription/webhook</code></div></div></li>
+      <li class="step" tabindex="0"><span class="box"><svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg></span>
+        <div class="body"><div class="txt">Header <strong>Authorization</strong> = <code>Bearer &lt;ton-secret&gt;</code></div>
+          <div class="hint">Choisis un secret long et aléatoire. Le code compare la valeur à <code>Bearer &lt;secret&gt;</code> — le mot « Bearer » doit être inclus côté RevenueCat.</div></div></li>
+      <li class="step" tabindex="0"><span class="box"><svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg></span>
+        <div class="body"><div class="txt">Sur <strong>Render</strong> → variable d'env <code>REVENUECAT_WEBHOOK_SECRET</code> = le même secret</div>
+          <div class="hint">Sans « Bearer », juste la valeur brute. Puis redéploie le back.</div></div></li>
+    </ul>
+    <div class="callout info"><span class="ic">🔒</span><div>
+      <div class="h">Sécurité durcie côté back</div>
+      <p>Le webhook refuse désormais toute requête si <code>REVENUECAT_WEBHOOK_SECRET</code> n'est pas défini (avant, il était ouvert à tous → quelqu'un pouvait s'auto-créditer des coins). Donc cette variable est <strong>obligatoire</strong>, sinon le webhook répond <code>503</code>.</p>
+    </div></div>
+  </section>
+
+  <!-- PHASE 6 -->
+  <section class="phase">
+    <div class="phase-head"><div class="num">6</div><h2>Tester en Sandbox avant de soumettre</h2></div>
+    <p class="sub">On vérifie la chaîne complète avec un faux achat, sans dépenser un centime.</p>
+    <ul class="steps">
+      <li class="step" tabindex="0"><span class="box"><svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg></span>
+        <div class="body"><div class="txt">Créer un <strong>Sandbox Tester</strong></div>
+          <div class="hint">App Store Connect → Users and Access → Sandbox → Testers. Un email bidon suffit.</div></div></li>
+      <li class="step" tabindex="0"><span class="box"><svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg></span>
+        <div class="body"><div class="txt">Acheter un pack coins + un abo avec le compte sandbox</div>
+          <div class="hint">Sur l'app installée via TestFlight ou build de dev. Vérifie que le solde de TrainCoins augmente et que le badge PRO s'affiche.</div></div></li>
+      <li class="step" tabindex="0"><span class="box"><svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg></span>
+        <div class="body"><div class="txt">Vérifier les <strong>logs Render</strong> : le webhook a bien été reçu</div>
+          <div class="hint">Tu dois voir l'event <code>INITIAL_PURCHASE</code> / <code>NON_SUBSCRIPTION_PURCHASE</code> traité. RevenueCat a aussi un onglet « Events » pour voir les livraisons.</div></div></li>
+      <li class="step" tabindex="0"><span class="box"><svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg></span>
+        <div class="body"><div class="txt">Tester le bouton <strong>Restaurer les achats</strong></div>
+          <div class="hint">Obligatoire pour Apple. Il doit re-débloquer le Pro sans re-payer.</div></div></li>
+    </ul>
+  </section>
+
+  <!-- PHASE 7 -->
+  <section class="phase">
+    <div class="phase-head"><div class="num">7</div><h2>Re-soumettre à Apple</h2></div>
+    <p class="sub">On répond aux deux rejets d'un coup.</p>
+    <ul class="steps">
+      <li class="step" tabindex="0"><span class="box"><svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg></span>
+        <div class="body"><div class="txt"><strong>Rattacher les 4 IAP à la version</strong> de l'app (bouton « + »)</div>
+          <div class="hint">Sur une première soumission, les IAP doivent partir en review AVEC le binaire. C'était la cause du rejet 2.1(b).</div></div></li>
+      <li class="step" tabindex="0"><span class="box"><svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg></span>
+        <div class="body"><div class="txt">Uploader le <strong>nouveau build</strong> (clés remplies + suppression de compte durcie)</div>
+          <div class="hint">Un nouveau binaire est de toute façon exigé pour relancer la review.</div></div></li>
+      <li class="step" tabindex="0"><span class="box"><svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg></span>
+        <div class="body"><div class="txt">Compte démo actif + <strong>vidéo de suppression de compte</strong> dans les Notes</div>
+          <div class="hint">Répond au rejet 5.1.1(v). Crée le vrai <code>demo@trainwise-app.com</code> et filme le flux Réglages → Zone de danger → Supprimer.</div></div></li>
+    </ul>
+  </section>
+
+  <footer>
+    <p style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
+      <span>Ta progression est sauvegardée dans ce navigateur. Reviens quand tu veux.</span>
+      <button class="reset" id="reset">Réinitialiser</button>
+    </p>
+  </footer>
+</div>
+
+<script>
+  (function () {
+    var KEY = 'trainwise_rc_guide_v1';
+    var steps = Array.prototype.slice.call(document.querySelectorAll('.step'));
+    var saved = {};
+    try { saved = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { saved = {}; }
+
+    var fill = document.getElementById('fill');
+    var doneEl = document.getElementById('done');
+    var totalEl = document.getElementById('total');
+    totalEl.textContent = steps.length;
+
+    function refresh() {
+      var done = steps.filter(function (s) { return s.classList.contains('done'); }).length;
+      doneEl.textContent = done;
+      fill.style.width = (steps.length ? (done / steps.length * 100) : 0) + '%';
+    }
+
+    steps.forEach(function (s, i) {
+      var id = 's' + i;
+      if (saved[id]) s.classList.add('done');
+      s.setAttribute('role', 'checkbox');
+      s.setAttribute('aria-checked', s.classList.contains('done') ? 'true' : 'false');
+      function toggle() {
+        s.classList.toggle('done');
+        var on = s.classList.contains('done');
+        s.setAttribute('aria-checked', on ? 'true' : 'false');
+        saved[id] = on;
+        try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) {}
+        refresh();
+      }
+      s.addEventListener('click', toggle);
+      s.addEventListener('keydown', function (e) {
+        if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); }
+      });
+    });
+
+    document.getElementById('reset').addEventListener('click', function () {
+      saved = {};
+      try { localStorage.removeItem(KEY); } catch (e) {}
+      steps.forEach(function (s) { s.classList.remove('done'); s.setAttribute('aria-checked', 'false'); });
+      refresh();
+    });
+
+    refresh();
+  })();
+</script>
