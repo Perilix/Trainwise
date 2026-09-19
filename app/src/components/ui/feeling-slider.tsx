@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useRef } from 'react';
+import { StyleSheet, View, type GestureResponderEvent } from 'react-native';
 
 import { useTheme } from '@/theme/theme-provider';
 import { radius } from '@/theme/tokens';
@@ -11,16 +12,38 @@ type Props = {
   labels?: [string, string];
 };
 
-const STEPS = Array.from({ length: 10 }, (_, index) => index + 1);
-
-// Ressenti de séance : un appui sur la piste choisit la note (1 = épuisant, 10 = excellent).
+/**
+ * Ressenti de séance : 1 = épuisant, 10 = excellent.
+ *
+ * La piste répond au glissement comme à l'appui — on attrape le curseur et on
+ * le fait courir, ou on tape directement à l'endroit voulu.
+ */
 export function FeelingSlider({ value, onChange, labels = ['Épuisant', 'Excellent'] }: Props) {
   const { colors } = useTheme();
   const percent = ((value - 1) / 9) * 100;
 
+  const track = useRef<View>(null);
+  // Position et largeur de la piste à l'écran : c'est ce qui convertit un doigt en note.
+  const geometry = useRef({ x: 0, width: 0 });
+  const measure = () => track.current?.measureInWindow((x, _y, width) => (geometry.current = { x, width }));
+
+  const stepFor = (pageX: number) => {
+    const { x, width } = geometry.current;
+    if (!width) return null;
+    const ratio = Math.min(1, Math.max(0, (pageX - x) / width));
+    return Math.round(1 + ratio * 9);
+  };
+
+  const apply = (event: GestureResponderEvent) => {
+    const step = stepFor(event.nativeEvent.pageX);
+    if (step !== null) onChange?.(step);
+  };
+
   return (
     <View style={styles.container}>
       <View
+        ref={track}
+        onLayout={measure}
         style={styles.track}
         accessibilityRole="adjustable"
         accessibilityLabel="Ressenti"
@@ -29,15 +52,19 @@ export function FeelingSlider({ value, onChange, labels = ['Épuisant', 'Excelle
         onAccessibilityAction={(event) => {
           if (event.nativeEvent.actionName === 'increment') onChange?.(Math.min(10, value + 1));
           if (event.nativeEvent.actionName === 'decrement') onChange?.(Math.max(1, value - 1));
-        }}>
+        }}
+        onStartShouldSetResponder={() => true}
+        onMoveShouldSetResponder={() => true}
+        // La piste garde le doigt : sans ça, la page défile au lieu de glisser.
+        onResponderTerminationRequest={() => false}
+        onResponderGrant={(event) => {
+          measure();
+          apply(event);
+        }}
+        onResponderMove={apply}>
         <View style={[styles.rail, { backgroundColor: colors.subtle }]} />
         <View style={[styles.rail, { width: `${percent}%`, backgroundColor: colors.primary }]} />
         <View style={[styles.thumb, { left: `${percent}%`, backgroundColor: colors.surface, borderColor: colors.primary }]} />
-        <View style={styles.hitAreas}>
-          {STEPS.map((step) => (
-            <Pressable key={step} style={styles.hitArea} onPress={() => onChange?.(step)} accessibilityElementsHidden importantForAccessibility="no" />
-          ))}
-        </View>
       </View>
       <View style={styles.labels}>
         <Text variant="caption">{labels[0]}</Text>
@@ -49,10 +76,8 @@ export function FeelingSlider({ value, onChange, labels = ['Épuisant', 'Excelle
 
 const styles = StyleSheet.create({
   container: { gap: 8 },
-  track: { height: 32, justifyContent: 'center', marginHorizontal: 12 },
+  track: { height: 40, justifyContent: 'center', marginHorizontal: 12 },
   rail: { position: 'absolute', left: 0, right: 0, height: 6, borderRadius: radius.pill },
-  thumb: { position: 'absolute', width: 24, height: 24, marginLeft: -12, borderRadius: 12, borderWidth: 2, boxShadow: '0 1px 3px rgba(5, 25, 35, 0.15)' },
-  hitAreas: { position: 'absolute', top: 0, bottom: 0, left: -12, right: -12, flexDirection: 'row' },
-  hitArea: { flex: 1 },
+  thumb: { position: 'absolute', width: 26, height: 26, marginLeft: -13, borderRadius: 13, borderWidth: 2, boxShadow: '0 1px 3px rgba(5, 25, 35, 0.15)' },
   labels: { flexDirection: 'row', justifyContent: 'space-between' },
 });

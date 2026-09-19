@@ -114,14 +114,9 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack, peerRole =
               ) : null}
               <View style={[styles.line, message.fromMe ? styles.mine : styles.theirs]}>
                 {showSenders && !message.fromMe ? (
-                  <Avatar initials={message.senderInitials ?? ''} size={28} tone={avatarToneFor(message.senderName ?? message.id)} />
+                  <Avatar initials={message.senderInitials ?? ''} size={38} tone={avatarToneFor(message.senderName ?? message.id)} />
                 ) : null}
                 <View style={[styles.bubbleWrap, message.fromMe ? styles.alignEnd : styles.alignStart, message.sending && styles.sending]}>
-                  {showSenders && !message.fromMe && message.senderName ? (
-                    <Text variant="caption" color="accentInk" style={styles.sender}>
-                      {message.senderName}
-                    </Text>
-                  ) : null}
                   <View
                     style={[
                       styles.bubble,
@@ -129,6 +124,11 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack, peerRole =
                         ? { backgroundColor: colors.primary, borderBottomRightRadius: 6 }
                         : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderBottomLeftRadius: 6 },
                     ]}>
+                    {showSenders && !message.fromMe && message.senderName ? (
+                      <Text variant="caption" color="accentInk" style={styles.sender}>
+                        {message.senderName}
+                      </Text>
+                    ) : null}
                     <Text style={{ color: message.fromMe ? colors.onPrimary : colors.ink }}>{message.text}</Text>
                   </View>
                   {message.session ? (
@@ -240,11 +240,11 @@ const styles = StyleSheet.create({
   messageBlock: { gap: 10 },
   dayPill: { alignSelf: 'center', height: 24, paddingHorizontal: 10, borderRadius: radius.pill, justifyContent: 'center' },
   /** La ligne d'un message : la pastille de l'auteur à gauche, la bulle à droite. */
-  line: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, maxWidth: '85%' },
+  line: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, maxWidth: '85%' },
   bubbleWrap: { flexShrink: 1, gap: 4 },
   alignStart: { alignItems: 'flex-start' },
   alignEnd: { alignItems: 'flex-end' },
-  sender: { paddingHorizontal: 4 },
+  sender: { marginBottom: 2 },
   mine: { alignSelf: 'flex-end', alignItems: 'flex-end' },
   theirs: { alignSelf: 'flex-start', alignItems: 'flex-start' },
   sending: { opacity: 0.6 },

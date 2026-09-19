@@ -114,13 +114,13 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
               }
               <div class="line" [class.mine]="message.fromMe">
                 @if (active()?.kind === 'group' && !message.fromMe) {
-                  <tw-avatar class="speaker" [initials]="message.senderInitials ?? ''" tone="accent" [size]="28" />
+                  <tw-avatar class="speaker" [initials]="message.senderInitials ?? ''" tone="accent" [size]="40" />
                 }
                 <div class="bubble-wrap" [class.mine]="message.fromMe">
-                  @if (active()?.kind === 'group' && !message.fromMe && message.senderName) {
-                    <span class="caption sender">{{ message.senderName }}</span>
-                  }
                   <div class="bubble" [class.mine]="message.fromMe">
+                    @if (active()?.kind === 'group' && !message.fromMe && message.senderName) {
+                      <span class="caption sender">{{ message.senderName }}</span>
+                    }
                     @if (message.session; as session) {
                       <button type="button" class="quoted" (click)="openSession(session)">
                         <span class="q-head">
@@ -277,8 +277,9 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
       }
 
       .sender {
-        padding: 0 4px 1px;
         color: var(--accent-ink);
+        /* La bulle espace ses blocs de 10 px : trop pour un nom et sa phrase. */
+        margin-bottom: -7px;
       }
 
       .filters {
@@ -537,7 +538,7 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
       /* La ligne d'un message : la pastille de l'auteur à gauche, la bulle à droite. */
       .line {
         display: flex;
-        align-items: flex-end;
+        align-items: flex-start;
         gap: 8px;
         max-width: 75%;
       }
@@ -547,7 +548,7 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
       }
 
       .speaker {
-        margin-bottom: 2px;
+        flex-shrink: 0;
       }
 
       .bubble-wrap {
