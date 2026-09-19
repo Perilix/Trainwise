@@ -2,6 +2,7 @@
 import type { ChatMessage } from '@/features/athlete/types';
 import { sampleCoachThread, samplePlannedDetails, sampleRuns } from '@/features/athlete/sample-data';
 import type {
+  ApiAlertRulesState,
   ApiCoachAthlete,
   ApiCoachAthleteDetail,
   ApiCoachStats,
@@ -352,4 +353,20 @@ export const sampleStrengthDone: ApiStrengthSessionDetail = {
   ],
   circuit: { name: 'Gainage', rounds: 3, restBetweenRounds: 45 },
   superset: { name: 'Super-set fessiers', sets: 3, restBetweenSets: 75 },
+};
+
+/** Seuils d'alerte affichés en mode démo : les valeurs par défaut, non modifiables. */
+export const sampleAlertRules: ApiAlertRulesState = {
+  rules: {
+    inactivityOrange: 7,
+    inactivityRed: 14,
+    skippedOrange: 1,
+    skippedRed: 3,
+    feelingOrange: 7,
+    feelingRed: 4,
+    volumeDropEnabled: true,
+    volumeDropPercent: 50,
+  },
+  editable: false,
+  planName: 'Découverte',
 };

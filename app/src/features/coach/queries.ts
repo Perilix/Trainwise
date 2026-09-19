@@ -10,6 +10,8 @@ import { useDirectChat } from '@/features/chat/use-direct-chat';
 import { mapStrengthDone } from '@/features/sessions/strength-done';
 import { api, cachedGet, invalidateApiCache } from '@/lib/api';
 import type {
+  ApiAlertRules,
+  ApiAlertRulesState,
   ApiCalendarData,
   ApiCoachAthlete,
   ApiCoachAthleteDetail,
@@ -37,6 +39,7 @@ import {
   sampleCoachMessages,
   sampleCoachRun,
   sampleCoachStats,
+  sampleAlertRules,
   sampleInviteCode,
   samplePendingInvitations,
   sampleSearchResults,
@@ -193,6 +196,11 @@ export function useInviteOverview() {
   );
 }
 
+/** Seuils d'alerte du coach : ils décident quand un athlète passe en orange, puis en rouge. */
+export function useAlertRules() {
+  return useSessionQuery('coach:alert-rules', async () => api<ApiAlertRulesState>('/api/coach/alert-rules'), () => sampleAlertRules);
+}
+
 /** Écritures de l'espace coach. En démo, elles n'appellent pas l'API. */
 export function useCoachActions() {
   const { status, user, updateUser } = useSession();
@@ -213,6 +221,13 @@ export function useCoachActions() {
       if (!live) return;
       await api(`/api/coach/subscription-requests/${encodeURIComponent(id)}/respond`, { method: 'POST', body: { action: accept ? 'accept' : 'decline' } });
       invalidateApiCache();
+    },
+    /** Le serveur borne les valeurs et renvoie ce qu'il a retenu. */
+    async saveAlertRules(rules: ApiAlertRules) {
+      if (!live) return sampleAlertRules;
+      const state = await api<ApiAlertRulesState>('/api/coach/alert-rules', { method: 'PUT', body: rules });
+      invalidateApiCache();
+      return state;
     },
     async generateInviteCode() {
       if (!live) return sampleInviteCode;

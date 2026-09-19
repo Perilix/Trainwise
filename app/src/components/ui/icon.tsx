@@ -13,6 +13,7 @@ const ICONS = {
   chevronRight: '<path d="m9 18 6-6-6-6"/>',
   chevronDown: '<path d="m6 9 6 6 6-6"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
+  minus: '<path d="M5 12h14"/>',
   bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/>',
   flame: '<path d="M12 22c4.1 0 7-2.9 7-7 0-3.2-1.7-5.6-4.2-8.1-.4 2-1.4 3.4-2.8 4 .2-3.3-1-6.4-4-8.9.2 4.2-3 6.6-3 11.4C5 18.9 7.9 22 12 22z"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',

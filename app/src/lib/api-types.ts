@@ -104,6 +104,21 @@ export type ApiSubscriptionRequest = { _id: string; athlete: ApiUserRef | null; 
 
 export type ApiPendingInvitation = { _id: string; athlete: ApiUserRef | null; invitedAt: string; inviteMethod: 'code' | 'direct' };
 
+/** Seuils d'alerte du coach : à partir de quand un athlète passe en orange, puis en rouge. */
+export type ApiAlertRules = {
+  inactivityOrange: number;
+  inactivityRed: number;
+  skippedOrange: number;
+  skippedRed: number;
+  feelingOrange: number;
+  feelingRed: number;
+  volumeDropEnabled: boolean;
+  volumeDropPercent: number;
+};
+
+/** `editable` est faux quand le plan du coach n'inclut pas les alertes sur mesure. */
+export type ApiAlertRulesState = { rules: ApiAlertRules; editable: boolean; planName: string };
+
 export type ApiUserSearchResult = ApiUserRef & { relationStatus: 'pending' | 'accepted' | 'rejected' | 'requested' | null; hasCoach: boolean };
 
 export type AuthResponse = { token: string; user: ApiUser };

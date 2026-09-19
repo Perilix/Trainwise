@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Avatar, Button, Card, Chip, Screen, Section, SectionHeader, Text } from '@/components/ui';
+import { Avatar, Button, Card, Chip, Icon, Screen, Section, SectionHeader, Text } from '@/components/ui';
 import { useSession } from '@/features/auth/session';
 import { InviteCodeCard } from '@/features/coach/invite-code-card';
 import { DIPLOMA_OPTIONS, DISCIPLINE_OPTIONS, optionLabel } from '@/features/coach/profile-options';
@@ -9,9 +9,11 @@ import { useInviteOverview } from '@/features/coach/queries';
 import { AppearanceCard } from '@/features/settings/appearance-card';
 import { MainAppBar } from '@/features/shell/main-app-bar';
 import { initialsOf } from '@/features/athlete/mappers';
+import { useTheme } from '@/theme/theme-provider';
 
 export default function CoachProfileScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { user, signOut } = useSession();
   const { data: invite, refetch } = useInviteOverview();
 
@@ -85,6 +87,19 @@ export default function CoachProfileScreen() {
       </Section>
 
       <Section style={styles.tight}>
+        <Pressable accessibilityRole="button" onPress={() => router.push('/pro/alertes')}>
+          <Card style={styles.link}>
+            <Icon name="bell" size={20} color={colors.text2} />
+            <View style={styles.flex}>
+              <Text variant="sectionTitle">Alertes</Text>
+              <Text variant="small">Quand considérez-vous qu’un athlète décroche ?</Text>
+            </View>
+            <Icon name="chevronRight" size={18} color={colors.text3} />
+          </Card>
+        </Pressable>
+      </Section>
+
+      <Section style={styles.tight}>
         <AppearanceCard />
       </Section>
 
@@ -100,6 +115,7 @@ const styles = StyleSheet.create({
   heading: { paddingTop: 4, paddingBottom: 14 },
   tight: { paddingBottom: 12 },
   userCard: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  link: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   facts: { gap: 14, marginTop: 14 },
   fact: { gap: 4 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 },
