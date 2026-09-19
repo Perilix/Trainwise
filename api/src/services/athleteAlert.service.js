@@ -1,7 +1,7 @@
 const PlannedRun = require('../models/plannedRun.model');
 const CoachAthlete = require('../models/coachAthlete.model');
 const User = require('../models/user.model');
-const { computeAthleteStatus, isWorse } = require('./athleteStatus.service');
+const { computeAthleteStatus, isWorse, DEFAULT_RULES } = require('./athleteStatus.service');
 const { createNotification } = require('../controllers/notification.controller');
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -37,21 +37,24 @@ async function markMissedSessions(now = new Date()) {
   return { markedMissed: result.modifiedCount };
 }
 
-// Construit le détail lisible des raisons du statut pour le message d'alerte
-function buildReasons(statusData) {
+// Construit le détail lisible des raisons du statut pour le message d'alerte.
+// Les seuils sont ceux du coach : le message ne doit citer que ce qui, pour
+// lui, déclenche vraiment l'alerte.
+function buildReasons(statusData, coachRules) {
+  const rules = { ...DEFAULT_RULES, ...(coachRules?.toObject?.() || coachRules || {}) };
   const reasons = [];
 
   if (statusData.daysSinceActivity === null) {
     reasons.push('aucune activité enregistrée');
-  } else if (statusData.daysSinceActivity > 7) {
+  } else if (statusData.daysSinceActivity > rules.inactivityOrange) {
     reasons.push(`aucune activité depuis ${statusData.daysSinceActivity} jours`);
   }
 
-  if (statusData.skippedCount >= 1) {
+  if (statusData.skippedCount >= rules.skippedOrange) {
     reasons.push(`${statusData.skippedCount} séance${statusData.skippedCount > 1 ? 's' : ''} manquée${statusData.skippedCount > 1 ? 's' : ''} sur 4 semaines`);
   }
 
-  if (statusData.avgFeeling !== null && statusData.avgFeeling < 7) {
+  if (statusData.avgFeeling !== null && statusData.avgFeeling < rules.feelingOrange) {
     reasons.push(`ressenti moyen en baisse (${statusData.avgFeeling}/10)`);
   }
 
@@ -86,7 +89,8 @@ async function checkStatusChanges(now = new Date()) {
       rulesCache.set(coachId, coach?.coachAlertRules || null);
     }
 
-    const key = `${coachId}:${rel.athlete._id}`;
+    const athleteId = rel.athlete._id.toString();
+    const key = `${coachId}:${athleteId}`;
     let statusData = statusCache.get(key);
     if (!statusData) {
       statusData = await computeAthleteStatus(rel.athlete._id, now, rulesCache.get(coachId));
@@ -114,7 +118,7 @@ async function checkStatusChanges(now = new Date()) {
     }
 
     const firstName = rel.athlete.firstName;
-    const reasons = buildReasons(statusData);
+    const reasons = buildReasons(statusData, rulesCache.get(coachId));
     const title = current === 'red'
       ? `🔴 ${firstName} est en alerte`
       : `🟠 ${firstName} est à surveiller`;
