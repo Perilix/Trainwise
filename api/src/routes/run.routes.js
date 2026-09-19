@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const runController = require('../controllers/run.controller');
 const matchController = require('../controllers/plannedMatch.controller');
+const stravaController = require('../controllers/strava.controller');
 const { protect } = require('../middleware/auth.middleware');
 const checkAIAccess = require('../middleware/checkAIAccess');
 
@@ -221,6 +222,10 @@ router.post('/:id/analyze', checkAIAccess(1), runController.analyzeRun);
 router.patch('/:id/analysis', runController.updateAnalysis);
 
 // Mapping séance Strava ⇄ séance planifiée
+// Recalcul du déroulé réalisé depuis les tours Strava (détection améliorée,
+// ou rattachement à une séance prévue fait après l'import).
+router.post('/:id/blocks/rebuild', stravaController.rebuildRunBlocks);
+
 router.get('/:id/match/candidates', matchController.getRunMatchCandidates);
 router.post('/:id/match/confirm', matchController.confirmRunMatch);
 router.post('/:id/match/dismiss', matchController.dismissRunMatch);
