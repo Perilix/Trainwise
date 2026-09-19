@@ -1,11 +1,11 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useMemo } from 'react';
-import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, Icon, IconButton, StateView, Text } from '@/components/ui';
+import { Avatar, Button, Icon, IconButton, StateView, Text } from '@/components/ui';
 import { useCoachChat } from '@/features/athlete/coach-chat';
-import { usePlannedSession } from '@/features/athlete/queries';
+import { useAthleteGroupConversations, usePlannedSession } from '@/features/athlete/queries';
 import type { CitedSession } from '@/features/athlete/types';
 import { ChatThread } from '@/features/chat/chat-thread';
 import { SessionPreview } from '@/features/sessions/session-preview';
@@ -17,6 +17,7 @@ export default function CoachChatScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const chat = useCoachChat();
+  const { data: groups } = useAthleteGroupConversations();
   const { width } = useWindowDimensions();
 
   useFocusEffect(chat.markRead);
@@ -60,6 +61,26 @@ export default function CoachChatScreen() {
       onBack={() => router.navigate('/')}
       peerRole="coach"
       headerRight={<IconButton icon="calendar" size={44} glass accessibilityLabel="Ouvrir le planning" onPress={() => router.push('/planning')} />}
+      above={
+        groups && groups.length ? (
+          <View style={styles.groups}>
+            {groups.map((group) => (
+              <Pressable
+                key={group.conversationId}
+                accessibilityRole="button"
+                accessibilityLabel={`Discussion ${group.name}${group.unread ? `, ${group.unread} non lus` : ''}`}
+                onPress={() => router.push({ pathname: '/discussion', params: { conversation: group.conversationId, nom: group.name } })}
+                style={[styles.groupChip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <Avatar initials={group.initials} size={24} tone="primary" />
+                <Text variant="small" numberOfLines={1}>
+                  {group.name}
+                </Text>
+                {group.unread ? <View style={[styles.dot, { backgroundColor: colors.danger }]} /> : null}
+              </Pressable>
+            ))}
+          </View>
+        ) : null
+      }
       CitedSessionBody={CitedSessionBody}
       onOpenSession={(session) =>
         session.kind === 'run'
@@ -75,4 +96,7 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 32 },
   centered: { textAlign: 'center' },
   joinButton: { marginTop: 14 },
+  groups: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, paddingBottom: 10 },
+  groupChip: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6, paddingRight: 12, paddingLeft: 6, borderRadius: 999, borderWidth: 1 },
+  dot: { width: 8, height: 8, borderRadius: 4 },
 });

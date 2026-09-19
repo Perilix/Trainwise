@@ -5,16 +5,15 @@ import { ChatThread } from '@/features/chat/chat-thread';
 import { useGroupChat } from '@/features/chat/group-chat';
 
 /**
- * La discussion d'un groupe d'athlètes.
+ * La discussion d'un groupe, vue par l'athlète.
  *
- * C'est une conversation à plusieurs : tout le monde voit les messages de tout
- * le monde. Pas de séance citée ici — une séance appartient à un athlète, pas
- * à un groupe.
+ * Il ne peut pas la créer — c'est son coach qui rassemble le groupe — mais il
+ * y écrit comme les autres, et voit les messages de tout le monde.
  */
-export default function CoachGroupChatScreen() {
+export default function AthleteGroupChatScreen() {
   const router = useRouter();
-  const { id, conversation, nom } = useLocalSearchParams<{ id?: string; conversation?: string; nom?: string }>();
-  const chat = useGroupChat({ groupId: id, conversationId: conversation, name: nom ?? 'Groupe' });
+  const { conversation, nom } = useLocalSearchParams<{ conversation: string; nom?: string }>();
+  const chat = useGroupChat({ conversationId: conversation, name: nom ?? 'Groupe' });
 
   useFocusEffect(chat.markRead);
 

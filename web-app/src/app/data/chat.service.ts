@@ -9,14 +9,27 @@ import { formatDayShort, formatTime, toIsoDay } from '../core/format';
 
 export type ConversationRow = {
   conversationId: string;
-  peerId: string;
+  /** Null pour un groupe : il n'y a pas d'interlocuteur unique. */
+  peerId: string | null;
+  kind: 'direct' | 'group';
   name: string;
   initials: string;
   online: boolean;
   preview: string;
   timeLabel: string;
   unread: number;
+  /** Nombre de participants, pour un groupe. */
+  members?: number;
 };
+
+/** Les initiales d'un groupe viennent de son nom : « Marathon de Lyon » → ML. */
+const groupInitials = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter((word) => word.length > 2)
+    .slice(0, 2)
+    .map((word) => word[0].toUpperCase())
+    .join('') || name.slice(0, 2).toUpperCase();
 
 function timeLabel(sentAt: Date, now: Date) {
   const age = daysBetween(sentAt, now);
@@ -35,20 +48,41 @@ export class ChatService {
       map((conversations) => {
         const now = new Date();
         return conversations.flatMap<ConversationRow>((conversation) => {
-          const peer = conversation.otherParticipant;
-          if (conversation.type !== 'direct' || !peer) return [];
           const last = conversation.lastMessage;
           const sentAt = last?.sentAt ? new Date(last.sentAt) : null;
+          const preview = last?.content ? (last.type === 'text' ? last.content : 'Pièce jointe') : 'Nouvelle conversation';
+          const common = {
+            conversationId: conversation._id,
+            preview,
+            timeLabel: sentAt ? timeLabel(sentAt, now) : '',
+            unread: conversation.unreadCount,
+          };
+
+          if (conversation.type === 'group') {
+            const name = conversation.name?.trim() || 'Groupe';
+            return [
+              {
+                ...common,
+                peerId: null,
+                kind: 'group' as const,
+                name,
+                initials: groupInitials(name),
+                online: false,
+                members: conversation.participants?.length ?? 0,
+              },
+            ];
+          }
+
+          const peer = conversation.otherParticipant;
+          if (!peer) return [];
           return [
             {
-              conversationId: conversation._id,
+              ...common,
               peerId: peer._id,
+              kind: 'direct' as const,
               name: `${peer.firstName} ${peer.lastName}`.trim(),
               initials: initialsOf(peer.firstName, peer.lastName),
               online: peer.isOnline,
-              preview: last?.content ? (last.type === 'text' ? last.content : 'Pièce jointe') : 'Nouvelle conversation',
-              timeLabel: sentAt ? timeLabel(sentAt, now) : '',
-              unread: conversation.unreadCount,
             },
           ];
         });
@@ -85,6 +119,7 @@ export class ChatService {
           map((conversation) => ({
             conversationId: conversation._id,
             peerId: coach._id,
+            kind: 'direct' as const,
             name: `${coach.firstName} ${coach.lastName}`.trim(),
             initials: initialsOf(coach.firstName, coach.lastName),
             online: false,

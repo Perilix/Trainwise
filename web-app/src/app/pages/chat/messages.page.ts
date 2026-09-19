@@ -30,7 +30,7 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
   imports: [AvatarComponent, IconComponent, RouterLink, StateViewComponent, WeekPlanComponent, WorkoutProfileComponent],
   template: `
     <main class="split">
-      @if (auth.isCoach()) {
+      @if (showList()) {
       <section class="list">
         <div class="list-head">
           <span class="title">Messages</span>
@@ -42,15 +42,28 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
           </div>
         </div>
 
+        @if (groupCount()) {
+          <div class="filters">
+            @for (option of filters; track option.value) {
+              <button type="button" class="chip-filter" [class.on]="filter() === option.value" (click)="filter.set(option.value)">
+                {{ option.label }}
+              </button>
+            }
+          </div>
+        }
+
         <div class="rows scroll-y">
           @if (conversations.loading()) {
             <tw-state kind="loading" />
           } @else {
             @for (row of filtered(); track row.conversationId) {
               <button type="button" class="conv" [class.on]="row.conversationId === activeId()" (click)="select(row)">
-                <tw-avatar [initials]="row.initials" tone="accent" [size]="44" [online]="row.online" />
+                <tw-avatar [initials]="row.initials" [tone]="row.kind === 'group' ? 'subtle' : 'accent'" [size]="44" [online]="row.online" />
                 <div class="grow stack">
                   <div class="line">
+                    @if (row.kind === 'group') {
+                      <tw-icon name="friends" [size]="14" />
+                    }
                     <span class="h3 grow truncate">{{ row.name }}</span>
                     <span class="caption muted-3">{{ row.timeLabel }}</span>
                   </div>
@@ -73,16 +86,21 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
       <section class="thread">
         @if (active(); as peer) {
           <header class="thread-head">
-            <tw-avatar [initials]="peer.initials" tone="accent" [size]="44" [online]="peer.online" />
+            <tw-avatar [initials]="peer.initials" [tone]="peer.kind === 'group' ? 'subtle' : 'accent'" [size]="44" [online]="peer.online" />
             <div class="grow stack">
               <span class="h3">{{ peer.name }}</span>
               <div class="line">
-                <span class="dot" [style.background]="peer.online ? 'var(--success)' : 'var(--text3)'"></span>
-                <span class="caption muted">{{ typing() ? 'écrit…' : peer.online ? 'En ligne' : 'Hors ligne' }}</span>
+                @if (peer.kind === 'group') {
+                  <tw-icon name="friends" [size]="14" />
+                  <span class="caption muted">{{ typing() ? 'quelqu’un écrit…' : (peer.members ?? 0) + ' participants' }}</span>
+                } @else {
+                  <span class="dot" [style.background]="peer.online ? 'var(--success)' : 'var(--text3)'"></span>
+                  <span class="caption muted">{{ typing() ? 'écrit…' : peer.online ? 'En ligne' : 'Hors ligne' }}</span>
+                }
               </div>
             </div>
-            @if (auth.isCoach()) {
-              <button class="btn btn-ghost btn-sm" type="button" (click)="openAthlete(peer.peerId)">
+            @if (auth.isCoach() && peer.peerId; as athleteId) {
+              <button class="btn btn-ghost btn-sm" type="button" (click)="openAthlete(athleteId)">
                 <tw-icon name="user" [size]="16" [strokeWidth]="2" />
                 Fiche athlète
               </button>
@@ -244,6 +262,32 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
         line-height: 30px;
         font-weight: 600;
         letter-spacing: -0.01em;
+      }
+
+      .filters {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0 16px 12px;
+      }
+
+      .chip-filter {
+        height: 28px;
+        padding: 0 12px;
+        border-radius: var(--r-pill);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text3);
+        cursor: pointer;
+      }
+
+      .chip-filter.on {
+        background: var(--subtle);
+        border-color: var(--border-strong);
+        color: var(--ink);
+        font-weight: 600;
       }
 
       .search-wrap {
@@ -646,7 +690,8 @@ export class MessagesPage {
   readonly week = load<WeekPlanDay[]>(() => {
     if (!this.auth.isCoach()) return this.athleteApi.weekPlan$();
     const peer = this.activePeer();
-    if (!peer) return of<WeekPlanDay[]>([]);
+    // Un groupe n'a pas de semaine à afficher : il n'a pas un planning, mais N.
+    if (!peer?.peerId) return of<WeekPlanDay[]>([]);
     const start = startOfWeek(new Date());
     const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6);
     return this.coach
@@ -655,6 +700,12 @@ export class MessagesPage {
   });
 
   readonly search = signal('');
+  readonly filters = [
+    { value: 'tous' as const, label: 'Tous' },
+    { value: 'athletes' as const, label: 'Athlètes' },
+    { value: 'groupes' as const, label: 'Groupes' },
+  ];
+  readonly filter = signal<'tous' | 'athletes' | 'groupes'>('tous');
   readonly activeId = signal<string | null>(null);
   readonly activePeer = signal<ConversationRow | null>(null);
   readonly messages = signal<ApiMessage[]>([]);
@@ -671,10 +722,20 @@ export class MessagesPage {
   private typingSent = false;
   private typingTimer: ReturnType<typeof setTimeout> | null = null;
 
+  readonly groupCount = computed(() => (this.conversations.data() ?? []).filter((row) => row.kind === 'group').length);
+
+  /**
+   * L'athlète n'avait qu'une conversation, celle de son coach : la liste ne lui
+   * servait à rien. Dès qu'il appartient à un groupe, il en a plusieurs.
+   */
+  readonly showList = computed(() => this.auth.isCoach() || this.groupCount() > 0);
+
   readonly filtered = computed(() => {
     const term = this.search().trim().toLowerCase();
-    const rows = this.conversations.data() ?? [];
-    return term ? rows.filter((row) => row.name.toLowerCase().includes(term)) : rows;
+    const kind = this.filter();
+    return (this.conversations.data() ?? [])
+      .filter((row) => (kind === 'tous' ? true : kind === 'groupes' ? row.kind === 'group' : row.kind === 'direct'))
+      .filter((row) => (term ? row.name.toLowerCase().includes(term) : true));
   });
 
   readonly active = computed(() => this.activePeer());
@@ -724,7 +785,10 @@ export class MessagesPage {
       const rows = this.conversations.data();
       if (!rows || this.activeId()) return;
       if (!this.auth.isCoach()) {
-        this.openCoachConversation();
+        const wantedConversation = this.conversation();
+        const target = wantedConversation ? rows.find((row) => row.conversationId === wantedConversation) : null;
+        if (target) this.select(target);
+        else this.openCoachConversation();
         return;
       }
       const wantedConversation = this.conversation();
@@ -802,10 +866,10 @@ export class MessagesPage {
     // et les blocs décider plutôt que d'imposer celle du coach.
     const request =
       session.kind === 'run'
-        ? this.auth.isCoach() && peer
+        ? this.auth.isCoach() && peer?.peerId
           ? this.coach.athleteRun$(peer.peerId, session.id).pipe(map((result) => result.detail.segments))
           : this.athleteApi.runDetail$(session.id).pipe(map((detail) => detail.segments))
-        : this.auth.isCoach() && peer
+        : this.auth.isCoach() && peer?.peerId
           ? this.coach.athleteSession$(peer.peerId, session.id).pipe(map((detail) => detail.segments))
           : this.athleteApi.plannedSession$(session.id).pipe(map((detail) => detail.segments));
 

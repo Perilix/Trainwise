@@ -25,9 +25,11 @@ type Props = {
   onCite?: () => void;
   /** Déroulé affiché sous la carte d'une séance citée (le composant va chercher la séance). */
   CitedSessionBody?: ComponentType<{ session: CitedSession }>;
+  /** Bandeau glissé entre l'en-tête et le fil — les discussions de groupe, côté athlète. */
+  above?: ReactNode;
 };
 
-export function ChatThread({ chat, offlineLabel, headerRight, onBack, peerRole = 'athlete', onOpenSession, onCite, CitedSessionBody }: Props) {
+export function ChatThread({ chat, offlineLabel, headerRight, onBack, peerRole = 'athlete', onOpenSession, onCite, CitedSessionBody, above }: Props) {
   const { colors } = useTheme();
   const [draft, setDraft] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -91,6 +93,8 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack, peerRole =
         </View>
         {headerRight}
       </View>
+
+      {above}
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView ref={scrollRef} contentContainerStyle={styles.thread} onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}>

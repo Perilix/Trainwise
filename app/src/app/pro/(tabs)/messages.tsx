@@ -1,7 +1,8 @@
 import { useFocusEffect, useRouter } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Avatar, avatarToneFor, Card, Screen, Section, StateView, Text } from '@/components/ui';
+import { Avatar, avatarToneFor, Card, Icon, Screen, Section, Segmented, StateView, Text } from '@/components/ui';
 import type { ConversationRow } from '@/features/chat/conversations';
 import { useCoachConversations } from '@/features/coach/queries';
 import { useSocketEvent } from '@/features/realtime/socket-provider';
@@ -10,12 +11,28 @@ import { useTheme } from '@/theme/theme-provider';
 import { radius } from '@/theme/tokens';
 import { fontFamily } from '@/theme/typography';
 
+const FILTERS = [
+  { value: 'tous', label: 'Tous' },
+  { value: 'athletes', label: 'Athlètes' },
+  { value: 'groupes', label: 'Groupes' },
+] as const;
+
 export default function CoachMessagesScreen() {
   const router = useRouter();
   const { data, loading, error, refetch } = useCoachConversations();
+  const [filter, setFilter] = useState<(typeof FILTERS)[number]['value']>('tous');
 
   useFocusEffect(refetch);
   useSocketEvent('message:new', refetch);
+
+  const groups = (data ?? []).filter((row) => row.kind === 'group').length;
+  const rows = (data ?? []).filter((row) => (filter === 'tous' ? true : filter === 'groupes' ? row.kind === 'group' : row.kind === 'direct'));
+
+  // Ouvrir un groupe, c'est ouvrir sa conversation ; un athlète, c'est le fil direct.
+  const open = (conversation: ConversationRow) =>
+    conversation.kind === 'group'
+      ? router.push({ pathname: '/pro/groupe-discussion', params: { conversation: conversation.conversationId, nom: conversation.name } })
+      : router.push({ pathname: '/pro/conversation/[id]', params: { id: conversation.peerId } });
 
   return (
     <Screen tabs>
@@ -26,20 +43,20 @@ export default function CoachMessagesScreen() {
 
       {data ? (
         <Section>
-          {data.length ? (
+          {groups > 0 ? <Segmented options={FILTERS} value={filter} onChange={setFilter} style={styles.filters} /> : null}
+          {rows.length ? (
             <Card padding={0} style={styles.list}>
-              {data.map((conversation, index) => (
-                <ConversationItem
-                  key={conversation.peerId}
-                  conversation={conversation}
-                  divided={index > 0}
-                  onPress={() => router.push({ pathname: '/pro/conversation/[id]', params: { id: conversation.peerId } })}
-                />
+              {rows.map((conversation, index) => (
+                <ConversationItem key={conversation.conversationId} conversation={conversation} divided={index > 0} onPress={() => open(conversation)} />
               ))}
             </Card>
           ) : (
             <Card>
-              <Text variant="body2">Aucune conversation pour l’instant. Écrivez à un athlète depuis sa fiche.</Text>
+              <Text variant="body2">
+                {filter === 'groupes'
+                  ? 'Aucune discussion de groupe. Ouvrez-en une depuis la carte d’un groupe, sur l’accueil.'
+                  : 'Aucune conversation pour l’instant. Écrivez à un athlète depuis sa fiche.'}
+              </Text>
             </Card>
           )}
         </Section>
@@ -60,11 +77,12 @@ function ConversationItem({ conversation, divided, onPress }: { conversation: Co
       onPress={onPress}
       style={[styles.item, divided && { borderTopWidth: 1, borderTopColor: colors.border }]}>
       <View>
-        <Avatar initials={conversation.initials} size={44} tone={avatarToneFor(conversation.peerId)} />
+        <Avatar initials={conversation.initials} size={44} tone={conversation.kind === 'group' ? 'primary' : avatarToneFor(conversation.peerId)} />
         {conversation.online ? <View style={[styles.online, { backgroundColor: colors.success, borderColor: colors.surface }]} /> : null}
       </View>
       <View style={styles.text}>
         <View style={styles.titleRow}>
+          {conversation.kind === 'group' ? <Icon name="users" size={14} color={colors.text2} /> : null}
           <Text variant="h3" numberOfLines={1} style={styles.name}>
             {conversation.name}
           </Text>
@@ -89,6 +107,7 @@ function ConversationItem({ conversation, divided, onPress }: { conversation: Co
 
 const styles = StyleSheet.create({
   heading: { paddingTop: 4, paddingBottom: 14 },
+  filters: { marginBottom: 12 },
   list: { paddingHorizontal: 16 },
   item: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
   online: { position: 'absolute', right: 0, bottom: 0, width: 12, height: 12, borderRadius: 6, borderWidth: 2 },

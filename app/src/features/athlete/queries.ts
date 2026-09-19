@@ -21,7 +21,7 @@ import { emitAppEvent } from '@/lib/app-events';
 import { startOfWeek } from '@/lib/dates';
 import { formatPace } from '@/lib/format';
 import { useSessionQuery } from '@/features/auth/use-session-query';
-import { getConversations } from '@/features/chat/conversations';
+import { getConversations, mapConversationRows } from '@/features/chat/conversations';
 
 import { buildHome, buildPlanning, buildProfile, buildRunsOverview, initialsOf, mapNotification, mapRunDetail, SESSION_TYPE_LABELS } from './mappers';
 import { mapPlannedDetail } from './session-detail';
@@ -414,4 +414,13 @@ export function useAthleteActions() {
       await api('/api/notifications/read-all', { method: 'PATCH' });
     },
   };
+}
+
+/** Les discussions de groupe auxquelles l'athlète appartient. */
+export function useAthleteGroupConversations() {
+  return useSessionQuery(
+    'athlete:group-conversations',
+    async () => mapConversationRows(await getConversations(), new Date()).filter((row) => row.kind === 'group'),
+    () => [],
+  );
 }

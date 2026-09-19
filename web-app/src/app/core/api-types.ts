@@ -357,6 +357,9 @@ export type ApiNotification = {
 export type ApiConversation = {
   _id: string;
   type: 'direct' | 'group';
+  /** Nom du groupe ; absent pour une conversation directe. */
+  name?: string;
+  participants?: ApiUserRef[];
   otherParticipant?: ApiUserRef & { isOnline: boolean };
   lastMessage?: { content: string; type: 'text' | 'image' | 'document'; sentAt: string | null };
   unreadCount: number;
