@@ -114,62 +114,6 @@ import { StateViewComponent } from '../../ui/state-view.component';
                 }
               </div>
             </section>
-
-            <section class="card card-pad">
-              <div class="spread mb">
-                <span class="h2">Changer de plan</span>
-                <div class="segmented">
-                  <button type="button" class="seg" [class.on]="cycle() === 'monthly'" (click)="cycle.set('monthly')">Mensuel</button>
-                  <button type="button" class="seg" [class.on]="cycle() === 'yearly'" (click)="cycle.set('yearly')">Annuel · 2 mois offerts</button>
-                </div>
-              </div>
-
-              <div class="plans">
-                @for (plan of state.plans; track plan.id) {
-                  <div class="plan" [class.on]="plan.id === current().id" [class.tight]="tooSmall(plan)">
-                    <div class="plan-head">
-                      <span class="h3">{{ plan.name }}</span>
-                      @if (plan.id === current().id) {
-                        <span class="chip chip-done">Actuel</span>
-                      }
-                    </div>
-                    <div class="price">
-                      <span class="num big">{{ priceOf(plan, cycle()) }} €</span>
-                      <span class="caption muted">/ mois</span>
-                    </div>
-                    @if (cycle() === 'yearly' && savingOf(plan) > 0) {
-                      <span class="caption saving num">{{ savingOf(plan) }} € économisés par an</span>
-                    }
-                    <span class="small muted pitch">{{ plan.pitch }}</span>
-                    <ul class="features">
-                      @for (feature of plan.features; track feature) {
-                        <li><tw-icon name="check" [size]="14" [strokeWidth]="2" />{{ feature }}</li>
-                      }
-                    </ul>
-                    @if (tooSmall(plan)) {
-                      <span class="caption err">Trop petit pour vos {{ state.usage.athletes }} athlètes</span>
-                    }
-                    <button
-                      class="btn btn-block"
-                      [class.btn-primary]="plan.id !== current().id"
-                      [class.btn-ghost]="plan.id === current().id"
-                      type="button"
-                      [disabled]="plan.id === current().id || tooSmall(plan) || plan.id === 'decouverte'"
-                      (click)="choose(plan)"
-                    >
-                      {{ planAction(plan) }}
-                    </button>
-                  </div>
-                }
-              </div>
-
-              @if (!state.configured) {
-                <p class="small muted note">
-                  Les tarifs sont en place, le paiement attend encore les clés Stripe. Choisir un plan restera sans effet tant qu'elles manquent.
-                </p>
-              }
-              <p class="caption muted-3 note">Prix hors taxes. Résiliable à tout moment depuis le portail.</p>
-            </section>
           </div>
 
           <aside class="col">
@@ -215,6 +159,62 @@ import { StateViewComponent } from '../../ui/state-view.component';
             </section>
           </aside>
         </div>
+
+        <section class="card card-pad">
+          <div class="spread mb">
+            <span class="h2">Changer de plan</span>
+            <div class="segmented">
+              <button type="button" class="seg" [class.on]="cycle() === 'monthly'" (click)="cycle.set('monthly')">Mensuel</button>
+              <button type="button" class="seg" [class.on]="cycle() === 'yearly'" (click)="cycle.set('yearly')">Annuel · 2 mois offerts</button>
+            </div>
+          </div>
+
+          <div class="plans">
+            @for (plan of state.plans; track plan.id) {
+              <div class="plan" [class.on]="plan.id === current().id" [class.tight]="tooSmall(plan)">
+                <div class="plan-head">
+                  <span class="h3">{{ plan.name }}</span>
+                  @if (plan.id === current().id) {
+                    <span class="chip chip-done">Actuel</span>
+                  }
+                </div>
+                <div class="price">
+                  <span class="num big">{{ priceOf(plan, cycle()) }} €</span>
+                  <span class="caption muted">/ mois</span>
+                </div>
+                @if (cycle() === 'yearly' && savingOf(plan) > 0) {
+                  <span class="caption saving num">{{ savingOf(plan) }} € économisés par an</span>
+                }
+                <span class="small muted pitch">{{ plan.pitch }}</span>
+                <ul class="features">
+                  @for (feature of plan.features; track feature) {
+                    <li><tw-icon name="check" [size]="14" [strokeWidth]="2" />{{ feature }}</li>
+                  }
+                </ul>
+                @if (tooSmall(plan)) {
+                  <span class="caption err">Trop petit pour vos {{ state.usage.athletes }} athlètes</span>
+                }
+                <button
+                  class="btn btn-block"
+                  [class.btn-primary]="plan.id !== current().id"
+                  [class.btn-ghost]="plan.id === current().id"
+                  type="button"
+                  [disabled]="plan.id === current().id || tooSmall(plan) || plan.id === 'decouverte'"
+                  (click)="choose(plan)"
+                >
+                  {{ planAction(plan) }}
+                </button>
+              </div>
+            }
+          </div>
+
+          @if (!state.configured) {
+            <p class="small muted note">
+              Les tarifs sont en place, le paiement attend encore les clés Stripe. Choisir un plan restera sans effet tant qu'elles manquent.
+            </p>
+          }
+          <p class="caption muted-3 note">Prix hors taxes. Résiliable à tout moment depuis le portail.</p>
+        </section>
 
         @if (pending(); as plan) {
           <div class="scrim" (click)="close()">
@@ -365,13 +365,13 @@ import { StateViewComponent } from '../../ui/state-view.component';
       .plans {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 12px;
+        gap: 16px;
       }
 
       .plan {
         border: 1px solid var(--border);
         border-radius: var(--r-md);
-        padding: 16px 14px;
+        padding: 20px 18px;
         display: flex;
         flex-direction: column;
         gap: 8px;
@@ -561,7 +561,9 @@ import { StateViewComponent } from '../../ui/state-view.component';
         .cols {
           grid-template-columns: minmax(0, 1fr);
         }
+      }
 
+      @media (max-width: 1080px) {
         .plans {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
