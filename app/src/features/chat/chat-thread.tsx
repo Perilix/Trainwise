@@ -3,7 +3,7 @@ import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleS
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar, avatarToneFor, Icon, IconButton, TAB_BAR_HEIGHT, TAB_BAR_MARGIN, Text } from '@/components/ui';
-import type { CitedSession } from '@/features/athlete/types';
+import type { ChatMessage, CitedSession } from '@/features/athlete/types';
 import { useTheme } from '@/theme/theme-provider';
 import { radius } from '@/theme/tokens';
 import { fontFamily } from '@/theme/typography';
@@ -32,6 +32,8 @@ type Props = {
 };
 
 export function ChatThread({ chat, offlineLabel, headerRight, onBack, peerRole = 'athlete', onOpenSession, onCite, CitedSessionBody, above, showSenders }: Props) {
+  // Qui a écrit : seulement dans un groupe, et seulement pour les autres.
+  const speaking = (message: ChatMessage) => Boolean(showSenders) && !message.fromMe;
   const { colors } = useTheme();
   const [draft, setDraft] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -112,36 +114,37 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack, peerRole =
                   <Text variant="caption">{message.dayLabel}</Text>
                 </View>
               ) : null}
-              <View style={[styles.line, message.fromMe ? styles.mine : styles.theirs]}>
-                {showSenders && !message.fromMe ? (
-                  <Avatar initials={message.senderInitials ?? ''} size={38} tone={avatarToneFor(message.senderName ?? message.id)} />
+              <View style={[styles.bubbleWrap, message.fromMe ? styles.mine : styles.theirs, message.sending && styles.sending]}>
+                {speaking(message) && message.senderName ? (
+                  <Text variant="caption" color="accentInk" style={styles.sender}>
+                    {message.senderName}
+                  </Text>
                 ) : null}
-                <View style={[styles.bubbleWrap, message.fromMe ? styles.alignEnd : styles.alignStart, message.sending && styles.sending]}>
+                <View style={styles.bubbleRow}>
+                  {speaking(message) ? (
+                    <Avatar initials={message.senderInitials ?? ''} size={38} tone={avatarToneFor(message.senderName ?? message.id)} />
+                  ) : null}
                   <View
                     style={[
                       styles.bubble,
+                      styles.shrink,
                       message.fromMe
                         ? { backgroundColor: colors.primary, borderBottomRightRadius: 6 }
                         : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderBottomLeftRadius: 6 },
                     ]}>
-                    {showSenders && !message.fromMe && message.senderName ? (
-                      <Text variant="caption" color="accentInk" style={styles.sender}>
-                        {message.senderName}
-                      </Text>
-                    ) : null}
                     <Text style={{ color: message.fromMe ? colors.onPrimary : colors.ink }}>{message.text}</Text>
                   </View>
-                  {message.session ? (
-                    <SessionCard session={message.session} onPress={onOpenSession ? () => onOpenSession(message.session!) : undefined}>
-                      {CitedSessionBody && message.session.kind === 'planned' ? <CitedSessionBody session={message.session} /> : null}
-                    </SessionCard>
-                  ) : null}
-                  {message.sending || message.timeLabel ? (
-                    <Text variant="caption" color="text3" style={styles.time}>
-                      {message.sending ? 'Envoi…' : message.timeLabel}
-                    </Text>
-                  ) : null}
                 </View>
+                {message.session ? (
+                  <SessionCard session={message.session} onPress={onOpenSession ? () => onOpenSession(message.session!) : undefined}>
+                    {CitedSessionBody && message.session.kind === 'planned' ? <CitedSessionBody session={message.session} /> : null}
+                  </SessionCard>
+                ) : null}
+                {message.sending || message.timeLabel ? (
+                  <Text variant="caption" color="text3" style={[styles.time, speaking(message) && styles.indented]}>
+                    {message.sending ? 'Envoi…' : message.timeLabel}
+                  </Text>
+                ) : null}
               </View>
             </View>
           ))}
@@ -240,11 +243,13 @@ const styles = StyleSheet.create({
   messageBlock: { gap: 10 },
   dayPill: { alignSelf: 'center', height: 24, paddingHorizontal: 10, borderRadius: radius.pill, justifyContent: 'center' },
   /** La ligne d'un message : la pastille de l'auteur à gauche, la bulle à droite. */
-  line: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, maxWidth: '85%' },
-  bubbleWrap: { flexShrink: 1, gap: 4 },
-  alignStart: { alignItems: 'flex-start' },
-  alignEnd: { alignItems: 'flex-end' },
-  sender: { marginBottom: 2 },
+  bubbleWrap: { maxWidth: '85%', gap: 4 },
+  /** La pastille de l'auteur accompagne la bulle, alignée sur son bas. */
+  bubbleRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
+  shrink: { flexShrink: 1 },
+  /** Nom et heure se calent sur la bulle, pas sur la pastille. */
+  indented: { paddingLeft: 46 },
+  sender: { paddingLeft: 46 },
   mine: { alignSelf: 'flex-end', alignItems: 'flex-end' },
   theirs: { alignSelf: 'flex-start', alignItems: 'flex-start' },
   sending: { opacity: 0.6 },

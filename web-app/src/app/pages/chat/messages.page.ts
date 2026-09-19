@@ -112,15 +112,16 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
               @if (message.dayLabel) {
                 <div class="day">{{ message.dayLabel }}</div>
               }
-              <div class="line" [class.mine]="message.fromMe">
-                @if (active()?.kind === 'group' && !message.fromMe) {
-                  <tw-avatar class="speaker" [initials]="message.senderInitials ?? ''" tone="accent" [size]="40" />
+              @let speaking = active()?.kind === 'group' && !message.fromMe;
+              <div class="bubble-wrap" [class.mine]="message.fromMe" [class.speaking]="speaking">
+                @if (speaking && message.senderName) {
+                  <span class="caption sender">{{ message.senderName }}</span>
                 }
-                <div class="bubble-wrap" [class.mine]="message.fromMe">
+                <div class="bubble-row">
+                  @if (speaking) {
+                    <tw-avatar class="speaker" [initials]="message.senderInitials ?? ''" tone="accent" [size]="40" />
+                  }
                   <div class="bubble" [class.mine]="message.fromMe">
-                    @if (active()?.kind === 'group' && !message.fromMe && message.senderName) {
-                      <span class="caption sender">{{ message.senderName }}</span>
-                    }
                     @if (message.session; as session) {
                       <button type="button" class="quoted" (click)="openSession(session)">
                         <span class="q-head">
@@ -142,8 +143,8 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
                       <span class="text">{{ message.text }}</span>
                     }
                   </div>
-                  <span class="time caption muted-3">{{ message.timeLabel }}</span>
                 </div>
+                <span class="time caption muted-3">{{ message.timeLabel }}</span>
               </div>
             } @empty {
               <tw-state kind="empty" icon="chat" message="Démarre la conversation." />
@@ -278,8 +279,6 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
 
       .sender {
         color: var(--accent-ink);
-        /* La bulle espace ses blocs de 10 px : trop pour un nom et sa phrase. */
-        margin-bottom: -7px;
       }
 
       .filters {
@@ -535,20 +534,23 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
         border-radius: var(--r-pill);
       }
 
-      /* La ligne d'un message : la pastille de l'auteur à gauche, la bulle à droite. */
-      .line {
+      /* La pastille de l'auteur accompagne la bulle, alignée sur son bas ;
+         le nom et l'heure restent en dehors, au-dessus et en dessous. */
+      .bubble-row {
         display: flex;
-        align-items: flex-start;
+        align-items: flex-end;
         gap: 8px;
-        max-width: 75%;
-      }
-
-      .line.mine {
-        align-self: flex-end;
+        min-width: 0;
       }
 
       .speaker {
         flex-shrink: 0;
+      }
+
+      /* Nom et heure se calent sur la bulle, pas sur la pastille. */
+      .bubble-wrap.speaking .sender,
+      .bubble-wrap.speaking .time {
+        padding-left: 48px;
       }
 
       .bubble-wrap {
@@ -556,7 +558,7 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
         flex-direction: column;
         align-items: flex-start;
         gap: 4px;
-        min-width: 0;
+        max-width: 75%;
         /* Le message se pose au lieu d'apparaître d'un coup — à l'envoi comme
            à la réception, et au chargement du fil. */
         animation: message-in 0.22s cubic-bezier(0.2, 0.8, 0.3, 1) both;
