@@ -48,7 +48,11 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack, peerRole =
   const fromCoach = peerRole === 'coach';
 
   useEffect(() => {
-    const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => setKeyboardUp(true));
+    const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => {
+      setKeyboardUp(true);
+      // Le fil rétrécit : sans ça, les derniers messages passent sous le clavier.
+      requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+    });
     const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setKeyboardUp(false));
     return () => {
       show.remove();
@@ -111,7 +115,12 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack, peerRole =
       {above}
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
-        <ScrollView ref={scrollRef} contentContainerStyle={styles.thread} onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}>
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={styles.thread}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}>
           {chat.messages.length === 0 ? (
             <Text variant="body2" style={[styles.centered, styles.firstMessage]}>
               Écris ton premier message à {peer.firstName}.

@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 
 import { BRAND } from '@/components/ui/brand-svg';
@@ -37,8 +37,8 @@ export default function LoginScreen() {
   };
 
   return (
-    <Screen edges={['top', 'bottom']} scroll={false}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
+    <Screen edges={['top', 'bottom']} contentStyle={styles.container}>
+      <View style={styles.flex}>
         <SvgXml xml={scheme === 'dark' ? BRAND.logoDark : BRAND.logoLight} width={102} height={48} accessibilityLabel="Trainwise" />
         <View style={styles.heading}>
           <Text variant="h1" style={styles.title}>
@@ -94,14 +94,14 @@ export default function LoginScreen() {
             </Text>
           </Pressable>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  container: { flex: 1, paddingHorizontal: 24, paddingTop: 56, paddingBottom: 24 },
+  container: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 56, paddingBottom: 24 },
   heading: { gap: 4, marginTop: 40 },
   title: { fontSize: 28, lineHeight: 36 },
   form: { gap: 14, marginTop: 28 },

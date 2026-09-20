@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets, type Edge } from 'react-native-safe-area-context';
 
 import { useIsDesktop } from '@/lib/use-layout';
@@ -36,21 +36,30 @@ export function Screen({ children, scroll = true, tabs, edges = ['top'], content
   return (
     <SafeAreaView edges={edges} style={{ flex: 1, backgroundColor: colors.bg }}>
       {scroll ? (
-        <ScrollView contentContainerStyle={[{ paddingBottom: bottom }, column, contentStyle]} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={[{ paddingBottom: bottom }, column, contentStyle]}
+          keyboardShouldPersistTaps="handled"
+          // Le clavier ne doit pas masquer ce qu'on écrit : la page se décale
+          // et amène le champ au-dessus de lui.
+          automaticallyAdjustKeyboardInsets
+          keyboardDismissMode="interactive">
           {children}
         </ScrollView>
       ) : (
         <View style={[{ flex: 1, paddingBottom: tabs ? bottom : 0 }, column, contentStyle]}>{children}</View>
       )}
-      {/* La barre d'action flotte : le contenu défile dessous, en transparence. */}
+      {/* La barre d'action flotte : le contenu défile dessous, en transparence.
+          Clavier ouvert, elle monte avec lui plutôt que de disparaître dessous. */}
       {footer ? (
-        <GlassSurface
-          radius={0}
-          sheen={false}
-          interactive={false}
-          style={{ paddingBottom: footerInset, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }}>
-          {footer}
-        </GlassSurface>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <GlassSurface
+            radius={0}
+            sheen={false}
+            interactive={false}
+            style={{ paddingBottom: footerInset, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }}>
+            {footer}
+          </GlassSurface>
+        </KeyboardAvoidingView>
       ) : null}
     </SafeAreaView>
   );
