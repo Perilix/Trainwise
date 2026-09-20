@@ -5,6 +5,7 @@ import { StyleSheet, TextInput, View } from 'react-native';
 import { BackBar, Button, Card, ChoicePill, FormError, Screen, Section, StateView, Text } from '@/components/ui';
 import { useAthleteFiche, useCoachActions, useCoachPlannedRaw } from '@/features/coach/queries';
 import { DateStepper } from '@/features/sessions/date-stepper';
+import { ExpectedFeelingPicker } from '@/features/sessions/expected-feeling';
 import { RunBlocksEditor, Stepper } from '@/features/sessions/run-blocks-editor';
 import { newCooldown, newWarmup, toEditable, toPayload, validateBlocks, type EditableBlock } from '@/features/sessions/run-blocks-model';
 import { SESSION_TYPES } from '@/features/sessions/simple-session-form';
@@ -26,6 +27,8 @@ export default function CoachSessionEditorScreen() {
   const [date, setDate] = useState(() => (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : toIsoDay(new Date())));
   const [sessionType, setSessionType] = useState<string | null>(null);
   const [description, setDescription] = useState<string | null>(null);
+  /** `undefined` tant que le coach n'y a pas touché : la valeur de la séance fait foi. */
+  const [expectedFeeling, setExpectedFeeling] = useState<number | null | undefined>(undefined);
   // Nouvelle séance : échauffement et retour au calme proposés d'emblée.
   const [blocks, setBlocks] = useState<EditableBlock[] | null>(() => (planId ? null : [newWarmup(), newCooldown()]));
   const [plan, setPlan] = useState<EditableStrengthPlan | null>(null);
@@ -50,6 +53,7 @@ export default function CoachSessionEditorScreen() {
   const currentPlan = plan ?? toEditableStrength(raw?.strengthPlan);
   const currentType = sessionType ?? raw?.sessionType ?? (strength ? 'full_body' : 'fractionne');
   const currentDescription = description ?? raw?.description ?? '';
+  const currentFeeling = expectedFeeling === undefined ? (raw?.expectedFeeling ?? null) : expectedFeeling;
   const currentDuration = duration ?? raw?.strengthPlan?.estimatedDuration ?? raw?.targetDuration ?? 45;
 
   const save = async () => {
@@ -63,13 +67,14 @@ export default function CoachSessionEditorScreen() {
     const content = strength ? { strengthPlan: toStrengthPayload(currentPlan, currentDuration), targetDuration: currentDuration } : { runBlocks: toPayload(currentBlocks, vma) };
     try {
       if (planId) {
-        await updateAthleteSession(id, planId, { sessionType: currentType, description: currentDescription.trim(), ...content });
+        await updateAthleteSession(id, planId, { sessionType: currentType, description: currentDescription.trim(), expectedFeeling: currentFeeling, ...content });
       } else {
         await createAthleteSession(id, {
           date,
           activityType: strength ? 'strength' : 'running',
           sessionType: currentType,
           description: currentDescription.trim() || undefined,
+          expectedFeeling: currentFeeling,
           ...content,
         });
       }
@@ -132,6 +137,12 @@ export default function CoachSessionEditorScreen() {
               multiline
               style={[styles.description, { backgroundColor: colors.bg, borderColor: colors.border, color: colors.ink }]}
             />
+          </View>
+          <View>
+            <Text variant="caption" color="ink" style={styles.label}>
+              Difficulté attendue
+            </Text>
+            <ExpectedFeelingPicker value={currentFeeling} onChange={setExpectedFeeling} />
           </View>
         </Card>
       </Section>

@@ -3,12 +3,15 @@ import { Location } from '@angular/common';
 import { Router } from '@angular/router';
 
 import type { ApiPlannedRunDetail } from '../../core/api-types';
+import type { PlannedSessionDetail } from '../../domain/athlete.types';
 import { ApiService } from '../../core/api.service';
 import { formatDayLong, formatDecimal, formatHoursMinutes, formatPace } from '../../core/format';
 import { load } from '../../core/load';
 import { CoachService } from '../../data/coach.service';
 import { totals } from '../../domain/sessions';
 import { plannedToTemplatePayload } from '../../domain/templates';
+import { ApiError } from '../../core/api.service';
+import { ExpectedFeelingComponent, feelingLabel } from '../../ui/expected-feeling.component';
 import { IconComponent } from '../../ui/icon.component';
 import { IntensityLegendComponent } from '../../ui/intensity-legend.component';
 import { StateViewComponent } from '../../ui/state-view.component';
@@ -19,7 +22,7 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
   selector: 'tw-coach-athlete-planned',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconComponent, IntensityLegendComponent, StateViewComponent, WorkoutProfileComponent],
+  imports: [ExpectedFeelingComponent, IconComponent, IntensityLegendComponent, StateViewComponent, WorkoutProfileComponent],
   template: `
     <main class="page">
       @if (session.loading()) {
@@ -48,6 +51,12 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
                   @if (data.plannedBy === 'coach') {
                     <span class="chip chip-on-brand"><tw-icon name="user" [size]="13" [strokeWidth]="2" />Planifiée par vous</span>
                   }
+                  @if (data.expectedFeeling; as expected) {
+                    <span class="chip chip-on-brand">
+                      <tw-icon name="gauge" [size]="13" [strokeWidth]="2" />
+                      Difficulté attendue {{ expected }}/10 · {{ feelingLabel(expected) }}
+                    </span>
+                  }
                 </div>
                 @if (data.description) {
                   <p class="desc">{{ data.description }}</p>
@@ -71,10 +80,46 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
                   @if (data.linkedRunId) {
                     <button class="btn btn-inverse grow" type="button" (click)="openRun(data.linkedRunId!)">Voir l'analyse</button>
                   }
+                  <button class="btn btn-outline-light grow" type="button" (click)="startEdit(data)">Modifier</button>
                   <button class="btn btn-outline-light grow" type="button" (click)="remove()">Supprimer</button>
                 </div>
               </div>
             </section>
+
+            @if (editing()) {
+              <section class="card card-pad">
+                <div class="spread">
+                  <span class="h2">Modifier la séance</span>
+                  <button class="link" type="button" (click)="editing.set(false)">Annuler</button>
+                </div>
+
+                <div class="field mt">
+                  <label for="edit-title">Titre</label>
+                  <input id="edit-title" class="input" [value]="editTitle()" (input)="editTitle.set(value($event))" />
+                </div>
+
+                <div class="field mt-sm">
+                  <label for="edit-desc">Consignes</label>
+                  <textarea id="edit-desc" class="input" rows="3" [value]="editDesc()" (input)="editDesc.set(text($event))"></textarea>
+                </div>
+
+                <div class="field mt-sm">
+                  <label>Difficulté attendue <span class="muted">— facultatif</span></label>
+                  <tw-expected-feeling [value]="editFeeling()" (changed)="editFeeling.set($event)" />
+                </div>
+
+                @if (editError()) {
+                  <p class="err small">{{ editError() }}</p>
+                }
+
+                <div class="edit-actions">
+                  <span class="caption muted-3 grow">Le déroulé détaillé se modifie depuis la bibliothèque.</span>
+                  <button class="btn btn-primary btn-sm" type="button" [disabled]="saving()" (click)="saveEdit()">
+                    {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+                  </button>
+                </div>
+              </section>
+            }
 
             @if (data.segments.length) {
               <section class="card card-pad">
@@ -275,6 +320,26 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
         color: rgba(255, 255, 255, 0.6);
       }
 
+      .edit-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 16px;
+      }
+
+      .mt {
+        margin-top: 14px;
+      }
+
+      .mt-sm {
+        margin-top: 10px;
+      }
+
+      .err {
+        color: var(--danger);
+        margin-top: 10px;
+      }
+
       .hero-actions {
         display: flex;
         gap: 10px;
@@ -395,6 +460,58 @@ export class CoachAthletePlannedPage {
     const total = totals(this.session.data()?.segments ?? []);
     return { duration: formatHoursMinutes(total.sec), distance: `${formatDecimal(total.dist / 1000, 1)} km` };
   });
+
+  /** Le libellé d'une note, pour que coach et athlète parlent de la même chose. */
+  readonly feelingLabel = feelingLabel;
+
+  readonly editing = signal(false);
+  readonly editTitle = signal('');
+  readonly editDesc = signal('');
+  readonly editFeeling = signal<number | null>(null);
+  readonly editError = signal('');
+
+  startEdit(data: PlannedSessionDetail) {
+    this.editTitle.set(data.title);
+    this.editDesc.set(data.description ?? '');
+    this.editFeeling.set(data.expectedFeeling ?? null);
+    this.editError.set('');
+    this.editing.set(true);
+  }
+
+  /**
+   * Le titre, les consignes et la difficulté se modifient ici ; le déroulé
+   * détaillé reste l'affaire de la bibliothèque, qui a l'éditeur de blocs.
+   */
+  saveEdit() {
+    if (this.saving()) return;
+    this.saving.set(true);
+    this.editError.set('');
+    this.coach
+      .updateSession(this.id(), this.planId(), {
+        title: this.editTitle().trim() || undefined,
+        description: this.editDesc().trim(),
+        expectedFeeling: this.editFeeling(),
+      })
+      .subscribe({
+        next: () => {
+          this.saving.set(false);
+          this.editing.set(false);
+          this.session.reload(true);
+        },
+        error: (err: unknown) => {
+          this.saving.set(false);
+          this.editError.set(err instanceof ApiError ? err.message : 'Enregistrement impossible.');
+        },
+      });
+  }
+
+  value(event: Event) {
+    return (event.target as HTMLInputElement).value;
+  }
+
+  text(event: Event) {
+    return (event.target as HTMLTextAreaElement).value;
+  }
 
   target(sets?: number, reps?: string, weight?: number) {
     const parts: string[] = [];

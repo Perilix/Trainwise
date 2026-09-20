@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { ApiError } from '../../core/api.service';
 import type { ApiSessionTemplate } from '../../core/api-types';
 import { formatDecimal, formatHoursMinutes, formatPace, toIsoDay } from '../../core/format';
 import { load } from '../../core/load';
@@ -117,6 +118,10 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
                       <tw-icon name="edit" [size]="16" [strokeWidth]="2" />
                       Modifier
                     </button>
+                    <button class="btn btn-ghost btn-sm danger-text" type="button" (click)="askDelete()">
+                      <tw-icon name="trash" [size]="16" [strokeWidth]="2" />
+                      Supprimer
+                    </button>
                     <button class="btn btn-primary btn-sm" type="button" (click)="assignOpen.set(true)">
                       <tw-icon name="send" [size]="16" [strokeWidth]="2" />
                       Assigner
@@ -210,6 +215,27 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
               </div>
             }
           </section>
+        </div>
+      }
+
+      @if (deleting() && selected(); as template) {
+        <div class="scrim" (click)="deleting.set(false)">
+          <div class="modal card" (click)="$event.stopPropagation()">
+            <span class="h2">Supprimer « {{ template.name }} » ?</span>
+            <p class="small muted mt-sm">
+              Cette séance type disparaît de votre bibliothèque. Les séances déjà assignées à vos athlètes ne bougent pas : elles vivent leur vie depuis leur
+              planning.
+            </p>
+            @if (deleteError()) {
+              <p class="err small">{{ deleteError() }}</p>
+            }
+            <div class="modal-actions">
+              <button class="btn btn-ghost grow" type="button" (click)="deleting.set(false)">Annuler</button>
+              <button class="btn btn-danger grow" type="button" [disabled]="removing()" (click)="remove(template._id)">
+                {{ removing() ? 'Suppression…' : 'Supprimer' }}
+              </button>
+            </div>
+          </div>
         </div>
       }
 
@@ -596,6 +622,15 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
         color: var(--accent-ink);
       }
 
+      .danger-text {
+        color: var(--danger);
+      }
+
+      .err {
+        color: var(--danger);
+        margin-top: 10px;
+      }
+
       .modal-actions {
         display: flex;
         gap: 10px;
@@ -620,6 +655,34 @@ export class CoachLibraryPage {
   readonly sport = signal<'all' | 'running' | 'strength'>('all');
   readonly search = signal('');
   readonly selectedId = signal<string | null>(null);
+
+  readonly deleting = signal(false);
+  readonly removing = signal(false);
+  readonly deleteError = signal('');
+
+  askDelete() {
+    this.deleteError.set('');
+    this.deleting.set(true);
+  }
+
+  /** Supprimer une séance type ne touche pas aux séances déjà assignées. */
+  remove(templateId: string) {
+    if (this.removing()) return;
+    this.removing.set(true);
+    this.deleteError.set('');
+    this.coach.deleteTemplate(templateId).subscribe({
+      next: () => {
+        this.removing.set(false);
+        this.deleting.set(false);
+        this.selectedId.set(null);
+        this.templates.reload(true);
+      },
+      error: (err: unknown) => {
+        this.removing.set(false);
+        this.deleteError.set(err instanceof ApiError ? err.message : 'Suppression impossible.');
+      },
+    });
+  }
 
   readonly assignOpen = signal(false);
   readonly assignDate = signal(toIsoDay(new Date()));

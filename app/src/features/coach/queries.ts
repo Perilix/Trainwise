@@ -327,7 +327,14 @@ export function useCoachActions() {
     async updateAthleteSession(
       athleteId: string,
       planId: string,
-      patch: { sessionType?: string; description?: string; targetDuration?: number | null; runBlocks?: ApiRunBlock[]; strengthPlan?: ApiStrengthPlan },
+      patch: {
+        sessionType?: string;
+        description?: string;
+        expectedFeeling?: number | null;
+        targetDuration?: number | null;
+        runBlocks?: ApiRunBlock[];
+        strengthPlan?: ApiStrengthPlan;
+      },
     ) {
       if (!live) return;
       await api(`${athletePath(athleteId)}/planning/${encodeURIComponent(planId)}`, { method: 'PATCH', body: patch });
