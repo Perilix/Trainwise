@@ -143,10 +143,10 @@ function SessionCard({ session, onSkip, onOpen }: { session: PlannedSession; onS
       {session.status === 'planned' ? (
         <View style={styles.sessionActions}>
           <Button label="Passer" variant="secondary" onPress={onSkip} style={styles.flex} />
-          <Button label="Détailler" onPress={onOpen} style={styles.flex} />
+          <Button label="Voir" onPress={onOpen} style={styles.flex} />
         </View>
       ) : (
-        <Button label="Voir le détail" variant="secondary" fullWidth onPress={onOpen} style={styles.detailButton} />
+        <Button label="Voir la séance" variant="secondary" fullWidth onPress={onOpen} style={styles.detailButton} />
       )}
     </Card>
   );
