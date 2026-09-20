@@ -172,6 +172,7 @@ export function mapRunDetail(run: ApiRun, coachName?: string, vma?: number): Run
     maxHr: run.maxHeartRate ?? strava?.maxHeartrate ?? undefined,
     elevationGain: run.elevationGain ?? strava?.totalElevationGain ?? undefined,
     notes: notes || undefined,
+    coachFeedback: run.coachFeedback?.text ? { text: run.coachFeedback.text, at: run.coachFeedback.at } : undefined,
     splits,
     paceZones,
   };

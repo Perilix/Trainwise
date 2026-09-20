@@ -293,6 +293,16 @@ export function useCoachActions() {
       invalidateApiCache();
       return response.code;
     },
+    /** Le retour du coach sur une séance réalisée. Un texte vide l'efface. */
+    async setSessionFeedback(athleteId: string, kind: 'run' | 'strength', sessionId: string, text: string) {
+      if (!live) return { text: text || null, at: new Date().toISOString() };
+      const response = await api<{ coachFeedback: { text: string | null; at: string | null } }>(
+        `${athletePath(athleteId)}/feedback/${kind}/${encodeURIComponent(sessionId)}`,
+        { method: 'PUT', body: { text } },
+      );
+      invalidateApiCache();
+      return response.coachFeedback;
+    },
     async generateInviteCode() {
       if (!live) return sampleInviteCode;
       return (await api<{ code: string }>('/api/coach/invite/code', { method: 'POST', body: {} })).code;

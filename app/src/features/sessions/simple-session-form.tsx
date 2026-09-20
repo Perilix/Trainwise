@@ -3,6 +3,7 @@ import { StyleSheet, TextInput, View } from 'react-native';
 
 import { Button, Card, ChoicePill, Field, FormError, Section, Segmented, Text } from '@/components/ui';
 import type { NewPlannedSession, Sport } from '@/features/athlete/types';
+import { ExpectedFeelingPicker } from '@/features/sessions/expected-feeling';
 import { parseDecimal } from '@/lib/format';
 import { useTheme } from '@/theme/theme-provider';
 import { radius } from '@/theme/tokens';
@@ -35,12 +36,14 @@ const PACE_PATTERN = /^\d{1,2}:[0-5]\d$/;
 type Props = {
   date: string; // AAAA-MM-JJ
   submitLabel: string;
+  /** Vrai quand c'est le coach qui planifie : lui seul annonce la difficulté. */
+  withExpectedFeeling?: boolean;
   /** Enregistre la séance ; une erreur levée s'affiche sous le formulaire. */
   onSubmit: (payload: NewPlannedSession) => Promise<void>;
 };
 
 /** Séance simple (type, objectifs, consignes), sans blocs : ajout par l'athlète ou le coach. */
-export function SimpleSessionForm({ date, submitLabel, onSubmit }: Props) {
+export function SimpleSessionForm({ date, submitLabel, withExpectedFeeling, onSubmit }: Props) {
   const { colors } = useTheme();
   const [activity, setActivity] = useState<Sport>('running');
   const [sessionType, setSessionType] = useState('endurance');
@@ -48,6 +51,7 @@ export function SimpleSessionForm({ date, submitLabel, onSubmit }: Props) {
   const [duration, setDuration] = useState('');
   const [pace, setPace] = useState('');
   const [description, setDescription] = useState('');
+  const [expectedFeeling, setExpectedFeeling] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,6 +85,7 @@ export function SimpleSessionForm({ date, submitLabel, onSubmit }: Props) {
         targetDuration: minutes ? Math.round(minutes) : undefined,
         targetPace: running && pace.trim() ? pace.trim() : undefined,
         description: description.trim() || undefined,
+        expectedFeeling,
       });
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Ajout impossible.');
@@ -151,6 +156,15 @@ export function SimpleSessionForm({ date, submitLabel, onSubmit }: Props) {
           />
         </Card>
       </Section>
+
+      {withExpectedFeeling ? (
+        <Section style={styles.tight}>
+          <Card style={styles.gap}>
+            <Text variant="sectionTitle">Difficulté attendue</Text>
+            <ExpectedFeelingPicker value={expectedFeeling} onChange={setExpectedFeeling} />
+          </Card>
+        </Section>
+      ) : null}
 
       <Section style={styles.submit}>
         <FormError message={error} />

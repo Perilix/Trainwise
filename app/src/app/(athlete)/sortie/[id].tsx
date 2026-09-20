@@ -6,6 +6,7 @@ import { RouteMap } from '@/components/charts/route-map';
 import { BackBar, Button, Card, Chip, FeelingSlider, Field, FormError, Icon, IconButton, Screen, Section, StateView, Text } from '@/components/ui';
 import { linkRunToPlanned, runMatchCandidates, type MatchCandidate } from '@/features/athlete/planned-match';
 import { useAthleteActions, useRunDetail } from '@/features/athlete/queries';
+import { CoachFeedbackCard } from '@/features/sessions/coach-feedback';
 import { RunDetailBody, RunHero } from '@/features/sessions/run-detail-body';
 import { useTheme } from '@/theme/theme-provider';
 import { layout, radius } from '@/theme/tokens';
@@ -185,7 +186,13 @@ export default function RunDetailScreen() {
         <RouteMap width={contentWidth} height={200} polyline={run.polyline} />
       </Section>
 
-      <RunDetailBody run={run} chartWidth={contentWidth - 32} feeling={feeling} feelingCard={feelingCard} />
+      <RunDetailBody
+        run={run}
+        chartWidth={contentWidth - 32}
+        feeling={feeling}
+        feelingCard={feelingCard}
+        feedbackCard={<CoachFeedbackCard feedback={run.coachFeedback} />}
+      />
     </Screen>
   );
 }

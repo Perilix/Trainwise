@@ -4,6 +4,7 @@ import { SvgXml } from 'react-native-svg';
 
 import { BRAND, Card, Chip, Icon, Section, Stat, Text, WorkoutProfile } from '@/components/ui';
 import { SESSION_STATUS_CHIP } from '@/features/athlete/session-status';
+import { feelingLabel } from '@/features/sessions/expected-feeling';
 import type { PlanExercise, PlannedSessionDetail, RunBlockView, StrengthPlanView } from '@/features/athlete/types';
 import { formatDayLong, formatDecimal, formatHoursMinutes, formatPace } from '@/lib/format';
 import { formatDuration, intensityColor, totals } from '@/lib/sessions';
@@ -47,6 +48,9 @@ export function PlannedSessionBody({ session, plannedByLabel, hideHeader, hero }
           <SessionHero session={session} running={running}>
             <Chip label={plannedByLabel} tone={byCoach ? 'violet' : 'neutral'} icon={byCoach ? 'user' : 'pen'} />
             <Chip label={status.label} tone={status.tone} icon={status.icon} />
+            {session.expectedFeeling ? (
+              <Chip label={`Difficulté ${session.expectedFeeling}/10 · ${feelingLabel(session.expectedFeeling)}`} tone="accent" icon="gauge" />
+            ) : null}
           </SessionHero>
         </Section>
       )}

@@ -20,10 +20,12 @@ type Props = {
   feeling?: number | null;
   /** Carte de saisie du ressenti, insérée après les graphiques. */
   feelingCard?: ReactNode;
+  /** Le retour du coach — lecture côté athlète, écriture côté coach. */
+  feedbackCard?: ReactNode;
 };
 
 /** Corps d'une sortie réalisée : chiffres clés, allure par kilomètre, FC, zones et notes. */
-export function RunDetailBody({ run, chartWidth, feeling, feelingCard }: Props) {
+export function RunDetailBody({ run, chartWidth, feeling, feelingCard, feedbackCard }: Props) {
   const paces = run.splits.map((split) => split.paceSecPerKm);
   const half = Math.floor(paces.length / 2);
   const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / Math.max(1, values.length);
@@ -99,7 +101,7 @@ export function RunDetailBody({ run, chartWidth, feeling, feelingCard }: Props) 
       {feelingCard ? <Section style={styles.tight}>{feelingCard}</Section> : null}
 
       {run.notes ? (
-        <Section>
+        <Section style={feedbackCard ? styles.tight : undefined}>
           <Card>
             <Text variant="sectionTitle">Notes</Text>
             <Text variant="body2" style={styles.notes}>
@@ -108,6 +110,8 @@ export function RunDetailBody({ run, chartWidth, feeling, feelingCard }: Props) 
           </Card>
         </Section>
       ) : null}
+
+      {feedbackCard ? <Section>{feedbackCard}</Section> : null}
     </>
   );
 }

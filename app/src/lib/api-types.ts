@@ -190,6 +190,8 @@ export type ApiPlannedRun = {
   };
   status: 'planned' | 'completed' | 'skipped';
   feeling: number | null;
+  /** Difficulté attendue, sur 10 : ce que le coach annonce à l'athlète. */
+  expectedFeeling?: number | null;
   generatedBy: 'ai' | 'manual' | 'coach';
   createdBy: string | null;
   // Le calendrier renvoie les séances entières : les blocs servent à estimer
@@ -272,6 +274,8 @@ export type ApiSessionTemplate = {
   sessionType: string;
   targetDistance: number | null;
   targetDuration: number | null;
+  /** Difficulté attendue, sur 10 : ce que l'athlète devrait ressentir. */
+  expectedFeeling?: number | null;
   runBlocks: ApiTemplateRunBlock[];
   strengthPlan: ApiPlannedRunDetail['strengthPlan'] | null;
   usageCount: number;
@@ -299,6 +303,9 @@ export type ApiStravaData = {
   paceZoneDistribution?: Record<string, number>; // secondes par zone
 };
 
+/** Retour du coach sur une séance réalisée. */
+export type ApiCoachFeedback = { text: string | null; coach?: string | { _id: string } | null; at: string | null } | null;
+
 export type ApiRun = {
   _id: string;
   date: string;
@@ -311,6 +318,8 @@ export type ApiRun = {
   sessionType?: string;
   feeling?: number;
   notes?: string;
+  /** Le retour du coach sur cette séance, s'il en a laissé un. */
+  coachFeedback?: ApiCoachFeedback;
   stravaActivityId: number | null;
   /** Tracé encodé (format Google polyline) quand la sortie a un GPS. */
   polyline?: string | null;
@@ -347,6 +356,8 @@ export type ApiStrengthEntry = {
 /** Séance de musculation réalisée (GET /api/coach/athletes/:id/strength-session/:plannedId). */
 export type ApiStrengthSessionDetail = ApiStrengthSession & {
   notes?: string;
+  /** Le retour du coach sur cette séance, s'il en a laissé un. */
+  coachFeedback?: ApiCoachFeedback;
   exercises: ApiStrengthEntry[];
   circuit?: { name?: string; rounds?: number; restBetweenRounds?: number } | null;
   superset?: { name?: string; sets?: number; restBetweenSets?: number } | null;

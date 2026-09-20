@@ -84,6 +84,7 @@ export default function CoachAddSessionScreen() {
 
       {mode === 'simple' ? (
         <SimpleSessionForm
+          withExpectedFeeling
           date={date}
           submitLabel="Ajouter au planning"
           onSubmit={async (payload) => {

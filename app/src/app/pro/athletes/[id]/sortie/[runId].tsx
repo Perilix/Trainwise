@@ -4,6 +4,7 @@ import { StyleSheet, useWindowDimensions } from 'react-native';
 import { BackBar, Chip, Screen, Section, StateView } from '@/components/ui';
 import { useCoachRunDetail } from '@/features/coach/queries';
 import { PlannedVsDone } from '@/features/sessions/planned-vs-done';
+import { CoachFeedbackCard } from '@/features/sessions/coach-feedback';
 import { RunDetailBody, RunHero } from '@/features/sessions/run-detail-body';
 import { layout } from '@/theme/tokens';
 
@@ -41,7 +42,13 @@ export default function CoachRunDetailScreen() {
         </Section>
       ) : null}
 
-      <RunDetailBody run={run} chartWidth={contentWidth - 32} />
+      <RunDetailBody
+        run={run}
+        chartWidth={contentWidth - 32}
+        feedbackCard={
+          <CoachFeedbackCard feedback={run.coachFeedback} editable={{ athleteId: id, kind: 'run', sessionId: runId, onSaved: refetch }} />
+        }
+      />
     </Screen>
   );
 }

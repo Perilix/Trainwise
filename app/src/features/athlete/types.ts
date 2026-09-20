@@ -18,6 +18,8 @@ export type PlannedSession = {
   plannedBy: PlannedBy;
   coachName?: string;
   status: SessionStatus;
+  /** Ce que le coach annonce comme difficulté, sur 10. */
+  expectedFeeling?: number;
 };
 
 /** Corps de POST /api/planning pour une séance ajoutée par l'athlète. */
@@ -29,6 +31,8 @@ export type NewPlannedSession = {
   targetDuration?: number;
   targetPace?: string;
   description?: string;
+  /** Difficulté attendue, posée par le coach : l'athlète n'y touche pas. */
+  expectedFeeling?: number | null;
 };
 
 export type CoachInvitation = { id: string; coachName: string; initials: string; email?: string };
@@ -155,6 +159,8 @@ export type RunDetail = Activity & {
   minHr?: number;
   elevationGain?: number;
   notes?: string;
+  /** Le retour du coach sur cette séance, s'il en a laissé un. */
+  coachFeedback?: { text: string | null; at: string | null };
   splits: KmSplit[];
   paceZones: { label: string; minutes: number }[];
   /** Déroulé réalisé, vide tant que personne ne l'a saisi. */
