@@ -19,6 +19,8 @@ export type PlannedSession = {
   plannedBy: PlannedBy;
   coachName?: string;
   status: SessionStatus;
+  /** Ce que le coach annonce comme difficulté, sur 10. */
+  expectedFeeling?: number;
   /** Profil de la séance (échauffement, blocs, retour au calme) : vide hors course à pied. */
   segments: Segment[];
 };
@@ -166,6 +168,8 @@ export type RunDetail = Activity & {
   minHr?: number;
   elevationGain?: number;
   notes?: string;
+  /** Le retour du coach sur cette séance, s'il en a laissé un. */
+  coachFeedback?: { text: string | null; at: string | null };
   splits: KmSplit[];
   paceZones: { label: string; minutes: number }[];
   /** Déroulé réalisé, vide tant que personne ne l'a saisi. */

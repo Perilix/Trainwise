@@ -193,6 +193,14 @@ const plannedRunSchema = new mongoose.Schema({
     max: 10,
     default: null
   },
+  // Difficulté attendue, posée par le coach : l'athlète sait avant de partir
+  // ce qu'il doit ressentir en rentrant, et la compare à son propre ressenti.
+  expectedFeeling: {
+    type: Number,
+    min: 1,
+    max: 10,
+    default: null
+  },
   generatedBy: {
     type: String,
     enum: ['ai', 'manual', 'coach'],

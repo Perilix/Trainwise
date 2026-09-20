@@ -111,6 +111,13 @@ const sessionTemplateSchema = new mongoose.Schema({
 
   targetDistance: { type: Number, default: null },
   targetDuration: { type: Number, default: null },
+  // Difficulté attendue, reprise par chaque séance assignée depuis ce modèle.
+  expectedFeeling: {
+    type: Number,
+    min: 1,
+    max: 10,
+    default: null
+  },
   warmup: { type: String, trim: true },
   mainWorkout: { type: String, trim: true },
   cooldown: { type: String, trim: true },

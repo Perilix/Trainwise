@@ -100,6 +100,7 @@ export function mapPlanned(planned: ApiPlannedRun, coachName?: string, vma?: num
     plannedBy: byCoach ? 'coach' : 'athlete',
     coachName: byCoach ? coachName : undefined,
     status: planned.status === 'completed' ? 'done' : planned.status,
+    expectedFeeling: planned.expectedFeeling ?? undefined,
     segments: planned.activityType === 'running' ? blocksToSegments(planned.runBlocks ?? [], vma) : [],
   };
 }
@@ -187,6 +188,7 @@ export function mapRunDetail(run: ApiRun, coachName?: string, vma?: number): Run
     maxHr: run.maxHeartRate ?? strava?.maxHeartrate ?? undefined,
     elevationGain: run.elevationGain ?? strava?.totalElevationGain ?? undefined,
     notes: notes || undefined,
+    coachFeedback: run.coachFeedback?.text ? { text: run.coachFeedback.text, at: run.coachFeedback.at } : undefined,
     splits,
     paceZones,
   };

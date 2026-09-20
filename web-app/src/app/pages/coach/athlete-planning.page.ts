@@ -8,6 +8,7 @@ import { CoachService } from '../../data/coach.service';
 import { buildPlanning } from '../../domain/athlete.mappers';
 import type { Activity, PlannedSession } from '../../domain/athlete.types';
 import { AvatarComponent } from '../../ui/avatar.component';
+import { ExpectedFeelingComponent } from '../../ui/expected-feeling.component';
 import { IconComponent } from '../../ui/icon.component';
 import { StateViewComponent } from '../../ui/state-view.component';
 
@@ -18,7 +19,7 @@ const WEEKDAYS = ['Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.', 'Dim.'];
   selector: 'tw-coach-planning',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AvatarComponent, IconComponent, StateViewComponent],
+  imports: [AvatarComponent, ExpectedFeelingComponent, IconComponent, StateViewComponent],
   template: `
     <main class="page">
       <header>
@@ -206,6 +207,10 @@ const WEEKDAYS = ['Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.', 'Dim.'];
               <div class="field">
                 <label for="c-desc">Consignes</label>
                 <textarea id="c-desc" class="input" rows="3" [value]="draftDesc()" (input)="draftDesc.set(text($event))"></textarea>
+              </div>
+              <div class="field">
+                <label>Difficulté attendue <span class="muted">— facultatif</span></label>
+                <tw-expected-feeling [value]="draftFeeling()" (changed)="draftFeeling.set($event)" />
               </div>
             </div>
             <div class="modal-actions">
@@ -509,6 +514,8 @@ export class CoachAthletePlanningPage {
   readonly draftDistance = signal('');
   readonly draftDuration = signal('');
   readonly draftDesc = signal('');
+  /** Ce que l'athlète devrait ressentir en rentrant, sur 10. */
+  readonly draftFeeling = signal<number | null>(null);
 
   readonly fiche = load(() => this.coach.athlete$(this.id()));
 
@@ -591,6 +598,7 @@ export class CoachAthletePlanningPage {
         sessionType: this.draftSport() === 'strength' ? 'full_body' : 'endurance',
         title: this.draftTitle().trim() || undefined,
         description: this.draftDesc().trim() || undefined,
+        expectedFeeling: this.draftFeeling(),
         targetDistance: Number.isFinite(distance) && distance > 0 ? distance : undefined,
         targetDuration: Number.isFinite(duration) && duration > 0 ? duration : undefined,
         duration: Number.isFinite(duration) && duration > 0 ? duration : undefined,

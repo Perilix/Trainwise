@@ -7,6 +7,7 @@ import { formatDayLong, formatDecimal } from '../../core/format';
 import { load } from '../../core/load';
 import { AthleteService } from '../../data/athlete.service';
 import { MUSCLE_LABELS } from '../../domain/session-detail';
+import { CoachFeedbackComponent } from '../../ui/coach-feedback.component';
 import { IconComponent } from '../../ui/icon.component';
 import { StatComponent } from '../../ui/stat.component';
 import { StateViewComponent } from '../../ui/state-view.component';
@@ -24,7 +25,7 @@ const TYPE_LABELS: Record<string, string> = {
   selector: 'tw-athlete-strength-done',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconComponent, StatComponent, StateViewComponent],
+  imports: [CoachFeedbackComponent, IconComponent, StatComponent, StateViewComponent],
   template: `
     <main class="page">
       @if (session.loading()) {
@@ -120,6 +121,9 @@ const TYPE_LABELS: Record<string, string> = {
                 <span class="h2">Mes notes</span>
                 <p class="quote">« {{ data.notes }} »</p>
               </section>
+            }
+            @if (data.coachFeedback?.text) {
+              <tw-coach-feedback [feedback]="data.coachFeedback" />
             }
           </div>
         </div>

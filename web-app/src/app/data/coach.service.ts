@@ -214,6 +214,16 @@ export class CoachService {
    * résoudre l'allure de chacun selon sa VMA. La date est posée à midi : à
    * minuit, le fuseau du serveur peut faire basculer la séance d'un jour.
    */
+  /** Le retour du coach sur une séance réalisée. Un texte vide l'efface. */
+  setSessionFeedback(athleteId: string, kind: 'run' | 'strength', sessionId: string, text: string) {
+    return this.api
+      .put<{ coachFeedback: { text: string | null; at: string | null } }>(
+        `/api/coach/athletes/${encodeURIComponent(athleteId)}/feedback/${kind}/${encodeURIComponent(sessionId)}`,
+        { text },
+      )
+      .pipe(this.refresh());
+  }
+
   assignTemplate(templateId: string, body: { athleteIds: string[]; date: string }) {
     const date = `${body.date}T12:00:00.000Z`;
     return this.api

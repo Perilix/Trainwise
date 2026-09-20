@@ -98,6 +98,7 @@ export function mapPlanned(planned: ApiPlannedRun, coachName?: string, vma?: num
     plannedBy: byCoach ? 'coach' : 'athlete',
     coachName: byCoach ? coachName : undefined,
     status: planned.status === 'completed' ? 'done' : planned.status,
+    expectedFeeling: planned.expectedFeeling ?? undefined,
   };
 }
 

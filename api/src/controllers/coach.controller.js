@@ -356,6 +356,49 @@ exports.getAthleteRun = async (req, res) => {
   }
 };
 
+/**
+ * PUT /api/coach/athletes/:athleteId/feedback/:kind/:id
+ *
+ * Le retour du coach sur une séance réalisée — `kind` vaut `run` ou `strength`.
+ * Un seul retour, celui du coach : il se modifie, il ne s'empile pas. Un texte
+ * vide l'efface.
+ */
+exports.setSessionFeedback = async (req, res) => {
+  try {
+    const { athleteId, kind, id } = req.params;
+    if (!['run', 'strength'].includes(kind)) return res.status(400).json({ error: 'Type de séance inconnu' });
+
+    const relationship = await CoachAthlete.findOne({ coach: req.user._id, athlete: athleteId, status: 'accepted' });
+    if (!relationship) return res.status(403).json({ error: 'Accès refusé' });
+
+    const Model = kind === 'run' ? Run : StrengthSession;
+    const session = await Model.findOne({ _id: id, user: athleteId });
+    if (!session) return res.status(404).json({ error: 'Séance non trouvée' });
+
+    const text = String(req.body.text || '').trim();
+    const hadFeedback = Boolean(session.coachFeedback?.text);
+    session.coachFeedback = text ? { text, coach: req.user._id, at: new Date() } : { text: null, coach: null, at: null };
+    await session.save();
+
+    // On prévient à la première écriture, pas à chaque correction de virgule.
+    if (text && !hadFeedback) {
+      await createNotification({
+        recipient: athleteId,
+        sender: req.user._id,
+        type: 'session',
+        action: 'session_feedback',
+        title: `${req.user.firstName} a commenté ta séance`,
+        message: text.length > 120 ? `${text.slice(0, 117)}…` : text,
+        actionUrl: kind === 'run' ? `/sorties/${id}` : `/muscu-realisee/${id}`
+      });
+    }
+
+    res.json({ coachFeedback: session.coachFeedback });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 // Récupérer une séance planifiée par ID (pour le coach)
 exports.getAthletePlannedSession = async (req, res) => {
   try {

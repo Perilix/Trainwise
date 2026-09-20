@@ -46,6 +46,9 @@ router.get('/stats', coachController.getCoachStats);
 // Planifié / réalisé semaine par semaine, pour l'écran Stats.
 router.get('/stats/weekly', coachController.getWeeklyStats);
 
+// Le retour du coach sur une séance réalisée (kind : run | strength).
+router.put('/athletes/:athleteId/feedback/:kind/:id', coachController.setSessionFeedback);
+
 /**
  * @swagger
  * /api/coach/athletes:

@@ -9,6 +9,7 @@ import type { KmSplit } from '../../domain/athlete.types';
 import type { PhaseComparison } from '../../domain/planned-vs-done';
 import { totals } from '../../domain/sessions';
 import { BlockListComponent } from '../../ui/block-list.component';
+import { CoachFeedbackComponent } from '../../ui/coach-feedback.component';
 import { HeartRateChartComponent } from '../../ui/heart-rate-chart.component';
 import { IconComponent } from '../../ui/icon.component';
 import { IntensityLegendComponent } from '../../ui/intensity-legend.component';
@@ -25,6 +26,7 @@ import { ZoneBarsComponent } from '../../ui/zone-bars.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     BlockListComponent,
+    CoachFeedbackComponent,
     HeartRateChartComponent,
     IconComponent,
     IntensityLegendComponent,
@@ -275,6 +277,10 @@ import { ZoneBarsComponent } from '../../ui/zone-bars.component';
                 <p class="body muted mt-sm">{{ data.notes || 'Aucune note pour cette sortie.' }}</p>
               }
             </section>
+
+            @if (data.coachFeedback) {
+              <tw-coach-feedback [feedback]="data.coachFeedback" />
+            }
           </aside>
         </div>
       }

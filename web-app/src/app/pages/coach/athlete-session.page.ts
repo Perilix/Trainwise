@@ -9,6 +9,7 @@ import { ChatService } from '../../data/chat.service';
 import { CoachService } from '../../data/coach.service';
 import { blocksToSegments } from '../../domain/run-blocks';
 import { totals } from '../../domain/sessions';
+import { CoachFeedbackComponent } from '../../ui/coach-feedback.component';
 import { HeartRateChartComponent } from '../../ui/heart-rate-chart.component';
 import { IconComponent } from '../../ui/icon.component';
 import { IntensityLegendComponent } from '../../ui/intensity-legend.component';
@@ -24,6 +25,7 @@ import { ZoneBarsComponent } from '../../ui/zone-bars.component';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    CoachFeedbackComponent,
     HeartRateChartComponent,
     IconComponent,
     IntensityLegendComponent,
@@ -189,6 +191,15 @@ import { ZoneBarsComponent } from '../../ui/zone-bars.component';
                 }
               </section>
             }
+
+            <tw-coach-feedback
+              [athleteId]="id()"
+              kind="run"
+              [sessionId]="runId()"
+              [feedback]="data.detail.coachFeedback"
+              [editable]="true"
+              (saved)="run.reload(true)"
+            />
 
             @if (data.detail.paceZones.length) {
               <section class="card card-pad">

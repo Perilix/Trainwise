@@ -7,6 +7,7 @@ import { formatDayLong, formatDecimal } from '../../core/format';
 import { load } from '../../core/load';
 import { CoachService } from '../../data/coach.service';
 import { MUSCLE_LABELS } from '../../domain/session-detail';
+import { CoachFeedbackComponent } from '../../ui/coach-feedback.component';
 import { IconComponent } from '../../ui/icon.component';
 import { StatComponent } from '../../ui/stat.component';
 import { StateViewComponent } from '../../ui/state-view.component';
@@ -16,7 +17,7 @@ import { StateViewComponent } from '../../ui/state-view.component';
   selector: 'tw-coach-athlete-strength',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconComponent, StatComponent, StateViewComponent],
+  imports: [CoachFeedbackComponent, IconComponent, StatComponent, StateViewComponent],
   template: `
     <main class="page">
       @if (session.loading()) {
@@ -113,6 +114,15 @@ import { StateViewComponent } from '../../ui/state-view.component';
                 <p class="quote">« {{ data.notes }} »</p>
               </section>
             }
+
+            <tw-coach-feedback
+              [athleteId]="id()"
+              kind="strength"
+              [sessionId]="sessionId()"
+              [feedback]="data.coachFeedback"
+              [editable]="true"
+              (saved)="session.reload(true)"
+            />
           </div>
         </div>
       }

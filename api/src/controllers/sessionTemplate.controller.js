@@ -362,6 +362,7 @@ exports.assignTemplate = async (req, res) => {
         targetDuration: template.targetDuration,
         targetPace,
         description: template.description,
+        expectedFeeling: template.expectedFeeling,
         warmup: template.warmup,
         mainWorkout: template.mainWorkout,
         cooldown: template.cooldown,

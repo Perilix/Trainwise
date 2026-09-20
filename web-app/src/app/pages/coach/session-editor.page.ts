@@ -36,6 +36,7 @@ import {
 import { paceFor, totals } from '../../domain/sessions';
 import { templateRunBlocks, toTemplateBlocks } from '../../domain/templates';
 import { AvatarComponent } from '../../ui/avatar.component';
+import { ExpectedFeelingComponent } from '../../ui/expected-feeling.component';
 import { IconComponent } from '../../ui/icon.component';
 import { IntensityLegendComponent } from '../../ui/intensity-legend.component';
 import { StateViewComponent } from '../../ui/state-view.component';
@@ -48,7 +49,7 @@ const RUNNING_TYPES = ['endurance', 'fractionne', 'tempo', 'sortie_longue', 'rec
   selector: 'tw-session-editor',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AvatarComponent, IconComponent, IntensityLegendComponent, NgTemplateOutlet, StateViewComponent, WorkoutProfileComponent],
+  imports: [AvatarComponent, ExpectedFeelingComponent, IconComponent, IntensityLegendComponent, NgTemplateOutlet, StateViewComponent, WorkoutProfileComponent],
   template: `
     <main class="page">
       <button type="button" class="back" (click)="goBack()">
@@ -102,6 +103,11 @@ const RUNNING_TYPES = ['endurance', 'fractionne', 'tempo', 'sortie_longue', 'rec
             <div class="field mt">
               <label for="desc">Description</label>
               <textarea id="desc" class="input" rows="2" [value]="description()" (input)="description.set(text($event))"></textarea>
+            </div>
+
+            <div class="field mt">
+              <label>Difficulté attendue <span class="muted">— facultatif</span></label>
+              <tw-expected-feeling [value]="expectedFeeling()" (changed)="expectedFeeling.set($event)" />
             </div>
           </section>
 
@@ -720,6 +726,8 @@ export class CoachSessionEditorPage {
 
   readonly name = signal('');
   readonly description = signal('');
+  /** Ce que l'athlète devrait ressentir en rentrant, sur 10. */
+  readonly expectedFeeling = signal<number | null>(null);
   readonly sport = signal<'running' | 'strength'>('running');
   readonly sessionType = signal('fractionne');
   readonly blocks = signal<EditableBlock[]>([newWarmup(), newRepeat(), newCooldown()]);
@@ -800,6 +808,7 @@ export class CoachSessionEditorPage {
       if (!template) return;
       this.name.set(template.name);
       this.description.set(template.description ?? '');
+      this.expectedFeeling.set(template.expectedFeeling ?? null);
       this.sport.set(template.sport);
       this.sessionType.set(template.sessionType);
       const blocks = toEditable(templateRunBlocks(template.runBlocks ?? []));
@@ -974,6 +983,7 @@ export class CoachSessionEditorPage {
       .saveTemplate(this.id() ?? null, {
         name: this.name().trim(),
         description: this.description().trim(),
+        expectedFeeling: this.expectedFeeling(),
         sport: this.sport(),
         sessionType: this.sessionType(),
         targetDistance: total.dist ? Number((total.dist / 1000).toFixed(1)) : null,

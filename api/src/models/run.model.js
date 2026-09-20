@@ -50,6 +50,14 @@ const runSchema = new mongoose.Schema({
 
   // Ressenti
   feeling: { type: Number, min: 1, max: 10 }, // 1-10
+  // Retour du coach sur la séance réalisée. Un seul retour, celui du coach :
+  // il se modifie, il ne s'empile pas.
+  coachFeedback: {
+    text: { type: String, trim: true, maxlength: 2000, default: null },
+    coach: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    at: { type: Date, default: null }
+  },
+
 
   // Date de la relance « ajoute ton ressenti » : empêche de la renvoyer chaque jour
   feedbackReminderAt: { type: Date, default: null },

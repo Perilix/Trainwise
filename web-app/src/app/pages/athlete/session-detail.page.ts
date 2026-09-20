@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 
 import { formatDayLong, formatDecimal, formatHoursMinutes, formatPace } from '../../core/format';
 import { load } from '../../core/load';
+import { feelingLabel } from '../../ui/expected-feeling.component';
 import { AthleteService } from '../../data/athlete.service';
 import { totals } from '../../domain/sessions';
 import { IconComponent } from '../../ui/icon.component';
@@ -46,6 +47,12 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
                     <tw-icon [name]="data.status === 'done' ? 'check' : 'clock'" [size]="13" [strokeWidth]="2" />
                     {{ data.status === 'done' ? 'Faite' : data.status === 'skipped' ? 'Passée' : 'À faire' }}
                   </span>
+                  @if (data.expectedFeeling; as expected) {
+                    <span class="chip chip-on-brand" title="Ce que ton coach attend comme ressenti à la fin">
+                      <tw-icon name="gauge" [size]="13" [strokeWidth]="2" />
+                      Difficulté attendue {{ expected }}/10 · {{ feelingLabel(expected) }}
+                    </span>
+                  }
                 </div>
                 @if (data.description) {
                   <p class="desc">{{ data.description }}</p>
@@ -328,6 +335,9 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
   ],
 })
 export class SessionDetailPage {
+  /** Le libellé d'une note, pour que coach et athlète parlent de la même chose. */
+  readonly feelingLabel = feelingLabel;
+
   private readonly athlete = inject(AthleteService);
   private readonly router = inject(Router);
   private readonly location = inject(Location);
