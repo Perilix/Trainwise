@@ -92,7 +92,7 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
               <div class="line">
                 @if (peer.kind === 'group') {
                   <tw-icon class="group-mark" name="friends" [size]="14" />
-                  <span class="caption muted">{{ typing() ? 'quelqu’un écrit…' : (peer.members ?? 0) + ' participants' }}</span>
+                  <span class="caption muted">{{ typing() ? 'quelqu’un écrit…' : (peer.people?.length ?? 0) + ' participants' }}</span>
                 } @else {
                   <span class="dot" [style.background]="peer.online ? 'var(--success)' : 'var(--text3)'"></span>
                   <span class="caption muted">{{ typing() ? 'écrit…' : peer.online ? 'En ligne' : 'Hors ligne' }}</span>
@@ -181,6 +181,32 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
         }
       </section>
 
+      @if (active()?.kind === 'group') {
+        <aside class="week">
+          <div class="week-head">
+            <div class="head-line">
+              <span class="h3 grow">Membres</span>
+              <span class="caption muted num">{{ active()?.people?.length ?? 0 }}</span>
+            </div>
+          </div>
+          <div class="members scroll-y">
+            @for (person of active()?.people ?? []; track person.id) {
+              <div class="member">
+                <tw-avatar [initials]="person.initials" [tone]="person.coach ? 'violet' : 'accent'" [size]="36" />
+                <span class="h3 grow truncate">{{ person.name }}</span>
+                @if (person.coach) {
+                  <span class="chip chip-coach">Coach</span>
+                }
+              </div>
+            } @empty {
+              <p class="small muted pad">Personne dans ce groupe.</p>
+            }
+          </div>
+          <p class="caption muted-3 pad">
+            Les membres suivent le groupe : le coach les ajoute et les retire depuis sa page d'accueil.
+          </p>
+        </aside>
+      } @else {
       <aside class="week">
         <div class="week-head">
           <div class="head-line">
@@ -233,6 +259,7 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
           </div>
         }
       </aside>
+      }
     </main>
   `,
   styles: [
@@ -291,6 +318,25 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
         color: var(--text3);
         text-align: center;
         padding: 2px 0;
+      }
+
+      .members {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+
+      .member {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        border-top: 1px solid var(--border);
+      }
+
+      .pad {
+        padding: 12px 16px;
+        margin: 0;
       }
 
       .filters {

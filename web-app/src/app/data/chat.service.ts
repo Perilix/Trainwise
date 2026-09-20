@@ -18,8 +18,8 @@ export type ConversationRow = {
   preview: string;
   timeLabel: string;
   unread: number;
-  /** Nombre de participants, pour un groupe. */
-  members?: number;
+  /** Participants, pour un groupe : le coach d'abord, puis les athlètes. */
+  people?: { id: string; name: string; initials: string; coach: boolean }[];
 };
 
 /** Les initiales d'un groupe viennent de son nom : « Marathon de Lyon » → ML. */
@@ -68,7 +68,15 @@ export class ChatService {
                 name,
                 initials: groupInitials(name),
                 online: false,
-                members: conversation.participants?.length ?? 0,
+                people: (conversation.participants ?? [])
+                  .map((person) => ({
+                    id: person._id,
+                    name: `${person.firstName} ${person.lastName}`.trim(),
+                    initials: initialsOf(person.firstName, person.lastName),
+                    coach: person.role === 'coach',
+                  }))
+                  // Le coach en tête : c'est lui qui rassemble le groupe.
+                  .sort((a, b) => Number(b.coach) - Number(a.coach) || a.name.localeCompare(b.name)),
               },
             ];
           }

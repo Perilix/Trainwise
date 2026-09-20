@@ -1,10 +1,20 @@
 import { initialsOf } from '@/features/athlete/mappers';
+import { useSessionQuery } from '@/features/auth/use-session-query';
 import { api } from '@/lib/api';
 import type { ApiConversation } from '@/lib/api-types';
 import { daysBetween } from '@/lib/dates';
 import { formatDayShort, formatTime, toIsoDay } from '@/lib/format';
 
 export const getConversations = () => api<ApiConversation[]>('/api/chat/conversations').catch((): ApiConversation[] => []);
+
+/** Une conversation précise, telle que la liste la décrit — membres compris. */
+export function useConversationRow(conversationId: string) {
+  return useSessionQuery(
+    `conversation:${conversationId}`,
+    async () => mapConversationRows(await getConversations(), new Date()).find((row) => row.conversationId === conversationId) ?? null,
+    () => null,
+  );
+}
 
 export type ConversationRow = {
   /** Identifiant de l'interlocuteur, ou du groupe pour une conversation à plusieurs. */
@@ -16,8 +26,8 @@ export type ConversationRow = {
   preview: string;
   timeLabel: string;
   unread: number;
-  /** Nombre de participants, pour un groupe. */
-  members?: number;
+  /** Participants, pour un groupe : le coach d'abord, puis les athlètes. */
+  people?: { id: string; name: string; initials: string; coach: boolean }[];
   /** Identifiant de la conversation — utile quand il n'y a pas d'interlocuteur. */
   conversationId: string;
 };
@@ -61,7 +71,15 @@ export function mapConversationRows(conversations: ApiConversation[], now: Date)
           name,
           initials: groupInitials(name),
           online: false,
-          members: conversation.participants?.length ?? 0,
+          people: (conversation.participants ?? [])
+            .map((person) => ({
+              id: person._id,
+              name: `${person.firstName} ${person.lastName}`.trim(),
+              initials: initialsOf(person.firstName, person.lastName),
+              coach: person.role === 'coach',
+            }))
+            // Le coach en tête : c'est lui qui rassemble le groupe.
+            .sort((a, b) => Number(b.coach) - Number(a.coach) || a.name.localeCompare(b.name)),
         },
       ];
     }

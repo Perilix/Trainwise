@@ -29,9 +29,11 @@ type Props = {
   above?: ReactNode;
   /** Discussion à plusieurs : chaque bulle porte le nom de qui l'a écrite. */
   showSenders?: boolean;
+  /** Toucher le titre ouvre les détails — les membres d'un groupe. */
+  onOpenDetails?: () => void;
 };
 
-export function ChatThread({ chat, offlineLabel, headerRight, onBack, peerRole = 'athlete', onOpenSession, onCite, CitedSessionBody, above, showSenders }: Props) {
+export function ChatThread({ chat, offlineLabel, headerRight, onBack, peerRole = 'athlete', onOpenSession, onCite, CitedSessionBody, above, showSenders, onOpenDetails }: Props) {
   // Qui a écrit : seulement dans un groupe, et seulement pour les autres.
   const speaking = (message: ChatMessage) => Boolean(showSenders) && !message.fromMe;
   const { colors } = useTheme();
@@ -84,17 +86,25 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack, peerRole =
       <View style={[styles.header, onBack && styles.headerWithBack, { borderBottomColor: colors.border }]}>
         {onBack ? <IconButton icon="chevronLeft" size={44} glass accessibilityLabel="Retour" onPress={onBack} /> : null}
         <Avatar initials={peer.initials} size={38} tone={fromCoach ? 'violet' : avatarToneFor(peer.id)} />
-        <View style={styles.flex}>
-          <Text variant="h2" numberOfLines={1}>
-            {peer.name}
-          </Text>
+        <Pressable
+          accessibilityRole={onOpenDetails ? 'button' : undefined}
+          accessibilityLabel={onOpenDetails ? `Détails de ${peer.name}` : undefined}
+          disabled={!onOpenDetails}
+          onPress={onOpenDetails}
+          style={styles.flex}>
+          <View style={styles.titleRow}>
+            <Text variant="h2" numberOfLines={1} style={styles.shrinkTitle}>
+              {peer.name}
+            </Text>
+            {onOpenDetails ? <Icon name="chevronRight" size={16} color={colors.text3} /> : null}
+          </View>
           <View style={styles.presence}>
             {chat.typing ? null : <View style={[styles.presenceDot, { backgroundColor: peer.online ? colors.success : colors.text3 }]} />}
             <Text variant="caption" color={chat.typing ? 'accentInk' : 'text2'}>
               {chat.typing ? 'écrit…' : peer.online ? 'En ligne' : offlineLabel}
             </Text>
           </View>
-        </View>
+        </Pressable>
         {headerRight}
       </View>
 
@@ -249,6 +259,8 @@ const styles = StyleSheet.create({
   messageBlock: { gap: 10 },
   dayPill: { alignSelf: 'center', height: 24, paddingHorizontal: 10, borderRadius: radius.pill, justifyContent: 'center' },
   /** La ligne d'un message : la pastille de l'auteur à gauche, la bulle à droite. */
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  shrinkTitle: { flexShrink: 1 },
   bubbleWrap: { maxWidth: '85%', gap: 4 },
   /** La pastille de l'auteur accompagne la bulle, alignée sur son bas. */
   bubbleRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },

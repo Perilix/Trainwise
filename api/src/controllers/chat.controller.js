@@ -37,7 +37,7 @@ exports.getConversations = async (req, res) => {
     const conversations = await Conversation.find({
       participants: req.user._id
     })
-      .populate('participants', 'firstName lastName email profilePicture')
+      .populate('participants', 'firstName lastName email profilePicture role')
       .populate('lastMessage.sender', 'firstName lastName profilePicture')
       .sort({ 'lastMessage.sentAt': -1, updatedAt: -1 });
 

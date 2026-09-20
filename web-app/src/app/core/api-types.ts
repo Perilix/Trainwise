@@ -359,7 +359,7 @@ export type ApiConversation = {
   type: 'direct' | 'group';
   /** Nom du groupe ; absent pour une conversation directe. */
   name?: string;
-  participants?: ApiUserRef[];
+  participants?: (ApiUserRef & { role?: 'user' | 'coach' | 'admin' })[];
   otherParticipant?: ApiUserRef & { isOnline: boolean };
   lastMessage?: { content: string; type: 'text' | 'image' | 'document' | 'session' | 'system'; sentAt: string | null };
   unreadCount: number;

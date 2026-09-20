@@ -186,6 +186,8 @@ export function useDirectChat({ key, loadPeer, demo, loadConversation }: Options
 
   return {
     peer,
+    /** Utile pour les écrans qui prolongent la conversation : détails, membres… */
+    conversationId,
     messages,
     loading: query.loading,
     error: query.error,

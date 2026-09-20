@@ -27,5 +27,15 @@ export default function CoachGroupChatScreen() {
     );
   }
 
-  return <ChatThread chat={chat} offlineLabel="Groupe" showSenders onBack={() => router.back()} />;
+  return (
+    <ChatThread
+      chat={chat}
+      offlineLabel="Groupe"
+      showSenders
+      onBack={() => router.back()}
+      onOpenDetails={() =>
+        router.push({ pathname: '/pro/groupe-details', params: { conversation: chat.conversationId ?? '', nom: chat.peer?.name ?? nom } })
+      }
+    />
+  );
 }
