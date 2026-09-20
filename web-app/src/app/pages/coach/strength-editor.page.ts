@@ -23,6 +23,7 @@ import {
   type EditableStrengthPlan,
   type ExerciseSlot,
 } from '../../domain/strength-plan-model';
+import { ExpectedFeelingComponent } from '../../ui/expected-feeling.component';
 import { IconComponent } from '../../ui/icon.component';
 import { StateViewComponent } from '../../ui/state-view.component';
 
@@ -33,7 +34,7 @@ const STRENGTH_TYPES = ['upper_body', 'lower_body', 'full_body', 'push', 'pull',
   selector: 'tw-strength-editor',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconComponent, StateViewComponent],
+  imports: [ExpectedFeelingComponent, IconComponent, StateViewComponent],
   template: `
     <main class="page">
       <button type="button" class="back" (click)="goBack()">
@@ -83,6 +84,11 @@ const STRENGTH_TYPES = ['upper_body', 'lower_body', 'full_body', 'push', 'pull',
             <div class="field mt">
               <label for="desc">Description</label>
               <textarea id="desc" class="input" rows="2" [value]="description()" (input)="description.set(text($event))"></textarea>
+            </div>
+
+            <div class="field mt">
+              <label>Difficulté attendue <span class="muted">— facultatif</span></label>
+              <tw-expected-feeling [value]="expectedFeeling()" (changed)="expectedFeeling.set($event)" />
             </div>
           </section>
 
@@ -660,6 +666,8 @@ export class CoachStrengthEditorPage {
 
   readonly name = signal('');
   readonly description = signal('');
+  /** Ce que l'athlète devrait ressentir en rentrant, sur 10. */
+  readonly expectedFeeling = signal<number | null>(null);
   readonly sessionType = signal('full_body');
   readonly duration = signal(50);
   readonly plan = signal<EditableStrengthPlan>(emptyStrengthPlan());
@@ -683,6 +691,7 @@ export class CoachStrengthEditorPage {
       if (!template) return;
       this.name.set(template.name);
       this.description.set(template.description ?? '');
+      this.expectedFeeling.set(template.expectedFeeling ?? null);
       this.sessionType.set(template.sessionType);
       if (template.targetDuration) this.duration.set(template.targetDuration);
       this.plan.set(toEditableStrength(template.strengthPlan));
@@ -822,6 +831,7 @@ export class CoachStrengthEditorPage {
       .saveTemplate(this.id() ?? null, {
         name: this.name().trim(),
         description: this.description().trim(),
+        expectedFeeling: this.expectedFeeling(),
         sport: 'strength',
         sessionType: this.sessionType(),
         targetDistance: null,

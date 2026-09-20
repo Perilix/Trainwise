@@ -34,7 +34,10 @@ export type TemplateRow = {
 export type TemplateGroup = { label: string; templates: TemplateRow[] };
 
 /** Corps de création / modification d'une séance type. */
-export type TemplatePayload = Pick<ApiSessionTemplate, 'name' | 'description' | 'sport' | 'sessionType' | 'targetDistance' | 'targetDuration' | 'runBlocks' | 'strengthPlan'>;
+export type TemplatePayload = Pick<
+  ApiSessionTemplate,
+  'name' | 'description' | 'sport' | 'sessionType' | 'targetDistance' | 'targetDuration' | 'expectedFeeling' | 'runBlocks' | 'strengthPlan'
+>;
 
 // Ordre d'affichage des familles de séances de course ; la muscu vient en dernier.
 const RUNNING_ORDER = ['fractionne', 'tempo', 'sortie_longue', 'endurance', 'cotes', 'fartlek', 'recuperation'];

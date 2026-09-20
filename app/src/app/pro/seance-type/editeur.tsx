@@ -5,6 +5,7 @@ import { StyleSheet, TextInput, View } from 'react-native';
 import { BackBar, Button, Card, ChoicePill, Field, FormError, Screen, Section, Segmented, StateView, Text } from '@/components/ui';
 import { useCoachActions } from '@/features/coach/queries';
 import { templateRunBlocks, toTemplateBlocks, useTemplate } from '@/features/coach/templates';
+import { ExpectedFeelingPicker } from '@/features/sessions/expected-feeling';
 import { RunBlocksEditor, Stepper } from '@/features/sessions/run-blocks-editor';
 import { newCooldown, newWarmup, toEditable, validateBlocks, type EditableBlock } from '@/features/sessions/run-blocks-model';
 import { SESSION_TYPES } from '@/features/sessions/simple-session-form';
@@ -27,6 +28,8 @@ export default function TemplateEditorScreen() {
   const [sport, setSport] = useState<Sport | null>(null);
   const [sessionType, setSessionType] = useState<string | null>(null);
   const [description, setDescription] = useState<string | null>(null);
+  /** `undefined` tant que le coach n'y a pas touché : la valeur du modèle fait foi. */
+  const [expectedFeeling, setExpectedFeeling] = useState<number | null | undefined>(undefined);
   const [blocks, setBlocks] = useState<EditableBlock[] | null>(() => (id ? null : [newWarmup(), newCooldown()]));
   const [plan, setPlan] = useState<EditableStrengthPlan | null>(null);
   const [duration, setDuration] = useState<number | null>(null);
@@ -54,6 +57,7 @@ export default function TemplateEditorScreen() {
   const knownType = SESSION_TYPES[currentSport].some(([value]) => value === (sessionType ?? template?.sessionType));
   const currentType = knownType ? (sessionType ?? template?.sessionType ?? defaultType) : defaultType;
   const currentDescription = description ?? template?.description ?? '';
+  const currentFeeling = expectedFeeling === undefined ? (template?.expectedFeeling ?? null) : expectedFeeling;
   const currentBlocks = blocks ?? toEditable(templateRunBlocks(template?.runBlocks ?? []));
   const currentPlan = plan ?? toEditableStrength(template?.strengthPlan);
   const currentDuration = duration ?? template?.strengthPlan?.estimatedDuration ?? template?.targetDuration ?? 45;
@@ -79,6 +83,7 @@ export default function TemplateEditorScreen() {
     const payload = {
       name: currentName.trim(),
       description: currentDescription.trim(),
+      expectedFeeling: currentFeeling,
       sport: currentSport,
       sessionType: currentType,
       targetDistance: strength ? null : (template?.targetDistance ?? null),
@@ -144,6 +149,12 @@ export default function TemplateEditorScreen() {
               multiline
               style={[styles.description, { backgroundColor: colors.bg, borderColor: colors.border, color: colors.ink }]}
             />
+          </View>
+          <View>
+            <Text variant="caption" color="ink" style={styles.label}>
+              Difficulté attendue
+            </Text>
+            <ExpectedFeelingPicker value={currentFeeling} onChange={setExpectedFeeling} />
           </View>
         </Card>
       </Section>
