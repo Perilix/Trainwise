@@ -193,7 +193,7 @@ const plannedRunSchema = new mongoose.Schema({
     max: 10,
     default: null
   },
-  // Ressenti attendu, posé par le coach : l'athlète sait avant de partir
+  // Difficulté attendue, posé par le coach : l'athlète sait avant de partir
   // ce qu'il doit ressentir en rentrant, et la compare à son propre ressenti.
   expectedFeeling: {
     type: Number,

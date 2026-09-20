@@ -49,7 +49,7 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
                   </span>
                 </div>
                 @if (data.expectedFeeling; as expected) {
-                  <tw-feeling-scale class="scale" [value]="expected" label="Ressenti attendu par ton coach" />
+                  <tw-feeling-scale class="scale" [value]="expected" label="Difficulté annoncée par ton coach" />
                 }
                 @if (data.description) {
                   <p class="desc">{{ data.description }}</p>

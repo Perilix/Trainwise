@@ -111,7 +111,7 @@ const sessionTemplateSchema = new mongoose.Schema({
 
   targetDistance: { type: Number, default: null },
   targetDuration: { type: Number, default: null },
-  // Ressenti attendu, repris par chaque séance assignée depuis ce modèle.
+  // Difficulté attendue, repris par chaque séance assignée depuis ce modèle.
   expectedFeeling: {
     type: Number,
     min: 1,

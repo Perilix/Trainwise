@@ -152,7 +152,7 @@ export default function TemplateEditorScreen() {
           </View>
           <View>
             <Text variant="caption" color="ink" style={styles.label}>
-              Ressenti attendu
+              Difficulté attendue
             </Text>
             <ExpectedFeelingPicker value={currentFeeling} onChange={setExpectedFeeling} />
           </View>

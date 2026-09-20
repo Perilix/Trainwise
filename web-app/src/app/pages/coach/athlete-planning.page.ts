@@ -209,7 +209,7 @@ const WEEKDAYS = ['Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.', 'Dim.'];
                 <textarea id="c-desc" class="input" rows="3" [value]="draftDesc()" (input)="draftDesc.set(text($event))"></textarea>
               </div>
               <div class="field">
-                <label>Ressenti attendu <span class="muted">— facultatif</span></label>
+                <label>Difficulté attendue <span class="muted">— facultatif</span></label>
                 <tw-expected-feeling [value]="draftFeeling()" (changed)="draftFeeling.set($event)" />
               </div>
             </div>

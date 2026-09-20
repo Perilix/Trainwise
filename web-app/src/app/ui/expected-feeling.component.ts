@@ -2,16 +2,16 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 
 /** Ce que veut dire une note, pour que le coach et l'athlète parlent de la même chose. */
 export const FEELING_SCALE: Record<number, string> = {
-  1: 'Épuisant',
-  2: 'Très dur',
-  3: 'Dur',
-  4: 'Exigeant',
-  5: 'Soutenu',
-  6: 'Correct',
-  7: 'Confortable',
-  8: 'Facile',
-  9: 'Très facile',
-  10: 'Excellent',
+  1: 'Très facile',
+  2: 'Facile',
+  3: 'Tranquille',
+  4: 'Modérée',
+  5: 'Soutenue',
+  6: 'Exigeante',
+  7: 'Dure',
+  8: 'Très dure',
+  9: 'Maximale',
+  10: 'Épuisante',
 };
 
 export const feelingLabel = (value: number | null | undefined) => (value ? (FEELING_SCALE[value] ?? '') : '');
@@ -19,28 +19,28 @@ export const feelingLabel = (value: number | null | undefined) => (value ? (FEEL
 /**
  * La couleur d'une note, du rouge au vert.
  *
- * L'échelle est celle du ressenti : 1 épuisant, 10 excellent. Le rouge et le
- * vert y portent exactement leur sens habituel — ça va mal, ça va bien — donc
- * ils ne concurrencent pas le code couleur de l'app, ils le prolongent.
+ * L'échelle va du plus facile au plus dur : 1 très facile, 10 épuisante. Le
+ * vert et le rouge y portent le sens qu'on leur donne partout ailleurs — c'est
+ * tranquille, c'est costaud — donc ils prolongent le code couleur de l'app.
  */
 export const FEELING_TINT: Record<number, { soft: string; ink: string }> = {
-  1: { soft: '#FBE4E2', ink: '#B4463D' },
-  2: { soft: '#FBE4E2', ink: '#B4463D' },
-  3: { soft: '#FBE8D8', ink: '#B4662F' },
-  4: { soft: '#FBE8D8', ink: '#B4662F' },
+  1: { soft: '#E4F1E6', ink: '#41815A' },
+  2: { soft: '#E4F1E6', ink: '#41815A' },
+  3: { soft: '#EDF3DC', ink: '#6E8A2E' },
+  4: { soft: '#EDF3DC', ink: '#6E8A2E' },
   5: { soft: '#FAF0D8', ink: '#96731C' },
   6: { soft: '#FAF0D8', ink: '#96731C' },
-  7: { soft: '#EDF3DC', ink: '#6E8A2E' },
-  8: { soft: '#EDF3DC', ink: '#6E8A2E' },
-  9: { soft: '#E4F1E6', ink: '#41815A' },
-  10: { soft: '#E4F1E6', ink: '#41815A' },
+  7: { soft: '#FBE8D8', ink: '#B4662F' },
+  8: { soft: '#FBE8D8', ink: '#B4662F' },
+  9: { soft: '#FBE4E2', ink: '#B4463D' },
+  10: { soft: '#FBE4E2', ink: '#B4463D' },
 };
 
 /**
  * La difficulté attendue d'une séance, posée par le coach.
  *
- * Même échelle que le ressenti de l'athlète — 1 épuisant, 10 excellent — pour
- * que les deux notes se comparent à la fin de la séance.
+ * 1 très facile, 10 épuisante. C'est l'inverse de l'échelle de ressenti que
+ * l'athlète remplit après coup, où 10 veut dire « je me sentais bien ».
  */
 @Component({
   selector: 'tw-expected-feeling',
@@ -114,7 +114,7 @@ export const FEELING_TINT: Record<number, { soft: string; ink: string }> = {
 })
 export class ExpectedFeelingComponent {
   readonly value = input<number | null>(null);
-  readonly hint = input('Ce que l’athlète devrait ressentir en rentrant');
+  readonly hint = input('Ce que la séance devrait coûter à l’athlète');
   readonly changed = output<number | null>();
 
   readonly steps = Array.from({ length: 10 }, (_, index) => index + 1);
@@ -193,7 +193,7 @@ export class ExpectedFeelingComponent {
 })
 export class FeelingScaleComponent {
   readonly value = input.required<number>();
-  readonly label = input('Ressenti attendu');
+  readonly label = input('Difficulté attendue');
 
   readonly steps = Array.from({ length: 10 }, (_, index) => index + 1);
 

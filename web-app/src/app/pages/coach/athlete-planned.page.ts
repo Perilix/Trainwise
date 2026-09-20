@@ -101,7 +101,7 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
                 </div>
 
                 <div class="field mt-sm">
-                  <label>Ressenti attendu <span class="muted">— facultatif</span></label>
+                  <label>Difficulté attendue <span class="muted">— facultatif</span></label>
                   <tw-expected-feeling [value]="editFeeling()" (changed)="editFeeling.set($event)" />
                 </div>
 

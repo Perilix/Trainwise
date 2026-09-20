@@ -55,7 +55,7 @@ export function PlannedSessionBody({ session, plannedByLabel, hideHeader, hero }
       {session.expectedFeeling ? (
         <Section style={styles.tight}>
           <Card>
-            <FeelingScale value={session.expectedFeeling} label={byCoach ? 'Ressenti attendu par ton coach' : 'Ressenti attendu'} />
+            <FeelingScale value={session.expectedFeeling} label={byCoach ? 'Difficulté annoncée par ton coach' : 'Difficulté attendue'} />
           </Card>
         </Section>
       ) : null}

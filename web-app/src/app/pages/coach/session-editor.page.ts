@@ -106,7 +106,7 @@ const RUNNING_TYPES = ['endurance', 'fractionne', 'tempo', 'sortie_longue', 'rec
             </div>
 
             <div class="field mt">
-              <label>Ressenti attendu <span class="muted">— facultatif</span></label>
+              <label>Difficulté attendue <span class="muted">— facultatif</span></label>
               <tw-expected-feeling [value]="expectedFeeling()" (changed)="expectedFeeling.set($event)" />
             </div>
           </section>

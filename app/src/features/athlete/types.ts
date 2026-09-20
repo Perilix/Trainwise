@@ -18,7 +18,7 @@ export type PlannedSession = {
   plannedBy: PlannedBy;
   coachName?: string;
   status: SessionStatus;
-  /** Ce que le coach annonce comme ressenti attendu, sur 10. */
+  /** Ce que le coach annonce comme difficulté, sur 10. */
   expectedFeeling?: number;
 };
 
@@ -31,7 +31,7 @@ export type NewPlannedSession = {
   targetDuration?: number;
   targetPace?: string;
   description?: string;
-  /** Ressenti attendu, posé par le coach : l'athlète n'y touche pas. */
+  /** Difficulté attendue, posé par le coach : l'athlète n'y touche pas. */
   expectedFeeling?: number | null;
 };
 

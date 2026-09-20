@@ -19,7 +19,7 @@ export type PlannedSession = {
   plannedBy: PlannedBy;
   coachName?: string;
   status: SessionStatus;
-  /** Ce que le coach annonce comme ressenti attendu, sur 10. */
+  /** Ce que le coach annonce comme difficulté, sur 10. */
   expectedFeeling?: number;
   /** Profil de la séance (échauffement, blocs, retour au calme) : vide hors course à pied. */
   segments: Segment[];
