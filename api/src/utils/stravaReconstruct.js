@@ -223,6 +223,12 @@ function homogeneous(values) {
 
 const isGroup = (b) => Array.isArray(b.children) && b.children.length > 0;
 
+// Au-delà, on ne court plus : récupération debout, marche, arrêt au feu. Ces
+// tours ne doivent pas peser dans la séparation effort / facile, sinon la
+// coupure se fait entre « courir » et « être à l'arrêt », et l'échauffement se
+// retrouve du côté des efforts.
+const STANDING_PACE = 570; // 9:30 /km
+
 /** Classe chaque lap en effort / facile et détecte une course continue. */
 function classifyLaps(laps) {
   if (laps.length <= 1) return { isEffort: laps.map(() => false), continuous: true };
@@ -231,17 +237,55 @@ function classifyLaps(laps) {
     pace: paceSecPerKm(l.average_speed),
     weight: Math.max(1, l.moving_time || l.elapsed_time || 1)
   }));
-  const paces = entries.map(e => e.pace).filter(Number.isFinite);
-  if (paces.length < 2) return { isEffort: laps.map(() => false), continuous: true };
 
-  // Moins de 25 s/km d'amplitude : allure régulière, il n'y a pas d'intervalles.
-  if (Math.max(...paces) - Math.min(...paces) < 25) return { isEffort: laps.map(() => false), continuous: true };
+  const running = entries.filter(e => Number.isFinite(e.pace) && e.pace < STANDING_PACE);
+  const standing = entries.length - running.length;
+  if (running.length < 2) return { isEffort: laps.map(() => false), continuous: true };
 
-  const { cut, fast, slow } = splitByPace(entries);
+  const paces = running.map(e => e.pace);
+  const spread = Math.max(...paces) - Math.min(...paces);
+
+  // Allure de course régulière : soit c'est un footing, soit les seules pauses
+  // sont des arrêts — auquel cas tout ce qui est couru est un effort.
+  if (spread < 25) {
+    if (!standing) return { isEffort: laps.map(() => false), continuous: true };
+    return { isEffort: entries.map(e => Number.isFinite(e.pace) && e.pace < STANDING_PACE), continuous: false };
+  }
+
+  const { cut, fast, slow } = splitByPace(running);
   // Deux groupes trop proches : c'est une allure qui dérive, pas une alternance.
-  if (slow - fast < 20) return { isEffort: laps.map(() => false), continuous: true };
+  if (slow - fast < 20 && !standing) return { isEffort: laps.map(() => false), continuous: true };
 
-  return { isEffort: entries.map(e => e.pace <= cut), continuous: false };
+  // Un tour à l'arrêt n'est jamais un effort, quelle que soit la coupure.
+  return { isEffort: entries.map(e => Number.isFinite(e.pace) && e.pace < STANDING_PACE && e.pace <= cut), continuous: false };
+}
+
+/**
+ * Fond les tours voisins de même nature en un seul.
+ *
+ * Une montre qui tourne en tour automatique au kilomètre découpe une répétition
+ * de 12 minutes en trois tours : sans cette fusion, on lit trois répétitions
+ * d'un kilomètre là où l'athlète en a fait une seule.
+ */
+function mergeConsecutive(laps, isEffort) {
+  const outLaps = [];
+  const outEffort = [];
+
+  laps.forEach((lap, index) => {
+    const last = outLaps[outLaps.length - 1];
+    if (last && outEffort[outEffort.length - 1] === isEffort[index]) {
+      last.distance = (last.distance || 0) + (lap.distance || 0);
+      last.moving_time = (last.moving_time || 0) + (lap.moving_time || lap.elapsed_time || 0);
+      last.elapsed_time = (last.elapsed_time || 0) + (lap.elapsed_time || lap.moving_time || 0);
+      const time = last.moving_time || last.elapsed_time;
+      if (time > 0) last.average_speed = last.distance / time;
+      return;
+    }
+    outLaps.push({ ...lap, moving_time: lap.moving_time || lap.elapsed_time || 0 });
+    outEffort.push(isEffort[index]);
+  });
+
+  return { laps: outLaps, isEffort: outEffort };
 }
 
 /**
@@ -254,7 +298,7 @@ function classifyLaps(laps) {
  */
 function reconstructBlocksFromLaps(rawLaps, plannedBlocks) {
   if (!Array.isArray(rawLaps) || rawLaps.length === 0) return [];
-  const laps = mergeMicroLaps(rawLaps);
+  let laps = mergeMicroLaps(rawLaps);
 
   // Si on a un plan coach → on s'aligne dessus (10×500 prévu rempli depuis 10×550 réels)
   if (Array.isArray(plannedBlocks) && plannedBlocks.length) {
@@ -267,12 +311,16 @@ function reconstructBlocksFromLaps(rawLaps, plannedBlocks) {
     return [continuousBlock(laps)];
   }
 
-  const { isEffort, continuous } = classifyLaps(laps);
+  const classified = classifyLaps(laps);
 
   // Pas de vraie variation d'allure → footing continu
-  if (continuous) {
+  if (classified.continuous) {
     return [continuousBlock(laps)];
   }
+
+  const merged = mergeConsecutive(laps, classified.isEffort);
+  const isEffort = merged.isEffort;
+  laps = merged.laps;
 
   // Indices du premier et dernier effort
   const firstEffort = isEffort.indexOf(true);
@@ -369,8 +417,10 @@ function reconstructBlocksFromLaps(rawLaps, plannedBlocks) {
  * élément avec les valeurs RÉELLES tirées des laps. Résultat : des blocs réalisés
  * alignés 1:1 sur le prévu → comparaison directe (10×500 prévu → 10×550 réalisé).
  */
-function reconstructAgainstPlan(laps, plannedBlocks) {
-  const { isEffort } = classifyLaps(laps);
+function reconstructAgainstPlan(rawLaps, plannedBlocks) {
+  // Les tours voisins de même nature sont fondus : une répétition découpée par
+  // le tour automatique au kilomètre redevient une répétition.
+  const { laps, isEffort } = mergeConsecutive(rawLaps, classifyLaps(rawLaps).isEffort);
   const n = laps.length;
   let cursor = 0;
 
@@ -383,7 +433,13 @@ function reconstructAgainstPlan(laps, plannedBlocks) {
     while (cursor < n && !isEffort[cursor]) cursor++; // saute un éventuel lap facile parasite
     return cursor < n ? laps[cursor++] : null;
   };
-  const takeRecovery = () => (cursor < n && !isEffort[cursor]) ? laps[cursor++] : null;
+  // Une récupération sépare deux efforts : s'il n'y a plus d'effort derrière,
+  // ce tour facile est le retour au calme, pas une récup.
+  const effortAhead = (from) => {
+    for (let i = from; i < n; i++) if (isEffort[i]) return true;
+    return false;
+  };
+  const takeRecovery = () => (cursor < n && !isEffort[cursor] && effortAhead(cursor + 1) ? laps[cursor++] : null);
 
   // Valeur réalisée d'un step en respectant le mode du plan (distance/durée)
   const realizedValue = (planStep, effLaps) => {
@@ -396,7 +452,8 @@ function reconstructAgainstPlan(laps, plannedBlocks) {
     };
     if (out.mode === 'duration') {
       const secs = effLaps.map(l => l.moving_time || l.elapsed_time || 0);
-      out.duration = Math.max(1, Math.round(avg(secs) / 60));
+      // Au dixième de minute : arrondir à la minute pleine ferait d'un 1'30 un 2'.
+      out.duration = Math.max(0.1, Math.round(avg(secs) / 6) / 10);
     } else {
       out.distance = round2(avg(effLaps.map(l => l.distance || 0)) / 1000);
     }
@@ -435,8 +492,9 @@ function reconstructAgainstPlan(laps, plannedBlocks) {
     };
     if (planStep.recoveryMode && recLaps.length) {
       step.recoveryMode = 'duration';
-      step.recoveryDuration = secondsToRecoveryText(avg(recLaps.map(l => l.moving_time || l.elapsed_time || 0)));
-      step.recoveryPace = speedToPaceStr(avg(recLaps.map(l => l.average_speed).filter(Boolean)));
+      // Médiane : une pause plus longue que les autres ne doit pas tirer la récup.
+      step.recoveryDuration = secondsToRecoveryText(median(recLaps.map(l => l.moving_time || l.elapsed_time || 0)));
+      step.recoveryPace = speedToPaceStr(median(recLaps.map(l => l.average_speed).filter(Boolean)));
       step.recoveryDescription = '';
     }
     return step;
@@ -487,8 +545,9 @@ function reconstructAgainstPlan(laps, plannedBlocks) {
         };
         if (c.recoveryMode && acc[ci].rec.length) {
           child.recoveryMode = 'duration';
-          child.recoveryDuration = secondsToRecoveryText(avg(acc[ci].rec.map(l => l.moving_time || l.elapsed_time || 0)));
-          child.recoveryPace = speedToPaceStr(avg(acc[ci].rec.map(l => l.average_speed).filter(Boolean)));
+          // Médiane : une pause plus longue que les autres ne doit pas tirer la récup.
+          child.recoveryDuration = secondsToRecoveryText(median(acc[ci].rec.map(l => l.moving_time || l.elapsed_time || 0)));
+          child.recoveryPace = speedToPaceStr(median(acc[ci].rec.map(l => l.average_speed).filter(Boolean)));
           child.recoveryDescription = 'Récup';
         }
         return child;
