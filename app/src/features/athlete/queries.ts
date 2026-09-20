@@ -384,27 +384,6 @@ export function useAthleteActions() {
       await api(`/api/competitions/${encodeURIComponent(id)}`, { method: 'DELETE' });
       invalidateApiCache();
     },
-    async updateIdentity(patch: { firstName: string; lastName: string }) {
-      if (!user) return;
-      if (!live) {
-        updateUser({ ...user, ...patch });
-        return;
-      }
-      updateUser(await api<ApiUser>('/api/auth/profile', { method: 'PATCH', body: patch }));
-    },
-    async changeEmail(email: string, password: string) {
-      if (!user || !live) return;
-      const { email: saved } = await api<{ email: string }>('/api/auth/email', { method: 'PATCH', body: { email, password } });
-      updateUser({ ...user, email: saved });
-    },
-    async changePassword(currentPassword: string, newPassword: string) {
-      if (!live) return;
-      await api('/api/auth/password', { method: 'PATCH', body: { currentPassword, newPassword } });
-    },
-    async deleteAccount() {
-      if (!live) return;
-      await api('/api/auth/account', { method: 'DELETE' });
-    },
     async markNotificationRead(id: string) {
       if (!live) return;
       await api(`/api/notifications/${encodeURIComponent(id)}/read`, { method: 'PATCH' });

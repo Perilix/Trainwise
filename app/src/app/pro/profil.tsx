@@ -84,6 +84,19 @@ export default function CoachProfileScreen() {
       </Section>
 
       <Section style={styles.tight}>
+        <Pressable accessibilityRole="button" onPress={() => router.push('/pro/compte')}>
+          <Card style={styles.link}>
+            <Icon name="user" size={20} color={colors.text2} />
+            <View style={styles.flex}>
+              <Text variant="sectionTitle">Mon compte</Text>
+              <Text variant="small">Identité, adresse email, mot de passe</Text>
+            </View>
+            <Icon name="chevronRight" size={18} color={colors.text3} />
+          </Card>
+        </Pressable>
+      </Section>
+
+      <Section style={styles.tight}>
         <PlanCard />
       </Section>
 

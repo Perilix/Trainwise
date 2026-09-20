@@ -1,5 +1,5 @@
 import { AccountScreen } from '@/features/settings/account-screen';
 
-export default function AthleteAccountScreen() {
+export default function CoachAccountScreen() {
   return <AccountScreen />;
 }
