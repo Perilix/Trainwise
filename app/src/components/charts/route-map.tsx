@@ -11,6 +11,14 @@ type Props = {
   width: number;
   height: number;
   polyline?: string | null;
+  /**
+   * Carte posée dans une liste : elle ne doit pas répondre au doigt, sinon elle
+   * capte le défilement et le geste n'atteint jamais la carte qu'on voulait
+   * ouvrir. Les gestes d'une carte Plans ne se désactivent pas autrement.
+   */
+  interactive?: boolean;
+  /** Variante du tracé dessiné, quand il n'y a pas de carte native. */
+  seed?: number;
 };
 
 /**
@@ -31,12 +39,12 @@ const zoomFor = (spanLat: number, spanLng: number, width: number) => {
 };
 
 /** Parcours d'une sortie sur une carte (Plans sur iOS, Google Maps sur Android). */
-export function RouteMap({ width, height, polyline }: Props) {
+export function RouteMap({ width, height, polyline, interactive = true, seed }: Props) {
   const { colors } = useTheme();
   const points = useMemo(() => (polyline ? decodePolyline(polyline) : []), [polyline]);
 
   if (!maps || points.length < 2) {
-    return <RoutePreview width={width} height={height} polyline={polyline} />;
+    return <RoutePreview width={width} height={height} polyline={polyline} seed={seed} />;
   }
 
   const lats = points.map((point) => point.lat);
@@ -48,7 +56,7 @@ export function RouteMap({ width, height, polyline }: Props) {
   const MapView = Platform.OS === 'ios' ? maps.AppleMaps.View : maps.GoogleMaps.View;
 
   return (
-    <View style={[styles.frame, { width, height, borderColor: colors.border }]}>
+    <View style={[styles.frame, { width, height, borderColor: colors.border }]} pointerEvents={interactive ? 'auto' : 'none'}>
       <MapView style={StyleSheet.absoluteFill} cameraPosition={cameraPosition} polylines={polylines} />
     </View>
   );

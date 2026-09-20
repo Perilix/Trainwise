@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { DistanceBars } from '@/components/charts/distance-bars';
-import { RoutePreview } from '@/components/charts/route-preview';
+import { RouteMap } from '@/components/charts/route-map';
 import { Card, Chip, Divider, IconButton, Screen, Section, SectionHeader, Segmented, Stat, StateView, Text } from '@/components/ui';
 import { AthleteAppBar } from '@/features/athlete/athlete-app-bar';
 import { useRunsOverview } from '@/features/athlete/queries';
@@ -119,7 +119,7 @@ function RunCard({ run, seed, previewWidth, onPress }: { run: Activity; seed: nu
   return (
     <Card padding={0} onPress={onPress} accessibilityLabel={`${run.title}, ${formatDayShort(run.date)}`} style={styles.runCard}>
       <View style={styles.preview}>
-        <RoutePreview width={previewWidth} height={120} polyline={run.polyline} seed={seed} />
+        <RouteMap width={previewWidth} height={120} polyline={run.polyline} seed={seed} interactive={false} />
       </View>
       <View style={styles.runBody}>
         <View style={styles.runHeader}>
