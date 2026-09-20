@@ -87,7 +87,7 @@ const STRENGTH_TYPES = ['upper_body', 'lower_body', 'full_body', 'push', 'pull',
             </div>
 
             <div class="field mt">
-              <label>Difficulté attendue <span class="muted">— facultatif</span></label>
+              <label>Ressenti attendu <span class="muted">— facultatif</span></label>
               <tw-expected-feeling [value]="expectedFeeling()" (changed)="expectedFeeling.set($event)" />
             </div>
           </section>

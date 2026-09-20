@@ -145,7 +145,7 @@ export type ApiPlannedRun = {
   };
   status: 'planned' | 'completed' | 'skipped';
   feeling: number | null;
-  /** Difficulté attendue, sur 10 : ce que le coach annonce à l'athlète. */
+  /** Ressenti attendu, sur 10 : ce que le coach annonce à l'athlète. */
   expectedFeeling?: number | null;
   generatedBy: 'ai' | 'manual' | 'coach';
   createdBy: string | null;
@@ -229,7 +229,7 @@ export type ApiSessionTemplate = {
   sessionType: string;
   targetDistance: number | null;
   targetDuration: number | null;
-  /** Difficulté attendue, sur 10 : ce que l'athlète devrait ressentir. */
+  /** Ressenti attendu, sur 10 : ce que l'athlète devrait ressentir. */
   expectedFeeling?: number | null;
   runBlocks: ApiTemplateRunBlock[];
   strengthPlan: ApiPlannedRunDetail['strengthPlan'] | null;

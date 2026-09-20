@@ -11,7 +11,7 @@ import { CoachService } from '../../data/coach.service';
 import { totals } from '../../domain/sessions';
 import { plannedToTemplatePayload } from '../../domain/templates';
 import { ApiError } from '../../core/api.service';
-import { ExpectedFeelingComponent, feelingLabel } from '../../ui/expected-feeling.component';
+import { ExpectedFeelingComponent, FeelingScaleComponent } from '../../ui/expected-feeling.component';
 import { IconComponent } from '../../ui/icon.component';
 import { IntensityLegendComponent } from '../../ui/intensity-legend.component';
 import { StateViewComponent } from '../../ui/state-view.component';
@@ -22,7 +22,7 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
   selector: 'tw-coach-athlete-planned',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ExpectedFeelingComponent, IconComponent, IntensityLegendComponent, StateViewComponent, WorkoutProfileComponent],
+  imports: [ExpectedFeelingComponent, FeelingScaleComponent, IconComponent, IntensityLegendComponent, StateViewComponent, WorkoutProfileComponent],
   template: `
     <main class="page">
       @if (session.loading()) {
@@ -51,13 +51,10 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
                   @if (data.plannedBy === 'coach') {
                     <span class="chip chip-on-brand"><tw-icon name="user" [size]="13" [strokeWidth]="2" />Planifiée par vous</span>
                   }
-                  @if (data.expectedFeeling; as expected) {
-                    <span class="chip chip-on-brand">
-                      <tw-icon name="gauge" [size]="13" [strokeWidth]="2" />
-                      Difficulté attendue {{ expected }}/10 · {{ feelingLabel(expected) }}
-                    </span>
-                  }
                 </div>
+                @if (data.expectedFeeling; as expected) {
+                  <tw-feeling-scale class="scale" [value]="expected" />
+                }
                 @if (data.description) {
                   <p class="desc">{{ data.description }}</p>
                 }
@@ -104,7 +101,7 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
                 </div>
 
                 <div class="field mt-sm">
-                  <label>Difficulté attendue <span class="muted">— facultatif</span></label>
+                  <label>Ressenti attendu <span class="muted">— facultatif</span></label>
                   <tw-expected-feeling [value]="editFeeling()" (changed)="editFeeling.set($event)" />
                 </div>
 
@@ -340,6 +337,11 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
         margin-top: 10px;
       }
 
+      .scale {
+        margin-top: 14px;
+        max-width: 420px;
+      }
+
       .hero-actions {
         display: flex;
         gap: 10px;
@@ -460,9 +462,6 @@ export class CoachAthletePlannedPage {
     const total = totals(this.session.data()?.segments ?? []);
     return { duration: formatHoursMinutes(total.sec), distance: `${formatDecimal(total.dist / 1000, 1)} km` };
   });
-
-  /** Le libellé d'une note, pour que coach et athlète parlent de la même chose. */
-  readonly feelingLabel = feelingLabel;
 
   readonly editing = signal(false);
   readonly editTitle = signal('');

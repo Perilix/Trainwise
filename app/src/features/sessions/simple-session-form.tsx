@@ -160,7 +160,7 @@ export function SimpleSessionForm({ date, submitLabel, withExpectedFeeling, onSu
       {withExpectedFeeling ? (
         <Section style={styles.tight}>
           <Card style={styles.gap}>
-            <Text variant="sectionTitle">Difficulté attendue</Text>
+            <Text variant="sectionTitle">Ressenti attendu</Text>
             <ExpectedFeelingPicker value={expectedFeeling} onChange={setExpectedFeeling} />
           </Card>
         </Section>
