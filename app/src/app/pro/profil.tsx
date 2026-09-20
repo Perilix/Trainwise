@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Avatar, BackBar, Button, Card, Chip, Icon, Screen, Section, SectionHeader, Text } from '@/components/ui';
+import { Avatar, BackBar, Button, Card, Chip, Icon, IconButton, Screen, Section, SectionHeader, Text } from '@/components/ui';
 import { useSession } from '@/features/auth/session';
 import { InviteCodeCard } from '@/features/coach/invite-code-card';
 import { DIPLOMA_OPTIONS, DISCIPLINE_OPTIONS, optionLabel } from '@/features/coach/profile-options';
@@ -24,7 +24,10 @@ export default function CoachProfileScreen() {
 
   return (
     <Screen>
-      <BackBar title="Profil" />
+      <BackBar
+        title="Profil"
+        right={<IconButton icon="settings" size={44} glass accessibilityLabel="Mon compte" onPress={() => router.push('/pro/compte')} />}
+      />
 
       <Section style={styles.tight}>
         <Card style={styles.userCard}>
@@ -81,19 +84,6 @@ export default function CoachProfileScreen() {
             </View>
           </View>
         </Card>
-      </Section>
-
-      <Section style={styles.tight}>
-        <Pressable accessibilityRole="button" onPress={() => router.push('/pro/compte')}>
-          <Card style={styles.link}>
-            <Icon name="user" size={20} color={colors.text2} />
-            <View style={styles.flex}>
-              <Text variant="sectionTitle">Mon compte</Text>
-              <Text variant="small">Identité, adresse email, mot de passe</Text>
-            </View>
-            <Icon name="chevronRight" size={18} color={colors.text3} />
-          </Card>
-        </Pressable>
       </Section>
 
       <Section style={styles.tight}>
