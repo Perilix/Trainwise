@@ -1,11 +1,20 @@
 import { initialsOf } from '@/features/athlete/mappers';
 import { useSessionQuery } from '@/features/auth/use-session-query';
 import { api } from '@/lib/api';
-import type { ApiConversation } from '@/lib/api-types';
+import type { ApiConversation, ApiConversationGroup } from '@/lib/api-types';
 import { daysBetween } from '@/lib/dates';
 import { formatDayShort, formatTime, toIsoDay } from '@/lib/format';
 
 export const getConversations = () => api<ApiConversation[]>('/api/chat/conversations').catch((): ApiConversation[] => []);
+
+/** Le groupe derrière une conversation : sa couleur, sa course visée. */
+export function useConversationGroup(conversationId: string) {
+  return useSessionQuery<ApiConversationGroup | null>(
+    `conversation-group:${conversationId}`,
+    async () => api<ApiConversationGroup>(`/api/chat/conversations/${encodeURIComponent(conversationId)}/group`).catch(() => null),
+    () => null,
+  );
+}
 
 /** Une conversation précise, telle que la liste la décrit — membres compris. */
 export function useConversationRow(conversationId: string) {

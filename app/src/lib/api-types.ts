@@ -131,6 +131,13 @@ export type ApiCoachBilling = {
   usage: { athletes: number; athleteLimit: number | null; groups: number; groupLimit: number | null };
 };
 
+/** Le groupe derrière une conversation (GET /api/chat/conversations/:id/group). */
+export type ApiConversationGroup = {
+  name: string;
+  color: GroupColor;
+  race: { name: string; date: string | null } | null;
+};
+
 /** Planifié et réalisé, semaine par semaine (GET /api/coach/stats/weekly). */
 export type ApiWeeklyStats = {
   weeks: { label: string; planned: number; done: number }[];

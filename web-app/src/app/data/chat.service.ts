@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { forkJoin, map, of, switchMap } from 'rxjs';
 
-import type { ApiConversation, ApiMessage, ApiSessionRef, ApiUserRef } from '../core/api-types';
+import type { ApiConversation, ApiConversationGroup, ApiMessage, ApiSessionRef, ApiUserRef } from '../core/api-types';
 import { ApiService } from '../core/api.service';
 import { initialsOf } from '../domain/athlete.mappers';
 import { daysBetween } from '../core/dates';
@@ -96,6 +96,11 @@ export class ChatService {
         });
       }),
     );
+  }
+
+  /** Le groupe derrière une conversation : sa couleur, sa course visée. */
+  conversationGroup$(conversationId: string) {
+    return this.api.getOr<ApiConversationGroup | null>(`/api/chat/conversations/${encodeURIComponent(conversationId)}/group`, null);
   }
 
   messages$(conversationId: string) {

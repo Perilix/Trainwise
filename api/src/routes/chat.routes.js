@@ -87,6 +87,7 @@ router.get('/conversations/:conversationId/messages', chatController.getMessages
  *       500:
  *         description: Server error
  */
+router.get('/conversations/:conversationId/group', chatController.getConversationGroup);
 router.post('/conversations/with/:userId', chatController.getOrCreateConversation);
 
 /**

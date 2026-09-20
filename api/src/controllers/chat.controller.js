@@ -1,4 +1,5 @@
 const Conversation = require('../models/conversation.model');
+const CoachGroup = require('../models/coachGroup.model');
 const Message = require('../models/message.model');
 const User = require('../models/user.model');
 const Friendship = require('../models/friendship.model');
@@ -67,6 +68,32 @@ exports.getConversations = async (req, res) => {
     res.json(formattedConversations);
   } catch (error) {
     console.error('Error getting conversations:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * GET /api/chat/conversations/:conversationId/group
+ *
+ * Le groupe derrière une conversation : son nom, sa couleur, sa course visée.
+ * Ouvert à tous ses participants — un athlète y a droit comme son coach, il
+ * n'y lit rien qu'il ne voie déjà dans le fil.
+ */
+exports.getConversationGroup = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const conversation = await Conversation.findOne({ _id: conversationId, participants: req.user._id }).lean();
+    if (!conversation) return res.status(404).json({ error: 'Conversation non trouvee' });
+
+    const group = await CoachGroup.findOne({ conversation: conversationId }).select('name color race').lean();
+    if (!group) return res.status(404).json({ error: 'Groupe non trouve' });
+
+    res.json({
+      name: group.name,
+      color: group.color || 'bleu',
+      race: group.race?.name ? { name: group.race.name, date: group.race.date || null } : null
+    });
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };

@@ -365,6 +365,13 @@ export type ApiConversation = {
   unreadCount: number;
 };
 
+/** Le groupe derrière une conversation (GET /api/chat/conversations/:id/group). */
+export type ApiConversationGroup = {
+  name: string;
+  color: GroupColor;
+  race: { name: string; date: string | null } | null;
+};
+
 /** Séance citée dans un message, figée à l'envoi. */
 export type ApiSessionRef = {
   kind: 'planned' | 'run' | 'strength';

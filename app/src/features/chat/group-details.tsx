@@ -1,7 +1,10 @@
 import { StyleSheet, View } from 'react-native';
 
 import { Avatar, avatarToneFor, BackBar, Card, Chip, Icon, Screen, Section, SectionHeader, StateView, Text } from '@/components/ui';
-import { useConversationRow } from '@/features/chat/conversations';
+import { useConversationGroup, useConversationRow } from '@/features/chat/conversations';
+import { tintOf } from '@/features/coach/group-colors';
+import { daysBetween } from '@/lib/dates';
+import { formatDayShort, toIsoDay } from '@/lib/format';
 import { useTheme } from '@/theme/theme-provider';
 
 /**
@@ -13,8 +16,15 @@ import { useTheme } from '@/theme/theme-provider';
 export function GroupDetails({ conversationId, name }: { conversationId: string; name: string }) {
   const { colors } = useTheme();
   const { data, loading, error, refetch } = useConversationRow(conversationId);
+  const { data: group } = useConversationGroup(conversationId);
 
   const people = data?.people ?? [];
+  const tint = group ? tintOf(group.color) : null;
+
+  // Une course passée n'a plus de compte à rebours à afficher.
+  const raceDate = group?.race?.date ? new Date(group.race.date) : null;
+  const days = raceDate ? daysBetween(new Date(), raceDate) : null;
+  const countdown = days === null ? null : days === 0 ? 'Aujourd’hui' : days > 0 ? `J-${days}` : null;
 
   return (
     <Screen>
@@ -22,8 +32,8 @@ export function GroupDetails({ conversationId, name }: { conversationId: string;
 
       <Section style={styles.tight}>
         <Card style={styles.identity}>
-          <View style={[styles.tile, { backgroundColor: colors.dangerSoft }]}>
-            <Icon name="users" size={26} color={colors.danger} />
+          <View style={[styles.tile, { backgroundColor: tint?.soft ?? colors.dangerSoft }]}>
+            <Icon name="users" size={26} color={tint?.ink ?? colors.danger} />
           </View>
           <Text variant="h2" style={styles.centered}>
             {data?.name ?? name}
@@ -31,6 +41,16 @@ export function GroupDetails({ conversationId, name }: { conversationId: string;
           <Text variant="small">
             {people.length} participant{people.length > 1 ? 's' : ''}
           </Text>
+          {group?.race ? (
+            <View style={[styles.race, { backgroundColor: colors.subtle }]}>
+              <Icon name="flag" size={14} color={colors.text2} />
+              <Text variant="small" numberOfLines={1}>
+                {group.race.name}
+                {raceDate ? ` · ${formatDayShort(toIsoDay(raceDate))}` : ''}
+              </Text>
+              {countdown ? <Chip label={countdown} tone="accent" /> : null}
+            </View>
+          ) : null}
         </Card>
       </Section>
 
@@ -72,6 +92,7 @@ const styles = StyleSheet.create({
   identity: { alignItems: 'center', gap: 8, paddingVertical: 22 },
   tile: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
   centered: { textAlign: 'center' },
+  race: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999 },
   list: { overflow: 'hidden' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12 },
 });

@@ -6,7 +6,7 @@ import { ApiService } from '../../core/api.service';
 import type { ApiMessage } from '../../core/api-types';
 import { AuthService } from '../../core/auth.service';
 import { BadgesService } from '../../core/badges.service';
-import { startOfWeek } from '../../core/dates';
+import { daysBetween, startOfWeek } from '../../core/dates';
 import { formatDayShort, formatDecimal, formatHoursMinutes, toIsoDay } from '../../core/format';
 import { load } from '../../core/load';
 import { SocketService } from '../../core/socket.service';
@@ -14,6 +14,7 @@ import { AthleteService } from '../../data/athlete.service';
 import { ChatService, type ConversationRow } from '../../data/chat.service';
 import { CoachService } from '../../data/coach.service';
 import { buildPlanning, buildWeekPlan, mapMessages } from '../../domain/athlete.mappers';
+import { GROUP_TINT } from '../../domain/group-colors';
 import type { Activity, CitedSession, PlannedSession, WeekPlanDay } from '../../domain/athlete.types';
 import type { Segment } from '../../domain/sessions';
 import { AvatarComponent } from '../../ui/avatar.component';
@@ -185,9 +186,21 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
         <aside class="week">
           <div class="week-head">
             <div class="head-line">
-              <span class="h3 grow">Membres</span>
+              <span class="tile" [style.background]="groupTint().soft" [style.color]="groupTint().ink">
+                <tw-icon name="friends" [size]="18" />
+              </span>
+              <span class="h3 grow truncate">{{ active()?.name }}</span>
               <span class="caption muted num">{{ active()?.people?.length ?? 0 }}</span>
             </div>
+            @if (groupRace(); as race) {
+              <span class="race" [class.close]="race.soon">
+                <tw-icon name="flag" [size]="13" [strokeWidth]="2" />
+                <span class="truncate grow">{{ race.name }}{{ race.dateLabel ? ' · ' + race.dateLabel : '' }}</span>
+                @if (race.countdown) {
+                  <span class="num">{{ race.countdown }}</span>
+                }
+              </span>
+            }
           </div>
           <div class="members scroll-y">
             @for (person of active()?.people ?? []; track person.id) {
@@ -318,6 +331,16 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
         color: var(--text3);
         text-align: center;
         padding: 2px 0;
+      }
+
+      .tile {
+        width: 32px;
+        height: 32px;
+        border-radius: var(--r-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
       }
 
       .members {
@@ -908,6 +931,28 @@ export class MessagesPage {
 
   /** Prochaine compétition de l'athlète : seul le sien est chargé ici. */
   readonly race = load(() => (this.auth.isCoach() ? of(null) : this.athleteApi.nextCompetition$()));
+
+  /** Le groupe derrière la conversation ouverte : sa couleur, sa course visée. */
+  readonly group = load(() => {
+    const row = this.activePeer();
+    return row?.kind === 'group' ? this.chat.conversationGroup$(row.conversationId) : of(null);
+  });
+
+  readonly groupTint = computed(() => GROUP_TINT[this.group.data()?.color ?? 'bleu'] ?? GROUP_TINT.bleu);
+
+  readonly groupRace = computed(() => {
+    const race = this.group.data()?.race;
+    if (!race) return null;
+    const date = race.date ? new Date(race.date) : null;
+    const days = date ? daysBetween(new Date(), date) : null;
+    return {
+      name: race.name,
+      dateLabel: date ? formatDayShort(toIsoDay(date)) : null,
+      // Une course passée n'a plus de compte à rebours à afficher.
+      countdown: days === null ? null : days === 0 ? 'Aujourd’hui' : days > 0 ? `J-${days}` : null,
+      soon: days !== null && days >= 0 && days <= 21,
+    };
+  });
 
   /** Kilomètres réalisés cette semaine, rapportés à ce qui était prévu. */
   readonly volume = computed(() => {
