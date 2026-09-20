@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
 import { Button, Card, FormError, Text } from '@/components/ui';
+import { useBringIntoView } from '@/components/ui/keyboard-scroll';
 import { useCoachActions } from '@/features/coach/queries';
 import { formatDayShort, toIsoDay } from '@/lib/format';
 import { useTheme } from '@/theme/theme-provider';
@@ -25,6 +26,8 @@ type Props = {
  */
 export function CoachFeedbackCard({ feedback, editable }: Props) {
   const { colors } = useTheme();
+  const areaRef = useRef<TextInput>(null);
+  const bringIntoView = useBringIntoView();
   const { setSessionFeedback } = useCoachActions();
 
   const [local, setLocal] = useState<Feedback>(undefined);
@@ -66,6 +69,8 @@ export function CoachFeedbackCard({ feedback, editable }: Props) {
       {editing ? (
         <>
           <TextInput
+            ref={areaRef}
+            onFocus={() => bringIntoView(areaRef.current)}
             accessibilityLabel="Retour du coach"
             value={draft}
             onChangeText={setDraft}

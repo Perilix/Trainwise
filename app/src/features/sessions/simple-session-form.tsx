@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
 import { Button, Card, ChoicePill, Field, FormError, Section, Segmented, Text } from '@/components/ui';
+import { useBringIntoView } from '@/components/ui/keyboard-scroll';
 import type { NewPlannedSession, Sport } from '@/features/athlete/types';
 import { ExpectedFeelingPicker } from '@/features/sessions/expected-feeling';
 import { parseDecimal } from '@/lib/format';
@@ -45,6 +46,8 @@ type Props = {
 /** Séance simple (type, objectifs, consignes), sans blocs : ajout par l'athlète ou le coach. */
 export function SimpleSessionForm({ date, submitLabel, withExpectedFeeling, onSubmit }: Props) {
   const { colors } = useTheme();
+  const areaRef = useRef<TextInput>(null);
+  const bringIntoView = useBringIntoView();
   const [activity, setActivity] = useState<Sport>('running');
   const [sessionType, setSessionType] = useState('endurance');
   const [distance, setDistance] = useState('');
@@ -146,6 +149,8 @@ export function SimpleSessionForm({ date, submitLabel, withExpectedFeeling, onSu
         <Card>
           <Text variant="sectionTitle">Consignes</Text>
           <TextInput
+            ref={areaRef}
+            onFocus={() => bringIntoView(areaRef.current)}
             accessibilityLabel="Consignes de la séance"
             placeholder={running ? 'Ex. footing en aisance, 4 lignes droites à la fin' : 'Ex. 4 × 10 squats, 3 × 12 pompes'}
             placeholderTextColor={colors.text3}

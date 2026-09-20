@@ -7,6 +7,7 @@ import { useTheme } from '@/theme/theme-provider';
 import { layout } from '@/theme/tokens';
 
 import { GlassSurface } from './glass-surface';
+import { KeyboardScrollProvider, useScrollRef } from './keyboard-scroll';
 import { TAB_BAR_HEIGHT, TAB_BAR_MARGIN } from './tab-bar';
 
 type Props = {
@@ -24,6 +25,8 @@ type Props = {
 
 export function Screen({ children, scroll = true, tabs, edges = ['top'], contentStyle, footer, wide }: Props) {
   const { colors } = useTheme();
+  // Les champs de saisie s'y annoncent pour être amenés au-dessus du clavier.
+  const scrollRef = useScrollRef();
   const insets = useSafeAreaInsets();
   const desktop = useIsDesktop();
   // Sur grand écran, la barre d'onglets a laissé place à la barre latérale.
@@ -34,9 +37,11 @@ export function Screen({ children, scroll = true, tabs, edges = ['top'], content
   // La barre d'action descend jusqu'au bord : elle garde sous elle la place de la barre d'accueil.
   const footerInset = edges.includes('bottom') ? 0 : insets.bottom;
   return (
+    <KeyboardScrollProvider value={scrollRef}>
     <SafeAreaView edges={edges} style={{ flex: 1, backgroundColor: colors.bg }}>
       {scroll ? (
         <ScrollView
+          ref={scrollRef}
           contentContainerStyle={[{ paddingBottom: bottom }, column, contentStyle]}
           keyboardShouldPersistTaps="handled"
           // Le clavier ne doit pas masquer ce qu'on écrit : la page se décale
@@ -62,5 +67,6 @@ export function Screen({ children, scroll = true, tabs, edges = ['top'], content
         </KeyboardAvoidingView>
       ) : null}
     </SafeAreaView>
+    </KeyboardScrollProvider>
   );
 }

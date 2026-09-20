@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Share, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button, Card, Chip, Icon, Text } from '@/components/ui';
+import { useBringIntoView } from '@/components/ui/keyboard-scroll';
 import { useTheme } from '@/theme/theme-provider';
 import { radius } from '@/theme/tokens';
 import { fontFamily } from '@/theme/typography';
@@ -23,6 +24,8 @@ type Availability = { code: string; available: boolean; error?: string };
  */
 export function InviteCodeCard({ code, onChanged }: Props) {
   const { colors } = useTheme();
+  const areaRef = useRef<TextInput>(null);
+  const bringIntoView = useBringIntoView();
   const { generateInviteCode, checkInviteCode, setInviteCode } = useCoachActions();
 
   const [generated, setGenerated] = useState<string | null>(null);
@@ -105,6 +108,8 @@ export function InviteCodeCard({ code, onChanged }: Props) {
         </Text>
 
         <TextInput
+          ref={areaRef}
+          onFocus={() => bringIntoView(areaRef.current)}
           accessibilityLabel="Code d’invitation"
           value={draft}
           onChangeText={onType}

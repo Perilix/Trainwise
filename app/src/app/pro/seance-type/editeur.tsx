@@ -1,8 +1,9 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
 import { BackBar, Button, Card, ChoicePill, Field, FormError, Screen, Section, Segmented, StateView, Text } from '@/components/ui';
+import { useBringIntoView } from '@/components/ui/keyboard-scroll';
 import { useCoachActions } from '@/features/coach/queries';
 import { templateRunBlocks, toTemplateBlocks, useTemplate } from '@/features/coach/templates';
 import { ExpectedFeelingPicker } from '@/features/sessions/expected-feeling';
@@ -22,6 +23,8 @@ export default function TemplateEditorScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const router = useRouter();
   const { colors } = useTheme();
+  const areaRef = useRef<TextInput>(null);
+  const bringIntoView = useBringIntoView();
   const { data: template, loading, error, refetch } = useTemplate(id);
   const { createTemplate, updateTemplate } = useCoachActions();
   const [name, setName] = useState<string | null>(null);
@@ -141,6 +144,8 @@ export default function TemplateEditorScreen() {
               Description
             </Text>
             <TextInput
+            ref={areaRef}
+            onFocus={() => bringIntoView(areaRef.current)}
               accessibilityLabel="Description de la séance"
               placeholder="Objectif, public visé, consignes générales…"
               placeholderTextColor={colors.text3}

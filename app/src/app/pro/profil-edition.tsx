@@ -1,8 +1,9 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
 import { BackBar, Button, Card, ChoicePill, Field, FormError, Screen, Section, Text } from '@/components/ui';
+import { useBringIntoView } from '@/components/ui/keyboard-scroll';
 import { useSession } from '@/features/auth/session';
 import { DIPLOMA_OPTIONS, DISCIPLINE_OPTIONS } from '@/features/coach/profile-options';
 import { useCoachActions } from '@/features/coach/queries';
@@ -16,6 +17,8 @@ const toggle = (list: string[], value: string) => (list.includes(value) ? list.f
 export default function CoachProfileEditScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const areaRef = useRef<TextInput>(null);
+  const bringIntoView = useBringIntoView();
   const { user } = useSession();
   const { updateProfile } = useCoachActions();
   const [disciplines, setDisciplines] = useState<string[]>(() => user?.disciplines ?? []);
@@ -82,6 +85,8 @@ export default function CoachProfileEditScreen() {
               Présentation
             </Text>
             <TextInput
+            ref={areaRef}
+            onFocus={() => bringIntoView(areaRef.current)}
               accessibilityLabel="Présentation"
               placeholder="Votre parcours, votre approche, les athlètes que vous accompagnez…"
               placeholderTextColor={colors.text3}

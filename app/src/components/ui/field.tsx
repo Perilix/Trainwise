@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { Platform, StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
 
 import { useTheme } from '@/theme/theme-provider';
@@ -6,6 +6,7 @@ import { radius } from '@/theme/tokens';
 import { fontFamily } from '@/theme/typography';
 
 import { Icon, type IconName } from './icon';
+import { useBringIntoView } from './keyboard-scroll';
 import { Text } from './text';
 
 type Props = TextInputProps & {
@@ -18,6 +19,8 @@ type Props = TextInputProps & {
 export function Field({ label, icon, trailing, containerStyle, style, onFocus, onBlur, ...input }: Props) {
   const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
+  const inputRef = useRef<TextInput>(null);
+  const bringIntoView = useBringIntoView();
 
   return (
     <View style={[styles.container, containerStyle]}>
@@ -34,11 +37,14 @@ export function Field({ label, icon, trailing, containerStyle, style, onFocus, o
         ]}>
         {icon ? <Icon name={icon} size={18} color={colors.text3} /> : null}
         <TextInput
+          ref={inputRef}
           accessibilityLabel={label}
           placeholderTextColor={colors.text3}
           {...input}
           onFocus={(event) => {
             setFocused(true);
+            // Le clavier arrive : on remonte le champ au-dessus de lui.
+            bringIntoView(inputRef.current);
             onFocus?.(event);
           }}
           onBlur={(event) => {

@@ -1,8 +1,9 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
 import { BackBar, Button, Card, ChoicePill, FormError, Screen, Section, StateView, Text } from '@/components/ui';
+import { useBringIntoView } from '@/components/ui/keyboard-scroll';
 import { useAthleteFiche, useCoachActions, useCoachPlannedRaw } from '@/features/coach/queries';
 import { DateStepper } from '@/features/sessions/date-stepper';
 import { ExpectedFeelingPicker } from '@/features/sessions/expected-feeling';
@@ -21,6 +22,8 @@ export default function CoachSessionEditorScreen() {
   const { id, planId, date: dateParam, sport: sportParam } = useLocalSearchParams<{ id: string; planId?: string; date?: string; sport?: string }>();
   const router = useRouter();
   const { colors } = useTheme();
+  const areaRef = useRef<TextInput>(null);
+  const bringIntoView = useBringIntoView();
   const { data: raw, loading, error, refetch } = useCoachPlannedRaw(id, planId);
   const { data: fiche } = useAthleteFiche(id);
   const { createAthleteSession, updateAthleteSession } = useCoachActions();
@@ -129,6 +132,8 @@ export default function CoachSessionEditorScreen() {
               Consignes
             </Text>
             <TextInput
+            ref={areaRef}
+            onFocus={() => bringIntoView(areaRef.current)}
               accessibilityLabel="Consignes de la séance"
               placeholder="Objectif de la séance, sensations attendues…"
               placeholderTextColor={colors.text3}
