@@ -315,6 +315,81 @@ const buildPlannedStravaDescription = (planned) => {
   return lines.join('\n');
 };
 
+const STRENGTH_TYPE_LABELS = {
+  upper_body: 'Haut du corps',
+  lower_body: 'Bas du corps',
+  full_body: 'Full body',
+  push: 'Push',
+  pull: 'Pull',
+  legs: 'Jambes',
+  core: 'Gainage',
+  hiit: 'HIIT',
+  other: 'Renforcement'
+};
+
+/** Les séries réalisées : « 4 × 10 reps @ 60 kg », « 10, 10, 8 reps @ 60 kg »… */
+const formatDoneSets = (sets = []) => {
+  if (!sets.length) return null;
+  const weights = [...new Set(sets.map((set) => set.weight || 0))];
+
+  // Une charge tenue d'un bout à l'autre ne se répète pas : elle se dit une fois.
+  if (weights.length === 1) {
+    const load = weights[0] ? ` @ ${weights[0]} kg` : '';
+    const reps = [...new Set(sets.map((set) => set.reps))];
+    const body = reps.length > 1 ? `${sets.map((set) => set.reps).join(', ')} reps` : sets.length > 1 ? `${sets.length} × ${reps[0]} reps` : `${reps[0]} reps`;
+    return `${body}${load}`;
+  }
+
+  return sets.map((set) => `${set.reps}${set.weight ? ` @ ${set.weight} kg` : ''}`).join(' · ');
+};
+
+/** Le titre d'une séance de renforcement : celui du coach, repris dans les notes. */
+const strengthSessionTitle = (session) => {
+  const first = (session.notes || '').split('\n').map((line) => line.trim()).find(Boolean);
+  if (first && first.length <= 80) return first;
+  return STRENGTH_TYPE_LABELS[session.sessionType] || 'Renforcement';
+};
+
+/** Les lignes d'une séance de renforcement réalisée, bloc par bloc. */
+const formatStrengthSession = (session) => {
+  const entries = (session.exercises || [])
+    .filter((entry) => entry.sets?.length)
+    .slice()
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  if (!entries.length) return [];
+
+  const describe = (entry) => {
+    const name = exerciseName(entry);
+    const done = formatDoneSets(entry.sets);
+    return done ? `${name} — ${done}` : name;
+  };
+  const ofKind = (kind) => entries.filter((entry) => (entry.block?.kind || 'single') === kind);
+
+  const lines = ofKind('single').map((entry) => `• ${describe(entry)}`);
+
+  const plural = (count, word) => `${count} ${word}${count > 1 ? 's' : ''}`;
+
+  const circuit = ofKind('circuit');
+  if (circuit.length) {
+    lines.push(`• ${session.circuit?.name || 'Circuit'} — ${plural(session.circuit?.rounds || circuit[0].sets.length, 'tour')} :`);
+    circuit.forEach((entry) => lines.push(`   – ${describe(entry)}`));
+  }
+
+  const superset = ofKind('superset');
+  if (superset.length) {
+    lines.push(`• ${session.superset?.name || 'Super-set'} — ${plural(session.superset?.sets || superset[0].sets.length, 'série')} :`);
+    superset.forEach((entry) => lines.push(`   – ${describe(entry)}`));
+  }
+
+  return lines;
+};
+
+const buildStrengthSessionDescription = (session) => {
+  const lines = formatStrengthSession(session);
+  if (!lines.length) return null;
+  return [`🏋️ Séance Trainwise — ${strengthSessionTitle(session)}`, '', lines.join('\n'), '', `Planifié avec Trainwise 🏋️ ${TRAINWISE_URL}`].join('\n');
+};
+
 /**
  * Recharge une séance de renforcement avec le nom de ses exercices.
  *
@@ -332,17 +407,38 @@ const withExerciseNames = async (planned) => {
   return populated || planned;
 };
 
-// Écrit (une seule fois) la séance programmée dans la description de l'activité Strava.
-// `existingDescription` = description actuelle côté Strava, pour ne pas l'écraser.
-const writePlannedSessionToStrava = async (activityId, accessToken, planned, existingDescription = '') => {
-  const block = buildPlannedStravaDescription(planned);
+/**
+ * Retire de la description le bloc écrit par Trainwise, s'il y en a un.
+ *
+ * Le bloc va de sa ligne d'en-tête (« … Séance Trainwise — … ») jusqu'au lien
+ * qui le referme : ce qui vient de l'athlète, avant ou après, est préservé.
+ */
+const stripTrainwiseBlock = (description = '') => {
+  const marker = description.indexOf('Séance Trainwise');
+  if (marker === -1) return description.trim();
+  const start = description.lastIndexOf('\n', marker) + 1;
+  const link = description.indexOf(TRAINWISE_URL, marker);
+  const rest = link === -1 ? '' : description.slice(link + TRAINWISE_URL.length);
+  return `${description.slice(0, start)}${rest}`.replace(/\n{3,}/g, '\n\n').trim();
+};
+
+/**
+ * Écrit un bloc Trainwise dans la description de l'activité Strava.
+ *
+ * `replace` réécrit un bloc déjà posé — c'est le cas d'une séance de
+ * renforcement détaillée après coup, dont on ne connaissait pas encore les
+ * charges au moment du rapprochement. Sinon on ne touche à rien : l'activité
+ * est déjà annotée, et notre PUT redéclencherait un webhook.
+ */
+const writeBlockToStrava = async (activityId, accessToken, block, existingDescription = '', { replace = false } = {}) => {
   if (!block) return;
 
-  // Idempotence : si l'activité est déjà annotée par Trainwise, on n'y touche plus
-  // (évite aussi une boucle : notre PUT redéclenche un webhook 'update').
-  if (existingDescription && existingDescription.includes(TRAINWISE_URL)) return;
+  const already = existingDescription && existingDescription.includes(TRAINWISE_URL);
+  if (already && !replace) return;
 
-  const description = (existingDescription ? `${existingDescription}\n\n${block}` : block).slice(0, 4000);
+  const kept = already ? stripTrainwiseBlock(existingDescription) : (existingDescription || '').trim();
+  const description = (kept ? `${kept}\n\n${block}` : block).slice(0, 4000);
+  if (description === (existingDescription || '').trim()) return;
 
   try {
     await axios.put(
@@ -355,6 +451,11 @@ const writePlannedSessionToStrava = async (activityId, accessToken, planned, exi
     console.error(`[Strava] écriture description activité ${activityId} échouée:`, e.response?.status || e.message);
   }
 };
+
+// Écrit (une seule fois) la séance programmée dans la description de l'activité Strava.
+// `existingDescription` = description actuelle côté Strava, pour ne pas l'écraser.
+const writePlannedSessionToStrava = async (activityId, accessToken, planned, existingDescription = '') =>
+  writeBlockToStrava(activityId, accessToken, buildPlannedStravaDescription(planned), existingDescription);
 
 // ── Import d'une activité course (utilisé par la sync manuelle ET le webhook) ──
 // `activity` peut être un summary (liste d'activités) ou un détail complet ;
@@ -1132,6 +1233,31 @@ exports.processWebhookEvent = processWebhookEvent;
  * lève jamais — l'échec d'une écriture sur Strava ne doit pas faire échouer
  * le rapprochement lui-même.
  */
+/**
+ * Écrit la séance de renforcement réalisée dans sa description Strava.
+ *
+ * C'est à l'enregistrement des séries que la séance existe vraiment : au
+ * rapprochement, on ne connaît encore ni les charges ni les répétitions. Le
+ * bloc posé alors est donc remplacé par celui-ci.
+ */
+exports.annotateStrengthSession = async (userId, session) => {
+  if (!session?.stravaActivityId) return;
+  const block = buildStrengthSessionDescription(session);
+  if (!block) return;
+  try {
+    const user = await User.findById(userId).select('+strava.accessToken +strava.refreshToken');
+    if (!user?.strava?.accessToken) return;
+
+    const accessToken = await refreshTokenIfNeeded(user);
+    const detail = await axios.get(`${STRAVA_API_URL}/activities/${session.stravaActivityId}`, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    await writeBlockToStrava(session.stravaActivityId, accessToken, block, detail.data.description || '', { replace: true });
+  } catch (e) {
+    console.error(`[Strava] annotation de la séance muscu ${session._id} impossible :`, e.response?.status || e.message);
+  }
+};
+
 exports.annotateStravaActivity = async (userId, stravaActivityId, planned) => {
   if (!stravaActivityId || !planned) return;
   try {

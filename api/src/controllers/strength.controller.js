@@ -4,6 +4,7 @@ const PlannedRun = require('../models/plannedRun.model');
 const User = require('../models/user.model');
 const { autoCompletePlannedSessions } = require('../services/planningAutoComplete');
 const { createNotification } = require('./notification.controller');
+const { annotateStrengthSession } = require('./strava.controller');
 const { athleteHasCoach } = require('../services/coachRelation.service');
 const { getUpcomingCompetitionsForContext } = require('../utils/competitions');
 const aiAnalysis = require('../services/aiAnalysis.service');
@@ -161,6 +162,10 @@ exports.updateSession = async (req, res) => {
     }
 
     res.json(session);
+
+    // La séance détaillée part sur Strava, comme une course rapprochée de son
+    // plan. Après la réponse : l'athlète n'a pas à attendre l'aller-retour.
+    annotateStrengthSession(req.user._id, session).catch((e) => console.error('[Strava] annotation muscu:', e.message));
   } catch (error) {
     console.error('Error updating strength session:', error);
     res.status(500).json({ error: error.message });

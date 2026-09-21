@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 
 import { Avatar, BRAND, Button, Card, Chip, GlassSurface, Icon, IconButton, Screen, Section, SectionHeader, StateView, Text } from '@/components/ui';
+import { activityHref } from '@/features/athlete/activity-link';
 import { AthleteAppBar } from '@/features/athlete/athlete-app-bar';
 import { PlannedMatchPrompt } from '@/features/athlete/planned-match-prompt';
 import { useAthleteHome } from '@/features/athlete/queries';
@@ -82,7 +83,7 @@ export default function AthleteHomeScreen() {
               key={activity.id}
               activity={activity}
               first={index === 0}
-              onPress={activity.sport === 'running' ? () => router.push({ pathname: '/sortie/[id]', params: { id: activity.id } }) : undefined}
+              onPress={() => router.push(activityHref(activity))}
             />
           ))}
           {data.strava.connected ? <StravaRow /> : null}

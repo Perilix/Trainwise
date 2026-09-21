@@ -4,9 +4,9 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { BackBar, Button, Card, FeelingSlider, Icon, Screen, Section, StateView, Text } from '@/components/ui';
 import { useAthleteActions, usePlannedSession, useStrengthSession } from '@/features/athlete/queries';
-import { buildStrengthPayload, entriesFromPlan, entriesFromSession, groupEntries, type LogEntry, type LogSet } from '@/features/athlete/strength-log';
+import { buildStrengthPayload, entriesFromPlan, entriesFromSession, groupEntries, sessionTitle, type LogEntry, type LogSet } from '@/features/athlete/strength-log';
 import { emitAppEvent } from '@/lib/app-events';
-import { formatClock, formatDecimal } from '@/lib/format';
+import { formatClock, formatDayLong, formatDecimal, formatHoursMinutes, toIsoDay } from '@/lib/format';
 import { useTheme } from '@/theme/theme-provider';
 import { layout, radius } from '@/theme/tokens';
 import { fontFamily } from '@/theme/typography';
@@ -56,8 +56,16 @@ export default function StrengthLogScreen() {
   const entries = edited ?? (existing ? entriesFromSession(existing) : entriesFromPlan(plan!));
   const feelingValue = feeling ?? existing?.feeling ?? 7;
   const notesValue = notes ?? existing?.notes ?? '';
+  // Une séance déjà détaillée se relit et se corrige ; elle ne se « termine » plus.
+  const recorded = (existing?.exercises ?? []).some((entry) => (entry.sets?.length ?? 0) > 0);
+  const title = existing ? sessionTitle(existing) : (session?.title ?? 'Séance de renforcement');
   const totalSets = entries.reduce((sum, entry) => sum + entry.sets.length, 0);
   const doneSets = entries.reduce((sum, entry) => sum + entry.sets.filter((set) => set.done).length, 0);
+  const meta = existing
+    ? [formatDayLong(toIsoDay(new Date(existing.date))), existing.duration ? formatHoursMinutes(existing.duration * 60) : null, doneSets ? `${doneSets} séries` : null]
+        .filter(Boolean)
+        .join(' · ')
+    : null;
 
   const updateEntry = (entryIndex: number, change: (entry: LogEntry) => LogEntry) =>
     setEdited(entries.map((entry, index) => (index === entryIndex ? change(entry) : entry)));
@@ -74,7 +82,7 @@ export default function StrengthLogScreen() {
   const removeSet = (entryIndex: number) => updateEntry(entryIndex, (entry) => ({ ...entry, sets: entry.sets.slice(0, -1) }));
 
   const finish = async () => {
-    if (doneSets === 0) {
+    if (entries.length && doneSets === 0) {
       setSaveError('Coche au moins une série réalisée.');
       return;
     }
@@ -111,7 +119,13 @@ export default function StrengthLogScreen() {
           {saveError}
         </Text>
       ) : null}
-      <Button label={saving ? 'Enregistrement…' : `Terminer · ${doneSets}/${totalSets} séries`} icon="check" fullWidth disabled={saving} onPress={finish} />
+      <Button
+        label={saving ? 'Enregistrement…' : recorded ? 'Enregistrer' : `Terminer · ${doneSets}/${totalSets} séries`}
+        icon="check"
+        fullWidth
+        disabled={saving}
+        onPress={finish}
+      />
     </View>
   );
 
@@ -132,13 +146,30 @@ export default function StrengthLogScreen() {
       />
 
       <Section style={styles.titleBlock}>
-        <Text variant="h1">{session?.title ?? 'Séance de renforcement'}</Text>
+        <Text variant="h1">{title}</Text>
         <Text variant="body2">
-          {existing
-            ? 'Cette séance vient de Strava : les exercices sont ceux de ton coach, les séries restent à saisir.'
-            : 'Coche chaque série une fois faite, ajuste les répétitions et la charge si besoin.'}
+          {recorded
+            ? 'Ce que tu as enregistré. Ajuste tes séries, ton ressenti ou tes notes si besoin.'
+            : existing
+              ? 'Cette séance vient de Strava : les exercices sont ceux de ton coach, les séries restent à saisir.'
+              : 'Coche chaque série une fois faite, ajuste les répétitions et la charge si besoin.'}
         </Text>
+        {meta ? (
+          <Text variant="small" tabular>
+            {meta}
+          </Text>
+        ) : null}
       </Section>
+
+      {existing && !entries.length ? (
+        <Section style={styles.tight}>
+          <Card>
+            <Text variant="body2">
+              Aucun exercice n’est rattaché à cette séance. Rapproche-la d’une séance planifiée pour retrouver la liste de ton coach.
+            </Text>
+          </Card>
+        </Section>
+      ) : null}
 
       {groupEntries(entries).map((section) => (
         <Section key={section.key} style={styles.tight}>

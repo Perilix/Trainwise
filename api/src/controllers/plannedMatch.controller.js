@@ -95,10 +95,11 @@ async function attachPlannedToRun(run, planned, athleteId) {
   run.pendingPlannedMatch = null;
   run.matchDismissed = true;
   await run.save();
+  // Avant la suppression : l'annotation relit la séance planifiée pour en
+  // nommer les exercices.
+  await annotateStravaActivity(athleteId, run.stravaActivityId, planned);
   await PlannedRun.deleteOne({ _id: planned._id });
   await notifyCoachIfNeeded(planned, athleteId, run._id, 'run');
-  // Rapprochée à la main ou automatiquement, l'activité mérite son annotation.
-  await annotateStravaActivity(athleteId, run.stravaActivityId, planned);
 }
 
 exports.confirmRunMatch = async (req, res) => {
@@ -220,9 +221,9 @@ async function attachPlannedToStrength(session, planned, athleteId) {
   }
 
   await session.save();
+  await annotateStravaActivity(athleteId, session.stravaActivityId, planned);
   await PlannedRun.deleteOne({ _id: planned._id });
   await notifyCoachIfNeeded(planned, athleteId, session._id, 'strength');
-  await annotateStravaActivity(athleteId, session.stravaActivityId, planned);
 }
 
 exports.confirmStrengthMatch = async (req, res) => {

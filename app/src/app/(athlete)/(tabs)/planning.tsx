@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Button, Card, Chip, Icon, Screen, Section, SectionHeader, Stat, Text } from '@/components/ui';
+import { activityHref } from '@/features/athlete/activity-link';
 import { AthleteAppBar } from '@/features/athlete/athlete-app-bar';
 import { useAthleteActions, usePlanningMonth } from '@/features/athlete/queries';
 import { SESSION_STATUS_CHIP } from '@/features/athlete/session-status';
@@ -92,9 +93,7 @@ export default function PlanningScreen() {
                   <ActivityCard
                     key={activity.id}
                     activity={activity}
-                    onPress={
-                      activity.sport === 'running' ? () => router.push({ pathname: '/sortie/[id]', params: { id: activity.id } }) : undefined
-                    }
+                    onPress={() => router.push(activityHref(activity))}
                   />
                 ))}
               </View>

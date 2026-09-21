@@ -102,6 +102,18 @@ export function buildStrengthPayload({ plannedId, sessionType, plan, entries, da
 export type StrengthSessionPayload = ReturnType<typeof buildStrengthPayload>;
 
 /**
+ * Le titre d'une séance enregistrée : celui du coach, repris en tête des notes
+ * au moment du rapprochement.
+ */
+export function sessionTitle(session: ApiStrengthSessionDetail): string {
+  const first = (session.notes ?? '')
+    .split('\n')
+    .map((line) => line.trim())
+    .find(Boolean);
+  return first && first.length <= 80 ? first : 'Séance de renforcement';
+}
+
+/**
  * Reprend une séance déjà enregistrée pour la compléter.
  *
  * Une séance importée de Strava puis rapprochée du plan du coach arrive avec
