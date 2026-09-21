@@ -23,15 +23,19 @@ export default function StrengthLogScreen() {
   const [startedAt] = useState(() => Date.now());
   const [now, setNow] = useState(() => Date.now());
   const [edited, setEdited] = useState<LogEntry[] | null>(null);
-  const [feeling, setFeeling] = useState(7);
-  const [notes, setNotes] = useState('');
+  // `null` tant que l'athlète n'y touche pas : ce qui est déjà enregistré prime.
+  const [feeling, setFeeling] = useState<number | null>(null);
+  const [notes, setNotes] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  // Le chrono n'a de sens que sur une séance en cours : celle venue de Strava
+  // est déjà terminée et porte sa vraie durée.
   useEffect(() => {
+    if (done) return;
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [done]);
 
   const plan = session?.strength;
 
@@ -50,6 +54,8 @@ export default function StrengthLogScreen() {
   }
 
   const entries = edited ?? (existing ? entriesFromSession(existing) : entriesFromPlan(plan!));
+  const feelingValue = feeling ?? existing?.feeling ?? 7;
+  const notesValue = notes ?? existing?.notes ?? '';
   const totalSets = entries.reduce((sum, entry) => sum + entry.sets.length, 0);
   const doneSets = entries.reduce((sum, entry) => sum + entry.sets.filter((set) => set.done).length, 0);
 
@@ -80,9 +86,12 @@ export default function StrengthLogScreen() {
         sessionType: existing?.sessionType ?? session!.sessionType,
         plan,
         entries,
-        durationMin: Math.max(1, Math.round((now - startedAt) / 60_000)),
-        feeling,
-        notes,
+        // Séance importée : on garde sa date et sa durée réelles, pas le temps
+        // passé sur cet écran.
+        date: existing?.date,
+        durationMin: existing ? existing.duration : Math.max(1, Math.round((now - startedAt) / 60_000)),
+        feeling: feelingValue,
+        notes: notesValue,
       });
       // Compléter une séance existante la met à jour ; sinon on en crée une.
       if (existing) await updateStrengthSession(existing._id, payload);
@@ -111,12 +120,14 @@ export default function StrengthLogScreen() {
       <BackBar
         title="Séance muscu"
         right={
-          <View accessibilityLabel={`Temps écoulé ${formatClock((now - startedAt) / 1000)}`} style={[styles.chrono, { backgroundColor: colors.subtle }]}>
-            <Icon name="clock" size={14} color={colors.text2} />
-            <Text variant="h3" tabular>
-              {formatClock((now - startedAt) / 1000)}
-            </Text>
-          </View>
+          existing ? undefined : (
+            <View accessibilityLabel={`Temps écoulé ${formatClock((now - startedAt) / 1000)}`} style={[styles.chrono, { backgroundColor: colors.subtle }]}>
+              <Icon name="clock" size={14} color={colors.text2} />
+              <Text variant="h3" tabular>
+                {formatClock((now - startedAt) / 1000)}
+              </Text>
+            </View>
+          )
         }
       />
 
@@ -171,13 +182,13 @@ export default function StrengthLogScreen() {
             <Text variant="sectionTitle">Ressenti</Text>
             <View style={styles.baseline}>
               <Text variant="stat" tabular>
-                {feeling}
+                {feelingValue}
               </Text>
               <Text variant="small">/10</Text>
             </View>
           </View>
           <View style={styles.slider}>
-            <FeelingSlider value={feeling} onChange={setFeeling} />
+            <FeelingSlider value={feelingValue} onChange={setFeeling} />
           </View>
         </Card>
       </Section>
@@ -189,7 +200,7 @@ export default function StrengthLogScreen() {
             accessibilityLabel="Notes pour ton coach"
             placeholder="Sensations, douleurs, charges à revoir…"
             placeholderTextColor={colors.text3}
-            value={notes}
+            value={notesValue}
             onChangeText={setNotes}
             multiline
             style={[styles.notes, { backgroundColor: colors.bg, borderColor: colors.border, color: colors.ink }]}

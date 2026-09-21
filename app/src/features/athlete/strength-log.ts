@@ -64,13 +64,16 @@ type PayloadInput = {
   /** Absent quand on complète une séance déjà enregistrée : sa structure suffit. */
   plan?: StrengthPlanView;
   entries: LogEntry[];
-  durationMin: number;
+  /** Absente quand la séance est créée maintenant : c'est aujourd'hui. */
+  date?: string;
+  /** Absente quand on complète une séance dont la durée est déjà connue. */
+  durationMin?: number;
   feeling: number;
   notes: string;
 };
 
 /** Corps de POST /api/strength/sessions : seules les séries cochées sont enregistrées. */
-export function buildStrengthPayload({ plannedId, sessionType, plan, entries, durationMin, feeling, notes }: PayloadInput) {
+export function buildStrengthPayload({ plannedId, sessionType, plan, entries, date, durationMin, feeling, notes }: PayloadInput) {
   const exercises = entries
     .map((entry, order) => ({
       exercise: entry.exerciseId,
@@ -84,7 +87,7 @@ export function buildStrengthPayload({ plannedId, sessionType, plan, entries, du
     .filter((entry) => entry.sets.length > 0);
 
   return {
-    date: new Date().toISOString(),
+    date: date ?? new Date().toISOString(),
     duration: durationMin,
     sessionType,
     exercises,
