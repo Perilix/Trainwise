@@ -1,0 +1,111 @@
+<%- include('_header', { title: 'Séances de muscu', page: 'strength' }) %>
+
+<div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+  <div>
+    <h1>Séances de muscu</h1>
+    <p><%= total %> séance<%= total > 1 ? 's' : '' %><%= search || origin || dateFrom || dateTo ? ' correspondant au filtre' : '' %> · <%= fromStrava %> importée<%= fromStrava > 1 ? 's' : '' %> de Strava</p>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-body">
+    <form method="GET" class="form-grid" style="align-items:end;">
+      <div class="form-group full">
+        <label class="form-label">Athlète</label>
+        <input type="search" name="search" class="form-control" value="<%= search %>" placeholder="Nom ou email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Origine</label>
+        <select name="origin" class="form-control" onchange="this.form.submit()">
+          <option value="">Toutes</option>
+          <option value="strava" <%= origin === 'strava' ? 'selected' : '' %>>Importées de Strava</option>
+          <option value="app" <%= origin === 'app' ? 'selected' : '' %>>Saisies dans l'app</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Du</label>
+        <input type="date" name="dateFrom" class="form-control" value="<%= dateFrom %>" onchange="this.form.submit()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Au</label>
+        <input type="date" name="dateTo" class="form-control" value="<%= dateTo %>" onchange="this.form.submit()">
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Athlète</th>
+          <th>Date</th>
+          <th>Type</th>
+          <th>Durée</th>
+          <th>Exercices</th>
+          <th>Séries</th>
+          <th>Origine</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% sessions.forEach(s => { %>
+        <tr>
+          <td>
+            <% if (s.user) { %>
+            <a href="/users/<%= s.user._id %>" class="table-link">
+              <div style="font-weight:500;"><%= s.user.firstName || '' %> <%= s.user.lastName || '' %></div>
+              <div class="text-small text-muted"><%= s.user.email %></div>
+            </a>
+            <% } else { %><span class="text-muted">Compte supprimé</span><% } %>
+          </td>
+          <td class="text-small text-muted"><%= new Date(s.date).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' }) %></td>
+          <td><% if (s.sessionType) { %><span class="badge badge-user" style="font-size:0.7rem;"><%= s.sessionType %></span><% } else { %><span class="text-muted">—</span><% } %></td>
+          <td><%= s.duration ? s.duration + ' min' : '—' %></td>
+          <td>
+            <% const names = (s.exercises || []).map(e => e.exercise && e.exercise.name).filter(Boolean); %>
+            <% if (names.length) { %>
+              <span title="<%= names.join(', ') %>"><%= names.length %></span>
+              <span class="text-small text-muted"> — <%= names.slice(0, 2).join(', ') %><%= names.length > 2 ? '…' : '' %></span>
+            <% } else { %><span class="text-muted">aucun</span><% } %>
+          </td>
+          <td>
+            <% const sets = (s.exercises || []).reduce((n, e) => n + ((e.sets || []).length), 0); %>
+            <% if (sets) { %><%= sets %><% } else { %><span style="color:var(--warning);" title="Exercices repris du plan, séries pas encore saisies">à remplir</span><% } %>
+          </td>
+          <td>
+            <% if (s.stravaActivityId) { %>
+              <a href="https://www.strava.com/activities/<%= s.stravaActivityId %>" target="_blank" rel="noopener" style="color:#fc4c02;font-size:0.8rem;">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Strava
+              </a>
+            <% } else { %><span class="text-muted text-small">App</span><% } %>
+          </td>
+          <td>
+            <div style="display:flex;gap:6px;justify-content:flex-end;">
+              <form method="POST" action="/strength/<%= s._id %>/delete" onsubmit="return confirm('Supprimer définitivement cette séance de muscu ?');" style="margin:0;">
+                <button type="submit" class="btn" title="Supprimer" style="padding:5px 10px;background:rgba(239,68,68,0.08);color:var(--danger);border-color:rgba(239,68,68,0.2);">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        <% }); %>
+        <% if (!sessions.length) { %>
+        <tr><td colspan="8"><div class="empty-state"><i class="fa-solid fa-dumbbell"></i><p>Aucune séance trouvée</p></div></td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<% if (pages > 1) { %>
+  <div class="pagination">
+    <% for (let p = 1; p <= pages; p++) { %>
+      <a class="page-btn <%= p === page ? 'active' : '' %>" href="/strength?page=<%= p %>&search=<%= encodeURIComponent(search) %>&origin=<%= origin %>&dateFrom=<%= dateFrom %>&dateTo=<%= dateTo %>"><%= p %></a>
+    <% } %>
+  </div>
+<% } %>
+
+<%- include('_footer') %>
