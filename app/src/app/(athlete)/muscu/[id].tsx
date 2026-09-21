@@ -105,7 +105,10 @@ export default function StrengthLogScreen() {
       if (existing) await updateStrengthSession(existing._id, payload);
       else await saveStrengthSession(payload);
       emitAppEvent('sessions:changed');
-      router.dismissAll();
+      // Revenir d'où l'on vient : la fiche de la séance, ou l'onglet quand la
+      // saisie a été ouverte depuis la popup de rapprochement.
+      if (router.canGoBack()) router.back();
+      else router.dismissAll();
     } catch (reason) {
       setSaveError(reason instanceof Error ? reason.message : 'Enregistrement impossible.');
       setSaving(false);
