@@ -1,12 +1,16 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { Location } from '@angular/common';
 import { Router } from '@angular/router';
+import { of } from 'rxjs';
 
+import type { ApiStrengthSessionDetail } from '../../core/api-types';
 import { ApiService } from '../../core/api.service';
 import { formatDayShort, parseDecimal } from '../../core/format';
 import { load } from '../../core/load';
 import { AthleteService } from '../../data/athlete.service';
-import { buildStrengthPayload, entriesFromPlan, type LogEntry } from '../../domain/strength-log';
+
+import type { PlannedSessionDetail } from '../../domain/athlete.types';
+import { buildStrengthPayload, entriesFromPlan, entriesFromSession, type LogEntry } from '../../domain/strength-log';
 import { IconComponent } from '../../ui/icon.component';
 import { StatComponent } from '../../ui/stat.component';
 import { StateViewComponent } from '../../ui/state-view.component';
@@ -439,8 +443,15 @@ export class AthleteStrengthPage {
   private readonly location = inject(Location);
 
   readonly id = input.required<string>();
+  /**
+   * Séance déjà enregistrée à compléter, plutôt qu'une séance planifiée : c'est
+   * le cas d'une séance importée de Strava puis rapprochée du plan du coach,
+   * qui a ses exercices mais pas encore ses séries.
+   */
+  readonly done = input<string | undefined>(undefined);
 
-  readonly session = load(() => this.athlete.plannedSession$(this.id()));
+  readonly session = load<PlannedSessionDetail | null>(() => (this.done() ? of(null) : this.athlete.plannedSession$(this.id())));
+  readonly doneSession = load<ApiStrengthSessionDetail | null>(() => (this.done() ? this.athlete.strengthSession$(this.done()!) : of(null)));
 
   readonly entries = signal<LogEntry[]>([]);
   readonly duration = signal(45);
@@ -478,6 +489,16 @@ export class AthleteStrengthPage {
       this.entries.set(entriesFromPlan(plan));
       if (plan.estimatedDuration) this.duration.set(plan.estimatedDuration);
     });
+
+    // Séance déjà enregistrée : ses exercices amorcent la même grille.
+    effect(() => {
+      const session = this.doneSession.data();
+      if (!session || this.entries().length) return;
+      this.entries.set(entriesFromSession(session));
+      if (session.duration) this.duration.set(session.duration);
+      if (session.feeling) this.feeling.set(session.feeling);
+      if (session.notes) this.notes.set(session.notes);
+    });
   }
 
   target(reps?: string, weight?: number) {
@@ -507,21 +528,29 @@ export class AthleteStrengthPage {
   }
 
   save() {
+    const existing = this.doneSession.data();
     const data = this.session.data();
     const plan = data?.strength;
-    if (!data || !plan || this.saving()) return;
+    if (this.saving() || (!existing && (!data || !plan))) return;
     this.saving.set(true);
     this.saveError.set('');
+
     const payload = buildStrengthPayload({
-      plannedId: this.id(),
-      sessionType: data.sessionType,
+      plannedId: existing ? undefined : this.id(),
+      sessionType: existing?.sessionType ?? data!.sessionType,
       plan,
       entries: this.entries(),
       durationMin: this.duration(),
       feeling: this.feeling(),
       notes: this.notes(),
     });
-    this.api.post('/api/strength/sessions', payload).subscribe({
+
+    // Compléter une séance existante la met à jour ; sinon on en crée une.
+    const request = existing
+      ? this.api.put(`/api/strength/sessions/${encodeURIComponent(existing._id)}`, payload)
+      : this.api.post('/api/strength/sessions', payload);
+
+    request.subscribe({
       next: () => {
         this.api.invalidate();
         this.saving.set(false);

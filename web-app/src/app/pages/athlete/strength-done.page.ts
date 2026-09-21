@@ -65,7 +65,22 @@ const TYPE_LABELS: Record<string, string> = {
         <div class="cols">
           <div class="col">
             <section class="card card-pad">
-              <span class="h2">Exercices</span>
+              <div class="spread">
+                <span class="h2">Exercices</span>
+                @if (toFill()) {
+                  <button class="btn btn-primary btn-sm" type="button" (click)="fill()">
+                    <tw-icon name="edit" [size]="16" [strokeWidth]="2" />
+                    Compléter mes séries
+                  </button>
+                } @else if (data.exercises.length) {
+                  <button class="link" type="button" (click)="fill()">Modifier</button>
+                }
+              </div>
+              @if (toFill()) {
+                <p class="small muted mt-sm">
+                  Cette séance vient de Strava : les exercices sont ceux de ton coach, les séries restent à saisir.
+                </p>
+              }
               <div class="ex-list">
                 @for (entry of data.exercises; track $index) {
                   <div class="ex">
@@ -291,6 +306,17 @@ export class AthleteStrengthDonePage {
   });
 
   readonly totalSets = computed(() => (this.session.data()?.exercises ?? []).reduce((total, entry) => total + entry.sets.length, 0));
+
+  /** Des exercices repris du plan du coach, mais aucune série saisie. */
+  readonly toFill = computed(() => {
+    const exercises = this.session.data()?.exercises ?? [];
+    return exercises.length > 0 && exercises.every((entry) => !entry.sets.length);
+  });
+
+  /** Ouvre la grille de saisie sur cette séance plutôt que sur une séance planifiée. */
+  fill() {
+    void this.router.navigate(['/muscu', this.id()], { queryParams: { done: this.id() } });
+  }
 
   readonly volume = computed(() => {
     const total = (this.session.data()?.exercises ?? []).reduce(

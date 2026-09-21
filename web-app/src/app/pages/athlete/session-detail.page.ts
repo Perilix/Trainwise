@@ -11,6 +11,7 @@ import { IconComponent } from '../../ui/icon.component';
 import { BlockListComponent } from '../../ui/block-list.component';
 import { IntensityLegendComponent } from '../../ui/intensity-legend.component';
 import { StateViewComponent } from '../../ui/state-view.component';
+import { StrengthPlanComponent } from '../../ui/strength-plan.component';
 import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
 
 /** Séance planifiée ouverte par l'athlète : carte navy de mise en avant, puis le déroulé (DA §6.8). */
@@ -18,7 +19,7 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
   selector: 'tw-session-detail',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [BlockListComponent, FeelingScaleComponent, IconComponent, IntensityLegendComponent, StateViewComponent, WorkoutProfileComponent],
+  imports: [BlockListComponent, FeelingScaleComponent, IconComponent, IntensityLegendComponent, StateViewComponent, StrengthPlanComponent, WorkoutProfileComponent],
   template: `
     <main class="page">
       @if (session.loading()) {
@@ -118,20 +119,8 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
           <aside class="side">
             @if (data.strength; as plan) {
               <section class="card card-pad">
-                <span class="h2">Exercices</span>
-                <div class="ex-list">
-                  @for (exercise of plan.exercises; track exercise.key) {
-                    <div class="ex">
-                      <div class="stack grow">
-                        <span class="h3">{{ exercise.name }}</span>
-                        <span class="small muted">{{ exerciseTarget(exercise.sets, exercise.reps, exercise.weight) }}</span>
-                      </div>
-                      @if (exercise.muscle) {
-                        <span class="chip">{{ exercise.muscle }}</span>
-                      }
-                    </div>
-                  }
-                </div>
+                <span class="h2 mb">Séance de renforcement</span>
+                <tw-strength-plan [plan]="plan" />
                 <button class="btn btn-primary btn-block mt" type="button" (click)="openStrength()">Saisir la séance</button>
               </section>
             }

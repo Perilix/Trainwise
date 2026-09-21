@@ -168,10 +168,54 @@ exports.getStrengthMatchCandidates = async (req, res) => {
   }
 };
 
+/**
+ * Les exercices prévus par le coach, prêts à être remplis.
+ *
+ * Une séance importée de Strava arrive sans exercice : la montre ne sait pas ce
+ * qu'on a soulevé. En la rapprochant de la séance planifiée, on reprend la
+ * liste du coach — chaque exercice garde ce qui était demandé (`target`) et son
+ * bloc d'origine, et attend ses séries réelles.
+ */
+function planToEntries(plan) {
+  if (!plan) return [];
+  const entries = [];
+
+  const add = (item, block) => {
+    if (!item?.exercise) return;
+    entries.push({
+      exercise: item.exercise,
+      sets: [],
+      order: entries.length,
+      notes: item.notes || undefined,
+      block,
+      target: { sets: item.targetSets, reps: item.targetReps, weight: item.targetWeight, rest: item.targetRest }
+    });
+  };
+
+  (plan.exercises || []).forEach((item) => add(item, { kind: 'single', pairIndex: null, slot: null }));
+  (plan.circuit?.exercises || []).forEach((item) => add(item, { kind: 'circuit', pairIndex: null, slot: null }));
+  (plan.superset?.pairs || []).forEach((pair, pairIndex) => {
+    add(pair.a, { kind: 'superset', pairIndex, slot: 'a' });
+    add(pair.b, { kind: 'superset', pairIndex, slot: 'b' });
+  });
+
+  return entries;
+}
+
 async function attachPlannedToStrength(session, planned, athleteId) {
   session.linkedPlannedSession = planned._id;
   session.pendingPlannedMatch = null;
   session.matchDismissed = true;
+
+  // On ne reprend le plan que si l'athlète n'a rien saisi : sa saisie prime.
+  if (!session.exercises?.length) {
+    session.exercises = planToEntries(planned.strengthPlan);
+  }
+  // Le titre du coach vaut mieux que « Weight Training » importé de Strava.
+  if (planned.title && !session.notes?.includes(planned.title)) {
+    session.notes = session.notes ? `${planned.title}\n\n${session.notes}` : planned.title;
+  }
+
   await session.save();
   await PlannedRun.deleteOne({ _id: planned._id });
   await notifyCoachIfNeeded(planned, athleteId, session._id, 'strength');

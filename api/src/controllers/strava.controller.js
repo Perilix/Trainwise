@@ -223,14 +223,67 @@ const formatBlock = (block) => {
   return formatStepInline(block);
 };
 
+/** Ce que le coach demandait sur un exercice : « 4 × 10 · 60 kg ». */
+const formatExerciseTarget = (item) => {
+  const parts = [];
+  if (item.targetSets) parts.push(`${item.targetSets} séries`);
+  // « 8 » devient « 8 reps », mais « 45 s » reste « 45 s ».
+  if (item.targetReps) parts.push(/^[\d\s-]+$/.test(String(item.targetReps)) ? `${item.targetReps} reps` : String(item.targetReps));
+  if (item.targetWeight) parts.push(`${item.targetWeight} kg`);
+  return parts.join(' · ');
+};
+
+/** Le nom d'un exercice, qu'il soit peuplé ou réduit à son identifiant. */
+const exerciseName = (item) => {
+  const ref = item?.exercise;
+  if (!ref) return null;
+  return typeof ref === 'object' && ref.name ? ref.name : 'Exercice';
+};
+
+/** Les lignes d'un plan de renforcement : exercices, circuit et super-sets. */
+const formatStrengthPlan = (plan) => {
+  if (!plan) return [];
+  const lines = [];
+
+  const describe = (item) => {
+    const name = exerciseName(item);
+    if (!name) return null;
+    const target = formatExerciseTarget(item);
+    return target ? `${name} — ${target}` : name;
+  };
+
+  (plan.exercises || []).map(describe).filter(Boolean).forEach((line) => lines.push(`• ${line}`));
+
+  const circuit = (plan.circuit?.exercises || []).map(describe).filter(Boolean);
+  if (circuit.length) {
+    lines.push(`• ${plan.circuit?.name || 'Circuit'} — ${plan.circuit?.rounds || 3} tours :`);
+    circuit.forEach((line) => lines.push(`   – ${line}`));
+  }
+
+  const pairs = plan.superset?.pairs || [];
+  if (pairs.length) {
+    lines.push(`• ${plan.superset?.name || 'Super-set'} — ${plan.superset?.sets || 4} séries :`);
+    pairs.forEach((pair) => {
+      [pair.a, pair.b].map(describe).filter(Boolean).forEach((line) => lines.push(`   – ${line}`));
+    });
+  }
+
+  return lines;
+};
+
 // Construit le texte à écrire dans la description Strava à partir d'une séance planifiée.
 const buildPlannedStravaDescription = (planned) => {
   if (!planned) return null;
   const lines = [];
   const label = SESSION_TYPE_LABELS[planned.sessionType] || 'Séance';
-  lines.push(`🏃 Séance Trainwise — ${planned.title || label}`);
+  const strength = planned.activityType === 'strength';
+  lines.push(`${strength ? '🏋️' : '🏃'} Séance Trainwise — ${planned.title || label}`);
 
-  if (planned.runBlocks && planned.runBlocks.length) {
+  if (strength) {
+    const plan = formatStrengthPlan(planned.strengthPlan);
+    if (plan.length) { lines.push(''); lines.push(plan.join('\n')); }
+    if (planned.description) { lines.push(''); lines.push(planned.description); }
+  } else if (planned.runBlocks && planned.runBlocks.length) {
     const struct = planned.runBlocks
       .map((b) => formatBlock(b))
       .filter(Boolean)
@@ -248,6 +301,23 @@ const buildPlannedStravaDescription = (planned) => {
   lines.push('');
   lines.push(TRAINWISE_CTA);
   return lines.join('\n');
+};
+
+/**
+ * Recharge une séance de renforcement avec le nom de ses exercices.
+ *
+ * Les séances candidates arrivent sans peuplement : sans cette relecture, la
+ * description Strava annoncerait « Exercice » partout.
+ */
+const withExerciseNames = async (planned) => {
+  if (!planned || planned.activityType !== 'strength') return planned;
+  const populated = await PlannedRun.findById(planned._id)
+    .populate('strengthPlan.exercises.exercise', 'name')
+    .populate('strengthPlan.circuit.exercises.exercise', 'name')
+    .populate('strengthPlan.superset.pairs.a.exercise', 'name')
+    .populate('strengthPlan.superset.pairs.b.exercise', 'name')
+    .lean();
+  return populated || planned;
 };
 
 // Écrit (une seule fois) la séance programmée dans la description de l'activité Strava.
@@ -973,6 +1043,11 @@ const processWebhookEvent = async (event) => {
     const result = await importStrengthActivity(user._id, detail, accessToken, detail);
     if (result.status === 'imported') {
       await StrengthSession.updateOne({ _id: result.session._id }, { $set: { needsReview: true } });
+
+      // Comme pour une course : la séance du coach part dans la description Strava.
+      if (result.plannedCandidate) {
+        await writePlannedSessionToStrava(object_id, accessToken, await withExerciseNames(result.plannedCandidate), detail.description || '');
+      }
 
       await createNotification({
         recipient: user._id,

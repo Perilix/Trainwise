@@ -15,6 +15,7 @@ import { ExpectedFeelingComponent, FeelingScaleComponent } from '../../ui/expect
 import { IconComponent } from '../../ui/icon.component';
 import { IntensityLegendComponent } from '../../ui/intensity-legend.component';
 import { StateViewComponent } from '../../ui/state-view.component';
+import { StrengthPlanComponent } from '../../ui/strength-plan.component';
 import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
 
 /** Séance planifiée d'un athlète, vue coach : le détail, plus les actions sur la séance. */
@@ -22,7 +23,7 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
   selector: 'tw-coach-athlete-planned',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ExpectedFeelingComponent, FeelingScaleComponent, IconComponent, IntensityLegendComponent, StateViewComponent, WorkoutProfileComponent],
+  imports: [ExpectedFeelingComponent, FeelingScaleComponent, IconComponent, IntensityLegendComponent, StateViewComponent, StrengthPlanComponent, WorkoutProfileComponent],
   template: `
     <main class="page">
       @if (session.loading()) {
@@ -163,20 +164,8 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
 
             @if (data.strength; as plan) {
               <section class="card card-pad">
-                <span class="h2">Exercices</span>
-                <div class="ex-list">
-                  @for (exercise of plan.exercises; track exercise.key) {
-                    <div class="ex">
-                      <div class="stack grow">
-                        <span class="h3">{{ exercise.name }}</span>
-                        <span class="small muted">{{ target(exercise.sets, exercise.reps, exercise.weight) }}</span>
-                      </div>
-                      @if (exercise.muscle) {
-                        <span class="chip">{{ exercise.muscle }}</span>
-                      }
-                    </div>
-                  }
-                </div>
+                <span class="h2 mb">Séance de renforcement</span>
+                <tw-strength-plan [plan]="plan" />
               </section>
             }
           </div>
