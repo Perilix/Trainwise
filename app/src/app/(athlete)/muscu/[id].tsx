@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { BackBar, Button, Card, Chip, FeelingSlider, Icon, Screen, Section, StateView, Text } from '@/components/ui';
-import { useAthleteActions, usePlannedSession } from '@/features/athlete/queries';
-import { buildStrengthPayload, entriesFromPlan, type LogEntry, type LogSet } from '@/features/athlete/strength-log';
+import { useAthleteActions, usePlannedSession, useStrengthSession } from '@/features/athlete/queries';
+import { buildStrengthPayload, entriesFromPlan, entriesFromSession, type LogEntry, type LogSet } from '@/features/athlete/strength-log';
 import { emitAppEvent } from '@/lib/app-events';
 import { formatClock, formatDecimal } from '@/lib/format';
 import { useTheme } from '@/theme/theme-provider';
@@ -12,11 +12,14 @@ import { layout, radius } from '@/theme/tokens';
 import { fontFamily } from '@/theme/typography';
 
 export default function StrengthLogScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  // `done` : on complète une séance déjà enregistrée — celle venue de Strava,
+  // qui a les exercices du coach mais pas encore ses séries.
+  const { id, done } = useLocalSearchParams<{ id: string; done?: string }>();
   const router = useRouter();
   const { colors } = useTheme();
-  const { data: session, loading, error, refetch } = usePlannedSession(id);
-  const { saveStrengthSession } = useAthleteActions();
+  const { data: session, loading, error, refetch } = usePlannedSession(done ? '' : id);
+  const { data: existing, loading: loadingDone, error: errorDone, refetch: refetchDone } = useStrengthSession(done ?? '');
+  const { saveStrengthSession, updateStrengthSession } = useAthleteActions();
   const [startedAt] = useState(() => Date.now());
   const [now, setNow] = useState(() => Date.now());
   const [edited, setEdited] = useState<LogEntry[] | null>(null);
@@ -32,17 +35,21 @@ export default function StrengthLogScreen() {
 
   const plan = session?.strength;
 
-  if (!session || !plan) {
-    const missingPlan = session && !plan ? 'Cette séance ne contient pas d’exercices à saisir.' : null;
+  if (done ? !existing : !session || !plan) {
+    const missingPlan = !done && session && !plan ? 'Cette séance ne contient pas d’exercices à saisir.' : null;
     return (
       <Screen>
         <BackBar title="Séance muscu" />
-        <StateView loading={loading} error={error ?? missingPlan} onRetry={missingPlan ? undefined : refetch} />
+        <StateView
+          loading={done ? loadingDone : loading}
+          error={(done ? errorDone : error) ?? missingPlan}
+          onRetry={missingPlan ? undefined : done ? refetchDone : refetch}
+        />
       </Screen>
     );
   }
 
-  const entries = edited ?? entriesFromPlan(plan);
+  const entries = edited ?? (existing ? entriesFromSession(existing) : entriesFromPlan(plan!));
   const totalSets = entries.reduce((sum, entry) => sum + entry.sets.length, 0);
   const doneSets = entries.reduce((sum, entry) => sum + entry.sets.filter((set) => set.done).length, 0);
 
@@ -68,17 +75,18 @@ export default function StrengthLogScreen() {
     setSaving(true);
     setSaveError(null);
     try {
-      await saveStrengthSession(
-        buildStrengthPayload({
-          plannedId: session.id,
-          sessionType: session.sessionType,
-          plan,
-          entries,
-          durationMin: Math.max(1, Math.round((now - startedAt) / 60_000)),
-          feeling,
-          notes,
-        }),
-      );
+      const payload = buildStrengthPayload({
+        plannedId: existing ? undefined : session!.id,
+        sessionType: existing?.sessionType ?? session!.sessionType,
+        plan,
+        entries,
+        durationMin: Math.max(1, Math.round((now - startedAt) / 60_000)),
+        feeling,
+        notes,
+      });
+      // Compléter une séance existante la met à jour ; sinon on en crée une.
+      if (existing) await updateStrengthSession(existing._id, payload);
+      else await saveStrengthSession(payload);
       emitAppEvent('sessions:changed');
       router.dismissAll();
     } catch (reason) {
@@ -113,8 +121,12 @@ export default function StrengthLogScreen() {
       />
 
       <Section style={styles.titleBlock}>
-        <Text variant="h1">{session.title}</Text>
-        <Text variant="body2">Coche chaque série une fois faite, ajuste les répétitions et la charge si besoin.</Text>
+        <Text variant="h1">{session?.title ?? 'Séance de renforcement'}</Text>
+        <Text variant="body2">
+          {existing
+            ? 'Cette séance vient de Strava : les exercices sont ceux de ton coach, les séries restent à saisir.'
+            : 'Coche chaque série une fois faite, ajuste les répétitions et la charge si besoin.'}
+        </Text>
       </Section>
 
       {entries.map((entry, entryIndex) => (

@@ -1,4 +1,5 @@
 import { BlurView } from 'expo-blur';
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
@@ -25,6 +26,7 @@ import {
  * séance prévue sont proposées au rapprochement, une par une.
  */
 export function PlannedMatchPrompt() {
+  const router = useRouter();
   const { colors, scheme } = useTheme();
   const { status } = useSession();
   const [items, setItems] = useState<PendingReviewItem[]>([]);
@@ -67,6 +69,13 @@ export function PlannedMatchPrompt() {
   };
 
   const confirm = () => run(() => (item.kind === 'run' ? confirmRunMatch(item.id) : confirmStrengthMatch(item.id)));
+
+  /** Rapproche, puis ouvre la saisie des séries sur la séance ainsi complétée. */
+  const confirmAndDetail = () =>
+    run(async () => {
+      await confirmStrengthMatch(item.id);
+      router.push({ pathname: '/muscu/[id]', params: { id: item.id, done: item.id } });
+    });
   const dismiss = () => run(() => (item.kind === 'run' ? dismissRunMatch(item.id) : dismissStrengthMatch(item.id)));
   const link = (candidate: MatchCandidate) => run(() => linkRunToPlanned(item.id, candidate.id));
 
@@ -143,7 +152,13 @@ export function PlannedMatchPrompt() {
               </Text>
 
               <Button label={busy ? '…' : 'Oui, c’est celle-ci'} icon="check" fullWidth disabled={busy} onPress={confirm} style={styles.action} />
-              {item.kind === 'run' ? <Button label="Une autre séance" variant="secondary" fullWidth disabled={busy} onPress={openPicker} /> : null}
+              {/* Une séance de muscu arrive sans série : on propose de la remplir
+                  dans la foulée, tant que l'athlète l'a en tête. */}
+              {item.kind === 'strength' ? (
+                <Button label="Oui, et je détaille" variant="secondary" icon="pen" fullWidth disabled={busy} onPress={confirmAndDetail} />
+              ) : (
+                <Button label="Une autre séance" variant="secondary" fullWidth disabled={busy} onPress={openPicker} />
+              )}
               <Button label="Non, aucune" variant="ghost" fullWidth disabled={busy} onPress={dismiss} />
             </>
           )}

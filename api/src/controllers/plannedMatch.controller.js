@@ -2,6 +2,7 @@ const Run = require('../models/run.model');
 const StrengthSession = require('../models/strengthSession.model');
 const PlannedRun = require('../models/plannedRun.model');
 const User = require('../models/user.model');
+const { annotateStravaActivity } = require('./strava.controller');
 const { createNotification } = require('./notification.controller');
 const { mapRunBlockPlain } = require('../utils/runBlockMapper');
 
@@ -96,6 +97,8 @@ async function attachPlannedToRun(run, planned, athleteId) {
   await run.save();
   await PlannedRun.deleteOne({ _id: planned._id });
   await notifyCoachIfNeeded(planned, athleteId, run._id, 'run');
+  // Rapprochée à la main ou automatiquement, l'activité mérite son annotation.
+  await annotateStravaActivity(athleteId, run.stravaActivityId, planned);
 }
 
 exports.confirmRunMatch = async (req, res) => {
@@ -219,6 +222,7 @@ async function attachPlannedToStrength(session, planned, athleteId) {
   await session.save();
   await PlannedRun.deleteOne({ _id: planned._id });
   await notifyCoachIfNeeded(planned, athleteId, session._id, 'strength');
+  await annotateStravaActivity(athleteId, session.stravaActivityId, planned);
 }
 
 exports.confirmStrengthMatch = async (req, res) => {

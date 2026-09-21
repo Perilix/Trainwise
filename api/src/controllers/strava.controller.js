@@ -575,6 +575,17 @@ const runInitialImport = async (userId) => {
             : await importStrengthActivity(userId, activity, accessToken);
           if (result.status === 'skipped') skipped++;
           else imported++;
+
+          // Une activité rattrapée à la main mérite la même annotation qu'une
+          // activité arrivée par le webhook : la séance du coach part sur Strava.
+          if (result.status === 'imported' && result.plannedCandidate) {
+            await writePlannedSessionToStrava(
+              activity.id,
+              accessToken,
+              await withExerciseNames(result.plannedCandidate),
+              activity.description || ''
+            );
+          }
         } catch (e) {
           if (e.response?.status === 429) {
             rateLimited = true;
@@ -1097,6 +1108,30 @@ exports.rebuildRunBlocks = async (req, res) => {
 
 // Exporté pour les tests / déclenchement manuel
 exports.processWebhookEvent = processWebhookEvent;
+
+/**
+ * Écrit la séance du coach dans la description de l'activité Strava.
+ *
+ * Appelé aussi bien par l'import automatique que par un rapprochement fait à
+ * la main : une séance rattachée après coup mérite la même annotation. Ne
+ * lève jamais — l'échec d'une écriture sur Strava ne doit pas faire échouer
+ * le rapprochement lui-même.
+ */
+exports.annotateStravaActivity = async (userId, stravaActivityId, planned) => {
+  if (!stravaActivityId || !planned) return;
+  try {
+    const user = await User.findById(userId).select('+strava.accessToken +strava.refreshToken');
+    if (!user?.strava?.accessToken) return;
+
+    const accessToken = await refreshTokenIfNeeded(user);
+    const detail = await axios.get(`${STRAVA_API_URL}/activities/${stravaActivityId}`, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    await writePlannedSessionToStrava(stravaActivityId, accessToken, await withExerciseNames(planned), detail.data.description || '');
+  } catch (e) {
+    console.error(`[Strava] annotation de l'activité ${stravaActivityId} impossible :`, e.response?.status || e.message);
+  }
+};
 
 // Même forme allégée que le populate des Run/StrengthSession côté athlète
 const PENDING_MATCH_FIELDS = 'date activityType sessionType targetDistance targetDuration targetPace description generatedBy';

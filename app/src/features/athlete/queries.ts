@@ -15,6 +15,7 @@ import type {
   ApiRunBlock,
   ApiUser,
   ApiStrengthSession,
+  ApiStrengthSessionDetail,
   ApiStravaStatus,
 } from '@/lib/api-types';
 import { emitAppEvent } from '@/lib/app-events';
@@ -68,6 +69,15 @@ export function usePlanningMonth(year: number, monthIndex: number) {
       return buildPlanning(calendar, new Date(), coach?.firstName, user.vma ?? undefined);
     },
     () => ({ ...samplePlanning, year, monthIndex }),
+  );
+}
+
+/** Séance de renforcement déjà enregistrée, avec ses exercices et ses séries. */
+export function useStrengthSession(id: string) {
+  return useSessionQuery<ApiStrengthSessionDetail | null>(
+    `athlete:strength-session:${id}`,
+    async () => api<ApiStrengthSessionDetail>(`/api/strength/sessions/${encodeURIComponent(id)}`),
+    () => null,
   );
 }
 
@@ -286,6 +296,12 @@ export function useAthleteActions() {
     async saveStrengthSession(payload: StrengthSessionPayload) {
       if (!live) return;
       await api('/api/strength/sessions', { method: 'POST', body: payload });
+      invalidateApiCache();
+    },
+    /** Complète une séance déjà enregistrée — celle venue de Strava, par exemple. */
+    async updateStrengthSession(id: string, payload: StrengthSessionPayload) {
+      if (!live) return;
+      await api(`/api/strength/sessions/${encodeURIComponent(id)}`, { method: 'PUT', body: payload });
       invalidateApiCache();
     },
     async saveRunFeeling(id: string, feeling: number) {
