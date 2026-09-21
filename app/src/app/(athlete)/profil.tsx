@@ -146,7 +146,7 @@ export default function ProfileScreen() {
           <LinkRow icon="info" title="À propos de Trainwise" onPress={() => openLink(SITE_LINKS.about)} />
           <LinkRow icon="help" title="Support et questions fréquentes" divided onPress={() => openLink(SITE_LINKS.support)} />
           <LinkRow icon="shield" title="Politique de confidentialité" divided onPress={() => openLink(SITE_LINKS.privacy)} />
-          <LinkRow icon="mail" title="Nous contacter" divided onPress={() => router.push('/contact')} />
+          <LinkRow icon="mail" title="Nous contacter" divided onPress={() => openLink(SITE_LINKS.contact)} />
         </Card>
       </Section>
 

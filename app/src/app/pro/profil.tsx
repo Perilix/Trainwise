@@ -113,7 +113,7 @@ export default function CoachProfileScreen() {
           <SiteLinkRow icon="info" title="À propos de Trainwise" onPress={() => openLink(SITE_LINKS.about)} />
           <SiteLinkRow icon="help" title="Support et questions fréquentes" divided onPress={() => openLink(SITE_LINKS.support)} />
           <SiteLinkRow icon="shield" title="Politique de confidentialité" divided onPress={() => openLink(SITE_LINKS.privacy)} />
-          <SiteLinkRow icon="mail" title="Nous contacter" divided onPress={() => router.push('/pro/contact')} />
+          <SiteLinkRow icon="mail" title="Nous contacter" divided onPress={() => openLink(SITE_LINKS.contact)} />
         </Card>
       </Section>
 
