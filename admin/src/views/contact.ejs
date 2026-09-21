@@ -1,0 +1,114 @@
+<%- include('_header', { title: 'Messages reçus', page: 'contact' }) %>
+
+<div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+  <div>
+    <h1>Messages reçus</h1>
+    <p><%= total %> message<%= total > 1 ? 's' : '' %><%= status || subject || search ? ' correspondant au filtre' : '' %></p>
+  </div>
+  <% if (statusCounts.nouveau > 0) { %>
+    <div class="alert alert-warning" style="margin:0;"><i class="fa-solid fa-envelope"></i> <%= statusCounts.nouveau %> non traité<%= statusCounts.nouveau > 1 ? 's' : '' %></div>
+  <% } %>
+</div>
+
+<% if (saved) { %>
+  <div class="alert alert-success"><i class="fa-solid fa-circle-check"></i> Message mis à jour.</div>
+<% } %>
+
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-body">
+    <form method="GET" class="form-grid" style="align-items:end;">
+      <div class="form-group">
+        <label class="form-label">Statut</label>
+        <select name="status" class="form-control" onchange="this.form.submit()">
+          <option value="">Tous</option>
+          <% statuses.forEach(s => { %>
+            <option value="<%= s %>" <%= status === s ? 'selected' : '' %>><%= statusStyle[s].label %> (<%= statusCounts[s] %>)</option>
+          <% }); %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sujet</label>
+        <select name="subject" class="form-control" onchange="this.form.submit()">
+          <option value="">Tous</option>
+          <% Object.entries(subjectLabels).forEach(([value, label]) => { %>
+            <option value="<%= value %>" <%= subject === value ? 'selected' : '' %>><%= label %></option>
+          <% }); %>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Recherche</label>
+        <input type="search" name="search" class="form-control" value="<%= search %>" placeholder="Nom, email ou contenu du message">
+      </div>
+    </form>
+  </div>
+</div>
+
+<% items.forEach(item => { %>
+  <div class="card" style="margin-bottom:14px;">
+    <div class="card-body">
+      <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:220px;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span style="font-weight:600;"><%= item.name || 'Sans nom' %></span>
+            <% const st = statusStyle[item.status] || statusStyle.nouveau; %>
+            <span class="badge" style="background:<%= st.bg %>;color:<%= st.ink %>;"><%= st.label %></span>
+            <span class="badge" style="background:rgba(0,0,0,0.05);color:var(--text-muted);"><%= subjectLabels[item.subject] || item.subject %></span>
+            <% if (item.meta && item.meta.source === 'app') { %>
+              <span class="badge" style="background:rgba(0,166,251,0.10);color:#0582ca;"><i class="fa-solid fa-mobile-screen"></i> App</span>
+            <% } %>
+          </div>
+          <div class="text-small text-muted" style="margin-top:2px;">
+            <a href="mailto:<%= item.email %>"><%= item.email %></a>
+            <% if (item.user) { %>
+              · <a href="/users/<%= item.user._id %>">compte <%= item.user.role %></a>
+            <% } else { %>
+              · pas de compte
+            <% } %>
+            · <%= new Date(item.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:6px;align-items:center;">
+          <form method="POST" action="/contact/<%= item._id %>/status" style="margin:0;">
+            <select name="status" class="form-control" style="padding:0.3rem 0.5rem;font-size:0.78rem;" onchange="this.form.submit()">
+              <% statuses.forEach(s => { %>
+                <option value="<%= s %>" <%= item.status === s ? 'selected' : '' %>><%= statusStyle[s].label %></option>
+              <% }); %>
+            </select>
+          </form>
+          <a class="btn btn-secondary" style="padding:5px 10px;font-size:0.78rem;" href="mailto:<%= item.email %>?subject=<%= encodeURIComponent('Re : votre message à Trainwise') %>">
+            <i class="fa-solid fa-reply"></i> Répondre
+          </a>
+          <form method="POST" action="/contact/<%= item._id %>/delete" style="margin:0;" onsubmit="return confirm('Supprimer ce message ? Cette action est irréversible.')">
+            <button type="submit" class="btn" style="padding:5px 10px;font-size:0.78rem;background:rgba(239,68,68,0.08);color:var(--danger);border-color:rgba(239,68,68,0.2);">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <p style="margin:12px 0 0;white-space:pre-wrap;color:var(--text-muted);line-height:1.5;"><%= item.message %></p>
+
+      <% if (item.meta && (item.meta.platform || item.meta.appVersion)) { %>
+        <div class="text-small text-muted" style="margin-top:10px;">
+          <i class="fa-solid fa-circle-info"></i>
+          <%= item.meta.platform || '' %><%= item.meta.appVersion ? ' · version ' + item.meta.appVersion : '' %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+<% }); %>
+
+<% if (!items.length) { %>
+  <div class="card"><div class="card-body"><div class="empty-state"><i class="fa-solid fa-envelope-open"></i><p>Aucun message</p></div></div></div>
+<% } %>
+
+<% if (pages > 1) { %>
+  <div class="pagination">
+    <% for (let p = 1; p <= pages; p++) { %>
+      <a class="page-btn <%= p === page ? 'active' : '' %>" href="/contact?page=<%= p %>&status=<%= status %>&subject=<%= subject %>&search=<%= encodeURIComponent(search) %>"><%= p %></a>
+    <% } %>
+  </div>
+<% } %>
+
+<%- include('_footer') %>

@@ -7,6 +7,7 @@ import { useAthleteProfile } from '@/features/athlete/queries';
 import { useSession } from '@/features/auth/session';
 import { onAppEvent } from '@/lib/app-events';
 import { formatDayShort, formatDecimal } from '@/lib/format';
+import { openLink, SITE_LINKS } from '@/lib/site';
 import { AppearanceCard } from '@/features/settings/appearance-card';
 import { useTheme } from '@/theme/theme-provider';
 import { radius } from '@/theme/tokens';
@@ -142,10 +143,10 @@ export default function ProfileScreen() {
 
       <Section style={styles.tight}>
         <Card padding={0} style={styles.linksCard}>
-          <LinkRow icon="info" title="À propos de Trainwise" />
-          <LinkRow icon="help" title="Support et questions fréquentes" divided />
-          <LinkRow icon="shield" title="Politique de confidentialité" divided />
-          <LinkRow icon="mail" title="Nous contacter" divided />
+          <LinkRow icon="info" title="À propos de Trainwise" onPress={() => openLink(SITE_LINKS.about)} />
+          <LinkRow icon="help" title="Support et questions fréquentes" divided onPress={() => openLink(SITE_LINKS.support)} />
+          <LinkRow icon="shield" title="Politique de confidentialité" divided onPress={() => openLink(SITE_LINKS.privacy)} />
+          <LinkRow icon="mail" title="Nous contacter" divided onPress={() => router.push('/contact')} />
         </Card>
       </Section>
 

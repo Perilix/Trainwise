@@ -1,13 +1,14 @@
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Avatar, BackBar, Button, Card, Chip, Icon, IconButton, Screen, Section, SectionHeader, Text } from '@/components/ui';
+import { Avatar, BackBar, Button, Card, Chip, Icon, IconButton, Screen, Section, SectionHeader, Text, type IconName } from '@/components/ui';
 import { useSession } from '@/features/auth/session';
 import { InviteCodeCard } from '@/features/coach/invite-code-card';
 import { DIPLOMA_OPTIONS, DISCIPLINE_OPTIONS, optionLabel } from '@/features/coach/profile-options';
 import { PlanCard } from '@/features/coach/plan-card';
 import { useInviteOverview } from '@/features/coach/queries';
 import { AppearanceCard } from '@/features/settings/appearance-card';
+import { openLink, SITE_LINKS } from '@/lib/site';
 import { initialsOf } from '@/features/athlete/mappers';
 import { useTheme } from '@/theme/theme-provider';
 
@@ -107,10 +108,36 @@ export default function CoachProfileScreen() {
         <AppearanceCard />
       </Section>
 
+      <Section style={styles.tight}>
+        <Card padding={0} style={styles.links}>
+          <SiteLinkRow icon="info" title="À propos de Trainwise" onPress={() => openLink(SITE_LINKS.about)} />
+          <SiteLinkRow icon="help" title="Support et questions fréquentes" divided onPress={() => openLink(SITE_LINKS.support)} />
+          <SiteLinkRow icon="shield" title="Politique de confidentialité" divided onPress={() => openLink(SITE_LINKS.privacy)} />
+          <SiteLinkRow icon="mail" title="Nous contacter" divided onPress={() => router.push('/pro/contact')} />
+        </Card>
+      </Section>
+
       <Section>
         <Button label="Se déconnecter" variant="danger" icon="logout" fullWidth onPress={signOut} />
       </Section>
     </Screen>
+  );
+}
+
+/** Une ligne qui mène hors de l'app : site public ou messagerie. */
+function SiteLinkRow({ icon, title, divided, onPress }: { icon: IconName; title: string; divided?: boolean; onPress: () => void }) {
+  const { colors } = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={[styles.siteRow, divided ? { borderTopWidth: 1, borderTopColor: colors.border } : null]}>
+      <Icon name={icon} size={20} color={colors.text2} />
+      <Text variant="body" style={styles.flex}>
+        {title}
+      </Text>
+      <Icon name="chevronRight" size={18} color={colors.text3} />
+    </Pressable>
   );
 }
 
@@ -119,6 +146,8 @@ const styles = StyleSheet.create({
   tight: { paddingBottom: 12 },
   userCard: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   link: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  links: { overflow: 'hidden' },
+  siteRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14 },
   facts: { gap: 14, marginTop: 14 },
   fact: { gap: 4 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 },

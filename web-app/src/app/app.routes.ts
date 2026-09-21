@@ -6,6 +6,28 @@ import { ShellComponent } from './layout/shell.component';
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'accueil' },
 
+  // ---- Pages publiques, lisibles sans compte ----
+  // Apple et Google exigent une politique de confidentialité et un point de
+  // support joignables depuis une simple URL, sans connexion.
+  {
+    path: 'a-propos',
+    loadComponent: () => import('./pages/public/about.page').then((m) => m.AboutPage),
+  },
+  { path: 'about', redirectTo: 'a-propos' },
+  {
+    path: 'support',
+    loadComponent: () => import('./pages/public/support.page').then((m) => m.SupportPage),
+  },
+  {
+    path: 'confidentialite',
+    loadComponent: () => import('./pages/public/privacy.page').then((m) => m.PrivacyPage),
+  },
+  { path: 'privacy', redirectTo: 'confidentialite' },
+  {
+    path: 'contact',
+    loadComponent: () => import('./pages/public/contact.page').then((m) => m.ContactPage),
+  },
+
   // ---- Écrans publics ----
   {
     path: 'connexion',

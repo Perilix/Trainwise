@@ -25,6 +25,7 @@ const pushNotificationRoutes = require('./routes/pushNotification.routes');
 const subscriptionRoutes = require('./routes/subscription.routes');
 const betaFeedbackRoutes = require('./routes/betaFeedback.routes');
 const competitionRoutes = require('./routes/competition.routes');
+const contactRoutes = require('./routes/contact.routes');
 const { initializeSocket } = require('./socket/index');
 
 const app = express();
@@ -121,16 +122,21 @@ app.use('/api/users', pushNotificationRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/beta', betaFeedbackRoutes);
 app.use('/api/competitions', competitionRoutes);
+app.use('/api/contact', contactRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// Pages légales publiques (requis Apple / RGPD)
+// Pages légales publiques (requis Apple / RGPD).
+// Le texte de référence vit désormais sur le site ; cette adresse reste servie
+// pour les liens déjà déposés sur les stores, et redirige.
 const path = require('path');
+const SITE_URL = process.env.FRONTEND_URL || 'https://trainwise-app.com';
 app.get('/privacy', (req, res) => {
-  res.sendFile(path.join(__dirname, 'legal', 'privacy.html'));
+  if (req.query.raw === '1') return res.sendFile(path.join(__dirname, 'legal', 'privacy.html'));
+  res.redirect(301, `${SITE_URL.replace(/\/$/, '')}/confidentialite`);
 });
 
 // MongoDB connection
