@@ -4,6 +4,7 @@ import { AuthService } from '../../core/auth.service';
 import { load } from '../../core/load';
 import { ThemeService, type ThemeMode } from '../../core/theme.service';
 import { CoachService } from '../../data/coach.service';
+import { SITE_LINKS } from '../../domain/site-links';
 import { RouterLink } from '@angular/router';
 
 import { AlertRulesComponent } from '../../ui/alert-rules.component';
@@ -106,6 +107,16 @@ import { PageHeaderComponent } from '../../ui/page-header.component';
             </div>
           </section>
 
+          <section class="card links">
+            @for (link of links; track link.label) {
+              <a class="link-row" [href]="link.href" target="_blank" rel="noopener">
+                <tw-icon [name]="link.icon" [size]="20" />
+                <span class="grow body">{{ link.label }}</span>
+                <tw-icon name="chevron-right" [size]="18" />
+              </a>
+            }
+          </section>
+
           <button class="btn btn-danger btn-block" type="button" (click)="auth.logout()">
             <tw-icon name="logout" [size]="18" [strokeWidth]="2" />
             Se déconnecter
@@ -172,6 +183,22 @@ import { PageHeaderComponent } from '../../ui/page-header.component';
         flex-direction: column;
         gap: 20px;
         min-width: 0;
+      }
+
+      .links {
+        padding: 0 20px;
+      }
+
+      .link-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        height: 52px;
+        color: var(--ink);
+      }
+
+      .link-row + .link-row {
+        border-top: 1px solid var(--border);
       }
 
       .identity {
@@ -338,6 +365,9 @@ import { PageHeaderComponent } from '../../ui/page-header.component';
   ],
 })
 export class CoachProfilePage {
+  /** Les pages publiques du site, les mêmes que côté athlète. */
+  readonly links = SITE_LINKS;
+
   readonly auth = inject(AuthService);
   readonly theme = inject(ThemeService);
   private readonly coach = inject(CoachService);

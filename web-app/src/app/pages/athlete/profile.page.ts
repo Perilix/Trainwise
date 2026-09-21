@@ -8,6 +8,7 @@ import { ThemeService, type ThemeMode } from '../../core/theme.service';
 import { AthleteService, type CompetitionPayload } from '../../data/athlete.service';
 import { AvatarComponent } from '../../ui/avatar.component';
 import { IconComponent } from '../../ui/icon.component';
+import { SITE_LINKS } from '../../domain/site-links';
 import { PageHeaderComponent } from '../../ui/page-header.component';
 import { StatComponent } from '../../ui/stat.component';
 import { StateViewComponent } from '../../ui/state-view.component';
@@ -18,13 +19,6 @@ const LEVELS = [
   { value: 'intermediaire', label: 'Intermédiaire' },
   { value: 'confirme', label: 'Confirmé' },
   { value: 'expert', label: 'Expert' },
-];
-
-const LINKS = [
-  { label: 'À propos de Trainwise', icon: 'info', href: 'https://www.trainwise-app.com' },
-  { label: 'Support et questions fréquentes', icon: 'help', href: 'mailto:contact@trainwise-app.com' },
-  { label: 'Politique de confidentialité', icon: 'shield', href: 'https://www.trainwise-app.com/privacy' },
-  { label: 'Nous contacter', icon: 'mail', href: 'mailto:contact@trainwise-app.com' },
 ];
 
 @Component({
@@ -621,7 +615,7 @@ export class AthleteProfilePage {
   readonly theme = inject(ThemeService);
 
   readonly levels = LEVELS;
-  readonly links = LINKS;
+  readonly links = SITE_LINKS;
   readonly modes: { value: ThemeMode; label: string }[] = [
     { value: 'light', label: 'Clair' },
     { value: 'dark', label: 'Sombre' },
