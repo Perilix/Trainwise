@@ -136,3 +136,62 @@ export function entriesFromSession(session: ApiStrengthSessionDetail): LogEntry[
     };
   });
 }
+
+/** Un bloc de la saisie : exercices libres, circuit, ou super-set. */
+export type LogSection = {
+  key: string;
+  kind: 'single' | 'circuit' | 'superset';
+  title?: string;
+  subtitle?: string;
+  /** Les couples d'un super-set, une ligne par couple ; une seule ligne ailleurs. */
+  rows: { entry: LogEntry; index: number; slot?: 'A' | 'B' }[][];
+};
+
+/**
+ * Regroupe les lignes de saisie par bloc.
+ *
+ * À plat, « Circuit » et « Super-set 1A » ne sont que des étiquettes collées à
+ * des cartes identiques : on ne voit pas ce qui va ensemble. Groupés, un
+ * circuit se lit comme un circuit, et les deux exercices d'un couple se
+ * suivent.
+ */
+export function groupEntries(entries: LogEntry[]): LogSection[] {
+  const sections: LogSection[] = [];
+  const singles: LogSection['rows'] = [];
+  const circuit: LogSection['rows'] = [];
+  const pairs = new Map<number, { entry: LogEntry; index: number; slot?: 'A' | 'B' }[]>();
+
+  entries.forEach((entry, index) => {
+    const row = { entry, index, slot: entry.block.slot ? (entry.block.slot.toUpperCase() as 'A' | 'B') : undefined };
+    if (entry.block.kind === 'circuit') circuit.push([row]);
+    else if (entry.block.kind === 'superset') {
+      const key = entry.block.pairIndex ?? 0;
+      pairs.set(key, [...(pairs.get(key) ?? []), row]);
+    } else singles.push([row]);
+  });
+
+  if (singles.length) sections.push({ key: 'single', kind: 'single', rows: singles });
+
+  if (pairs.size) {
+    sections.push({
+      key: 'superset',
+      kind: 'superset',
+      title: 'Super-set',
+      subtitle: 'Les deux exercices s’enchaînent sans repos.',
+      rows: [...pairs.keys()].sort((a, b) => a - b).map((key) => pairs.get(key) ?? []),
+    });
+  }
+
+  if (circuit.length) {
+    const rounds = circuit[0][0].entry.sets.length;
+    sections.push({
+      key: 'circuit',
+      kind: 'circuit',
+      title: 'Circuit',
+      subtitle: `${rounds} tour${rounds > 1 ? 's' : ''} — on enchaîne les exercices, puis on récupère.`,
+      rows: circuit,
+    });
+  }
+
+  return sections;
+}

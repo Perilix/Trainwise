@@ -298,6 +298,18 @@ const buildPlannedStravaDescription = (planned) => {
     if (seg.length) { lines.push(''); lines.push(seg.join('\n')); }
   }
 
+  // Sans déroulé détaillé, les objectifs valent mieux qu'un titre seul : une
+  // description réduite à son en-tête et à son lien n'apprend rien.
+  if (lines.length === 1) {
+    const targets = [
+      planned.targetDistance ? `${planned.targetDistance} km` : null,
+      planned.targetDuration ? `${planned.targetDuration} min` : null,
+      planned.targetPace ? `${planned.targetPace} /km` : null
+    ].filter(Boolean);
+    if (targets.length) { lines.push(''); lines.push(`• ${targets.join(' · ')}`); }
+    if (planned.description) { lines.push(''); lines.push(planned.description); }
+  }
+
   lines.push('');
   lines.push(TRAINWISE_CTA);
   return lines.join('\n');
@@ -454,7 +466,10 @@ const importStrengthActivity = async (userId, activity, accessToken, prefetchedD
     user: userId,
     stravaActivityId: activity.id,
     date: new Date(activity.start_date),
-    duration: secondsToMinutes(activity.moving_time || activity.elapsed_time),
+    // Une montre compte peu de « temps en mouvement » sur une séance de
+    // renforcement — on ne se déplace pas. C'est le temps écoulé qui fait foi,
+    // sans quoi une heure de muscu s'affiche en une minute.
+    duration: secondsToMinutes(Math.max(activity.elapsed_time || 0, activity.moving_time || 0)),
     sessionType: mapStravaStrengthType(getActivityType(activity)),
     notes,
     exercises: [],

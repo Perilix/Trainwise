@@ -2,9 +2,9 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { BackBar, Button, Card, Chip, FeelingSlider, Icon, Screen, Section, StateView, Text } from '@/components/ui';
+import { BackBar, Button, Card, FeelingSlider, Icon, Screen, Section, StateView, Text } from '@/components/ui';
 import { useAthleteActions, usePlannedSession, useStrengthSession } from '@/features/athlete/queries';
-import { buildStrengthPayload, entriesFromPlan, entriesFromSession, type LogEntry, type LogSet } from '@/features/athlete/strength-log';
+import { buildStrengthPayload, entriesFromPlan, entriesFromSession, groupEntries, type LogEntry, type LogSet } from '@/features/athlete/strength-log';
 import { emitAppEvent } from '@/lib/app-events';
 import { formatClock, formatDecimal } from '@/lib/format';
 import { useTheme } from '@/theme/theme-provider';
@@ -129,14 +129,39 @@ export default function StrengthLogScreen() {
         </Text>
       </Section>
 
-      {entries.map((entry, entryIndex) => (
-        <Section key={entry.key} style={styles.tight}>
-          <ExerciseCard
-            entry={entry}
-            onChangeSet={(setIndex, patch) => changeSet(entryIndex, setIndex, patch)}
-            onAddSet={() => addSet(entryIndex)}
-            onRemoveSet={() => removeSet(entryIndex)}
-          />
+      {groupEntries(entries).map((section) => (
+        <Section key={section.key} style={styles.tight}>
+          {section.title ? (
+            <View style={[styles.blockHead, { borderLeftColor: colors.accent }]}>
+              <Text variant="sectionTitle">{section.title}</Text>
+              {section.subtitle ? <Text variant="small">{section.subtitle}</Text> : null}
+            </View>
+          ) : null}
+
+          {section.rows.map((row, rowIndex) => (
+            <View key={`${section.key}-${rowIndex}`} style={section.kind === 'superset' ? [styles.pair, { borderLeftColor: colors.border }] : undefined}>
+              {section.kind === 'superset' ? (
+                <Text variant="caption" style={styles.pairLabel}>
+                  Couple {rowIndex + 1}
+                </Text>
+              ) : null}
+              {row.map(({ entry, index, slot }) => (
+                <View key={entry.key} style={styles.cardSpace}>
+                  {slot ? (
+                    <Text variant="caption" color="accentInk" style={styles.slot}>
+                      {slot}
+                    </Text>
+                  ) : null}
+                  <ExerciseCard
+                    entry={entry}
+                    onChangeSet={(setIndex, patch) => changeSet(index, setIndex, patch)}
+                    onAddSet={() => addSet(index)}
+                    onRemoveSet={() => removeSet(index)}
+                  />
+                </View>
+              ))}
+            </View>
+          ))}
         </Section>
       ))}
 
@@ -202,7 +227,6 @@ function ExerciseCard({ entry, onChangeSet, onAddSet, onRemoveSet }: ExerciseCar
             {[entry.muscle, goal ? `Objectif ${goal}` : null].filter(Boolean).join(' · ')}
           </Text>
         </View>
-        {entry.context ? <Chip label={entry.context} tone="accent" /> : null}
       </View>
 
       <View style={styles.setHeader}>
@@ -274,6 +298,11 @@ function NumberCell({ label, value, onChange, decimal, suffix }: NumberCellProps
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   titleBlock: { gap: 4, paddingBottom: 16 },
+  blockHead: { gap: 2, marginBottom: 10, paddingLeft: 10, borderLeftWidth: 3 },
+  pair: { borderLeftWidth: 1, paddingLeft: 10, marginBottom: 6 },
+  pairLabel: { marginBottom: 4 },
+  slot: { marginBottom: 2 },
+  cardSpace: { marginBottom: 8 },
   tight: { paddingBottom: 12 },
   chrono: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 32, paddingHorizontal: 10, borderRadius: radius.pill },
   exerciseHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
