@@ -78,7 +78,7 @@
 
 <section id="timeline" class="lp-section">
   <h2 class="lp-h2">Timeline</h2>
-  <p class="lp-lead">Les cases cochées sont enregistrées en base : tous les admins voient le même avancement. Les objectifs chiffrés sont des repères à ajuster après la première quinzaine.</p>
+  <p class="lp-lead">Les cases cochées et les responsables sont enregistrés en base : tous les admins voient le même avancement. Les objectifs chiffrés sont des repères à ajuster après la première quinzaine.</p>
   <div class="lp-timeline">
     <% PHASES.forEach(phase => { %>
       <article class="lp-phase<%= phase.launch ? ' is-launch' : '' %>">
@@ -95,10 +95,18 @@
                 <div class="lp-col-label<%= i === 1 ? ' is-second' : '' %>"><%= col.label %></div>
                 <ul class="lp-tasks">
                   <% col.tasks.forEach(([key, label]) => { %>
-                    <li><label>
-                      <input type="checkbox" data-key="<%= key %>" <%= done.has(key) ? 'checked' : '' %>>
-                      <span><%= label %></span>
-                    </label></li>
+                    <li class="lp-task">
+                      <label>
+                        <input type="checkbox" data-key="<%= key %>" <%= done.has(key) ? 'checked' : '' %>>
+                        <span><%= label %></span>
+                      </label>
+                      <select class="lp-assignee<%= assignees[key] ? ' is-set' : '' %>" data-key="<%= key %>" aria-label="Responsable">
+                        <option value="">—</option>
+                        <% Object.entries(assigneeOptions).forEach(([value, name]) => { %>
+                          <option value="<%= value %>" <%= assignees[key] === value ? 'selected' : '' %>><%= name %></option>
+                        <% }); %>
+                      </select>
+                    </li>
                   <% }); %>
                 </ul>
               </div>
@@ -207,6 +215,26 @@
       box.disabled = false;
       document.getElementById('doneCount').textContent =
         document.querySelectorAll('.lp-tasks input:checked').length;
+    });
+  });
+
+  document.querySelectorAll('.lp-assignee').forEach(select => {
+    let previous = select.value;
+    select.addEventListener('change', async () => {
+      select.disabled = true;
+      try {
+        const res = await fetch('/launch/tasks/' + select.dataset.key, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ assignee: select.value })
+        });
+        if (!res.ok) throw new Error();
+        previous = select.value;
+      } catch (e) {
+        select.value = previous;
+      }
+      select.classList.toggle('is-set', !!select.value);
+      select.disabled = false;
     });
   });
 

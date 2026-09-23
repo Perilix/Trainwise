@@ -5,7 +5,8 @@ const mongoose = require('mongoose');
 const launchTaskSchema = new mongoose.Schema({
   key: { type: String, required: true, unique: true },
   done: { type: Boolean, default: false },
-  doneAt: { type: Date, default: null }
+  doneAt: { type: Date, default: null },
+  assignee: { type: String, enum: ['', 'julien', 'hugo'], default: '' }
 }, { timestamps: true });
 
 module.exports = mongoose.model('LaunchTask', launchTaskSchema);
