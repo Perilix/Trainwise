@@ -1,0 +1,228 @@
+<%- include('_header', { title: 'Plan de lancement', page: 'launch' }) %>
+
+<div class="page-header">
+  <h1>Plan de lancement</h1>
+  <p>Communication et prospection autour de la sortie iPhone du mercredi 7 octobre 2026, de J-14 à J+90.</p>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-card-top">
+      <div class="stat-label">Sortie iPhone</div>
+      <div class="stat-icon navy"><i class="fa-solid fa-rocket"></i></div>
+    </div>
+    <div class="stat-value">
+      <% if (daysToLaunch > 0) { %>J-<%= daysToLaunch %><% } else if (daysToLaunch === 0) { %>Aujourd'hui<% } else { %>J+<%= -daysToLaunch %><% } %>
+    </div>
+    <div class="stat-sub">mercredi 7 octobre</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-top">
+      <div class="stat-label">Actions faites</div>
+      <div class="stat-icon green"><i class="fa-solid fa-list-check"></i></div>
+    </div>
+    <div class="stat-value"><span id="doneCount"><%= doneCount %></span> / <%= TASK_KEYS.length %></div>
+    <div class="stat-sub">partagé entre les admins</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-top">
+      <div class="stat-label">Plan Coach</div>
+      <div class="stat-icon blue"><i class="fa-solid fa-euro-sign"></i></div>
+    </div>
+    <div class="stat-value">29 €</div>
+    <div class="stat-sub">15 athlètes, gratuit jusqu'à 3</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-top">
+      <div class="stat-label">Budget</div>
+      <div class="stat-icon purple"><i class="fa-solid fa-wallet"></i></div>
+    </div>
+    <div class="stat-value">~<%= BUDGET.reduce((s, b) => s + b[1], 0) %> €</div>
+    <div class="stat-sub">sur les 3 premiers mois</div>
+  </div>
+</div>
+
+<nav class="lp-toc">
+  <a href="#cible">Cible & message</a>
+  <a href="#timeline">Timeline</a>
+  <a href="#routine">Semaine type</a>
+  <a href="#canaux">Canaux</a>
+  <a href="#scripts">Scripts</a>
+  <a href="#budget">Budget</a>
+</nav>
+
+<section id="cible" class="lp-section">
+  <h2 class="lp-h2">Cible & message</h2>
+  <p class="lp-lead">En V1, Trainwise vend aux coachs : les athlètes n'y paient jamais. Chaque coach qui arrive fait venir 5 à 40 athlètes. On cible par ordre de facilité à convaincre.</p>
+  <div class="lp-grid2">
+    <% TARGETS.forEach(t => { %>
+      <div class="card"><div class="card-body">
+        <span class="lp-tag lp-tag-<%= t.tone %>"><%= t.tag %></span>
+        <div class="lp-h3"><%= t.title %></div>
+        <ul class="lp-list">
+          <% t.points.forEach(p => { %><li><%= p %></li><% }); %>
+        </ul>
+      </div></div>
+    <% }); %>
+  </div>
+  <div class="lp-pitch">
+    <div class="lp-eyebrow">La phrase à répéter partout</div>
+    <div class="lp-pitch-line">« <%= PITCH.line %> »</div>
+    <div class="lp-grid2">
+      <% PITCH.versus.forEach(([who, what]) => { %>
+        <div class="text-small text-muted"><strong style="color:var(--text);"><%= who %> :</strong> <%= what %></div>
+      <% }); %>
+    </div>
+  </div>
+</section>
+
+<section id="timeline" class="lp-section">
+  <h2 class="lp-h2">Timeline</h2>
+  <p class="lp-lead">Les cases cochées sont enregistrées en base : tous les admins voient le même avancement. Les objectifs chiffrés sont des repères à ajuster après la première quinzaine.</p>
+  <div class="lp-timeline">
+    <% PHASES.forEach(phase => { %>
+      <article class="lp-phase<%= phase.launch ? ' is-launch' : '' %>">
+        <div class="lp-when">
+          <div class="lp-when-d"><%= phase.dates %></div>
+          <div class="lp-when-j"><%= phase.rel %></div>
+        </div>
+        <div class="lp-phase-body">
+          <div class="lp-h3 lp-phase-title"><%= phase.title %></div>
+          <p class="lp-goal"><%= phase.goal %></p>
+          <div class="lp-cols">
+            <% phase.columns.forEach((col, i) => { %>
+              <div>
+                <div class="lp-col-label<%= i === 1 ? ' is-second' : '' %>"><%= col.label %></div>
+                <ul class="lp-tasks">
+                  <% col.tasks.forEach(([key, label]) => { %>
+                    <li><label>
+                      <input type="checkbox" data-key="<%= key %>" <%= done.has(key) ? 'checked' : '' %>>
+                      <span><%= label %></span>
+                    </label></li>
+                  <% }); %>
+                </ul>
+              </div>
+            <% }); %>
+          </div>
+          <div class="lp-kpis">
+            <% phase.kpis.forEach(([label, kind]) => { %>
+              <span class="lp-kpi<%= kind === 'paid' ? ' is-paid' : '' %>"><%= label %></span>
+            <% }); %>
+          </div>
+        </div>
+      </article>
+    <% }); %>
+  </div>
+</section>
+
+<section id="routine" class="lp-section">
+  <h2 class="lp-h2">Semaine type</h2>
+  <p class="lp-lead">Environ 1 h par jour. 10 messages par jour pendant 3 mois, c'est 600 coachs contactés.</p>
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Jour</th><th>Communication</th><th>Prospection</th></tr></thead>
+        <tbody>
+          <% ROUTINE.forEach(([day, com, hint, pros]) => { %>
+            <tr>
+              <td style="font-weight:600;white-space:nowrap;"><%= day %></td>
+              <td><%= com %><% if (hint) { %><div class="text-small text-muted"><%= hint %></div><% } %></td>
+              <td><%= pros %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="canaux" class="lp-section">
+  <h2 class="lp-h2">Canaux</h2>
+  <p class="lp-lead">Classés selon ce qu'ils devraient rapporter en coachs inscrits, pour un budget proche de zéro.</p>
+  <div class="card">
+    <% CHANNELS.forEach(([name, desc, label, level]) => { %>
+      <div class="lp-chan">
+        <strong><%= name %></strong>
+        <span class="text-muted"><%= desc %></span>
+        <span class="lp-pill lp-pill-<%= level %>"><%= label %></span>
+      </div>
+    <% }); %>
+  </div>
+</section>
+
+<section id="scripts" class="lp-section">
+  <h2 class="lp-h2">Scripts</h2>
+  <p class="lp-lead">À personnaliser à chaque fois avec une vraie phrase sur la personne. Un message qui a l'air d'un modèle ne reçoit pas de réponse.</p>
+  <% SCRIPTS.forEach(s => { %>
+    <div class="card lp-script">
+      <div class="card-header">
+        <div>
+          <div class="card-title"><%= s.title %></div>
+          <div class="text-small text-muted"><%= s.hint %></div>
+        </div>
+        <button type="button" class="btn btn-secondary lp-copy"><i class="fa-regular fa-copy"></i> Copier</button>
+      </div>
+      <pre class="lp-script-text"><%= s.text %></pre>
+    </div>
+  <% }); %>
+</section>
+
+<section id="budget" class="lp-section">
+  <h2 class="lp-h2">Budget</h2>
+  <p class="lp-lead">Presque tout part dans ce qui facilite la prospection. La publicité ne vient qu'une fois le coût d'une inscription connu.</p>
+  <div class="card"><div class="card-body">
+    <% const maxBudget = Math.max(...BUDGET.map(b => b[1])); %>
+    <% BUDGET.forEach(([label, amount]) => { %>
+      <div class="progress-row">
+        <div class="progress-meta">
+          <span class="progress-label"><%= label %></span>
+          <span class="progress-val"><%= amount %> €</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="background:var(--blue);width:<%= Math.round(amount / maxBudget * 100) %>%;"></div></div>
+      </div>
+    <% }); %>
+    <div class="alert alert-warning" style="margin:16px 0 0;">
+      <i class="fa-solid fa-hourglass-half"></i>
+      <span><strong>Le vrai coût, c'est le temps.</strong> L'offre fondateurs (3 mois offerts à 20 coachs) représente environ 1 740 € non encaissés sur le plan Coach : c'est le principal investissement marketing.</span>
+    </div>
+  </div></div>
+</section>
+
+<p class="text-small text-muted" style="margin-top:28px;">Les chiffres sur Nolio et TrueCoach viennent de l'étude du 29 août 2026 et sont à reconfirmer avant de les citer en public.</p>
+
+<script>
+  document.querySelectorAll('.lp-tasks input[type=checkbox]').forEach(box => {
+    box.addEventListener('change', async () => {
+      box.disabled = true;
+      try {
+        const res = await fetch('/launch/tasks/' + box.dataset.key, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ done: box.checked })
+        });
+        if (!res.ok) throw new Error();
+      } catch (e) {
+        box.checked = !box.checked;
+      }
+      box.disabled = false;
+      document.getElementById('doneCount').textContent =
+        document.querySelectorAll('.lp-tasks input:checked').length;
+    });
+  });
+
+  document.querySelectorAll('.lp-copy').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const text = btn.closest('.lp-script').querySelector('.lp-script-text').textContent;
+      const label = btn.innerHTML;
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Copié';
+      } catch (e) {
+        btn.innerHTML = 'Copie impossible';
+      }
+      setTimeout(() => { btn.innerHTML = label; }, 1600);
+    });
+  });
+</script>
+
+<%- include('_footer') %>
