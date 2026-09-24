@@ -21,6 +21,8 @@ const StrengthSession = require('../models/strengthSession.model');
 const PlannedRun = require('../models/plannedRun.model');
 const Competition = require('../models/competition.model');
 const User = require('../models/user.model');
+// Chargé pour le populate des exercices, même hors du serveur (scripts).
+require('../models/exercise.model');
 
 const DAY = 24 * 60 * 60 * 1000;
 const WEEK = 7 * DAY;

@@ -9,7 +9,8 @@
     "strava:webhook": "node src/scripts/stravaWebhook.js",
     "strava:laps": "node src/scripts/stravaLaps.js",
     "alerts:check": "node src/scripts/alertRules.js",
-    "form:check": "node src/scripts/formCheck.js"
+    "form:check": "node src/scripts/formCheck.js",
+    "form:explain": "node src/scripts/formExplain.js"
   },
   "keywords": [],
   "author": "",
