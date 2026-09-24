@@ -100,9 +100,16 @@ export class CoachService {
     }).pipe(map(({ detail, competitions }) => buildAthleteFiche(detail, competitions, new Date())));
   }
 
+  /**
+   * Calendrier d'un athlète entre deux jours (AAAA-MM-JJ). Le mois et l'année
+   * du premier jour partent aussi : c'est ce que lisent les versions de l'API
+   * antérieures à la plage de dates, qui renvoyaient sinon toujours le mois en cours.
+   */
   athleteCalendar$(athleteId: string, startDate: string, endDate: string) {
-    return this.api.get<ApiCalendarData>(`/api/coach/athletes/${encodeURIComponent(athleteId)}/calendar`, { startDate, endDate });
+    const [year, month] = startDate.split('-').map(Number);
+    return this.api.get<ApiCalendarData>(`/api/coach/athletes/${encodeURIComponent(athleteId)}/calendar`, { startDate, endDate, month, year });
   }
+
 
   athletePlanning$(athleteId: string) {
     return this.api.get<ApiPlannedRunDetail[]>(`/api/coach/athletes/${encodeURIComponent(athleteId)}/planning`);

@@ -11,6 +11,8 @@ import { AvatarComponent } from '../../ui/avatar.component';
 import { ExpectedFeelingComponent } from '../../ui/expected-feeling.component';
 import { IconComponent } from '../../ui/icon.component';
 import { StateViewComponent } from '../../ui/state-view.component';
+import { ApiError } from '../../core/api.service';
+import { ToastService } from '../../core/toast.service';
 
 const WEEKDAYS = ['Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.', 'Dim.'];
 
@@ -497,6 +499,7 @@ const WEEKDAYS = ['Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.', 'Dim.'];
 })
 export class CoachAthletePlanningPage {
   private readonly coach = inject(CoachService);
+  private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
 
   readonly id = input.required<string>();
@@ -590,6 +593,7 @@ export class CoachAthletePlanningPage {
     this.saving.set(true);
     const distance = Number(this.draftDistance().replace(',', '.'));
     const duration = Number(this.draftDuration());
+    const day = this.selected();
     this.coach
       .createSession(this.id(), {
         date: this.selected(),
@@ -608,8 +612,12 @@ export class CoachAthletePlanningPage {
           this.saving.set(false);
           this.creating.set(false);
           this.planning.reload(true);
+          this.toast.success(`Séance ajoutée au planning le ${formatDayLong(day).toLowerCase()}.`);
         },
-        error: () => this.saving.set(false),
+        error: (err: unknown) => {
+          this.saving.set(false);
+          this.toast.error(err instanceof ApiError ? err.message : 'Ajout impossible.');
+        },
       });
   }
 

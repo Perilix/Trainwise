@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
-import { Button, Card, Field, FormError, Icon, Screen, Section, SectionHeader, Text } from '@/components/ui';
+import { Button, Card, Field, FormError, Icon, Screen, Section, SectionHeader, Text, useToast } from '@/components/ui';
 import { useCoachActions } from '@/features/coach/queries';
 import { useTemplates } from '@/features/coach/templates';
 import type { CoachGroup } from '@/features/coach/types';
 import { emitAppEvent } from '@/lib/app-events';
-import { toIsoDay } from '@/lib/format';
+import { formatDayLong, toIsoDay } from '@/lib/format';
 import { useTheme } from '@/theme/theme-provider';
 
 type Props = {
@@ -25,6 +25,7 @@ export function PlanGroupModal({ group, onClose }: Props) {
   const { colors } = useTheme();
   const { data: groups } = useTemplates();
   const { assignTemplateToAthletes } = useCoachActions();
+  const toast = useToast();
 
   const [date, setDate] = useState(() => toIsoDay(new Date()));
   const [picked, setPicked] = useState<string | null>(null);
@@ -47,6 +48,7 @@ export function PlanGroupModal({ group, onClose }: Props) {
       );
       emitAppEvent('athletes:changed');
       setDone(`Séance planifiée pour ${group.athletes.length} athlète${group.athletes.length > 1 ? 's' : ''}.`);
+      toast.success(`Séance planifiée le ${formatDayLong(date).toLowerCase()} pour le groupe ${group.name}`);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Planification impossible.');
     } finally {

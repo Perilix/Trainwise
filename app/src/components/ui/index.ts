@@ -21,4 +21,5 @@ export { Segmented } from './segmented';
 export { Stat } from './stat';
 export { TabBar, TAB_BAR_HEIGHT, TAB_BAR_MARGIN, type TabItem } from './tab-bar';
 export { Text } from './text';
+export { ToastProvider, useToast } from './toast';
 export { WorkoutProfile } from './workout-profile';

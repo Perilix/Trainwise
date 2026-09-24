@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
-import { BackBar, Button, Card, ChoicePill, FormError, Screen, Section, StateView, Text } from '@/components/ui';
+import { BackBar, Button, Card, ChoicePill, FormError, Screen, Section, StateView, Text, useToast } from '@/components/ui';
 import { useBringIntoView } from '@/components/ui/keyboard-scroll';
 import { useAthleteFiche, useCoachActions, useCoachPlannedRaw } from '@/features/coach/queries';
 import { DateStepper } from '@/features/sessions/date-stepper';
@@ -13,7 +13,7 @@ import { SESSION_TYPES } from '@/features/sessions/simple-session-form';
 import { StrengthPlanEditor } from '@/features/sessions/strength-plan-editor';
 import { toEditableStrength, toStrengthPayload, validateStrength, type EditableStrengthPlan } from '@/features/sessions/strength-plan-model';
 import { emitAppEvent } from '@/lib/app-events';
-import { toIsoDay } from '@/lib/format';
+import { formatDayLong, toIsoDay } from '@/lib/format';
 import { useTheme } from '@/theme/theme-provider';
 import { layout, radius } from '@/theme/tokens';
 import { fontFamily } from '@/theme/typography';
@@ -27,6 +27,7 @@ export default function CoachSessionEditorScreen() {
   const { data: raw, loading, error, refetch } = useCoachPlannedRaw(id, planId);
   const { data: fiche } = useAthleteFiche(id);
   const { createAthleteSession, updateAthleteSession } = useCoachActions();
+  const toast = useToast();
   const [date, setDate] = useState(() => (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : toIsoDay(new Date())));
   const [sessionType, setSessionType] = useState<string | null>(null);
   const [description, setDescription] = useState<string | null>(null);
@@ -81,6 +82,7 @@ export default function CoachSessionEditorScreen() {
           ...content,
         });
       }
+      toast.success(planId ? 'Séance modifiée' : `Séance ajoutée au planning le ${formatDayLong(date).toLowerCase()}`);
       emitAppEvent('sessions:changed');
       router.back();
     } catch (reason) {

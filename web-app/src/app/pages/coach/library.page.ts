@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 
 import { ApiError } from '../../core/api.service';
 import type { ApiSessionTemplate } from '../../core/api-types';
-import { formatDecimal, formatHoursMinutes, formatPace, toIsoDay } from '../../core/format';
+import { formatDayLong, formatDecimal, formatHoursMinutes, formatPace, toIsoDay } from '../../core/format';
 import { load } from '../../core/load';
 import { CoachService } from '../../data/coach.service';
 import { SESSION_TYPE_LABELS } from '../../domain/athlete.mappers';
@@ -15,6 +15,7 @@ import { IntensityLegendComponent } from '../../ui/intensity-legend.component';
 import { PageHeaderComponent } from '../../ui/page-header.component';
 import { StateViewComponent } from '../../ui/state-view.component';
 import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
+import { ToastService } from '../../core/toast.service';
 
 @Component({
   selector: 'tw-coach-library',
@@ -641,6 +642,7 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
 })
 export class CoachLibraryPage {
   private readonly coach = inject(CoachService);
+  private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
 
   readonly sports = [
@@ -797,12 +799,16 @@ export class CoachLibraryPage {
   }
 
   assign(templateId: string) {
-    this.coach.assignTemplate(templateId, { athleteIds: this.picked(), date: this.assignDate() }).subscribe({
+    const count = this.picked().length;
+    const day = this.assignDate();
+    this.coach.assignTemplate(templateId, { athleteIds: this.picked(), date: day }).subscribe({
       next: () => {
         this.assignOpen.set(false);
         this.picked.set([]);
         this.templates.reload(true);
+        this.toast.success(`Séance planifiée le ${formatDayLong(day).toLowerCase()} pour ${count} athlète${count > 1 ? 's' : ''}.`);
       },
+      error: (err: unknown) => this.toast.error(err instanceof ApiError ? err.message : 'Planification impossible.'),
     });
   }
 

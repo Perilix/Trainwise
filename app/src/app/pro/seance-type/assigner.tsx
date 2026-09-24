@@ -2,13 +2,13 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Avatar, avatarToneFor, BackBar, Button, Card, FormError, Icon, Screen, Section, StateView, Text } from '@/components/ui';
+import { Avatar, BackBar, Button, Card, FormError, Icon, Screen, Section, StateView, Text, avatarToneFor, useToast } from '@/components/ui';
 import { useCoachActions, useCoachAthleteList } from '@/features/coach/queries';
 import { mainPercent, useTemplate } from '@/features/coach/templates';
 import { DateStepper } from '@/features/sessions/date-stepper';
 import { paceFromPercent } from '@/features/sessions/run-blocks-model';
 import { emitAppEvent } from '@/lib/app-events';
-import { formatDecimal, toIsoDay } from '@/lib/format';
+import { formatDayLong, formatDecimal, toIsoDay } from '@/lib/format';
 import { useTheme } from '@/theme/theme-provider';
 import { layout } from '@/theme/tokens';
 
@@ -19,6 +19,7 @@ export default function AssignTemplateScreen() {
   const { data: template } = useTemplate(id);
   const { data: athletes, loading, error, refetch } = useCoachAthleteList();
   const { assignTemplateToAthletes } = useCoachActions();
+  const toast = useToast();
   const [date, setDate] = useState(() => toIsoDay(new Date()));
   const [selected, setSelected] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
@@ -36,6 +37,7 @@ export default function AssignTemplateScreen() {
     setSaveError(null);
     try {
       await assignTemplateToAthletes(id, selected, date);
+      toast.success(`Séance planifiée le ${formatDayLong(date).toLowerCase()} pour ${count} athlète${count > 1 ? 's' : ''}`);
       emitAppEvent('sessions:changed');
       emitAppEvent('templates:changed');
       router.back();

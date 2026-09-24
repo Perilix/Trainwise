@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { ToastProvider } from '@/components/ui';
 import { isCoach, SessionProvider, useSession } from '@/features/auth/session';
 import { AppThemeProvider, useTheme } from '@/theme/theme-provider';
 
@@ -27,7 +28,9 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <AppThemeProvider>
         <SessionProvider>
-          <ThemedNavigation />
+          <ToastProvider>
+            <ThemedNavigation />
+          </ToastProvider>
         </SessionProvider>
       </AppThemeProvider>
     </SafeAreaProvider>

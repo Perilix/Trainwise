@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { BackBar, Button, Field, FormError, Screen, StateView, Text } from '@/components/ui';
+import { BackBar, Button, Field, FormError, Screen, StateView, Text, useToast } from '@/components/ui';
 import type { PlannedSessionDetail } from '@/features/athlete/types';
 import { useShareSession } from '@/features/chat/share-session';
 import { useCoachActions, useCoachPlannedSession } from '@/features/coach/queries';
@@ -20,6 +20,7 @@ export default function CoachPlannedSessionScreen() {
   const router = useRouter();
   const { data: session, loading, error, refetch } = useCoachPlannedSession(id, planId);
   const { duplicateAthleteSession, deleteAthleteSession, saveSessionAsTemplate } = useCoachActions();
+  const toast = useToast();
   const shareSession = useShareSession();
   const [mode, setMode] = useState<Mode>('idle');
   const [targetDate, setTargetDate] = useState<string | null>(null);
@@ -59,6 +60,7 @@ export default function CoachPlannedSessionScreen() {
       setMode('idle');
       setTargetDate(null);
       setNotice(`Séance dupliquée au ${formatDayLong(target).toLowerCase()}.`);
+      toast.success(`Séance dupliquée le ${formatDayLong(target).toLowerCase()}`);
     } catch (reason) {
       setActionError(reason instanceof Error ? reason.message : 'Duplication impossible.');
     } finally {

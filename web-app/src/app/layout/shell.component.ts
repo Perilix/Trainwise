@@ -5,6 +5,7 @@ import { ApiService } from '../core/api.service';
 import { BadgesService } from '../core/badges.service';
 import { RefreshService } from '../core/refresh.service';
 import { SocketService } from '../core/socket.service';
+import { ToastHostComponent } from '../ui/toast-host.component';
 import { MatchPromptComponent } from './match-prompt.component';
 import { SidebarComponent } from './sidebar.component';
 
@@ -13,13 +14,14 @@ import { SidebarComponent } from './sidebar.component';
   selector: 'tw-shell',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatchPromptComponent, RouterOutlet, SidebarComponent],
+  imports: [MatchPromptComponent, RouterOutlet, SidebarComponent, ToastHostComponent],
   template: `
     <div class="shell">
       <tw-sidebar />
       <router-outlet />
     </div>
     <tw-match-prompt />
+    <tw-toast-host />
   `,
   styles: [
     `

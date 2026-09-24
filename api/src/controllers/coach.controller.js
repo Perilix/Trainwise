@@ -194,7 +194,7 @@ exports.getAthleteById = async (req, res) => {
 exports.getAthleteCalendar = async (req, res) => {
   try {
     const { athleteId } = req.params;
-    const { month, year } = req.query;
+    const { month, year, startDate: from, endDate: to } = req.query;
 
     // Vérifier que l'athlète appartient au coach
     const relationship = await CoachAthlete.findOne({
@@ -210,8 +210,12 @@ exports.getAthleteCalendar = async (req, res) => {
     const m = parseInt(month) || new Date().getMonth() + 1;
     const y = parseInt(year) || new Date().getFullYear();
 
-    const startDate = new Date(y, m - 1, 1);
-    const endDate = new Date(y, m, 0, 23, 59, 59);
+    // Une plage explicite (AAAA-MM-JJ) prime sur le mois : une semaine peut
+    // chevaucher deux mois. Sans rien, c'est le mois demandé, sinon le mois en cours.
+    const day = /^\d{4}-\d{2}-\d{2}$/;
+    const ranged = day.test(from || '') && day.test(to || '');
+    const startDate = ranged ? new Date(`${from}T00:00:00`) : new Date(y, m - 1, 1);
+    const endDate = ranged ? new Date(`${to}T23:59:59`) : new Date(y, m, 0, 23, 59, 59);
 
     const [runs, plannedRuns, strengthSessions, competitions] = await Promise.all([
       Run.find({

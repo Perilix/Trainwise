@@ -12,6 +12,8 @@ import { IconComponent } from '../../ui/icon.component';
 import { InviteCodeComponent } from '../../ui/invite-code.component';
 import { PageHeaderComponent } from '../../ui/page-header.component';
 import { StateViewComponent } from '../../ui/state-view.component';
+import { ToastService } from '../../core/toast.service';
+import { formatDayLong } from '../../core/format';
 
 
 
@@ -818,6 +820,7 @@ import { StateViewComponent } from '../../ui/state-view.component';
 })
 export class CoachDashboardPage {
   private readonly coach = inject(CoachService);
+  private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
 
   readonly home = load(() => this.coach.home$());
@@ -1022,6 +1025,7 @@ export class CoachDashboardPage {
       next: () => {
         this.planning.set(false);
         this.planDone.set(`Séance planifiée pour ${group.athletes.length} athlète${group.athletes.length > 1 ? 's' : ''}.`);
+        this.toast.success(`Séance planifiée le ${formatDayLong(this.planDate()).toLowerCase()} pour le groupe ${group.name}.`);
       },
       error: (err: unknown) => {
         this.planning.set(false);

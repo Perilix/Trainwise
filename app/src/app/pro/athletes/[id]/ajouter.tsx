@@ -2,14 +2,14 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
-import { BackBar, Button, Card, FormError, Screen, Section, Segmented, StateView, Text } from '@/components/ui';
+import { BackBar, Button, Card, FormError, Screen, Section, Segmented, StateView, Text, useToast } from '@/components/ui';
 import { useCoachActions } from '@/features/coach/queries';
 import { TemplateItem } from '@/features/coach/template-item';
 import { useTemplates, type TemplateRow } from '@/features/coach/templates';
 import { DateStepper } from '@/features/sessions/date-stepper';
 import { SimpleSessionForm } from '@/features/sessions/simple-session-form';
 import { emitAppEvent } from '@/lib/app-events';
-import { toIsoDay } from '@/lib/format';
+import { formatDayLong, toIsoDay } from '@/lib/format';
 import { layout } from '@/theme/tokens';
 
 type Mode = 'library' | 'simple';
@@ -22,6 +22,7 @@ export default function CoachAddSessionScreen() {
   const [mode, setMode] = useState<Mode>('library');
   const { data: groups, loading, error, refetch } = useTemplates();
   const { assignTemplate, createAthleteSession } = useCoachActions();
+  const toast = useToast();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [assignError, setAssignError] = useState<string | null>(null);
 
@@ -35,6 +36,7 @@ export default function CoachAddSessionScreen() {
     setAssignError(null);
     try {
       await assignTemplate(row.id, id, date);
+      toast.success(`Séance planifiée le ${formatDayLong(date).toLowerCase()}`);
       finish();
     } catch (reason) {
       setAssignError(reason instanceof Error ? reason.message : 'Planification impossible.');
@@ -89,6 +91,7 @@ export default function CoachAddSessionScreen() {
           submitLabel="Ajouter au planning"
           onSubmit={async (payload) => {
             await createAthleteSession(id, payload);
+            toast.success(`Séance ajoutée au planning le ${formatDayLong(payload.date).toLowerCase()}`);
             finish();
           }}
         />

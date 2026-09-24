@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import type { ApiPlannedRunDetail } from '../../core/api-types';
 import type { PlannedSessionDetail } from '../../domain/athlete.types';
 import { ApiService } from '../../core/api.service';
-import { formatDayLong, formatDecimal, formatHoursMinutes, formatPace } from '../../core/format';
+import { formatDayLong, formatDecimal, formatHoursMinutes, formatPace, toIsoDay } from '../../core/format';
 import { load } from '../../core/load';
 import { CoachService } from '../../data/coach.service';
 import { totals } from '../../domain/sessions';
@@ -17,6 +17,7 @@ import { IntensityLegendComponent } from '../../ui/intensity-legend.component';
 import { StateViewComponent } from '../../ui/state-view.component';
 import { StrengthPlanComponent } from '../../ui/strength-plan.component';
 import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
+import { ToastService } from '../../core/toast.service';
 
 /** Séance planifiée d'un athlète, vue coach : le détail, plus les actions sur la séance. */
 @Component({
@@ -413,6 +414,7 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
 })
 export class CoachAthletePlannedPage {
   private readonly coach = inject(CoachService);
+  private readonly toast = inject(ToastService);
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
   private readonly location = inject(Location);
@@ -485,6 +487,7 @@ export class CoachAthletePlannedPage {
           this.saving.set(false);
           this.editing.set(false);
           this.session.reload(true);
+          this.toast.success('Séance modifiée.');
         },
         error: (err: unknown) => {
           this.saving.set(false);
@@ -535,8 +538,14 @@ export class CoachAthletePlannedPage {
     if (!data) return;
     const target = new Date(data.date);
     target.setDate(target.getDate() + 7);
-    const iso = target.toISOString().slice(0, 10);
-    this.coach.duplicateSession(this.id(), this.planId(), iso).subscribe({ next: () => this.openPlanning() });
+    const iso = toIsoDay(target);
+    this.coach.duplicateSession(this.id(), this.planId(), iso).subscribe({
+      next: () => {
+        this.toast.success(`Séance dupliquée le ${formatDayLong(iso).toLowerCase()}.`);
+        this.openPlanning();
+      },
+      error: (err: unknown) => this.toast.error(err instanceof ApiError ? err.message : 'Duplication impossible.'),
+    });
   }
 
   remove() {
