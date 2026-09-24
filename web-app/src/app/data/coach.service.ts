@@ -211,7 +211,7 @@ export class CoachService {
 
   saveTemplate(id: string | null, body: unknown) {
     const path = id ? `/api/coach/session-templates/${encodeURIComponent(id)}` : '/api/coach/session-templates';
-    return (id ? this.api.put(path, body) : this.api.post(path, body)).pipe(this.refresh());
+    return (id ? this.api.patch(path, body) : this.api.post(path, body)).pipe(this.refresh());
   }
 
   deleteTemplate(id: string) {
