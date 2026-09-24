@@ -53,6 +53,8 @@ import {
   sampleStrengthDone,
   sampleSubscriptionRequests,
 } from './sample-data';
+import type { ApiAthleteForm, ApiFormSummary } from './form';
+import { sampleAthleteForms, sampleFormSummaries } from './form-sample';
 import { plannedToTemplatePayload, type TemplatePayload } from './templates';
 
 const athletePath = (id: string) => `/api/coach/athletes/${encodeURIComponent(id)}`;
@@ -229,6 +231,20 @@ export function useWeeklyStats(weeks: number) {
     `coach:weekly:${weeks}`,
     async () => api<ApiWeeklyStats>('/api/coach/stats/weekly', { query: { weeks } }),
     () => sampleWeeklyStats,
+  );
+}
+
+/** La forme de chaque athlète (charge 7 j / 28 j), pour trier la liste de l'écran Stats. */
+export function useFormSummaries() {
+  return useSessionQuery('coach:form', async () => api<ApiFormSummary[]>('/api/coach/form'), () => sampleFormSummaries);
+}
+
+/** Tout l'écran Stats d'un athlète : forme, charge, FC, ressenti, muscu, repères. */
+export function useAthleteForm(athleteId: string | null, weeks: number) {
+  return useSessionQuery(
+    `coach:form:${athleteId ?? '-'}:${weeks}`,
+    async () => (athleteId ? api<ApiAthleteForm>(`${athletePath(athleteId)}/form`, { query: { weeks } }) : null),
+    () => (athleteId ? sampleAthleteForms[athleteId] ?? sampleAthleteForms['athlete-lea'] : null),
   );
 }
 
