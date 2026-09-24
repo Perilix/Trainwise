@@ -8,6 +8,7 @@ const crypto = require('crypto');
 const { createNotification } = require('./notification.controller');
 const { computeAthleteStatus, isWorse } = require('../services/athleteStatus.service');
 const { athleteRoom } = require('../services/coachPlan.service');
+const { computeAthleteForm, computeFormSummaries } = require('../services/athleteForm.service');
 
 // Générer un code d'invitation unique
 const generateUniqueCode = () => {
@@ -1148,6 +1149,43 @@ exports.getWeeklyStats = async (req, res) => {
         return past.planned ? Math.round((past.done / past.planned) * 100) : null;
       })()
     });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * GET /api/coach/form
+ *
+ * La forme de chaque athlète suivi, pour trier la liste de l'écran Stats :
+ * seulement la charge (7 jours face à 28), le détail vient à l'ouverture.
+ */
+exports.getFormSummaries = async (req, res) => {
+  try {
+    const links = await CoachAthlete.find({ coach: req.user._id, status: 'accepted' }).select('athlete').lean();
+    res.json(await computeFormSummaries(links.map((link) => link.athlete)));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * GET /api/coach/athletes/:athleteId/form?weeks=8
+ *
+ * Tout l'écran Stats d'un athlète : forme du moment, charge semaine par
+ * semaine (et la semaine prochaine telle que planifiée), FC en endurance,
+ * ressenti, km par intensité, progression en muscu, et les repères.
+ */
+exports.getAthleteForm = async (req, res) => {
+  try {
+    const { athleteId } = req.params;
+    const relationship = await CoachAthlete.findOne({ coach: req.user._id, athlete: athleteId, status: 'accepted' }).select('_id').lean();
+    if (!relationship) return res.status(403).json({ error: 'Accès refusé' });
+
+    const weeks = Math.min(26, Math.max(4, Number(req.query.weeks) || 8));
+    const form = await computeAthleteForm(athleteId, { weeks });
+    if (!form) return res.status(404).json({ error: 'Athlète introuvable' });
+    res.json(form);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

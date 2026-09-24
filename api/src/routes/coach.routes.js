@@ -45,6 +45,9 @@ router.delete('/groups/:id', groupController.deleteGroup);
 router.get('/stats', coachController.getCoachStats);
 // Planifié / réalisé semaine par semaine, pour l'écran Stats.
 router.get('/stats/weekly', coachController.getWeeklyStats);
+// La forme des athlètes : un résumé pour la liste, le détail pour un athlète.
+router.get('/form', coachController.getFormSummaries);
+router.get('/athletes/:athleteId/form', coachController.getAthleteForm);
 
 // Le retour du coach sur une séance réalisée (kind : run | strength).
 router.put('/athletes/:athleteId/feedback/:kind/:id', coachController.setSessionFeedback);

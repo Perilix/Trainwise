@@ -8,7 +8,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "strava:webhook": "node src/scripts/stravaWebhook.js",
     "strava:laps": "node src/scripts/stravaLaps.js",
-    "alerts:check": "node src/scripts/alertRules.js"
+    "alerts:check": "node src/scripts/alertRules.js",
+    "form:check": "node src/scripts/formCheck.js"
   },
   "keywords": [],
   "author": "",

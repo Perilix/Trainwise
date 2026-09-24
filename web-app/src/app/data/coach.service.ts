@@ -21,6 +21,7 @@ import type {
 import { ApiService } from '../core/api.service';
 import { mapRunDetail } from '../domain/athlete.mappers';
 import { buildAthleteFiche, buildCoachHome, buildInviteOverview, mapAthleteList, mapGroups, mapSearchResults } from '../domain/coach.mappers';
+import type { ApiAthleteForm, ApiFormSummary } from '../domain/form';
 import { mapPlannedDetail } from '../domain/session-detail';
 
 @Injectable({ providedIn: 'root' })
@@ -69,6 +70,16 @@ export class CoachService {
       totals: { planned: number; done: number };
       completionRate: number | null;
     }>(`/api/coach/stats/weekly?weeks=${weeks}`);
+  }
+
+  /** La forme de chaque athlète (charge 7 j / 28 j), pour trier la liste de l'écran Stats. */
+  formSummaries$() {
+    return this.api.getOr<ApiFormSummary[]>('/api/coach/form', []);
+  }
+
+  /** Tout l'écran Stats d'un athlète : forme, charge, FC, ressenti, muscu, repères. */
+  athleteForm$(athleteId: string, weeks = 8) {
+    return this.api.get<ApiAthleteForm>(`/api/coach/athletes/${encodeURIComponent(athleteId)}/form`, { weeks });
   }
 
   athletes$() {
@@ -200,7 +211,7 @@ export class CoachService {
 
   saveTemplate(id: string | null, body: unknown) {
     const path = id ? `/api/coach/session-templates/${encodeURIComponent(id)}` : '/api/coach/session-templates';
-    return (id ? this.api.put(path, body) : this.api.post(path, body)).pipe(this.refresh());
+    return (id ? this.api.patch(path, body) : this.api.post(path, body)).pipe(this.refresh());
   }
 
   deleteTemplate(id: string) {
