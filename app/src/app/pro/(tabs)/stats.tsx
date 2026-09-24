@@ -252,7 +252,7 @@ export default function CoachStatsScreen() {
                         <TrendChart
                           width={inner}
                           labels={form.load.weeks.map((w) => w.label)}
-                          series={[{ values: form.run.easyHr.weeks.map((w) => w.value), color: colors.danger, area: true }]}
+                          series={[{ values: form.run.easyHr.weeks.map((w) => w.value), color: colors.danger, area: true, name: 'FC médiane' }]}
                           refValue={form.run.easyHr.baseline}
                           refLabel={form.run.easyHr.baseline ? `Habitude · ${form.run.easyHr.baseline}` : undefined}
                         />
@@ -276,7 +276,7 @@ export default function CoachStatsScreen() {
                     <Card style={styles.chartCard}>
                       <Text variant="h3">Kilomètres par semaine</Text>
                       <Legend items={[{ label: 'Endurance', color: ramp[0] }, { label: 'Seuil', color: ramp[2] }, { label: 'VMA', color: ramp[4] }]} />
-                      <StackChart width={inner} labels={form.run.km.weeks.map((w) => w.label)} stacks={form.run.km.weeks.map((w) => [w.easy, w.tempo, w.hard])} colors={[ramp[0], ramp[2], ramp[4]]} />
+                      <StackChart width={inner} labels={form.run.km.weeks.map((w) => w.label)} stacks={form.run.km.weeks.map((w) => [w.easy, w.tempo, w.hard])} colors={[ramp[0], ramp[2], ramp[4]]} names={['Endurance', 'Seuil', 'VMA']} unit=" km" />
                       <View style={styles.facts}>
                         <Fact label="Moyenne" value={`${fmt(form.run.km.averagePerWeek)} km`} />
                         <Fact label="Endurance" value={`${form.run.km.easyShare ?? '—'} %`} />
@@ -455,7 +455,7 @@ function StrengthCharts({ form, width }: { form: ApiAthleteForm; width: number }
   const labels = form.load.weeks.map((w) => w.label);
   const top = form.strength.exercises.filter((e) => e.weighted).slice(0, 3);
   const palette = [colors.ink, colors.accent, colors.accentInk];
-  const e1rm: LineSeries[] = top.map((ex, i) => ({ values: ex.weekly, color: palette[i], dashed: i === 2 }));
+  const e1rm: LineSeries[] = top.map((ex, i) => ({ values: ex.weekly, color: palette[i], dashed: i === 2, name: ex.name }));
   const rpeEx = top.find((ex) => ex.heavyRpe.some((v) => v != null));
   return (
     <>
@@ -475,7 +475,7 @@ function StrengthCharts({ form, width }: { form: ApiAthleteForm; width: number }
           <Card style={styles.chartCard}>
             <Text variant="h3">Effort perçu · {rpeEx.name}</Text>
             <Text variant="small">RPE de sa série la plus lourde</Text>
-            <TrendChart width={width} labels={labels} series={[{ values: rpeEx.heavyRpe, color: colors.warningInk, area: true }]} min={5} max={10} refValue={8} />
+            <TrendChart width={width} labels={labels} series={[{ values: rpeEx.heavyRpe, color: colors.warningInk, area: true, name: 'RPE' }]} min={5} max={10} refValue={8} />
           </Card>
         </Section>
       ) : null}

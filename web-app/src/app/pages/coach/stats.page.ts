@@ -282,7 +282,7 @@ const EXERCISE_COLORS = ['var(--ink)', 'var(--accent)', 'var(--accent-ink)'];
                       </span>
                     </div>
                     <div class="km">
-                      <tw-stack-chart class="chart" [labels]="labels()" [stacks]="kmStacks()" [colors]="zoneColors" label="Kilomètres par semaine" emptyText="Aucune sortie sur la période." />
+                      <tw-stack-chart class="chart" [labels]="labels()" [stacks]="kmStacks()" [colors]="zoneColors" [names]="['Endurance', 'Seuil', 'VMA']" unit=" km" label="Kilomètres par semaine" emptyText="Aucune sortie sur la période." />
                       <div class="facts">
                         <div class="fact"><span class="small muted">Moyenne par semaine</span><span class="h3 num">{{ fmt(f.run.km.averagePerWeek) }} km</span></div>
                         <div class="fact"><span class="small muted">Part en endurance</span><span class="h3 num">{{ f.run.km.easyShare ?? '—' }} %</span></div>
@@ -1027,7 +1027,7 @@ export class CoachStatsPage {
     return { warn: false, text: `La ${n.label} planifiée (${n.load} pts) reste dans la zone de progression (${n.low} à ${n.high} pts).` };
   });
 
-  readonly hrSeries = computed<LineSeries[]>(() => [{ values: this.data()?.run.easyHr.weeks.map((w) => w.value) ?? [], color: 'var(--danger)', area: true }]);
+  readonly hrSeries = computed<LineSeries[]>(() => [{ values: this.data()?.run.easyHr.weeks.map((w) => w.value) ?? [], color: 'var(--danger)', area: true, name: 'FC médiane' }]);
   readonly hrSubtitle = computed(() => {
     const range = this.data()?.run.easyHr.paceRange;
     return range ? `FC médiane de ses km courus entre ${paceLabel(range.from)} et ${paceLabel(range.to)}/km, sur terrain plat.` : 'FC médiane de ses km courus en endurance.';
@@ -1043,11 +1043,11 @@ export class CoachStatsPage {
   readonly tonnageStacks = computed(() => this.data()?.strength.tonnage.map((w) => [Math.round(w.value / 100) / 10]) ?? []);
 
   readonly topExercises = computed(() => (this.data()?.strength.exercises ?? []).filter((e) => e.weighted).slice(0, 3));
-  readonly e1rmSeries = computed<LineSeries[]>(() => this.topExercises().map((ex, i) => ({ values: ex.weekly, color: EXERCISE_COLORS[i], dashed: i === 2 })));
+  readonly e1rmSeries = computed<LineSeries[]>(() => this.topExercises().map((ex, i) => ({ values: ex.weekly, color: EXERCISE_COLORS[i], dashed: i === 2, name: ex.name })));
   readonly rpeExercise = computed(() => this.topExercises().find((ex) => ex.heavyRpe.some((v) => v != null)) ?? null);
   readonly rpeSeries = computed<LineSeries[]>(() => {
     const ex = this.rpeExercise();
-    return ex ? [{ values: ex.heavyRpe, color: 'var(--warn-ink)', area: true }] : [];
+    return ex ? [{ values: ex.heavyRpe, color: 'var(--warn-ink)', area: true, name: 'RPE série la plus lourde' }] : [];
   });
 
   readonly stalled = computed(() => (this.data()?.strength.exercises ?? []).filter((e) => e.weighted && e.flatWeeks >= 3));

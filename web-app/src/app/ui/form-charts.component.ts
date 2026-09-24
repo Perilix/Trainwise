@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
 
 import { hostWidth } from './host-width';
 
@@ -10,6 +10,20 @@ import { hostWidth } from './host-width';
 
 const LBL = `
   :host { display: block; width: 100%; }
+  .plot { position: relative; touch-action: pan-y; cursor: crosshair; }
+  .guide { stroke: var(--text3); stroke-width: 1; stroke-dasharray: 3 3; pointer-events: none; }
+  .tip {
+    position: absolute; top: 2px; z-index: 2; pointer-events: none;
+    min-width: 132px; max-width: 240px; padding: 8px 10px; border-radius: 10px;
+    background: var(--surface); border: 1px solid var(--border-strong);
+    box-shadow: 0 8px 24px rgba(5, 25, 35, 0.14);
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .tip.flip { transform: translateX(-100%); }
+  .tip-title { font-size: 12px; line-height: 16px; font-weight: 600; color: var(--ink); }
+  .tip-row { display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; color: var(--text2); white-space: nowrap; }
+  .tip-row b { margin-left: auto; padding-left: 10px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .tip-dot { width: 8px; height: 8px; border-radius: 3px; flex-shrink: 0; }
   svg { display: block; width: 100%; overflow: visible; }
   .lbl { font-size: 11px; fill: var(--text3); font-family: 'Poppins', sans-serif; }
   .lbl.on { fill: var(--ink); font-weight: 600; }
@@ -17,6 +31,64 @@ const LBL = `
 `;
 
 const r1 = (v: number) => Math.round(v * 10) / 10;
+const num = (v: number, digits = 1) => String(Number(v.toFixed(digits))).replace('.', ',');
+
+// ---------------------------------------------------------------------------
+// Infobulle : survol à la souris, toucher sur écran tactile
+// ---------------------------------------------------------------------------
+
+/** Une colonne du graphique et ce que l'infobulle en dit. */
+export type TipColumn = { x: number; title: string; rows: { label: string; value: string; color?: string }[] };
+
+/** L'infobulle de chaque graphique : la colonne la plus proche du pointeur. */
+const TIP = `
+  @if (tipAt(); as t) {
+    <div class="tip" [class.flip]="t.x > width() / 2" [style.left.px]="t.x > width() / 2 ? t.x - 10 : t.x + 10" role="status">
+      <span class="tip-title">{{ t.title }}</span>
+      @for (row of t.rows; track $index) {
+        <span class="tip-row">
+          @if (row.color) {
+            <span class="tip-dot" [style.background]="row.color"></span>
+          }
+          {{ row.label }}<b>{{ row.value }}</b>
+        </span>
+      }
+    </div>
+  }
+`;
+const GUIDE = `
+  @if (tipAt(); as t) {
+    <line class="guide" [attr.x1]="t.x" [attr.x2]="t.x" y1="4" [attr.y2]="height() - 22" />
+  }
+`;
+
+abstract class Tipped {
+  readonly active = signal<number | null>(null);
+  abstract readonly width: () => number;
+  abstract readonly tips: () => TipColumn[];
+
+  tipAt(): TipColumn | null {
+    const i = this.active();
+    return i == null ? null : (this.tips()[i] ?? null);
+  }
+
+  move(event: PointerEvent) {
+    const cols = this.tips();
+    if (!cols.length) return;
+    const px = event.clientX - (event.currentTarget as HTMLElement).getBoundingClientRect().left;
+    let best = 0;
+    cols.forEach((col, i) => {
+      if (Math.abs(col.x - px) < Math.abs(cols[best].x - px)) best = i;
+    });
+    this.active.set(best);
+  }
+
+  leave() {
+    this.active.set(null);
+  }
+}
+
+const PLOT_OPEN = `<div class="plot" (pointermove)="move($event)" (pointerdown)="move($event)" (pointerleave)="leave()">`;
 
 /** Graduations « rondes » entre 0 (ou min) et un max. */
 function niceTicks(min: number, max: number, count = 4): number[] {
@@ -35,7 +107,7 @@ function niceTicks(min: number, max: number, count = 4): number[] {
 // Charge d'entraînement : barres, semaine prévue hachurée, charge habituelle, zone
 // ---------------------------------------------------------------------------
 
-export type LoadWeek = { label: string; total: number; habitual: number | null; low: number | null; high: number | null };
+export type LoadWeek = { label: string; total: number; run?: number; strength?: number; habitual: number | null; low: number | null; high: number | null };
 
 @Component({
   selector: 'tw-load-chart',
@@ -43,6 +115,7 @@ export type LoadWeek = { label: string; total: number; habitual: number | null; 
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (model(); as m) {
+      ${PLOT_OPEN}
       <svg [attr.height]="height()" [attr.viewBox]="'0 0 ' + width() + ' ' + height()" role="img" aria-label="Charge d’entraînement par semaine">
         <defs>
           <pattern [attr.id]="hatchId" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
@@ -74,12 +147,15 @@ export type LoadWeek = { label: string; total: number; habitual: number | null; 
           <circle [attr.cx]="a.x" [attr.cy]="a.y" r="7" fill="var(--warn-ink)" />
           <text [attr.x]="a.x" [attr.y]="a.y + 3.5" text-anchor="middle" font-size="10" font-weight="700" fill="var(--surface)">!</text>
         }
+      ${GUIDE}
       </svg>
+      ${TIP}
+      </div>
     }
   `,
   styles: [LBL],
 })
-export class LoadChartComponent {
+export class LoadChartComponent extends Tipped {
   readonly weeks = input.required<LoadWeek[]>();
   /** Ce qui reste prévu cette semaine, empilé sur la dernière barre. */
   readonly remaining = input(0);
@@ -135,15 +211,34 @@ export class LoadChartComponent {
     const last = all[all.length - 1];
     const alert = last.next && last.high != null && last.planned > last.high ? { x: r1(cx(all.length - 1)), y: r1(y(last.planned) - 12) } : null;
 
-    return { left, ticks: ticks.map((value) => ({ value, y: r1(y(value)) })), bars, bw: r1(bw), band, habitual, alert };
+    const tips: TipColumn[] = all.map((w, i) => {
+      const zone = w.low != null && w.high != null ? [{ label: 'Zone de progression', value: `${w.low}–${w.high} pts`, color: 'color-mix(in srgb, var(--success) 35%, transparent)' }] : [];
+      if (w.next) return { x: r1(cx(i)), title: `${w.label} · semaine prochaine`, rows: [{ label: 'Prévu', value: `${Math.round(w.planned)} pts`, color: 'var(--accent)' }, ...zone] };
+      const split = w.run != null && w.strength != null && w.run > 0 && w.strength > 0 ? [{ label: '· dont course', value: `${Math.round(w.run)} pts` }, { label: '· dont muscu', value: `${Math.round(w.strength)} pts` }] : [];
+      return {
+        x: r1(cx(i)),
+        title: i === all.length - (all.some((a) => a.next) ? 2 : 1) ? `${w.label} · en cours` : w.label,
+        rows: [
+          { label: 'Réalisé', value: `${Math.round(w.total)} pts`, color: 'var(--accent)' },
+          ...split,
+          ...(w.planned ? [{ label: 'Encore prévu', value: `${Math.round(w.planned)} pts` }] : []),
+          ...(w.habitual != null ? [{ label: 'Charge habituelle', value: `${Math.round(w.habitual)} pts`, color: 'var(--ink)' }] : []),
+          ...zone,
+        ],
+      };
+    });
+
+    return { left, ticks: ticks.map((value) => ({ value, y: r1(y(value)) })), bars, bw: r1(bw), band, habitual, alert, tips };
   });
+
+  readonly tips = computed(() => this.model()?.tips ?? []);
 }
 
 // ---------------------------------------------------------------------------
 // Courbe(s) semaine par semaine
 // ---------------------------------------------------------------------------
 
-export type LineSeries = { values: (number | null)[]; color: string; area?: boolean; dashed?: boolean };
+export type LineSeries = { values: (number | null)[]; color: string; area?: boolean; dashed?: boolean; /** Nom dans l'infobulle. */ name?: string };
 
 @Component({
   selector: 'tw-trend-chart',
@@ -151,6 +246,7 @@ export type LineSeries = { values: (number | null)[]; color: string; area?: bool
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (model(); as m) {
+      ${PLOT_OPEN}
       <svg [attr.height]="height()" [attr.viewBox]="'0 0 ' + width() + ' ' + height()" role="img" [attr.aria-label]="label()">
         @for (t of m.ticks; track t.value) {
           <line [attr.x1]="m.left" [attr.x2]="width()" [attr.y1]="t.y" [attr.y2]="t.y" stroke="var(--border)" />
@@ -175,14 +271,17 @@ export type LineSeries = { values: (number | null)[]; color: string; area?: bool
             <circle [attr.cx]="p.x" [attr.cy]="p.y" [attr.r]="$last ? 4.5 : 3" [attr.fill]="s.color" stroke="var(--surface)" stroke-width="1.5" />
           }
         }
+      ${GUIDE}
       </svg>
+      ${TIP}
+      </div>
     } @else {
       <p class="small muted empty">{{ emptyText() }}</p>
     }
   `,
   styles: [LBL + ` .empty { margin: 12px 0 0; }`],
 })
-export class TrendChartComponent {
+export class TrendChartComponent extends Tipped {
   readonly labels = input.required<string[]>();
   readonly series = input.required<LineSeries[]>();
   readonly height = input(190);
@@ -229,14 +328,31 @@ export class TrendChartComponent {
       .map((text, i) => ({ text, x: r1(x(i)), anchor: i === labels.length - 1 && this.compact() ? 'end' : 'middle', i }))
       .filter((l) => (labels.length - 1 - l.i) % every === 0);
 
+    const refLabel = this.refLabel();
+    const tips: TipColumn[] = labels.map((title, i) => ({
+      x: r1(x(i)),
+      title,
+      rows: [
+        ...this.series().map((s) => ({
+          label: s.name ?? 'Valeur',
+          value: s.values[i] == null ? '—' : `${num(s.values[i]!)}${unit ? ' ' + unit : ''}`,
+          color: s.color,
+        })),
+        ...(ref != null && refLabel ? [{ label: refLabel.split('·')[0].trim(), value: `${num(ref)}${unit ? ' ' + unit : ''}` }] : []),
+      ],
+    }));
+
     return {
       left,
       ticks: ticks.map((value) => ({ value, y: r1(y(value)), text: `${String(value).replace('.', ',')}${unit ? ' ' + unit : ''}` })),
       ref: ref != null ? { y: r1(y(ref)) } : null,
       series,
       xLabels,
+      tips,
     };
   });
+
+  readonly tips = computed(() => this.model()?.tips ?? []);
 }
 
 // ---------------------------------------------------------------------------
@@ -249,6 +365,7 @@ export class TrendChartComponent {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (model(); as m) {
+      ${PLOT_OPEN}
       <svg [attr.height]="height()" [attr.viewBox]="'0 0 ' + width() + ' ' + height()" role="img" aria-label="Ressenti après chaque séance">
         <rect [attr.x]="m.left" [attr.y]="m.good.y" [attr.width]="width() - m.left" [attr.height]="m.good.h" fill="var(--success)" fill-opacity="0.07" />
         <rect [attr.x]="m.left" [attr.y]="m.bad.y" [attr.width]="width() - m.left" [attr.height]="m.bad.h" fill="var(--warn)" fill-opacity="0.08" />
@@ -265,15 +382,18 @@ export class TrendChartComponent {
         @for (l of m.xLabels; track $index) {
           <text [attr.x]="l.x" [attr.y]="height() - 6" [attr.text-anchor]="l.anchor" class="lbl">{{ l.text }}</text>
         }
+      ${GUIDE}
       </svg>
+      ${TIP}
+      </div>
     } @else {
       <p class="small muted empty">Pas encore de ressenti noté sur la période.</p>
     }
   `,
   styles: [LBL + ` .empty { margin: 12px 0 0; }`],
 })
-export class FeelingChartComponent {
-  readonly points = input.required<{ date: string; value: number }[]>();
+export class FeelingChartComponent extends Tipped {
+  readonly points = input.required<{ date: string; value: number; sport?: 'run' | 'strength' }[]>();
   readonly average = input<{ date: string; value: number | null }[]>([]);
   /** Début de la période affichée (AAAA-MM-JJ). */
   readonly from = input.required<string>();
@@ -311,8 +431,22 @@ export class FeelingChartComponent {
         anchor: f === 0 ? 'start' : f === 1 ? 'end' : 'middle',
         text: fmt.format(new Date(start + f * (end - start))).replace('.', ''),
       })),
+      tips: pts.map((p, i) => {
+        const mean = this.average()[i]?.value;
+        const day = new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(p.date)).replace(/\./g, '');
+        return {
+          x: r1(x(p.date)),
+          title: `${day}${p.sport ? ` · ${p.sport === 'strength' ? 'muscu' : 'course'}` : ''}`,
+          rows: [
+            { label: 'Ressenti', value: `${p.value}/10`, color: p.value >= 7 ? 'var(--success)' : p.value <= 4 ? 'var(--warn-ink)' : 'var(--accent)' },
+            ...(mean != null ? [{ label: 'Moyenne sur 7 jours', value: `${num(mean)}/10`, color: 'var(--ink)' }] : []),
+          ],
+        };
+      }),
     };
   });
+
+  readonly tips = computed(() => this.model()?.tips ?? []);
 }
 
 // ---------------------------------------------------------------------------
@@ -325,6 +459,7 @@ export class FeelingChartComponent {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (model(); as m) {
+      ${PLOT_OPEN}
       <svg [attr.height]="height()" [attr.viewBox]="'0 0 ' + width() + ' ' + height()" role="img" [attr.aria-label]="label()">
         @for (t of m.ticks; track t.value) {
           <line [attr.x1]="m.left" [attr.x2]="width()" [attr.y1]="t.y" [attr.y2]="t.y" stroke="var(--border)" />
@@ -338,18 +473,23 @@ export class FeelingChartComponent {
             <text [attr.x]="b.cx" [attr.y]="height() - 6" text-anchor="middle" class="lbl">{{ b.label }}</text>
           }
         }
+      ${GUIDE}
       </svg>
+      ${TIP}
+      </div>
     } @else {
       <p class="small muted empty">{{ emptyText() }}</p>
     }
   `,
   styles: [LBL + ` .empty { margin: 12px 0 0; }`],
 })
-export class StackChartComponent {
+export class StackChartComponent extends Tipped {
   readonly labels = input.required<string[]>();
   /** Une ligne par barre, une valeur par couleur. */
   readonly stacks = input.required<number[][]>();
   readonly colors = input.required<string[]>();
+  /** Nom de chaque couleur, pour l'infobulle. */
+  readonly names = input<string[]>([]);
   readonly height = input(180);
   readonly unit = input('');
   readonly label = input('Barres');
@@ -399,8 +539,23 @@ export class StackChartComponent {
             .filter((p): p is { y: number; h: number; color: string } => !!p),
         };
       }),
+      tips: stacks.map((parts, i) => {
+        const names = this.names();
+        const u = unit.trim();
+        const withUnit = (v: number) => `${num(v)}${u ? ' ' + u : ''}`;
+        return {
+          x: r1(left + cw * (i + 0.5)),
+          title: labels[i],
+          rows: [
+            ...(parts.length > 1 ? parts.map((v, k) => ({ label: names[k] ?? '', value: withUnit(v), color: colors[k] })) : []),
+            { label: 'Total', value: withUnit(totals[i]), color: parts.length > 1 ? undefined : colors[0] },
+          ],
+        };
+      }),
     };
   });
+
+  readonly tips = computed(() => this.model()?.tips ?? []);
 }
 
 // ---------------------------------------------------------------------------
