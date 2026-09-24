@@ -45,8 +45,8 @@ const PLANS = [
     pitch: 'Club, team, fédération.',
     monthly: 119,
     yearlyMonthly: 99,
-    limits: { athletes: null, groups: null, customAlerts: true },
-    features: ['Athlètes sans limite', 'Tout le plan Studio', 'Accompagnement à la mise en route', 'Facturation sur demande'],
+    limits: { athletes: 100, groups: null, customAlerts: true },
+    features: ['Jusqu’à 100 athlètes', 'Tout le plan Studio', 'Accompagnement à la mise en route', 'Facturation sur demande'],
     prices: { monthly: process.env.STRIPE_PRICE_CLUB_MONTHLY, yearly: process.env.STRIPE_PRICE_CLUB_YEARLY }
   }
 ];

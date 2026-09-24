@@ -413,7 +413,7 @@ export const sampleCoachBilling: ApiCoachBilling = {
     { id: 'decouverte', name: 'Découverte', athletes: 3, groups: 0, customAlerts: false },
     { id: 'coach', name: 'Coach', athletes: 15, groups: 3, customAlerts: false },
     { id: 'studio', name: 'Studio', athletes: 40, groups: null, customAlerts: true },
-    { id: 'club', name: 'Club', athletes: null, groups: null, customAlerts: true },
+    { id: 'club', name: 'Club', athletes: 100, groups: null, customAlerts: true },
   ],
   subscription: { planId: 'coach', cycle: 'monthly', status: 'active', renewsOn: '2026-10-19T00:00:00.000Z', cancelAtPeriodEnd: false, managed: true },
   usage: { athletes: 4, athleteLimit: 15, groups: 2, groupLimit: 3 },

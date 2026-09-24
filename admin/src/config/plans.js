@@ -10,7 +10,7 @@ const PLANS = [
   { id: 'decouverte', name: 'Découverte', athletes: 3, groups: 0, customAlerts: false, monthly: 0 },
   { id: 'coach', name: 'Coach', athletes: 15, groups: 3, customAlerts: false, monthly: 29 },
   { id: 'studio', name: 'Studio', athletes: 40, groups: null, customAlerts: true, monthly: 59 },
-  { id: 'club', name: 'Club', athletes: null, groups: null, customAlerts: true, monthly: 119 }
+  { id: 'club', name: 'Club', athletes: 100, groups: null, customAlerts: true, monthly: 119 }
 ];
 
 const FREE_PLAN_ID = 'decouverte';

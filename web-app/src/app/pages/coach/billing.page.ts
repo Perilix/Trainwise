@@ -78,7 +78,7 @@ import { StateViewComponent } from '../../ui/state-view.component';
                 } @else if (state.usage.athleteLimit) {
                   <span class="small muted">Il vous reste {{ state.usage.athleteLimit - state.usage.athletes }} places sur ce plan.</span>
                 } @else {
-                  <span class="small muted">Athlètes sans limite.</span>
+                  <span class="small muted">Jusqu’à 100 athlètes.</span>
                 }
               </div>
 
