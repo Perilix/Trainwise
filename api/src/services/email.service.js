@@ -1,16 +1,27 @@
 const nodemailer = require('nodemailer');
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD
-  }
-});
+// Un serveur SMTP du domaine (SMTP_HOST…) quand il est configuré, sinon le Gmail historique.
+const transporter = nodemailer.createTransport(
+  process.env.SMTP_HOST
+    ? {
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT) || 465,
+        secure: (Number(process.env.SMTP_PORT) || 465) === 465,
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD }
+      }
+    : { service: 'gmail', auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASSWORD } }
+);
+
+/** L'adresse qui envoie les mails, et à laquelle les coachs répondent. */
+const senderAddress = () => process.env.MAIL_FROM || process.env.SMTP_USER || process.env.EMAIL_USER;
+exports.senderAddress = senderAddress;
+
+/** Envoie un mail depuis l'adresse de l'application. */
+exports.send = (options) => transporter.sendMail({ from: `"Trainwise" <${senderAddress()}>`, ...options });
 
 exports.sendPasswordResetEmail = async (email, resetUrl) => {
   const mailOptions = {
-    from: `"Trainwise" <${process.env.EMAIL_USER}>`,
+    from: `"Trainwise" <${senderAddress()}>`,
     to: email,
     subject: 'Réinitialisation de votre mot de passe - Trainwise',
     html: `
