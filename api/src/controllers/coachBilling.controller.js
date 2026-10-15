@@ -4,6 +4,7 @@ const User = require('../models/user.model');
 const { PLANS, FREE_PLAN_ID, planById, planByPriceId, priceIdOf, publicPlan } = require('../config/plans');
 const { groupRoom, countAthletes, planOf } = require('../services/coachPlan.service');
 const { DEFAULT_RULES } = require('../services/athleteStatus.service');
+const billingEmail = require('../services/billingEmail.service');
 
 let client = null;
 
@@ -217,7 +218,7 @@ const applySubscription = async (subscription) => {
   const user =
     (await User.findOne({ 'coachBilling.customerId': subscription.customer })) ||
     (subscription.metadata?.userId ? await User.findById(subscription.metadata.userId) : null);
-  if (!user) return;
+  if (!user) return null;
 
   const ended = ['canceled', 'incomplete_expired', 'unpaid'].includes(subscription.status);
   const periodEnd = subscription.items?.data?.[0]?.current_period_end || subscription.current_period_end;
@@ -233,6 +234,7 @@ const applySubscription = async (subscription) => {
     cancelAtPeriodEnd: Boolean(subscription.cancel_at_period_end)
   };
   await user.save();
+  return user;
 };
 
 // POST /api/stripe/webhook — corps brut, signature vérifiée : c'est lui qui fait foi.
@@ -258,9 +260,13 @@ exports.webhook = async (req, res) => {
       }
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
-      case 'customer.subscription.deleted':
         await applySubscription(event.data.object);
         break;
+      case 'customer.subscription.deleted': {
+        const user = await applySubscription(event.data.object);
+        await billingEmail.onSubscriptionEnded(event.data.object, user);
+        break;
+      }
       case 'invoice.paid':
       case 'invoice.payment_failed': {
         const invoice = event.data.object;
@@ -269,6 +275,9 @@ exports.webhook = async (req, res) => {
         if (subscriptionId) {
           await applySubscription(await stripe().subscriptions.retrieve(subscriptionId));
         }
+        // Le récapitulatif part après l'enregistrement : le plan est déjà actif quand le coach le lit.
+        if (event.type === 'invoice.paid') await billingEmail.onInvoicePaid(invoice);
+        else await billingEmail.onInvoiceFailed(invoice);
         break;
       }
       default:

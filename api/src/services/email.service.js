@@ -8,6 +8,9 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+/** Envoie un mail depuis l'adresse de l'application. */
+exports.send = (options) => transporter.sendMail({ from: `"Trainwise" <${process.env.EMAIL_USER}>`, ...options });
+
 exports.sendPasswordResetEmail = async (email, resetUrl) => {
   const mailOptions = {
     from: `"Trainwise" <${process.env.EMAIL_USER}>`,
