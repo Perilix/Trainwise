@@ -53,6 +53,7 @@ const readInvoice = (invoice) => {
     hosted: invoice.hosted_invoice_url || null,
     email: invoice.customer_email,
     name: invoice.customer_name || '',
+    paidAt: invoice.status_transitions?.paid_at || invoice.created,
     firstPayment: invoice.billing_reason === 'subscription_create'
   };
 };
@@ -113,30 +114,126 @@ const buttons = (data) => `
   ${button(`${webUrl()}/coach/abonnement`, 'Gérer mon abonnement', false)}
 </div>`;
 
-/** Au coach, à chaque paiement réussi. */
+/** Les mentions du pied de facture (SIRET, TVA…), réglées par variable d'environnement. */
+const legal = () =>
+  (process.env.INVOICE_LEGAL_MENTIONS || 'TVA non applicable, art. 293 B du CGI')
+    .split('|')
+    .map((l) => escape(l.trim()))
+    .join('<br>');
+
+const cell = (content, { align = 'left', color = INK, size = 14, weight = 400, pad = '14px 0', line = false, caps = false } = {}) =>
+  `<td align="${align}" style="padding:${pad};font-size:${size}px;line-height:20px;font-weight:${weight};color:${color};${
+    line ? `border-bottom:1px solid ${BORDER};` : ''
+  }${caps ? 'letter-spacing:1px;text-transform:uppercase;' : ''}">${content}</td>`;
+
+const totalRow = (label, value, { strong = false, color } = {}) => `<tr>
+  <td></td>
+  ${cell(label, { color: strong ? INK : TEXT2, size: strong ? 15 : 13, weight: strong ? 700 : 400, pad: strong ? '14px 0 0 0' : '5px 0' })}
+  ${cell(value, { align: 'right', color: color || (strong ? NAVY : INK), size: strong ? 18 : 13, weight: strong ? 800 : 500, pad: strong ? '14px 0 0 0' : '5px 0' })}
+</tr>`;
+
+/** Au coach, à chaque paiement réussi : une facture en bonne et due forme. */
 const paymentReceived = (data) => {
   const prenom = data.name.split(' ')[0];
-  const hello = prenom ? `Bonjour ${escape(prenom)},` : 'Bonjour,';
-  return data.firstPayment
-    ? {
-        subject: `Bienvenue dans ${data.planName} 🎉`,
-        html: layout({
-          overline: 'Abonnement activé',
-          title: `Bienvenue dans ${escape(data.planName)}`,
-          intro: `${hello}<br><br>Merci pour votre confiance ! Votre abonnement est actif dès maintenant : vous pouvez inviter vos athlètes et construire leur planning. Voici le récapitulatif de votre paiement.`,
-          body: `${recapCard(data)}${buttons(data)}
-            <p style="margin:18px 0 0 0;font-size:14px;line-height:22px;color:${TEXT2};">Je lis chaque réponse à ce mail : une question, une idée, un bug, écrivez-moi.<br>Julien, fondateur de Trainwise</p>`
-        })
-      }
-    : {
-        subject: `Votre reçu Trainwise · ${euros(data.total)}`,
-        html: layout({
-          overline: 'Paiement reçu',
-          title: `Merci, c'est réglé`,
-          intro: `${hello}<br><br>Votre paiement pour ${escape(data.planName)} est bien passé. Votre abonnement continue sans interruption.`,
-          body: `${recapCard(data)}${buttons(data)}`
-        })
-      };
+  const lead = data.firstPayment
+    ? `${prenom ? `Bienvenue ${escape(prenom)} ! ` : 'Bienvenue ! '}Votre abonnement ${escape(data.planName)} est actif : vous pouvez inviter vos athlètes et construire leur planning dès maintenant.`
+    : `${prenom ? `Merci ${escape(prenom)}, ` : 'Merci, '}votre paiement est bien passé et votre abonnement continue sans interruption.`;
+
+  const html = `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="color-scheme" content="light"><title>Facture ${escape(data.number)}</title></head>
+<body style="margin:0;padding:0;background-color:${BEIGE};">
+<div style="display:none;max-height:0;overflow:hidden;">Facture ${escape(data.number)} · ${euros(data.total)} payés · ${escape(data.planName)}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${BEIGE}" style="background-color:${BEIGE};">
+<tr><td align="center" style="padding:36px 12px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+
+  <!-- En-tête -->
+  <tr><td bgcolor="${NAVY}" style="background-color:${NAVY};border-radius:20px 20px 0 0;padding:28px 34px 34px 34px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td style="vertical-align:middle;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td style="padding-right:12px;vertical-align:middle;"><img src="${LOGO}" width="36" height="36" alt="Trainwise" style="display:block;border-radius:9px;border:0;"></td>
+          <td style="vertical-align:middle;font-size:20px;font-weight:800;font-style:italic;letter-spacing:-0.3px;"><span style="color:#FFFFFF;">Train</span><span style="color:${BLUE};">wise</span></td>
+        </tr></table>
+      </td>
+      <td align="right" style="vertical-align:middle;font-size:11px;line-height:16px;letter-spacing:1.4px;text-transform:uppercase;color:#7FD3FD;font-weight:700;">Facture<br><span style="letter-spacing:0.4px;color:#FFFFFF;font-size:13px;font-weight:600;text-transform:none;">${escape(data.number)}</span></td>
+    </tr></table>
+
+    <div style="height:1px;line-height:1px;font-size:0;background-color:#1D4E6C;margin:26px 0 24px 0;">&nbsp;</div>
+
+    <div style="font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#9FB7C7;font-weight:600;">Montant payé</div>
+    <div style="padding-top:6px;font-size:42px;line-height:48px;font-weight:800;letter-spacing:-1px;color:#FFFFFF;">${euros(data.total)}</div>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:14px;"><tr>
+      <td bgcolor="#0E5B45" style="background-color:#0E5B45;border-radius:999px;padding:5px 12px;font-size:12px;font-weight:700;color:#7CF0C5;">&#10003;&nbsp; Payée</td>
+      <td style="padding-left:12px;font-size:13px;color:#9FB7C7;">le ${day(data.paidAt)}</td>
+    </tr></table>
+  </td></tr>
+
+  <!-- Corps -->
+  <tr><td bgcolor="#FFFFFF" style="background-color:#FFFFFF;border-left:1px solid ${BORDER};border-right:1px solid ${BORDER};padding:30px 34px 6px 34px;">
+    <p style="margin:0 0 28px 0;font-size:15px;line-height:24px;color:${INK};">${lead}</p>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td width="50%" valign="top" style="padding-right:12px;">
+        <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:${TEXT2};font-weight:700;padding-bottom:6px;">Facturé à</div>
+        <div style="font-size:14px;line-height:21px;color:${INK};font-weight:600;">${escape(data.name || data.email)}</div>
+        ${data.name ? `<div style="font-size:13px;line-height:20px;color:${TEXT2};">${escape(data.email)}</div>` : ''}
+      </td>
+      <td width="50%" valign="top" style="padding-left:12px;">
+        <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:${TEXT2};font-weight:700;padding-bottom:6px;">Émis par</div>
+        <div style="font-size:14px;line-height:21px;color:${INK};font-weight:600;">Trainwise</div>
+        <div style="font-size:13px;line-height:20px;color:${TEXT2};">${escape(founderEmail())}</div>
+      </td>
+    </tr></table>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:30px;border-collapse:collapse;">
+      <tr>
+        ${cell('Description', { size: 11, weight: 700, color: TEXT2, pad: '0 0 10px 0', line: true, caps: true })}
+        ${cell('Période', { size: 11, weight: 700, color: TEXT2, pad: '0 0 10px 0', line: true, caps: true })}
+        ${cell('Montant', { align: 'right', size: 11, weight: 700, color: TEXT2, pad: '0 0 10px 0', line: true, caps: true })}
+      </tr>
+      <tr>
+        ${cell(`<b>${escape(data.planName)}</b><br><span style="color:${TEXT2};font-size:13px;">Abonnement ${data.cycle}</span>`, { line: true })}
+        ${cell(data.periodStart ? `${day(data.periodStart)}<br><span style="color:${TEXT2};font-size:13px;">au ${day(data.periodEnd)}</span>` : '—', { size: 13, line: true })}
+        ${cell(euros(data.subtotal), { align: 'right', weight: 600, line: true })}
+      </tr>
+      ${totalRow('Sous-total', euros(data.subtotal))}
+      ${data.discount ? totalRow('Remise de lancement', `− ${euros(data.discount)}`, { color: '#0E7A5A' }) : ''}
+      ${totalRow('TVA', '0,00 €')}
+      ${totalRow('Total payé', euros(data.total), { strong: true })}
+    </table>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:30px;"><tr><td>
+      ${data.pdf ? button(data.pdf, 'Télécharger la facture PDF') : data.hosted ? button(data.hosted, 'Voir la facture') : ''}
+      ${button(`${webUrl()}/coach/abonnement`, 'Gérer mon abonnement', false)}
+    </td></tr></table>
+  </td></tr>
+
+  <!-- Mot du fondateur -->
+  <tr><td bgcolor="#FFFFFF" style="background-color:#FFFFFF;border-left:1px solid ${BORDER};border-right:1px solid ${BORDER};border-bottom:1px solid ${BORDER};border-radius:0 0 20px 20px;padding:10px 34px 30px 34px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${BEIGE}" style="background-color:${BEIGE};border-radius:14px;"><tr>
+      <td style="padding:16px 18px;font-size:13px;line-height:20px;color:${TEXT2};">
+        <b style="color:${NAVY};">Une question sur votre facture ?</b><br>Répondez simplement à ce mail : c'est moi qui vous réponds.<br><span style="color:${INK};">Julien, fondateur de Trainwise</span>
+      </td>
+    </tr></table>
+  </td></tr>
+
+  <!-- Mentions -->
+  <tr><td align="center" style="padding:22px 20px 0 20px;font-size:11px;line-height:17px;color:#8A939D;">
+    ${legal()}<br>
+    Paiement sécurisé par Stripe · <a href="${webUrl()}" style="color:#0077B6;text-decoration:none;">trainwise-app.com</a>
+  </td></tr>
+
+</table>
+</td></tr></table>
+</body></html>`;
+
+  return {
+    subject: data.firstPayment
+      ? `Bienvenue dans ${data.planName} · facture ${data.number}`
+      : `Facture ${data.number} · ${euros(data.total)} payés`,
+    html
+  };
 };
 
 /** Au coach, quand le prélèvement est refusé. */
