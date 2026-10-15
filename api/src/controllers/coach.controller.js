@@ -18,10 +18,12 @@ const generateUniqueCode = () => {
 // Obtenir la liste des athlètes du coach
 exports.getAthletes = async (req, res) => {
   try {
-    const relationships = await CoachAthlete.find({
+    // Un compte supprimé laisse une relation qui ne pointe plus sur personne : on l'ignore.
+    const relationships = (await CoachAthlete.find({
       coach: req.user._id,
       status: 'accepted'
-    }).populate('athlete', 'firstName lastName email profilePicture runningLevel vma');
+    }).populate('athlete', 'firstName lastName email profilePicture runningLevel vma'))
+      .filter(rel => rel.athlete);
 
     // Récupérer la prochaine compétition de chaque athlète en une seule requête
     const athleteIds = relationships.map(rel => rel.athlete._id);
@@ -873,7 +875,7 @@ exports.getSubscriptionRequests = async (req, res) => {
     }).populate('athlete', 'firstName lastName email profilePicture runningLevel vma')
       .sort({ invitedAt: -1 });
 
-    res.json(requests);
+    res.json(requests.filter(r => r.athlete));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -950,7 +952,7 @@ exports.getPendingInvitations = async (req, res) => {
       status: 'pending'
     }).populate('athlete', 'firstName lastName email profilePicture');
 
-    res.json(invitations);
+    res.json(invitations.filter(i => i.athlete));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
