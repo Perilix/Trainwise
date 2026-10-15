@@ -22,6 +22,8 @@ const LOGO = 'https://www.trainwise-app.com/icon.png';
 
 const webUrl = () => (process.env.FRONTEND_URL || 'https://www.trainwise-app.com').replace(/\/$/, '');
 const founderEmail = () => process.env.BILLING_NOTIFY_EMAIL || 'julien@trainwise-app.com';
+// L'adresse affichée sur la facture et qui reçoit les réponses des coachs.
+const contactEmail = () => process.env.MAIL_FROM || 'contact@trainwise-app.com';
 
 const euros = (cents) =>
   typeof cents === 'number'
@@ -182,7 +184,7 @@ const paymentReceived = (data) => {
       <td width="50%" valign="top" style="padding-left:12px;">
         <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:${TEXT2};font-weight:700;padding-bottom:6px;">Émis par</div>
         <div style="font-size:14px;line-height:21px;color:${INK};font-weight:600;">Trainwise</div>
-        <div style="font-size:13px;line-height:20px;color:${TEXT2};">${escape(founderEmail())}</div>
+        <div style="font-size:13px;line-height:20px;color:${TEXT2};">${escape(contactEmail())}</div>
       </td>
     </tr></table>
 
@@ -270,7 +272,7 @@ exports.onInvoicePaid = (invoice) =>
   safely('paiement reçu', async () => {
     if (!invoice.amount_paid) return; // facture à 0 € : rien à récapituler
     const data = readInvoice(invoice);
-    if (data.email) await send({ to: data.email, replyTo: founderEmail(), ...paymentReceived(data) });
+    if (data.email) await send({ to: data.email, replyTo: contactEmail(), ...paymentReceived(data) });
     if (data.firstPayment) {
       await send({
         to: founderEmail(),
@@ -286,7 +288,7 @@ exports.onInvoicePaid = (invoice) =>
 exports.onInvoiceFailed = (invoice) =>
   safely('paiement refusé', async () => {
     const data = readInvoice(invoice);
-    if (data.email) await send({ to: data.email, replyTo: founderEmail(), ...paymentFailed(data) });
+    if (data.email) await send({ to: data.email, replyTo: contactEmail(), ...paymentFailed(data) });
     await send({
       to: founderEmail(),
       ...founderAlert(`⚠️ Paiement refusé : ${data.name || data.email}`, [
