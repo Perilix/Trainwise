@@ -174,6 +174,8 @@ router.post('/:id/onboarding', requireAuth, async (req, res) => {
 // ── Delete user ──────────────────────────────────────────────
 router.post('/:id/delete', requireAuth, async (req, res) => {
   await User.findByIdAndDelete(req.params.id);
+  // Sans ça, le coach garde une relation vers un compte qui n'existe plus.
+  await CoachAthlete.deleteMany({ $or: [{ coach: req.params.id }, { athlete: req.params.id }] });
   res.redirect('/users?deleted=1');
 });
 

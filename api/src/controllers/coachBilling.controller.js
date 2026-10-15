@@ -16,9 +16,37 @@ const stripe = () => {
 
 const webUrl = () => (process.env.FRONTEND_URL || 'http://localhost:4200').replace(/\/$/, '');
 
+/**
+ * Oublie le client Stripe du coach s'il n'existe plus de l'autre côté : c'est le
+ * cas d'un compte qui a payé en mode test quand l'API passe sur les clés Live.
+ * Son abonnement de test part avec lui, et le coach repasse sur Découverte.
+ * Renvoie le client Stripe quand il existe.
+ */
+const liveCustomerOf = async (user, options = {}) => {
+  const id = user.coachBilling?.customerId;
+  if (!id) return null;
+  const customer = await stripe().customers.retrieve(id, options).catch((error) => {
+    if (error.code === 'resource_missing') return null;
+    throw error;
+  });
+  if (customer && !customer.deleted) return customer;
+
+  Object.assign(user.coachBilling, {
+    customerId: null,
+    subscriptionId: null,
+    planId: FREE_PLAN_ID,
+    status: 'active',
+    currentPeriodEnd: null,
+    cancelAtPeriodEnd: false
+  });
+  await user.save();
+  return null;
+};
+
 /** Le client Stripe du coach, créé à la volée la première fois qu'il paie. */
 const customerIdOf = async (user) => {
-  if (user.coachBilling?.customerId) return user.coachBilling.customerId;
+  const existing = await liveCustomerOf(user);
+  if (existing) return existing.id;
   if (!user.coachBilling) user.coachBilling = {};
   const customer = await stripe().customers.create({
     email: user.email,
@@ -38,6 +66,10 @@ exports.getBilling = async (req, res) => {
     const user = await User.findById(req.user._id).select('coachBilling email firstName lastName');
     if (!user) return res.status(404).json({ error: 'Compte introuvable' });
 
+    // À lire avant le plan : un client disparu de Stripe ramène le coach sur Découverte.
+    const customer = stripe()
+      ? await liveCustomerOf(user, { expand: ['invoice_settings.default_payment_method'] })
+      : null;
     const plan = planOf(user);
     const billing = user.coachBilling || {};
     const [athletes, groups] = await Promise.all([countAthletes(user._id), groupRoom(user._id)]);
@@ -46,11 +78,8 @@ exports.getBilling = async (req, res) => {
     let invoices = [];
 
     // Les factures et la carte vivent chez Stripe : on ne les recopie pas.
-    if (stripe() && billing.customerId) {
-      const [list, customer] = await Promise.all([
-        stripe().invoices.list({ customer: billing.customerId, limit: 6 }),
-        stripe().customers.retrieve(billing.customerId, { expand: ['invoice_settings.default_payment_method'] })
-      ]);
+    if (customer) {
+      const list = await stripe().invoices.list({ customer: customer.id, limit: 6 });
       invoices = list.data.map((invoice) => ({
         id: invoice.number || invoice.id,
         date: invoice.created ? new Date(invoice.created * 1000).toISOString().slice(0, 10) : null,
@@ -140,7 +169,8 @@ exports.createCheckout = async (req, res) => {
       client_reference_id: user._id.toString(),
       line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: { metadata: { userId: user._id.toString(), planId: plan.id, cycle } },
-      allow_promotion_codes: true,
+      // Le code de lancement vaut 2 mois à -50 % : sur l'annuel, il offrirait 6 mois.
+      allow_promotion_codes: cycle === 'monthly',
       locale: 'fr',
       integration_identifier: 'trainwise-coach-qkvzmhrd',
       success_url: `${back}?paiement=ok`,

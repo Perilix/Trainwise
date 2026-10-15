@@ -12,7 +12,7 @@ exports.getPendingInvitations = async (req, res) => {
       status: 'pending'
     }).populate('coach', 'firstName lastName email profilePicture');
 
-    res.json(invitations);
+    res.json(invitations.filter(i => i.coach));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -240,7 +240,8 @@ exports.getCurrentCoach = async (req, res) => {
       status: 'accepted'
     }).populate('coach', 'firstName lastName email profilePicture');
 
-    if (!relationship) {
+    // Coach supprimé : la relation reste en base mais ne mène plus à personne.
+    if (!relationship?.coach) {
       return res.json(null);
     }
 
