@@ -253,9 +253,9 @@ let ACTIVE = null, ACTIVE_ID = "julien"; try { const e = localStorage.getItem("b
 const AGENTS = [
   { id: "radar", nom: "Radar", role: "Chercheur de coachs", pole: "Recherche", init: "R", color: "#00A6FB", desk: [-9, -5], aisle: -2.4,
     station: { label: "Carte des zones", stand: [-12.2, -2.6], face: -Math.PI / 2 }, fx: "pin",
-    mission: "Trouve chaque semaine une cinquantaine de coachs d'endurance dans le secteur {secteur}, en priorité ceux qui ont un email public, et les ajoute au Sheet.",
+    mission: "Trouve chaque semaine une cinquantaine de coachs d'endurance dans le secteur {secteur}, en priorité ceux qui ont un email public, et les ajoute au fichier du bureau. Une consigne précise une zone, une discipline ou un nombre (20 par défaut).",
     rythme: "Chaque lundi (50 contacts), ou sur ordre",
-    steps: ["Choisit une zone", "Cherche les coachs sur le web", "Trouve un email public", "Ajoute la ligne au Sheet"],
+    steps: ["Choisit une zone", "Cherche les coachs sur le web", "Trouve un email public", "Ajoute les coachs au fichier"],
     actions: [{ id: "chercher", label: "Lancer une recherche", sel: false, hint: "Ex. : 20 coachs trail autour de Lyon, emails seulement" }] },
   { id: "allo", nom: "Allô", role: "Réponses et appels", pole: "Appels", init: "A", color: "#10B981", desk: [-4.5, -5], aisle: -2.4,
     station: { label: "Cabine", stand: [-7, 5.2], face: 0 }, fx: "ring",
@@ -282,11 +282,11 @@ const AGENTS = [
     rythme: "Dès que tu cliques",
     steps: ["Prend un contact à faire", "Remplit le modèle Premier email", "Programme l'envoi dans Zoho", "Passe la ligne en Programmé"],
     actions: [{ id: "programmer", label: "Programmer les emails", sel: true, hint: "Ex. : commence demain 8 h, insiste sur le suivi muscu" }] },
-  { id: "scribe", nom: "Scribe", role: "Tient le Sheet à jour", pole: "Suivi", init: "S", color: "#D4A24C", ink: "#3D2A06", desk: [6.2, 2.2], aisle: null,
+  { id: "scribe", nom: "Scribe", role: "Tient le fichier à jour", pole: "Suivi", init: "S", color: "#D4A24C", ink: "#3D2A06", desk: [6.2, 2.2], aisle: null,
     station: { label: "Sheet maître", stand: [9.6, 6.3], face: 0 }, fx: "cells",
-    mission: "Tu lui racontes ce que tu as fait (« j'ai appelé Sudrie, démo jeudi », « écrit à 3 coachs sur Instagram ») : il retrouve les coachs, te propose les nouveaux statuts, et met le Sheet à jour dès que tu valides. Les chiffres du bureau suivent.",
+    mission: "Tu lui racontes ce que tu as fait (« j'ai appelé Sudrie, démo jeudi », « écrit à 3 coachs sur Instagram ») : il retrouve les coachs et met leurs statuts et leurs notes à jour. Les chiffres du bureau suivent.",
     rythme: "Instantané, depuis cette page",
-    steps: ["Lit ce que tu racontes", "Retrouve les coachs dans le Sheet", "Te propose les changements", "Écrit dans le Sheet"],
+    steps: ["Lit ce que tu racontes", "Retrouve les coachs", "Déduit les nouveaux statuts", "Met le fichier à jour"],
     actions: [] },
 ];
 const BY_ID = Object.fromEntries(AGENTS.map(a => [a.id, a]));
@@ -596,8 +596,8 @@ const boardTex = canvasTex(900, 620, (g, w, h) => {
   g.fillStyle = "#003554"; g.fillRect(0, 0, w, h); g.fillStyle = "#00A6FB"; g.fillRect(0, h - 14, w, 14);
   g.fillStyle = "#7FD3FD"; g.font = "700 34px Poppins, sans-serif"; g.textBaseline = "top";
   g.fillText("PROSPECTION · " + E.secteur.toUpperCase() + " · S" + isoWeek(), 48, 40);
-  const rows = kpiVals ? [[kpiVals[0], "contacts dans le Sheet"], [kpiVals[3], "emails envoyés"], [kpiVals[2], "programmés"], [kpiVals[4], "réponses reçues"]]
-    : [["…", "chargement du Sheet"]];
+  const rows = kpiVals ? [[kpiVals[0], "contacts au fichier"], [kpiVals[3], "emails envoyés"], [kpiVals[2], "programmés"], [kpiVals[4], "réponses reçues"]]
+    : [["…", "chargement"]];
   rows.forEach(([n, l], i) => {
     const y = 120 + i * 118;
     g.fillStyle = i === 3 ? "#7FD3FD" : "#FFFFFF"; g.font = "700 96px Poppins, sans-serif"; g.fillText(String(n), 48, y);
@@ -1247,7 +1247,7 @@ function renderCard() {
     const pending = lies.filter(o => o.statut === "en_attente" || o.statut === "en_cours");
     const fiche = lies.find(o => o.agent === "allo" && o.action === "preparer_appel" && o.statut === "fait" && o.compte_rendu);
     const infos = [["Structure", r.structure !== r.nom ? r.structure : ""], ["Ville", r.ville], ["Spécialité", r.specialite], ["Outil actuel", r.outil], ["Canal", r.canal],
-      ["Contact", r.contact], ["Instagram", r.instagram], ["Premier message", r.envoye], ["Relance", r.relance], ["Notes", r.notes], ["Sheet", `${r.onglet}, ligne ${r.ligne}`]].filter(v => v[1]);
+      ["Contact", r.contact], ["Instagram", r.instagram], ["Premier message", r.envoye], ["Relance", r.relance], ["Notes", r.notes], ["Fichier", `${r.onglet}, ligne ${r.ligne}`]].filter(v => v[1]);
     html = cardHead(initials(r.nom), z.nom, r.nom) + `<div class="d-body">
       <div class="now"><div class="l1"><b>${esc(etat)}</b>${due ? `<span class="chip wait">Relance due</span>` : ""}</div>
         <ol class="track">${PARCOURS.map((p, i) => `<li class="${i < idx ? "past" : i === idx ? "on" : ""}">${esc(ZBY[p].court)}</li>`).join("")}${z.id === "sortie" ? `<li class="on">${esc(r.statut)}</li>` : ""}</ol></div>
