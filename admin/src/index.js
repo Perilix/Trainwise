@@ -16,6 +16,7 @@ const notificationsRoutes = require('./routes/notifications.routes');
 const feedbacksRoutes = require('./routes/feedbacks.routes');
 const contactRoutes = require('./routes/contact.routes');
 const launchRoutes = require('./routes/launch.routes');
+const bureauRoutes = require('./routes/bureau.routes');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -45,6 +46,7 @@ app.use('/notifications', notificationsRoutes);
 app.use('/feedbacks', feedbacksRoutes);
 app.use('/contact', contactRoutes);
 app.use('/launch', launchRoutes);
+app.use('/bureau', bureauRoutes);
 
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/trainwise')
   .then(() => {

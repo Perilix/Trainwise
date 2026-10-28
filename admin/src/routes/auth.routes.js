@@ -1,6 +1,7 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const User = require('../models/user.model');
+const { BureauUser } = require('../models/prospection');
 
 const router = express.Router();
 
@@ -20,11 +21,13 @@ const loginLimiter = rateLimit({
 
 router.get('/', (req, res) => {
   if (req.session.adminId) return res.redirect('/dashboard');
+  if (req.session.bureau) return res.redirect('/bureau');
   res.redirect('/login');
 });
 
 router.get('/login', (req, res) => {
   if (req.session.adminId) return res.redirect('/dashboard');
+  if (req.session.bureau) return res.redirect('/bureau');
   res.render('login', { error: null });
 });
 
@@ -39,20 +42,23 @@ router.post('/login', loginLimiter, async (req, res) => {
     // Vérifie que l'utilisateur existe ET a le rôle admin
     const user = await User.findOne({ email: email.toLowerCase().trim(), role: 'admin' }).select('+password');
 
-    if (!user) {
-      return res.render('login', { error: 'Accès refusé' });
+    if (user && await user.comparePassword(password)) {
+      // Stocke l'id + le nom en session (pas juste un booléen)
+      req.session.adminId = user._id.toString();
+      req.session.adminName = user.firstName || user.email;
+      // L'admin tient le bureau de Julien et peut agir sur les deux.
+      req.session.bureau = { prenom: user.firstName || 'Julien', espace: 'julien', admin: true };
+      return res.redirect('/dashboard');
     }
 
-    const valid = await user.comparePassword(password);
-    if (!valid) {
-      return res.render('login', { error: 'Accès refusé' });
+    // Sinon, un compte du bureau de prospection (base séparée) : accès au bureau seulement.
+    const membre = await BureauUser.findOne({ email: email.toLowerCase().trim() }).select('+password');
+    if (membre && await membre.comparePassword(password)) {
+      req.session.bureau = { id: membre._id.toString(), prenom: membre.prenom, espace: membre.espace, admin: false };
+      return res.redirect('/bureau');
     }
 
-    // Stocke l'id + le nom en session (pas juste un booléen)
-    req.session.adminId = user._id.toString();
-    req.session.adminName = user.firstName || user.email;
-
-    res.redirect('/dashboard');
+    return res.render('login', { error: 'Accès refusé' });
   } catch (err) {
     console.error('Login error:', err);
     res.render('login', { error: 'Erreur serveur, réessayez' });
