@@ -59,6 +59,17 @@ router.get('/api/etat', requireBureau, a(async (req, res) => {
   });
 }));
 
+// Pouls du bureau : une signature légère de ce qui a bougé. La page la consulte toutes les 2,5 s
+// et ne recharge tout l'état que lorsqu'elle change.
+router.get('/api/pouls', requireBureau, a(async (req, res) => {
+  const { espace } = req.query;
+  if (!ESPACES[espace]) return res.status(400).json({ error: 'Bureau inconnu' });
+  const dernier = (Modele, champ) => Modele.findOne({ espace }).sort({ [champ]: -1 }).select(champ).lean().then(d => +new Date(d?.[champ] || 0));
+  const parts = await Promise.all([dernier(Contact, 'updatedAt'), dernier(Ordre, 'creeLe'), dernier(Ordre, 'majLe'), dernier(Journal, 'quand'),
+    dernier(AgentEtat, 'majLe'), dernier(Ronde, 'derniereRonde'), Contact.countDocuments({ espace }), Ordre.countDocuments({ espace })]);
+  res.json({ v: parts.join('.') });
+}));
+
 router.post('/api/ordres', requireBureau, a(async (req, res) => {
   const { espace, agent, action, label, consigne, cibles } = req.body;
   if (!ESPACES[espace]) return res.status(400).json({ error: 'Bureau inconnu' });

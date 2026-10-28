@@ -265,25 +265,25 @@ const AGENTS = [
     actions: [{ id: "relever", label: "Relever la boîte mail", sel: false, hint: "" },
       { id: "preparer_appel", label: "Préparer l'appel", sel: true, hint: "Ex. : appel jeudi 18 h, triathlon longue distance" }] },
   { id: "messager", nom: "Messager", role: "Formulaires et Instagram", pole: "Formulaires", init: "M", color: "#7FD3FD", ink: "#003554", desk: [0, -5], aisle: -2.4,
-    station: { label: "Borne messages", stand: [3.2, 5.2], face: 0 }, fx: "chat",
+    station: null, fx: "chat",
     mission: "Prépare, pour chaque coach sans email, le message court prêt à coller dans son formulaire ou sur Instagram. Tu l'envoies toi-même, puis tu le dis au Scribe.",
     rythme: "Sur ordre",
     steps: ["Prend un contact sans email", "Trouve son formulaire ou son Instagram", "Prépare le message court", "Te le donne prêt à coller"],
     actions: [{ id: "contacter", label: "Préparer les messages", sel: true, hint: "Ex. : formulaires seulement, pas Instagram" }] },
   { id: "echo", nom: "Écho", role: "Relances", pole: "Relances", init: "É", color: "#FC4C02", desk: [4.5, -5], aisle: -2.4,
-    station: { label: "Classeur relances", stand: [11.4, -1.6], face: Math.PI / 2 }, fx: "drawer",
+    station: null, fx: "drawer",
     mission: "Relance une seule fois, 5 jours après le premier email, en réponse au même fil, avec le modèle « Relance (J+5) ». En journée elle part tout de suite, sinon le lendemain à 8 h 30.",
     rythme: "Dès que tu cliques",
     steps: ["Repère les relances dues (J+5)", "Retrouve le fil dans Zoho", "Répond avec la relance", "Passe la ligne en Relancé"],
     actions: [{ id: "relancer", label: "Relancer maintenant", sel: true, hint: "Ex. : ajoute le code FOULEE-DOREE-50" }] },
   { id: "facteur", nom: "Facteur", role: "Premiers emails", pole: "Envois", init: "F", color: "#003554", desk: [9, -5], aisle: -2.4,
-    station: { label: "Boîte d'envoi", stand: [11.3, 4.2], face: Math.PI / 2 }, fx: "mail",
+    station: null, fx: "mail",
     mission: "Programme les premiers mails depuis {email}, avec le modèle « Premier email » et ta signature : un toutes les 20 minutes, en semaine, à la suite de ceux déjà programmés.",
     rythme: "Dès que tu cliques",
     steps: ["Prend un contact à faire", "Remplit le modèle Premier email", "Programme l'envoi dans Zoho", "Passe la ligne en Programmé"],
     actions: [{ id: "programmer", label: "Programmer les emails", sel: true, hint: "Ex. : commence demain 8 h, insiste sur le suivi muscu" }] },
   { id: "scribe", nom: "Scribe", role: "Tient le fichier à jour", pole: "Suivi", init: "S", color: "#D4A24C", ink: "#3D2A06", desk: [6.2, 2.2], aisle: null,
-    station: { label: "Sheet maître", stand: [9.6, 6.3], face: 0 }, fx: "cells",
+    station: null, fx: "cells",
     mission: "Tu lui racontes ce que tu as fait (« j'ai appelé Sudrie, démo jeudi », « écrit à 3 coachs sur Instagram ») : il retrouve les coachs et met leurs statuts et leurs notes à jour. Les chiffres du bureau suivent.",
     rythme: "Instantané, depuis cette page",
     steps: ["Lit ce que tu racontes", "Retrouve les coachs", "Déduit les nouveaux statuts", "Met le fichier à jour"],
@@ -626,15 +626,6 @@ function bush(x, z) {
 }
 bush(-2.3, -7.9); bush(2.3, -7.9); bush(13, 0.6); bush(-13, -3.6);
 
-/* --- Coin pause : canapé vert + table basse --- */
-const PAUSE = [[-1.6, 0.95], [-0.35, 0.95], [0.9, 0.95]];
-box(4.4, 0.5, 1.2, "#0B4A73", -0.35, 0.35, 0.75); box(4.4, 0.9, 0.35, "#003554", -0.35, 0.75, 0.2);
-box(0.4, 0.75, 1.2, "#003554", -2.55, 0.55, 0.75); box(0.4, 0.75, 1.2, "#003554", 1.85, 0.55, 0.75);
-box(0.8, 0.5, 0.18, "#7FD3FD", -1.6, 0.85, 0.42); box(0.8, 0.5, 0.18, "#00A6FB", 0.9, 0.85, 0.42);
-box(2.2, 0.08, 1.0, "#D9B98E", -0.35, 0.45, 2.6); cyl(0.05, 0.05, 0.42, "#B89468", -1.3, 0.21, 2.6, scene, 8); cyl(0.05, 0.05, 0.42, "#B89468", 0.6, 0.21, 2.6, scene, 8);
-cyl(0.1, 0.08, 0.18, "#FFFFFF", -0.6, 0.58, 2.5); cyl(0.1, 0.08, 0.18, "#00A6FB", -0.1, 0.58, 2.7);
-const rugPause = new T.Mesh(new T.CircleGeometry(3.4, 48), mat("#EFEBE4")); rugPause.rotation.x = -Math.PI / 2; rugPause.position.set(-0.35, 0.01, 1.7); rugPause.receiveShadow = true; scene.add(rugPause);
-
 /* --- Postes de travail --- */
 function lighten(hex, k) { const c = new T.Color(hex); c.lerp(new T.Color("#FFFFFF"), k); return "#" + c.getHexString() }
 const desks = {};
@@ -687,32 +678,6 @@ box(1.6, 2.6, 0.12, "#10B981", 0, 1.3, 0.75, booth, glass); box(0.12, 2.6, 1.5, 
 box(1.6, 0.6, 0.14, "#0E9F6E", 0, 0.3, 0.75, booth);
 box(1.72, 0.12, 1.62, "#0E9F6E", 0, 2.62, 0, booth); box(0.5, 0.35, 0.12, "#0B2236", 0, 1.45, 0.62, booth);
 const handset = box(0.1, 0.35, 0.1, "#0B2236", 0.32, 1.45, 0.58, booth);
-// Borne messages (Messager)
-const kiosk = new T.Group(); kiosk.position.set(3.2, 0, 6.6); scene.add(kiosk);
-box(0.6, 0.06, 0.6, "#E9EDF1", 0, 0.03, 0, kiosk); cyl(0.06, 0.06, 1.2, "#9AA6B2", 0, 0.6, 0, kiosk, 10);
-const kScreen = box(0.9, 1.3, 0.08, "#0B2236", 0, 1.75, 0, kiosk); box(0.8, 1.15, 0.01, "#7FD3FD", 0, 1.75, -0.045, kiosk, { emissive: "#7FD3FD", emissiveIntensity: 0.5 });
-// Classeur relances (Écho)
-const cab = new T.Group(); cab.position.set(12.8, 0, -1.6); scene.add(cab);
-const drawers = [];
-box(1.0, 1.8, 1.5, "#E9EDF1", 0, 0.9, 0, cab);
-[0.35, 0.9, 1.45].forEach(y => { const d = box(0.08, 0.45, 1.3, "#FC4C02", -0.52, y, 0, cab); drawers.push(d) });
-// Boîte d'envoi (Facteur)
-const mbox = new T.Group(); mbox.position.set(12.6, 0, 4.2); scene.add(mbox);
-cyl(0.06, 0.06, 0.9, "#7D8793", 0, 0.45, 0, mbox, 10);
-box(0.9, 0.9, 1.1, "#003554", 0, 1.3, 0, mbox); box(0.92, 0.12, 1.12, "#00A6FB", 0, 1.8, 0, mbox);
-box(0.04, 0.08, 0.6, "#0B1218", -0.46, 1.45, 0, mbox);
-
-// Écran du Sheet maître (Scribe)
-const sheetSt = new T.Group(); sheetSt.position.set(9.6, 0, 7.7); scene.add(sheetSt);
-box(0.7, 0.06, 0.5, "#E9EDF1", 0, 0.03, 0, sheetSt); cyl(0.06, 0.06, 1.3, "#9AA6B2", 0, 0.65, 0, sheetSt, 10);
-box(2.0, 1.3, 0.1, "#0B2236", 0, 1.95, 0, sheetSt);
-const cells = [];
-for (let r = 0; r < 5; r++) for (let c = 0; c < 6; c++) {
-  const m = box(0.27, 0.17, 0.01, r === 0 ? "#D4A24C" : "#FFFFFF", -0.78 + c * 0.312, 2.42 - r * 0.21, -0.06, sheetSt, { emissive: r === 0 ? "#D4A24C" : "#FFFFFF", emissiveIntensity: 0.25 });
-  if (r) cells.push(m);
-}
-const cellOn = mat("#10B981", { emissive: "#10B981", emissiveIntensity: 0.6 });
-
 /* ================= Robots ================= */
 const robots = {};
 function makeRobot(a) {
@@ -754,20 +719,20 @@ function plan(r) {
   const seat = desks[r.a.id].seat, here = [r.pos.x, r.pos.y], q = [];
   const atSeat = Math.hypot(here[0] - seat[0], here[1] - seat[1]) < 0.05;
   if (REDUCE) { if (!atSeat) q.push(...routeFrom(r, here, seat, true)); q.push({ t: r.mode === "pause" ? "sip" : "sit", dur: 30, face: 0 }); r.q = q; return }
+  const cote = new T.Vector2(seat[0] + 1.7, seat[1] + 0.15);
+  if (!atSeat && Math.hypot(here[0] - cote.x, here[1] - cote.y) > 0.1) q.push(...routeFrom(r, here, seat, true));
   if (r.mode === "pause") {
-    const spot = PAUSE[AGENTS.indexOf(r.a) % 3];
-    const taken = Object.values(robots).some(o => o !== r && o.mode === "pause" && o.spot === spot);
-    const s = taken ? [spot[0] + (Math.random() - .5) * 2, 3.6] : spot;
-    r.spot = taken ? null : spot;
-    if (Math.hypot(here[0] - s[0], here[1] - s[1]) > 0.1) q.push(...routeFrom(r, here, s, false));
-    q.push({ t: taken ? "sip" : "lounge", dur: 9 + Math.random() * 8, face: taken ? Math.PI : 0 });
+    // En pause : un café debout à côté du poste, puis retour au bureau.
+    q.push({ t: "sit", dur: 4 + Math.random() * 6, face: 0 }, { t: "walk", to: cote }, { t: "sip", dur: 7 + Math.random() * 7, face: -0.6 },
+      { t: "walk", to: new T.Vector2(...seat) });
   } else {
     const fast = r.mode === "live";
-    if (!atSeat) q.push(...routeFrom(r, here, seat, true));
     q.push({ t: "sit", dur: fast ? 3.5 + Math.random() * 2.5 : 6 + Math.random() * 6, face: 0 });
-    q.push(...routeFrom(r, seat, r.a.station.stand, false));
-    q.push({ t: "act", dur: fast ? 2.8 : 2.4, face: r.a.station.face, fx: r.a.fx });
-    q.push(...routeFrom(r, r.a.station.stand, seat, true));
+    if (r.a.station) {
+      q.push(...routeFrom(r, seat, r.a.station.stand, false));
+      q.push({ t: "act", dur: fast ? 2.8 : 2.4, face: r.a.station.face, fx: r.a.fx });
+      q.push(...routeFrom(r, r.a.station.stand, seat, true));
+    } else q.push({ t: "work", dur: fast ? 2.2 : 1.8, face: 0, fx: r.a.fx });   // l'action se voit au-dessus de l'écran
   }
   r.q = q;
 }
@@ -782,9 +747,13 @@ function angLerp(a, b, k) { let d = b - a; while (d > Math.PI) d -= 2 * Math.PI;
 /* --- Effets --- */
 const fxs = [];
 function spawnFx(kind, r) {
-  if (kind === "mail") {
-    const env = box(0.3, 0.2, 0.03, "#FFFFFF", 0, 0, 0); const from = new T.Vector3(r.pos.x + 0.4, 1.3, r.pos.y), to = new T.Vector3(12.14, 1.45, 4.2);
-    fxs.push({ dur: 0.9, t: 0, upd: k => { env.position.lerpVectors(from, to, k); env.position.y += Math.sin(k * Math.PI) * 0.5; env.rotation.y = Math.PI / 2 }, end: () => scene.remove(env) });
+  if (["mail", "chat", "cells", "drawer"].includes(kind)) {
+    // Facteur, Messager, Scribe, Écho : une carte (enveloppe, bulle, ligne, relance) sort de l'écran et s'envole.
+    const [dx, dz] = r.a.desk, couleur = { mail: "#FFFFFF", chat: "#7FD3FD", cells: "#D4A24C", drawer: "#FC4C02" }[kind];
+    const carte = box(kind === "mail" ? 0.34 : 0.4, kind === "mail" ? 0.22 : 0.24, 0.04, couleur, dx, 1.6, dz - 0.25, scene, { emissive: couleur, emissiveIntensity: 0.35, transparent: true });
+    carte.material = carte.material.clone(); carte.castShadow = false;
+    fxs.push({ dur: 1.5, t: 0, upd: k => { carte.position.y = 1.6 + k * 1.6; carte.position.x = dx + Math.sin(k * 5) * 0.08; carte.rotation.y = k * 1.4;
+      carte.material.opacity = 1 - k * k }, end: () => { scene.remove(carte); carte.material.dispose() } });
   } else if (kind === "pin") {
     const p = sph(0.06, ["#00A6FB", "#003554", "#FC4C02", "#10B981"][pins.length % 4], -W + 0.26, 2.0 + Math.random() * 0.9, -3.6 + Math.random() * 2.0);
     pins.push(p); if (pins.length > 14) scene.remove(pins.shift());
@@ -793,17 +762,7 @@ function spawnFx(kind, r) {
     const m = new T.Mesh(new T.RingGeometry(0.2, 0.26, 40), new T.MeshBasicMaterial({ color: "#10B981", transparent: true }));
     m.position.set(-6.68, 1.9, 6.0); scene.add(m); handset.position.y = 1.75;
     fxs.push({ dur: 1.4, t: 0, upd: k => { m.scale.setScalar(1 + k * 3); m.material.opacity = 1 - k; m.lookAt(cam.position) }, end: () => { scene.remove(m); handset.position.y = 1.45 } });
-  } else if (kind === "chat") {
-    const b = box(0.5, 0.3, 0.06, "#00A6FB", 3.2, 2.5, 6.4, scene, { emissive: "#00A6FB", emissiveIntensity: 0.3 });
-    fxs.push({ dur: 1.6, t: 0, upd: k => { b.position.y = 2.5 + k * 1.4; b.material.transparent = true; b.material.opacity = 1 - k * k }, end: () => { scene.remove(b); b.material.opacity = 1 } });
-  } else if (kind === "cells") {
-    const picks = [0, 1, 2].map(() => cells[Math.floor(Math.random() * cells.length)]);
-    const before = picks.map(c => c.material);
-    picks.forEach(c => c.material = cellOn);
-    fxs.push({ dur: 1.4, t: 0, upd: () => {}, end: () => picks.forEach((c, i) => c.material = before[i]) });
-  } else if (kind === "drawer") {
-    const d = drawers[Math.floor(Math.random() * 3)];
-    fxs.push({ dur: 1.6, t: 0, upd: k => { d.position.x = -0.52 - Math.sin(k * Math.PI) * 0.45 } });
+
   }
 }
 
@@ -823,7 +782,7 @@ function step(r, dt, time) {
   } else {
     r.face = angLerp(r.face, c.face, Math.min(1, dt * 8));
     pose = c.t;
-    if (c.t === "act" && !r.fxDone && r.t > c.dur * 0.45) { spawnFx(c.fx, r); r.fxDone = true }
+    if ((c.t === "act" || c.t === "work") && !r.fxDone && r.t > c.dur * 0.45) { spawnFx(c.fx, r); r.fxDone = true }
     if (r.t >= c.dur) r.cur = null;
   }
   // pose
@@ -832,7 +791,7 @@ function step(r, dt, time) {
   let bodyY = 0, legX = 0, armL = 0, armR = 0, headTilt = 0;
   r.cup.visible = false;
   if (pose === "walk") { legX = Math.sin(ph) * 0.6; armL = -Math.sin(ph) * 0.5; armR = Math.sin(ph) * 0.5; bodyY = Math.abs(Math.cos(ph)) * 0.05 }
-  else if (pose === "sit") { bodyY = -0.06; legX = -1.45; const ty = r.mode === "live" ? 22 : 11; armL = -1.2 + Math.sin(time * ty + r.rnd) * 0.08; armR = -1.2 + Math.cos(time * ty + r.rnd) * 0.08; headTilt = 0.08 + Math.sin(time * 0.7 + r.rnd) * 0.05 }
+  else if (pose === "sit" || pose === "work") { bodyY = -0.06; legX = -1.45; const ty = r.mode === "live" ? 22 : 11; armL = -1.2 + Math.sin(time * ty + r.rnd) * 0.08; armR = -1.2 + Math.cos(time * ty + r.rnd) * 0.08; headTilt = 0.08 + Math.sin(time * 0.7 + r.rnd) * 0.05 }
   else if (pose === "act") { armL = -1.5 + Math.sin(time * 6) * 0.15; armR = -1.7 + Math.cos(time * 6) * 0.15; headTilt = -0.05 }
   else if (pose === "lounge") { bodyY = 0; legX = -1.4; armL = -0.2; armR = -0.9 - (Math.sin(time * 0.6 + r.rnd) > 0.6 ? 0.9 : 0); r.cup.visible = true; headTilt = -0.15 }
   else if (pose === "sip") { armL = 0; armR = -0.9 - (Math.sin(time * 0.6 + r.rnd) > 0.6 ? 0.9 : 0); r.cup.visible = true; headTilt = Math.sin(time * 0.5 + r.rnd) * 0.1 }
@@ -852,12 +811,7 @@ AGENTS.forEach(a => {
   const t = document.createElement("div"); t.className = "tag"; t.style.setProperty("--c", a.color); t.dataset.agent = a.id;
   t.innerHTML = `<span class="pip"></span><b>${esc(a.nom)}</b><span class="st"></span>`;
   t.addEventListener("click", () => { setActive(B); openAgent(a.id) }); tagsEl.appendChild(t); robots[a.id].tag = t;
-  const z = document.createElement("div"); z.className = "zone"; z.style.setProperty("--c", a.color); if (a.ink) z.style.setProperty("--zi", a.ink); z.textContent = "Pôle " + a.pole;
-  tagsEl.appendChild(z); robots[a.id].zoneTag = z;
-  const s = document.createElement("div"); s.className = "zone soft"; s.textContent = a.station.label; tagsEl.appendChild(s); robots[a.id].stTag = s;
 });
-const pauseTag = document.createElement("div"); pauseTag.className = "zone soft"; pauseTag.textContent = "Coin pause"; tagsEl.appendChild(pauseTag);
-const STATION_POS = { radar: [-W + 0.3, 3.6, -2.6], allo: [-7, 2.9, 6.8], messager: [3.2, 2.6, 6.6], echo: [12.8, 2.0, -1.6], facteur: [12.6, 2.1, 4.2], scribe: [9.6, 3.0, 7.7] };
 const v3 = new T.Vector3();
 function place(el, x, y, z) {
   v3.set(x + OX, y, z + OZ).project(cam);
@@ -1298,10 +1252,7 @@ function tick(dt, time) {
 function placeTags() {
   Object.values(robots).forEach(r => {
     place(r.tag, r.pos.x, 2.55 + r.body.position.y, r.pos.y);
-    const [dx, dz] = r.a.desk; placeCentered(r.zoneTag, dx, 0.05, dz + 1.45);
-    placeCentered(r.stTag, ...STATION_POS[r.a.id]);
   });
-  placeCentered(pauseTag, -3.4, 0.05, 2.6);
   placeClientTags();
 }
 document.fonts?.ready.then(() => { [logoTex, plaqueTex].forEach(x => { const t = x.userData; t.draw(t.g, t.c.width, t.c.height); x.needsUpdate = true }); redrawBoard() });
@@ -1604,7 +1555,15 @@ async function loadSheet() {
   }
   renderHud(); if (S.open) renderDetail();
 }
-setInterval(() => { if (!document.hidden) loadSheet() }, 15000);
+// Pouls : toutes les 2,5 s une petite signature ; le bureau ne se recharge que si quelque chose a bougé.
+let pouls = "";
+async function battre() {
+  if (document.hidden) return;
+  try { const { v } = await api(`/pouls?espace=${E.id}`); if (v !== pouls) { pouls = v; await loadSheet() } } catch (e) {}
+}
+setInterval(battre, 2500);
+setInterval(() => { if (!document.hidden) loadSheet() }, 60000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) battre() });
 setInterval(() => { renderChef(); updateTags() }, 30000);
 
 /* --- Ce que la page commune demande au bâtiment --- */
