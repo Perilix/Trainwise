@@ -2,10 +2,12 @@ const { ESPACES } = require('../config/prospectionDb');
 const { Contact, Ordre, Journal, AgentEtat, Ronde, Boite } = require('../models/prospection');
 const zoho = require('./zoho');
 const modeles = require('./modeles');
+const ia = require('./ia');
 
-// Le chef de bureau : il exécute les ordres mail du bureau (Facteur, Écho, Allô) dès qu'ils arrivent,
-// relève les boîtes toutes les 10 minutes et passe en « Envoyé » les mails programmés partis.
-// Les ordres des autres agents (Radar, Messager, fiches d'appel, Scribe) attendent l'API Claude.
+// Le chef de bureau : il exécute les ordres dès qu'ils arrivent, en deux files pour qu'une longue recherche
+// ne retarde jamais un mail. File mail (Zoho) : Facteur, Écho, relève d'Allô. File IA (Claude) : Radar,
+// fiches d'appel d'Allô, Messager, Scribe. Il relève aussi les boîtes toutes les 10 minutes, passe en
+// « Envoyé » les mails programmés partis et lance la recherche de coachs chaque lundi matin.
 
 const TZ = 'Europe/Paris';
 const MIN = 60000;
@@ -14,7 +16,11 @@ const PAS = 20 * MIN;
 const FENETRES = { julien: [8 * 60, 18 * 60 + 20], hugo: [8 * 60, 12 * 60 + 40] };
 const RELEVE = 10 * MIN;
 const EXECUTES = [{ agent: 'facteur', action: 'programmer' }, { agent: 'echo', action: 'relancer' }, { agent: 'allo', action: 'relever' }];
-const NOMS = { facteur: 'Facteur', echo: 'Écho', allo: 'Allô' };
+const NOMS = { facteur: 'Facteur', echo: 'Écho', allo: 'Allô', radar: 'Radar', messager: 'Messager', scribe: 'Scribe' };
+const EXECUTES_IA = [{ agent: 'radar', action: { $in: ['chercher', 'consigne'] } }, { agent: 'allo', action: 'preparer_appel' },
+  { agent: 'messager', action: 'contacter' }, { agent: 'scribe', action: 'raconter' }];
+// Une consigne libre donnée à un autre agent n'a pas d'exécutant : on le dit plutôt que de la laisser en attente.
+const SANS_EXECUTANT = { action: 'consigne', agent: { $ne: 'radar' } };
 
 /* --- Heure de Paris --- */
 function heureParis(d) {
@@ -180,22 +186,61 @@ async function executer(ordre) {
   const { espace, agent } = ordre;
   const avancer = (i, n, etape, tache) => etat(espace, agent, { etat: 'au_travail', tache: tache || ordre.label, progression: `${i}/${n}`, etape });
   try {
-    const boite = await Boite.findOne({ espace }).lean();
-    if (!boite) throw visible(`La boîte ${ESPACES[espace].email} n'est pas connectée : ouvre la fiche de ${NOMS[agent]} et clique sur « Connecter la boîte Zoho ».`);
     await etat(espace, agent, { etat: 'au_travail', tache: ordre.label, progression: `0/${ordre.cibles.length || 1}`, etape: 1 });
-    const compteRendu = agent === 'facteur' ? await programmer(ordre, boite, avancer)
-      : agent === 'echo' ? await relancer(ordre, boite, avancer)
-      : resumeReleve(await relever(espace, boite));
+    let compteRendu;
+    if (ordre.action === 'consigne' && agent !== 'radar') {
+      throw visible(`${NOMS[agent]} ne sait pas encore suivre une consigne libre : utilise un de ses boutons d'action.`);
+    } else if (['radar', 'messager', 'scribe'].includes(agent) || ordre.action === 'preparer_appel') {
+      if (!ia.configure()) throw visible("L'API Claude n'est pas configurée sur le serveur (ANTHROPIC_API_KEY).");
+      compteRendu = agent === 'radar' ? await ia.radar(ordre, avancer)
+        : agent === 'messager' ? await ia.messages(ordre, avancer)
+        : agent === 'scribe' ? await ia.scribe(ordre, avancer)
+        : await ia.ficheAppel(ordre, avancer);
+    } else {
+      const boite = await Boite.findOne({ espace }).lean();
+      if (!boite) throw visible(`La boîte ${ESPACES[espace].email} n'est pas connectée : ouvre la fiche de ${NOMS[agent]} et clique sur « Connecter la boîte Zoho ».`);
+      compteRendu = agent === 'facteur' ? await programmer(ordre, boite, avancer)
+        : agent === 'echo' ? await relancer(ordre, boite, avancer)
+        : resumeReleve(await relever(espace, boite));
+    }
     await Ordre.updateOne({ _id: ordre._id }, { statut: 'fait', compteRendu, majLe: new Date() });
     await journal(espace, agent, compteRendu);
   } catch (e) {
-    const message = e.visible ? e.message : `Zoho a répondu : ${erreurZoho(e)}`;
+    const message = e.visible ? e.message : e.response ? `Zoho a répondu : ${erreurZoho(e)}` : `Erreur : ${e.message}`;
     console.error(`Ordre ${ordre._id} (${agent}) :`, message);
     await Ordre.updateOne({ _id: ordre._id }, { statut: 'erreur', compteRendu: message, majLe: new Date() });
     await journal(espace, agent, `Bloqué : ${message}`);
   } finally {
     await etat(espace, agent, { etat: 'pause', tache: '', progression: '', etape: 0 });
   }
+}
+
+/* --- La recherche du lundi : 30 coachs par bureau (BUREAU_RECHERCHE_LUNDI), chaque lundi vers 6 h --- */
+const RECHERCHE_LUNDI = Number(process.env.BUREAU_RECHERCHE_LUNDI) || 30;
+async function rechercheDuLundi() {
+  const p = heureParis(new Date());
+  if (p.wd !== 'Mon' || p.h < 6 || !ia.configure()) return;
+  const { annee, numero } = ia.semaineIso(), semaine = `${annee}-S${numero}`;
+  for (const espace of Object.keys(ESPACES)) {
+    const r = await Ronde.findOneAndUpdate({ espace, rechercheSemaine: { $ne: semaine } }, { rechercheSemaine: semaine }, { upsert: false });
+    if (!r) continue;
+    await Ordre.create({ espace, agent: 'radar', action: 'chercher', label: 'Recherche du lundi', auteur: 'Chef de bureau',
+      consigne: `Recherche hebdomadaire : ${RECHERCHE_LUNDI} nouveaux coachs dans le secteur ${ESPACES[espace].secteur}.` });
+  }
+}
+
+/* --- La file IA (Claude) --- */
+let iaEnCours = false;
+async function rondeIA() {
+  if (iaEnCours) return;
+  iaEnCours = true;
+  try {
+    let ordre;
+    while ((ordre = await Ordre.findOneAndUpdate({ statut: 'en_attente', $or: [...EXECUTES_IA, SANS_EXECUTANT] }, { statut: 'en_cours', majLe: new Date() },
+      { sort: { creeLe: 1 }, new: true }))) await executer(ordre);
+  } catch (e) {
+    console.error('Chef de bureau (IA) :', e.message);
+  } finally { iaEnCours = false }
 }
 
 /* --- La ronde --- */
@@ -205,6 +250,8 @@ async function ronde() {
   if (enCours) { encore = true; return }
   enCours = true;
   try {
+    await rechercheDuLundi();
+    rondeIA();
     // Les mails programmés dont l'heure est passée sont partis.
     await Contact.updateMany({ statut: 'Programmé', envoyeLe: { $lt: new Date(Date.now() - 5 * MIN) } }, { statut: 'Envoyé' });
     for (const espace of Object.keys(ESPACES)) {
@@ -226,7 +273,8 @@ async function ronde() {
 }
 
 function demarrer() {
-  if (!zoho.configure()) { process.stdout.write('Chef de bureau : ZOHO_CLIENT_ID absent, les agents mail restent en pause.\n'); return }
+  if (!zoho.configure()) process.stdout.write('Chef de bureau : ZOHO_CLIENT_ID absent, les agents mail restent en pause.\n');
+  if (!ia.configure()) process.stdout.write('Chef de bureau : ANTHROPIC_API_KEY absent, Radar, Messager, Scribe et les fiches d\'appel restent en pause.\n');
   // Un ordre resté « en cours » (redémarrage pendant l'exécution) repart.
   Ordre.updateMany({ statut: 'en_cours', majLe: { $lt: new Date(Date.now() - 15 * MIN) } }, { statut: 'en_attente' }).catch(() => {});
   setInterval(ronde, 20000);
@@ -234,6 +282,6 @@ function demarrer() {
   process.stdout.write('Chef de bureau : en service.\n');
 }
 // Appelé quand un ordre arrive : il part tout de suite, sans attendre la prochaine ronde.
-const reveiller = () => { if (zoho.configure()) setImmediate(ronde) };
+const reveiller = () => setImmediate(ronde);
 
 module.exports = { demarrer, reveiller, creneaux, heureParis };

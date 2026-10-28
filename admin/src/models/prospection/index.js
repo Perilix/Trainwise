@@ -104,7 +104,16 @@ const boiteSchema = new mongoose.Schema({
 
 const rondeSchema = new mongoose.Schema({
   espace: { ...espace, unique: true },
-  derniereRonde: Date
+  derniereRonde: Date,
+  rechercheSemaine: String   // « 2026-S45 » : la recherche du lundi a déjà été lancée cette semaine
+});
+
+// Dépense API Claude du mois (« 2026-10 »), pour respecter le plafond du bureau.
+const depenseSchema = new mongoose.Schema({
+  mois: { type: String, unique: true },
+  dollars: { type: Number, default: 0 },
+  appels: { type: Number, default: 0 },
+  recherches: { type: Number, default: 0 }
 });
 
 module.exports = {
@@ -116,5 +125,6 @@ module.exports = {
   Journal: conn.model('Journal', journalSchema),
   AgentEtat: conn.model('AgentEtat', agentEtatSchema),
   Boite: conn.model('Boite', boiteSchema),
-  Ronde: conn.model('Ronde', rondeSchema)
+  Ronde: conn.model('Ronde', rondeSchema),
+  Depense: conn.model('Depense', depenseSchema)
 };
