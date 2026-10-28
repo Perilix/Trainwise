@@ -99,6 +99,7 @@ const boiteSchema = new mongoose.Schema({
   refreshToken: String,
   dossiers: { inbox: String, sent: String },
   dernierReleve: Date,
+  traites: [String],   // identifiants des mails déjà relevés par Allô
   connecteeLe: Date
 });
 
