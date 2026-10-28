@@ -73,12 +73,12 @@ async function api(boite, method, chemin, { params, body } = {}) {
   return data.data;
 }
 
-// Dossiers Boîte de réception et Envoyés, mémorisés sur la boîte.
+// Dossiers Boîte de réception, Envoyés et Boîte d'envoi (mails programmés), mémorisés sur la boîte.
 async function dossiers(boite) {
-  if (boite.dossiers?.inbox && boite.dossiers?.sent) return boite.dossiers;
+  if (boite.dossiers?.inbox && boite.dossiers?.sent && boite.dossiers?.outbox) return boite.dossiers;
   const liste = await api(boite, 'get', '/folders');
   const trouve = type => String((liste.find(f => f.folderType === type) || {}).folderId || '');
-  boite.dossiers = { inbox: trouve('Inbox'), sent: trouve('Sent') };
+  boite.dossiers = { inbox: trouve('Inbox'), sent: trouve('Sent'), outbox: trouve('Outbox') };
   await Boite.updateOne({ _id: boite._id }, { dossiers: boite.dossiers });
   return boite.dossiers;
 }

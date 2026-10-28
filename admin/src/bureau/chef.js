@@ -12,10 +12,14 @@ const ia = require('./ia');
 const TZ = 'Europe/Paris';
 const MIN = 60000;
 const PAS = 20 * MIN;
-// Fenêtre des premiers mails, heure de Paris, en semaine. Boîte d'Hugo neuve : 15 envois par jour au plus (8 h → 12 h 40).
-const FENETRES = { julien: [8 * 60, 18 * 60 + 20], hugo: [8 * 60, 12 * 60 + 40] };
+// Fenêtres d'envoi, heure de Paris. Premiers mails : en semaine (boîte d'Hugo neuve : 15 par jour, 8 h → 12 h 40).
+// Relances de Julien : tous les jours de 7 h à 20 h. Facteur et Écho partagent le même calendrier, un mail toutes les 20 min.
+const FENETRES = {
+  premier: { julien: { debut: 8 * 60, fin: 18 * 60 + 20, weekend: false }, hugo: { debut: 8 * 60, fin: 12 * 60 + 40, weekend: false } },
+  relance: { julien: { debut: 7 * 60, fin: 20 * 60, weekend: true }, hugo: { debut: 8 * 60, fin: 12 * 60 + 40, weekend: false } }
+};
 const RELEVE = 10 * MIN;
-const EXECUTES = [{ agent: 'facteur', action: 'programmer' }, { agent: 'echo', action: 'relancer' }, { agent: 'allo', action: 'relever' }];
+const EXECUTES = [{ agent: 'facteur', action: 'programmer' }, { agent: 'echo', action: { $in: ['relancer', 'replanifier'] } }, { agent: 'allo', action: 'relever' }];
 const NOMS = { facteur: 'Facteur', echo: 'Écho', allo: 'Allô', radar: 'Radar', messager: 'Messager', scribe: 'Scribe' };
 const EXECUTES_IA = [{ agent: 'radar', action: { $in: ['chercher', 'consigne'] } }, { agent: 'allo', action: 'preparer_appel' },
   { agent: 'messager', action: 'contacter' }, { agent: 'scribe', action: 'raconter' }];
@@ -39,14 +43,19 @@ const jourFr = d => d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-di
 const heureFr = d => d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: TZ });
 const ouvre = p => p.wd !== 'Sat' && p.wd !== 'Sun';
 
-// Les n prochains créneaux libres du bureau : un toutes les 20 min, après le dernier mail déjà programmé.
-async function creneaux(espace, n) {
-  const dernier = await Contact.findOne({ espace, statut: 'Programmé', envoyeLe: { $gte: new Date() } }).sort({ envoyeLe: -1 }).select('envoyeLe').lean();
-  let t = Math.max(Date.now() + 15 * MIN, dernier ? +dernier.envoyeLe + PAS : 0);
-  const [debut, fin] = FENETRES[espace], out = [];
+// Les n prochains créneaux libres du bureau : un toutes les 20 min, après le dernier mail déjà programmé
+// (premier mail ou relance). « sauf » écarte des contacts dont on déplace justement la relance.
+async function creneaux(espace, n, fenetre = FENETRES.premier[espace], sauf = []) {
+  const maintenant = new Date();
+  const [premier, relance] = await Promise.all([
+    Contact.findOne({ espace, _id: { $nin: sauf }, statut: 'Programmé', envoyeLe: { $gte: maintenant } }).sort({ envoyeLe: -1 }).select('envoyeLe').lean(),
+    Contact.findOne({ espace, _id: { $nin: sauf }, statut: 'Relancé', relanceEnvoyeeLe: { $gte: maintenant } }).sort({ relanceEnvoyeeLe: -1 }).select('relanceEnvoyeeLe').lean()
+  ]);
+  let t = Math.max(Date.now() + 15 * MIN, premier ? +premier.envoyeLe + PAS : 0, relance ? +relance.relanceEnvoyeeLe + PAS : 0);
+  const { debut, fin, weekend } = fenetre, out = [];
   while (out.length < n) {
     const p = heureParis(new Date(t)), min = p.h * 60 + p.mi;
-    if (!ouvre(p) || min > fin) {
+    if ((!weekend && !ouvre(p)) || min > fin) {
       const demain = heureParis(new Date(+dateParis(p.y, p.m, p.j, 12, 0) + 24 * 3600e3));
       t = +dateParis(demain.y, demain.m, demain.j, Math.floor(debut / 60), debut % 60);
     } else if (min < debut) {
@@ -54,14 +63,6 @@ async function creneaux(espace, n) {
     } else { out.push(new Date(t)); t += PAS }
   }
   return out;
-}
-// Une relance part tout de suite en journée ouvrée (8 h-19 h), sinon au prochain matin à 8 h 30.
-function quandRelancer() {
-  const p = heureParis(new Date()), min = p.h * 60 + p.mi;
-  if (ouvre(p) && min >= 8 * 60 && min < 19 * 60) return null;
-  let d = min >= 19 * 60 || !ouvre(p) ? heureParis(new Date(+dateParis(p.y, p.m, p.j, 12, 0) + 24 * 3600e3)) : p;
-  while (!ouvre(d)) d = heureParis(new Date(+dateParis(d.y, d.m, d.j, 12, 0) + 24 * 3600e3));
-  return dateParis(d.y, d.m, d.j, 8, 30);
 }
 
 /* --- Outils --- */
@@ -120,21 +121,58 @@ async function relancer(ordre, boite, avancer) {
     return true;
   });
   const liste = cibles.length ? await envoyes(boite) : [];
-  const plus_tard = quandRelancer();
+  const slots = await creneaux(ordre.espace, cibles.length, FENETRES.relance[ordre.espace]);
   for (const [i, c] of cibles.entries()) {
     await avancer(i, cibles.length, 2, `Relance ${c.nom}`);
-    const original = liste.find(m => m.a.includes(emailDe(c)) && !/^re\s*:/i.test(m.subject || ''));
+    const original = premierMail(liste, c);
     if (!original) { sautes.push(`${c.nom} (premier mail introuvable dans Envoyés)`); continue }
-    const body = { fromAddress: boite.email, toAddress: emailDe(c), action: 'reply', subject: `Re: ${original.subject}`,
-      content: modeles.relance(ordre.espace, c), mailFormat: 'html' };
-    if (plus_tard) Object.assign(body, { isSchedule: true, scheduleType: 6, timeZone: TZ, scheduleTime: horaireZoho(plus_tard) });
-    try { await zoho.api(boite, 'post', `/messages/${original.messageId}`, { body }) } catch (e) { sautes.push(`${c.nom} (${erreurZoho(e)})`); continue }
-    await Contact.updateOne({ _id: c._id }, { statut: 'Relancé', relanceEnvoyeeLe: plus_tard || new Date(),
-      notes: ajouterNote(c, plus_tard ? `relance programmée le ${jourFr(plus_tard)} à ${heureFr(plus_tard)}` : 'relance envoyée') });
-    faits.push(c.nom);
+    const quand = slots[faits.length];
+    try { await programmerRelance(boite, ordre.espace, c, original, quand) } catch (e) { sautes.push(`${c.nom} (${erreurZoho(e)})`); continue }
+    faits.push(quand);
   }
-  if (!faits.length && sautes.length) throw visible(`Aucune relance partie. ${sautes.join(', ')}.`);
-  return `${pluriel(faits.length, 'relance')} ${plus_tard ? `programmée${faits.length > 1 ? 's' : ''} pour le ${jourFr(plus_tard)} à ${heureFr(plus_tard)}` : `partie${faits.length > 1 ? 's' : ''}`}.${sautes.length ? ` Sautés : ${sautes.join(', ')}.` : ''}`;
+  if (!faits.length && sautes.length) throw visible(`Aucune relance programmée. ${sautes.join(', ')}.`);
+  return `${pluriel(faits.length, 'relance programmée')}${plage(faits)}.${sautes.length ? ` Sautés : ${sautes.join(', ')}.` : ''}`;
+}
+
+const premierMail = (liste, c) => liste.find(m => m.a.includes(emailDe(c)) && !/^re\s*:/i.test(m.subject || ''));
+const plage = dates => dates.length === 1 ? ` pour le ${jourFr(dates[0])} à ${heureFr(dates[0])}`
+  : dates.length ? `, du ${jourFr(dates[0])} ${heureFr(dates[0])} au ${jourFr(dates.at(-1))} ${heureFr(dates.at(-1))}` : '';
+// Relance en réponse au premier mail (même fil), programmée à l'heure donnée.
+async function programmerRelance(boite, espace, c, original, quand) {
+  await zoho.api(boite, 'post', `/messages/${original.messageId}`, { body: { fromAddress: boite.email, toAddress: emailDe(c), action: 'reply',
+    subject: `Re: ${original.subject}`, content: modeles.relance(espace, c), mailFormat: 'html',
+    isSchedule: true, scheduleType: 6, timeZone: TZ, scheduleTime: horaireZoho(quand) } });
+  await Contact.updateOne({ _id: c._id }, { statut: 'Relancé', relanceEnvoyeeLe: quand,
+    notes: ajouterNote(c, `relance programmée le ${jourFr(quand)} à ${heureFr(quand)}`) });
+}
+
+/* --- Écho : réétaler les relances déjà programmées (une toutes les 20 min dans la fenêtre) --- */
+async function replanifier(ordre, boite, avancer) {
+  const { outbox } = await zoho.dossiers(boite);
+  const enAttente = (await zoho.api(boite, 'get', '/messages/view', { params: { folderId: outbox, limit: 200 } }) || [])
+    .filter(m => /^re\s*:/i.test(m.subject || '')).map(m => ({ ...m, a: adresse(String(m.toAddress || '').replace(/&lt;|&gt;/g, ' ')) }));
+  const contacts = await Contact.find({ espace: ordre.espace, statut: 'Relancé', contact: /@/ }).lean();
+  const parEmail = new Map(contacts.map(c => [emailDe(c), c]));
+  const aDeplacer = enAttente.filter(m => parEmail.has(m.a));
+  if (!aDeplacer.length) throw visible("Aucune relance programmée à réétaler dans la boîte d'envoi.");
+  const liste = await envoyes(boite);
+  const slots = await creneaux(ordre.espace, aDeplacer.length, FENETRES.relance[ordre.espace], aDeplacer.map(m => parEmail.get(m.a)._id));
+  const faits = [], sautes = [];
+  for (const [i, m] of aDeplacer.entries()) {
+    const c = parEmail.get(m.a);
+    await avancer(i, aDeplacer.length, 3, `Replanifie ${c.nom}`);
+    const original = premierMail(liste, c);
+    if (!original) { sautes.push(`${c.nom} (premier mail introuvable)`); continue }
+    try {
+      // On reprogramme d'abord, puis on retire l'ancienne : au pire un doublon visible, jamais une relance perdue.
+      const quand = slots[faits.length];
+      await programmerRelance(boite, ordre.espace, c, original, quand);
+      await zoho.api(boite, 'delete', `/folders/${outbox}/messages/${m.messageId}`);
+      faits.push(quand);
+    } catch (e) { sautes.push(`${c.nom} (${erreurZoho(e)})`) }
+  }
+  if (!faits.length) throw visible(`Aucune relance réétalée. ${sautes.join(', ')}.`);
+  return `${pluriel(faits.length, 'relance réétalée')}, une toutes les 20 min${plage(faits)}.${sautes.length ? ` Non déplacées : ${sautes.join(', ')}.` : ''}`;
 }
 
 /* --- Allô : relève de la boîte, réponses et adresses en échec --- */
@@ -238,7 +276,7 @@ async function executer(ordre) {
       const boite = await Boite.findOne({ espace }).lean();
       if (!boite) throw visible(`La boîte ${ESPACES[espace].email} n'est pas connectée : ouvre la fiche de ${NOMS[agent]} et clique sur « Connecter la boîte Zoho ».`);
       compteRendu = agent === 'facteur' ? await programmer(ordre, boite, avancer)
-        : agent === 'echo' ? await relancer(ordre, boite, avancer)
+        : agent === 'echo' ? await (ordre.action === 'replanifier' ? replanifier : relancer)(ordre, boite, avancer)
         : resumeReleve(await relever(espace, boite));
     }
     await Ordre.updateOne({ _id: ordre._id }, { statut: 'fait', compteRendu, majLe: new Date() });
