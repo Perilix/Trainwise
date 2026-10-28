@@ -9,7 +9,7 @@ const AGENTS = {
   radar: ['chercher'],
   facteur: ['programmer'],
   messager: ['contacter'],
-  echo: ['relancer'],
+  echo: ['relancer', 'replanifier'],
   allo: ['relever', 'preparer_appel'],
   scribe: ['raconter']
 };
@@ -97,7 +97,7 @@ const boiteSchema = new mongoose.Schema({
   accountsServer: String,
   mailApi: String,
   refreshToken: String,
-  dossiers: { inbox: String, sent: String },
+  dossiers: { inbox: String, sent: String, outbox: String },
   dernierReleve: Date,
   traites: [String],   // identifiants des mails déjà relevés par Allô
   connecteeLe: Date
