@@ -17,6 +17,7 @@ const feedbacksRoutes = require('./routes/feedbacks.routes');
 const contactRoutes = require('./routes/contact.routes');
 const launchRoutes = require('./routes/launch.routes');
 const bureauRoutes = require('./routes/bureau.routes');
+const chefDeBureau = require('./bureau/chef');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -52,5 +53,6 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/trainwise
   .then(() => {
     process.stdout.write(`Connected to MongoDB\n`);
     app.listen(PORT, () => process.stdout.write(`Trainwise Admin running on port ${PORT}\n`));
+    chefDeBureau.demarrer();
   })
   .catch(err => console.error('MongoDB connection error:', err));

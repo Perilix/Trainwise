@@ -10,9 +10,12 @@ const conn = mongoose.createConnection(
 conn.on('error', err => console.error('Prospection MongoDB error:', err.message));
 
 // Les deux bureaux : chacun a son secteur, sa boîte mail et sa signature.
+// presentation : ce qui suit « Je m'appelle <prénom> » dans le premier mail.
 const ESPACES = {
-  julien: { prenom: 'Julien', secteur: 'Bordeaux', email: 'julien@trainwise-app.com' },
-  hugo: { prenom: 'Hugo', secteur: 'Alsace', email: 'hugo@trainwise-app.com' }
+  julien: { prenom: 'Julien', nom: 'Julien Dietschy', titre: 'Fondateur de Trainwise', presentation: ' et je développe Trainwise',
+    secteur: 'Bordeaux', email: 'julien@trainwise-app.com' },
+  hugo: { prenom: 'Hugo', nom: 'Hugo Bastide', titre: 'Trainwise', presentation: ", de l'équipe Trainwise",
+    secteur: 'Alsace', email: 'hugo@trainwise-app.com' }
 };
 
 module.exports = { conn, ESPACES };
