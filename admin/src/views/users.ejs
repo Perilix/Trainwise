@@ -23,6 +23,7 @@
       <option value="">Tous les rôles</option>
       <option value="user"  <%= role === 'user'  ? 'selected' : '' %>>Utilisateurs</option>
       <option value="coach" <%= role === 'coach' ? 'selected' : '' %>>Coaches</option>
+      <option value="coach-request" <%= role === 'coach-request' ? 'selected' : '' %>>Demandes coach</option>
       <option value="admin" <%= role === 'admin' ? 'selected' : '' %>>Admins</option>
     </select>
     <select name="subscription" class="filter-select">
@@ -72,7 +73,10 @@
               </div>
             </a>
           </td>
-          <td><span class="badge badge-<%= u.role %>"><%= u.role %></span></td>
+          <td>
+            <span class="badge badge-<%= u.role %>"><%= u.role %></span>
+            <% if (u.coachRequestedAt && u.role !== 'coach') { %><span class="badge badge-coach" title="A choisi Coach à l'inscription le <%= new Date(u.coachRequestedAt).toLocaleDateString('fr-FR') %>">demande coach</span><% } %>
+          </td>
           <td><span class="badge badge-<%= u.subscriptionStatus %>"><%= u.subscriptionStatus === 'pro' ? '✦ Pro' : 'Free' %></span></td>
           <td style="font-weight:600;color:var(--navy);">
             <% if (u.trainCoins != null) { %>

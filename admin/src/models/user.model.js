@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema({
   phone: { type: String, trim: true },
   profilePicture: { type: String, default: null },
   role: { type: String, enum: ['user', 'admin', 'coach'], default: 'user' },
+  coachRequestedAt: { type: Date, default: null },
   coachInviteCode: { type: String, unique: true, sparse: true },
   runningLevel: { type: String, default: null },
   weeklyFrequency: { type: Number, default: null },

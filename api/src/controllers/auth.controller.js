@@ -43,7 +43,7 @@ const generateToken = (userId) => {
 // Register new user
 exports.register = async (req, res) => {
   try {
-    const { email, password, firstName, lastName, phone } = req.body;
+    const { email, password, firstName, lastName, phone, role } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -51,8 +51,19 @@ exports.register = async (req, res) => {
       return res.status(400).json({ error: 'Cet email est déjà utilisé' });
     }
 
-    // Create user
-    const user = await User.create({ email, password, firstName, lastName, phone });
+    // Create user. Choisir « Coach » ne donne pas le rôle : on note la demande
+    // et on prévient l'équipe, qui active le compte depuis le back-office.
+    const wantsCoach = role === 'coach';
+    const user = await User.create({
+      email, password, firstName, lastName, phone,
+      coachRequestedAt: wantsCoach ? new Date() : null
+    });
+
+    if (wantsCoach) {
+      emailService.sendCoachRequestEmail(user).catch((error) => {
+        console.error('[auth] Mail demande coach:', error.message);
+      });
+    }
 
     // Generate token
     const token = generateToken(user._id);

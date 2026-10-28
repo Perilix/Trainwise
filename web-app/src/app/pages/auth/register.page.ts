@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 
 import { ApiError } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
+import { ToastService } from '../../core/toast.service';
 import { AuthLayoutComponent } from './auth-layout.component';
 
 @Component({
@@ -55,6 +56,9 @@ import { AuthLayoutComponent } from './auth-layout.component';
             <button type="button" class="role" [class.on]="role() === 'athlete'" (click)="role.set('athlete')">Athlète</button>
             <button type="button" class="role" [class.on]="role() === 'coach'" (click)="role.set('coach')">Coach</button>
           </div>
+          @if (role() === 'coach') {
+            <p class="small muted">Chaque compte coach est vérifié par l'équipe : tu démarres en athlète, on l'active sous 24 h.</p>
+          }
         </div>
 
         @if (error()) {
@@ -151,6 +155,7 @@ import { AuthLayoutComponent } from './auth-layout.component';
 export class RegisterPage {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
 
   firstName = '';
   lastName = '';
@@ -175,6 +180,9 @@ export class RegisterPage {
       .subscribe({
         next: (res) => {
           this.busy.set(false);
+          if (this.role() === 'coach' && res.user.role !== 'coach') {
+            this.toast.success('Demande coach envoyée : on active ton compte sous 24 h.');
+          }
           void this.router.navigate([res.user.role === 'coach' ? '/coach' : '/accueil']);
         },
         error: (err: unknown) => {

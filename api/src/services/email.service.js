@@ -69,3 +69,30 @@ exports.sendPasswordResetEmail = async (email, resetUrl) => {
 
   await transporter.sendMail(mailOptions);
 };
+
+const escapeHtml = (value) =>
+  String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+
+// Prévient l'équipe qu'un inscrit a choisi « Coach » : le compte reste athlète
+// tant qu'un admin ne l'a pas passé en coach depuis le back-office.
+exports.sendCoachRequestEmail = async (user) => {
+  const name = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Sans nom';
+  const date = new Date(user.coachRequestedAt || Date.now()).toLocaleString('fr-FR', { timeZone: 'Europe/Paris' });
+
+  await transporter.sendMail({
+    from: `"Trainwise" <${senderAddress()}>`,
+    to: process.env.COACH_REQUEST_EMAIL || 'julien@trainwise-app.com, hugo@trainwise-app.com',
+    replyTo: user.email,
+    subject: `Nouvelle demande coach : ${name}`,
+    text: `${name} (${user.email}) vient de créer un compte en choisissant « Coach », le ${date}.\n\nLe compte est athlète pour l'instant : passe-le en coach dans le back-office (Utilisateurs > ${user.email} > Rôle).`,
+    html: `
+      <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 560px; color: #374151; font-size: 15px; line-height: 1.6;">
+        <h2 style="color: #051923; margin: 0 0 16px;">Nouvelle demande coach</h2>
+        <p style="margin: 0 0 8px;"><strong>${escapeHtml(name)}</strong> vient de créer un compte en choisissant « Coach ».</p>
+        <p style="margin: 0 0 8px;">Email : <a href="mailto:${escapeHtml(user.email)}">${escapeHtml(user.email)}</a></p>
+        <p style="margin: 0 0 16px;">Date : ${escapeHtml(date)}</p>
+        <p style="margin: 0; color: #6b7280; font-size: 13px;">Le compte est athlète pour l'instant : passe-le en coach dans le back-office (Utilisateurs &gt; fiche &gt; Rôle). Répondre à ce mail écrit directement à la personne.</p>
+      </div>
+    `
+  });
+};
