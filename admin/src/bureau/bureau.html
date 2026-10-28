@@ -1,0 +1,1696 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Bureau Trainwise</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap">
+<style>
+/* Open space 3D isométrique plein écran, lumineux (un seul thème, assumé) ; cartes blanches flottantes par-dessus. */
+:root {
+  color-scheme: light;
+  --bg: #EEF1F4; --surface: #FFFFFF; --subtle: #F2F4F6; --border: #E3E7EB;
+  --ink: #051923; --text2: #5A6878; --text3: #8A95A0;
+  --brand: #003554; --accent: #00A6FB; --accentInk: #0077B6;
+  --live: #10B981; --busy: #F59E0B; --idle: #A7B1BB; --danger: #DC2626;
+  --beige: #EFEBE4; --highlight: #7FD3FD;
+  --font: "Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+* { box-sizing: border-box }
+[hidden] { display: none !important }
+html, body { height: 100%; background: var(--bg); color: var(--ink) }
+body { font-family: var(--font); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; overflow: hidden }
+button, textarea, input { font: inherit; color: inherit }
+
+#stage { position: fixed; inset: 0; background: var(--bg) }
+#stage canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab }
+#stage canvas.drag { cursor: grabbing }
+#tags { position: fixed; inset: 0; pointer-events: none; overflow: hidden }
+
+/* Étiquettes au-dessus des robots et des pôles */
+.tag { position: absolute; left: 0; top: 0; transform: translate(-50%, -100%); pointer-events: auto; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 3px 8px 3px 7px;
+  display: flex; align-items: center; gap: 6px; white-space: nowrap; box-shadow: 0 4px 12px -6px rgba(5,25,35,.35);
+  font-size: 11px; line-height: 1.3; will-change: transform }
+.tag b { font-weight: 700; font-size: 11.5px }
+.tag .st { color: var(--text2); max-width: 170px; overflow: hidden; text-overflow: ellipsis }
+.tag .pip { width: 7px; height: 7px; border-radius: 50%; background: var(--idle); flex: none }
+.tag.live .pip { background: var(--live); box-shadow: 0 0 0 3px color-mix(in srgb, var(--live) 25%, transparent); animation: pulse 1.4s infinite }
+.tag.busy .pip { background: var(--busy) }
+.tag.order { border-color: var(--busy) }
+.tag.sel { border-color: var(--c); box-shadow: 0 0 0 2px var(--c), 0 4px 12px -6px rgba(5,25,35,.35) }
+@keyframes pulse { 50% { box-shadow: 0 0 0 6px transparent } }
+.zone { position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); pointer-events: none;
+  background: var(--c); color: var(--zi, #fff); font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 4px; white-space: nowrap; opacity: .92 }
+.zone.soft { background: var(--surface); color: var(--text2); border: 1px solid var(--border) }
+
+/* Cartes flottantes */
+.card { position: fixed; background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  box-shadow: 0 12px 32px -16px rgba(5,25,35,.35) }
+.brandcard { top: calc(16px + env(safe-area-inset-top, 0px)); left: max(16px, env(safe-area-inset-left, 0px)); padding: 12px 16px;
+  display: flex; flex-direction: column; gap: 2px; max-width: calc(100% - 32px) }
+.brandcard { background: var(--brand); border-color: var(--brand); color: #fff }
+.brandcard h1 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px }
+.brandcard h1 i { width: 20px; height: 20px; border-radius: 6px; background: #fff; display: inline-block; position: relative }
+.brandcard h1 i::after { content: ""; position: absolute; inset: 6px 5px 5px 8px; background: var(--accent); border-radius: 2px }
+.brandcard h1 em { font-style: normal; color: var(--highlight); font-weight: 600 }
+.brandcard #compte a { color: var(--highlight); text-decoration: none; font-weight: 600 }
+.brandcard p { margin: 0; font-size: 12px; color: #C9DCE8; display: flex; align-items: center; gap: 6px; flex-wrap: wrap }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--idle); display: inline-block; flex: none }
+.dot.on { background: var(--live) } .dot.wait { background: var(--busy) }
+
+.kpis { top: calc(16px + env(safe-area-inset-top, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); padding: 10px 6px;
+  display: flex; max-width: calc(100% - 32px) }
+.kpis div { padding: 0 12px; border-left: 1px solid var(--border); min-width: 0 }
+.kpis div:first-child { border-left: 0 }
+.kpis b { display: block; font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.15 }
+.kpis span { display: block; font-size: 10.5px; color: var(--text2); white-space: nowrap; text-transform: uppercase; letter-spacing: .05em }
+.kpis b { color: var(--brand) }
+.kpis .hot b { color: var(--accent) }
+
+.feedcard { left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); width: min(380px, calc(100% - 32px)); padding: 12px 14px }
+.feedcard h2, .detail h3 { margin: 0 0 6px; font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text3);
+  display: flex; justify-content: space-between; align-items: center; gap: 8px }
+.feedcard h2 button { border: 0; background: none; color: var(--accentInk); font-size: 11px; font-weight: 600; cursor: pointer; padding: 0; letter-spacing: 0; text-transform: none }
+.feed { list-style: none; margin: 0; padding: 0 }
+.feed li { display: grid; grid-template-columns: 8px 1fr auto; gap: 8px; align-items: baseline; padding: 5px 0; border-top: 1px solid var(--border); font-size: 12.5px }
+.feed li:first-child { border-top: 0 }
+.feed .p { width: 7px; height: 7px; border-radius: 50%; background: var(--c); align-self: center }
+.feed .who { font-weight: 600 }
+.feed time { color: var(--text3); font-size: 11px; white-space: nowrap }
+.feed li.e { display: block; color: var(--text3) }
+
+.tools { right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); padding: 8px 10px;
+  display: flex; align-items: center; gap: 12px; font-size: 11.5px; color: var(--text2) }
+.tools .lg { display: flex; align-items: center; gap: 5px }
+.tools .hint { color: var(--text3) }
+.tools button { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-size: 16px; line-height: 1 }
+#reloadSheet { margin-left: 6px; border-color: var(--highlight); color: #fff }
+#reloadSheet span { display: inline-block }
+#reloadSheet.spin { cursor: progress; opacity: .8 }
+#reloadSheet.spin span { animation: spin .8s linear infinite }
+.tools button:focus-visible, .btn:focus-visible, .x:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+
+.banner { top: calc(84px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); padding: 8px 14px; font-size: 12.5px; color: var(--text2);
+  max-width: calc(100% - 32px); display: flex; gap: 10px; align-items: center; flex-wrap: wrap }
+.banner b { color: var(--ink) }
+
+/* Fiche d'un agent */
+.detail { top: calc(96px + env(safe-area-inset-top, 0px)); right: max(16px, env(safe-area-inset-right, 0px));
+  bottom: calc(66px + env(safe-area-inset-bottom, 0px)); width: min(400px, calc(100% - 32px)); display: flex; flex-direction: column; overflow: hidden }
+.d-head { padding: 14px 16px 12px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid var(--border) }
+.avatar { width: 40px; height: 40px; border-radius: 11px; background: var(--c); display: grid; place-items: center; color: var(--ci, #fff); font-weight: 800; flex: none }
+.d-head .eyebrow { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--c) }
+.d-head h2 { margin: 0; font-size: 17px; font-weight: 700; line-height: 1.2 }
+.x { margin-left: auto; border: 1px solid var(--border); background: var(--surface); width: 32px; height: 32px; border-radius: 9px; cursor: pointer; font-size: 17px; line-height: 1; flex: none }
+.d-body { overflow-y: auto; padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 16px }
+.now { background: var(--subtle); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px }
+.now .l1 { display: flex; justify-content: space-between; gap: 8px; font-size: 13px }
+.now .l1 b { font-weight: 600 }
+.bar { height: 6px; border-radius: 3px; background: var(--border); overflow: hidden }
+.bar i { display: block; height: 100%; background: var(--c); border-radius: 3px; transition: width .4s }
+.state { font-size: 12px; color: var(--text2); display: flex; align-items: center; gap: 6px }
+.mission { margin: 0; color: var(--text2); font-size: 13px }
+.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; counter-reset: s }
+.steps li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: center; font-size: 13px; color: var(--text2); counter-increment: s }
+.steps li::before { content: counter(s); width: 22px; height: 22px; border-radius: 50%; background: var(--subtle); display: grid; place-items: center; font-size: 11px; font-weight: 700; color: var(--text3) }
+.steps li.on { color: var(--ink); font-weight: 600 }
+.steps li.on::before { background: var(--c); color: #fff }
+.compose { border: 1px solid var(--border); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 8px }
+.compose textarea { width: 100%; min-height: 56px; resize: vertical; border: 1px solid var(--border); border-radius: 9px; padding: 7px 9px; background: var(--subtle); font-size: 13px }
+.compose textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px }
+.sel-line { font-size: 12px; color: var(--text2) }
+.btns { display: flex; flex-wrap: wrap; gap: 6px }
+.btn { border: 1px solid var(--border); background: var(--surface); border-radius: 9px; padding: 6px 11px; font-weight: 600; font-size: 12.5px; cursor: pointer }
+.btn.primary { background: var(--brand); border-color: transparent; color: #fff }
+.btn.accent { background: var(--accent); border-color: transparent; color: #fff }
+.btn:disabled { opacity: .45; cursor: not-allowed }
+.toast { font-size: 12px; color: var(--live); margin: 0; min-height: 1em }
+.toast.err { color: var(--danger) }
+.list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden }
+.list li { border-top: 1px solid var(--border) }
+.list li:first-child { border-top: 0 }
+.row { display: grid; grid-template-columns: auto 1fr auto; gap: 9px; align-items: center; padding: 7px 10px; min-width: 0 }
+.row input { width: 15px; height: 15px; accent-color: var(--accent) }
+.row .t { min-width: 0 }
+.row .t b { font-weight: 600; font-size: 13px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.row .t span { font-size: 11.5px; color: var(--text2); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.row .r { font-size: 11.5px; color: var(--text3); white-space: nowrap }
+label.row { cursor: pointer } label.row:hover { background: var(--subtle) }
+.order { padding: 8px 10px; display: flex; flex-direction: column; gap: 3px }
+.order .l1 { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-size: 13px }
+.order .l1 b { font-weight: 600 }
+.order p { margin: 0; font-size: 12.5px; color: var(--text2) }
+.order .cr { color: var(--ink); white-space: pre-line; background: var(--subtle); border-radius: 8px; padding: 8px 10px; margin-top: 4px; font-size: 12.5px; line-height: 1.55 }
+.chip { display: inline-flex; padding: 1px 8px; border-radius: 999px; background: var(--subtle); font-size: 11px; color: var(--text2); white-space: nowrap }
+.chip.ok { color: var(--live) } .chip.wait { color: #B45309 } .chip.err { color: var(--danger) } .chip.work { color: var(--accentInk) }
+.linkbtn { border: 0; background: none; color: var(--accentInk); font-size: 12px; cursor: pointer; padding: 0; font-weight: 600 }
+.linkbtn.danger { color: var(--danger) }
+.empty { color: var(--text3); font-size: 12.5px; margin: 0 }
+.maj { display: grid; grid-template-columns: auto 1fr; gap: 9px; align-items: start; padding: 8px 10px; cursor: pointer }
+.maj:hover { background: var(--subtle) }
+.maj input { margin-top: 3px; width: 15px; height: 15px; accent-color: var(--accent) }
+.maj b { font-weight: 600; font-size: 13px } .maj .arrow { color: var(--text3) } .maj .new { color: var(--accentInk); font-weight: 600 }
+.maj p { margin: 2px 0 0; font-size: 12px; color: var(--text2) }
+.thinking { font-size: 12.5px; color: var(--text2); display: flex; gap: 8px; align-items: center; margin: 0 }
+.thinking i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border); border-top-color: var(--accent); animation: spin .8s linear infinite }
+@keyframes spin { to { transform: rotate(360deg) } }
+
+.views { display: flex; gap: 4px; margin-top: 8px }
+.views button { border: 1px solid rgba(255,255,255,.28); background: transparent; color: #C9DCE8; border-radius: 999px; padding: 3px 12px; font-size: 12px; font-weight: 600; cursor: pointer }
+.views button[aria-pressed="true"] { background: #fff; color: var(--brand); border-color: #fff }
+.views button:focus-visible { outline: 2px solid var(--highlight); outline-offset: 2px }
+.espaces { display: flex; gap: 4px; margin: 6px 0 2px; background: rgba(255,255,255,.08); border-radius: 10px; padding: 3px }
+.espaces button { flex: 1; border: 0; background: transparent; color: #C9DCE8; border-radius: 8px; padding: 4px 10px; font-size: 12px; font-weight: 600; cursor: pointer; text-align: left; line-height: 1.25; white-space: nowrap }
+.espaces button small { display: block; font-weight: 500; font-size: 10.5px; opacity: .8 }
+.espaces button[aria-pressed="true"] { background: var(--accent); color: #fff }
+.espaces button:focus-visible { outline: 2px solid var(--highlight); outline-offset: 2px }
+.roomtag { position: absolute; left: 0; top: 0; pointer-events: auto; cursor: pointer; display: flex; align-items: center; gap: 7px; white-space: nowrap;
+  background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--c); border-radius: 8px; padding: 3px 9px; font-size: 11px;
+  box-shadow: 0 4px 12px -6px rgba(5,25,35,.35); will-change: transform }
+.roomtag b { font-weight: 700 } .roomtag span { color: var(--text2); font-variant-numeric: tabular-nums }
+.roomtag.sel { box-shadow: 0 0 0 2px var(--c), 0 4px 12px -6px rgba(5,25,35,.35) }
+.ctag { position: absolute; left: 0; top: 0; pointer-events: auto; cursor: pointer; background: var(--c); color: var(--ci, #fff); font-size: 10.5px; font-weight: 600;
+  padding: 1px 7px; border-radius: 999px; white-space: nowrap; box-shadow: 0 3px 8px -4px rgba(5,25,35,.4); will-change: transform }
+.ctag.hov { pointer-events: none; background: var(--surface); color: var(--ink); border: 1px solid var(--border) }
+.track { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px }
+.track li { font-size: 11px; padding: 1px 8px; border-radius: 999px; background: var(--surface); color: var(--text3) }
+.track li.past { color: var(--text2) } .track li.past::before { content: "✓ " }
+.track li.on { background: var(--c); color: var(--ci, #fff); font-weight: 600 }
+.infos { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 5px 14px; font-size: 13px }
+.infos dt { color: var(--text3); font-size: 12px; padding-top: 1px } .infos dd { margin: 0; min-width: 0; overflow-wrap: anywhere }
+.infos a { color: var(--accentInk) }
+.crbox { margin: 0; white-space: pre-line; background: var(--subtle); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; line-height: 1.55 }
+button.rowbtn { width: 100%; border: 0; background: none; text-align: left; cursor: pointer } button.rowbtn:hover { background: var(--subtle) }
+button.rowbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px }
+.rowbtn .pip { width: 8px; height: 8px; border-radius: 50% }
+
+@media (max-width: 760px) {
+  .kpis { top: auto; bottom: calc(66px + env(safe-area-inset-bottom, 0px)); left: max(16px, env(safe-area-inset-left, 0px)); right: auto; padding: 8px 2px }
+  .kpis div { padding: 0 8px } .kpis b { font-size: 16px } .kpis span { font-size: 9px }
+  .kpis { overflow-x: auto; right: max(16px, env(safe-area-inset-right, 0px)) }
+  .feedcard { display: none }
+  .feedcard.open { display: block; bottom: calc(130px + env(safe-area-inset-bottom, 0px)) }
+  .tools { left: max(16px, env(safe-area-inset-left, 0px)); justify-content: space-between }
+  .detail { top: 30%; left: 0; right: 0; bottom: 0; width: 100%; border-radius: 16px 16px 0 0; padding-bottom: env(safe-area-inset-bottom, 0px) }
+  .banner { top: calc(90px + env(safe-area-inset-top, 0px)) }
+}
+@media (min-width: 761px) { #feedToggle { display: none } }
+@media (max-width: 1100px) { #moveHint { display: none } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important } }
+</style>
+
+<div id="stage" aria-label="Le bureau en 3D : clique sur un agent pour ouvrir sa fiche"></div>
+<div id="tags"></div>
+
+<header class="card brandcard">
+  <h1><i aria-hidden="true"></i>Trainwise <em id="titre">· les bureaux</em></h1>
+  <div class="espaces" role="group" aria-label="Bureau"><button data-espace="julien">Julien<small>Secteur Bordeaux</small></button><button data-espace="hugo">Hugo<small>Secteur Alsace</small></button></div>
+  <p id="sub">Prospection des coachs</p>
+  <p id="chef"><span class="dot"></span><span>Chef de bureau : pas encore passé</span></p>
+  <p id="compte"></p>
+  <div class="views" role="group" aria-label="Vue"><button data-view="deux">Les deux</button><button data-view="agents">Agents</button><button data-view="clients">Clients</button><button data-view="tout">Tout</button><button id="reloadSheet" title="Relit les contacts et les ordres"><span aria-hidden="true">⟳</span> Recharger</button></div>
+</header>
+
+<div class="card kpis" id="kpis"></div>
+<div class="card banner" id="sheetBanner" hidden></div>
+
+<section class="card feedcard" id="feedcard">
+  <h2><span>Fil du bureau</span><span id="queueCount"></span></h2>
+  <ul class="feed" id="feed"></ul>
+</section>
+
+<div class="card tools">
+  <span class="lg"><span class="dot on"></span>En direct</span>
+  <span class="lg"><span class="dot wait"></span>À faire</span>
+  <span class="lg"><span class="dot"></span>En pause</span>
+  <span class="hint" id="moveHint">Glisse pour te déplacer · Maj + glisse pour tourner</span>
+  <button id="feedToggle" aria-label="Afficher le fil du bureau">☰</button>
+  <button id="zin" aria-label="Zoomer">+</button><button id="zout" aria-label="Dézoomer">−</button><button id="recentre" aria-label="Recentrer la vue" title="Recentrer">⌖</button>
+</div>
+
+<aside class="card detail" id="detail" hidden aria-label="Fiche de l'agent"></aside>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const SHEET_ID = "15et4rtJ_xexS0oxygti6xkil9Wnj58y39FsS18SmnuI";
+const SHEETS = "Google Sheets";
+const FRESH_MS = 20 * 60 * 1000;
+const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ================= Bureaux : Julien (Bordeaux) et Hugo (Alsace) ================= */
+// Même open space, mêmes agents ; chaque bureau a ses onglets du Sheet, sa boîte mail et ses collections dans la base.
+const ESPACES = {
+  julien: { id: "julien", prenom: "Julien", de: "de Julien", email: "julien@trainwise-app.com", boite: "julien@", secteur: "Bordeaux",
+    prefix: "", chef: "bureau/chef", tabs: t => /^S\d+( · Bordeaux)?$/.test(t) },
+  hugo: { id: "hugo", prenom: "Hugo", de: "d'Hugo", email: "hugo@trainwise-app.com", boite: "hugo@", secteur: "Alsace",
+    prefix: "hugo_", chef: "bureau/chef_hugo", tabs: t => /^S\d+ · Alsace$/.test(t) },
+};
+const OFFS = { julien: [0, 0], hugo: [0, -27] };   // le bâtiment d'Hugo se tient derrière celui de Julien, une allée plantée entre les deux
+const BUREAUX = [];
+let ACTIVE = null, ACTIVE_ID = "julien"; try { const e = localStorage.getItem("bureau-espace"); if (ESPACES[e]) ACTIVE_ID = e } catch (e) {}
+
+/* ================= Agents ================= */
+const AGENTS = [
+  { id: "radar", nom: "Radar", role: "Chercheur de coachs", pole: "Recherche", init: "R", color: "#00A6FB", desk: [-9, -5], aisle: -2.4,
+    station: { label: "Carte des zones", stand: [-12.2, -2.6], face: -Math.PI / 2 }, fx: "pin",
+    mission: "Trouve chaque semaine une cinquantaine de coachs d'endurance dans le secteur {secteur}, en priorité ceux qui ont un email public, et les ajoute au Sheet.",
+    rythme: "Chaque lundi (50 contacts), ou sur ordre",
+    steps: ["Choisit une zone", "Cherche les coachs sur le web", "Trouve un email public", "Ajoute la ligne au Sheet"],
+    actions: [{ id: "chercher", label: "Lancer une recherche", sel: false, hint: "Ex. : 20 coachs trail autour de Lyon, emails seulement" }] },
+  { id: "allo", nom: "Allô", role: "Réponses et appels", pole: "Appels", init: "A", color: "#10B981", desk: [-4.5, -5], aisle: -2.4,
+    station: { label: "Cabine", stand: [-7, 5.2], face: 0 }, fx: "ring",
+    mission: "Relève la boîte {boite}, classe les réponses, prépare tes appels et tes démos (fiche coach, points à aborder) et met les statuts à jour.",
+    rythme: "Sur ordre",
+    steps: ["Relève la boîte {boite}", "Rattache la réponse au coach", "Prépare la fiche d'appel", "Met le statut à jour"],
+    actions: [{ id: "relever", label: "Relever la boîte mail", sel: false, hint: "" },
+      { id: "preparer_appel", label: "Préparer l'appel", sel: true, hint: "Ex. : appel jeudi 18 h, triathlon longue distance" }] },
+  { id: "messager", nom: "Messager", role: "Formulaires et Instagram", pole: "Formulaires", init: "M", color: "#7FD3FD", ink: "#003554", desk: [0, -5], aisle: -2.4,
+    station: { label: "Borne messages", stand: [3.2, 5.2], face: 0 }, fx: "chat",
+    mission: "Prépare, pour chaque coach sans email, le message court prêt à coller dans son formulaire ou sur Instagram. Tu l'envoies toi-même, puis tu le dis au Scribe.",
+    rythme: "Sur ordre",
+    steps: ["Prend un contact sans email", "Trouve son formulaire ou son Instagram", "Prépare le message court", "Te le donne prêt à coller"],
+    actions: [{ id: "contacter", label: "Préparer les messages", sel: true, hint: "Ex. : formulaires seulement, pas Instagram" }] },
+  { id: "echo", nom: "Écho", role: "Relances", pole: "Relances", init: "É", color: "#FC4C02", desk: [4.5, -5], aisle: -2.4,
+    station: { label: "Classeur relances", stand: [11.4, -1.6], face: Math.PI / 2 }, fx: "drawer",
+    mission: "Relance une seule fois, 5 jours après le premier email, en réponse au même fil, avec le modèle « Relance (J+5) ».",
+    rythme: "Sur ordre",
+    steps: ["Repère les relances dues (J+5)", "Retrouve le fil dans Zoho", "Répond avec la relance", "Passe la ligne en Relancé"],
+    actions: [{ id: "relancer", label: "Relancer maintenant", sel: true, hint: "Ex. : ajoute le code FOULEE-DOREE-50" }] },
+  { id: "facteur", nom: "Facteur", role: "Premiers emails", pole: "Envois", init: "F", color: "#003554", desk: [9, -5], aisle: -2.4,
+    station: { label: "Boîte d'envoi", stand: [11.3, 4.2], face: Math.PI / 2 }, fx: "mail",
+    mission: "Programme les premiers emails dans Zoho depuis {email}, avec le modèle « Premier email ». 15 par jour au plus, un toutes les 20 minutes.",
+    rythme: "Sur ordre",
+    steps: ["Prend un contact à faire", "Remplit le modèle Premier email", "Programme l'envoi dans Zoho", "Passe la ligne en Programmé"],
+    actions: [{ id: "programmer", label: "Programmer les emails", sel: true, hint: "Ex. : commence demain 8 h, insiste sur le suivi muscu" }] },
+  { id: "scribe", nom: "Scribe", role: "Tient le Sheet à jour", pole: "Suivi", init: "S", color: "#D4A24C", ink: "#3D2A06", desk: [6.2, 2.2], aisle: null,
+    station: { label: "Sheet maître", stand: [9.6, 6.3], face: 0 }, fx: "cells",
+    mission: "Tu lui racontes ce que tu as fait (« j'ai appelé Sudrie, démo jeudi », « écrit à 3 coachs sur Instagram ») : il retrouve les coachs, te propose les nouveaux statuts, et met le Sheet à jour dès que tu valides. Les chiffres du bureau suivent.",
+    rythme: "Instantané, depuis cette page",
+    steps: ["Lit ce que tu racontes", "Retrouve les coachs dans le Sheet", "Te propose les changements", "Écrit dans le Sheet"],
+    actions: [] },
+];
+const BY_ID = Object.fromEntries(AGENTS.map(a => [a.id, a]));
+
+/* ================= Outils ================= */
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const today0 = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d };
+function frDate(s) { const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(s || ""); return m ? new Date(+m[3], m[2] - 1, +m[1]) : null }
+function ago(iso) {
+  if (!iso) return "";
+  const s = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (s < 60) return "à l'instant";
+  if (s < 3600) return `il y a ${Math.round(s / 60)} min`;
+  if (s < 86400) return `il y a ${Math.round(s / 3600)} h`;
+  return new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+}
+function isoWeek(d = new Date()) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day);
+  return Math.ceil(((t - new Date(Date.UTC(t.getUTCFullYear(), 0, 1))) / 864e5 + 1) / 7);
+}
+const key = r => `${r.onglet}:${r.ligne}`;
+
+/* ================= Sheet → contacts ================= */
+function parseTab(onglet, values) {
+  if (!values || !values.length) return [];
+  const head = values[0].map(h => String(h || "").trim());
+  const col = (name, fb) => { const i = head.indexOf(name); return i >= 0 ? i : fb };
+  const C = { nom: col("Nom", 1), structure: col("Structure", 2), ville: col("Ville", 3), canal: col("Canal", 7),
+    envoye: col("Envoyé le", 10), relance: col("Relance le", 11), notes: col("Notes", 12), ajoute: col("Ajouté le", 15),
+    specialite: col("Spécialité", 5), outil: col("Outil actuel", 6), contact: col("Contact", 8), instagram: col("Instagram", 9) };
+  const out = [];
+  values.slice(1).forEach((v, i) => {
+    const nom = (v[C.nom] || "").trim();
+    if (!nom) return;
+    out.push({ onglet, ligne: i + 2, statut: (v[0] || "").trim(), nom, structure: v[C.structure] || "", ville: v[C.ville] || "",
+      canal: v[C.canal] || "", envoye: v[C.envoye] || "", relance: v[C.relance] || "", notes: v[C.notes] || "", ajoute: v[C.ajoute] || "",
+      specialite: v[C.specialite] || "", outil: v[C.outil] || "", contact: v[C.contact] || "", instagram: v[C.instagram] || "" });
+  });
+  return out;
+}
+const isEmail = r => /email/i.test(r.canal);
+const REPONSES = ["Répondu", "Démo prévue", "Inscrit", "Pas intéressé", "Non"];
+
+/* ================= Scène 3D ================= */
+const use = n => window.claude?.use ? window.claude.use(n) : Promise.resolve(null);
+const T = THREE;
+const stage = document.getElementById("stage");
+const renderer = new T.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = T.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+const scene = new T.Scene();
+scene.background = new T.Color("#EEF1F4");
+const cam = new T.OrthographicCamera(-10, 10, 10, -10, 0.1, 200);
+let az = Math.PI / 4, zoom = innerWidth < 760 ? 1.25 : 1;
+const target = new T.Vector3(0.6, 1.2, -0.4);
+
+scene.add(new T.HemisphereLight(0xffffff, 0xd9dee4, 0.75));
+const sun = new T.DirectionalLight(0xffffff, 0.62);
+sun.position.set(14, 26, 12);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -22, right: 22, top: 22, bottom: -22, near: 1, far: 80 });
+sun.shadow.bias = -0.0006; sun.shadow.radius = 3;
+scene.add(sun);
+
+const M = {};
+function mat(hex, o = {}) { const k = hex + JSON.stringify(o); return M[k] || (M[k] = new T.MeshStandardMaterial({ color: hex, roughness: 0.85, metalness: 0, ...o })) }
+const WORLD = scene;
+const lerp = (a, b, k) => a + (b - a) * k;
+const D0 = 9;
+
+/* --- Caméra --- */
+const VIEWS = { agents: { x: 0.6, z: -0.4, w: 37, h: 27, sh: 22 }, clients: { x: 33.4, z: -3.2, w: 47, h: 33, sh: 26 }, tout: { x: 16.6, z: -0.8, w: 74, h: 34, sh: 40 },
+  deux: { x: 16.6, z: -14.3, w: 92, h: 52, sh: 56, abs: true } };
+const activeOff = () => OFFS[ACTIVE ? ACTIVE.E.id : ACTIVE_ID];
+const viewFor = v => VIEWS[v].abs ? VIEWS[v] : { ...VIEWS[v], x: VIEWS[v].x + activeOff()[0], z: VIEWS[v].z + activeOff()[1] };
+let view = "deux"; try { const v = localStorage.getItem("bureau-vue2"); if (VIEWS[v]) view = v } catch (e) {}
+const camV = { ...viewFor(view) }; target.x = camV.x; target.z = camV.z; let camAnim = null;
+scene.add(sun.target);
+function setShadow(s) { Object.assign(sun.shadow.camera, { left: -s, right: s, top: s, bottom: -s }); sun.shadow.camera.updateProjectionMatrix() }
+setShadow(camV.sh);
+function placeCam() {
+  const r = 40, el = 0.62;
+  cam.position.set(target.x + Math.sin(az) * Math.cos(el) * r, Math.sin(el) * r * 1.0, target.z + Math.cos(az) * Math.cos(el) * r);
+  cam.lookAt(target);
+  sun.position.set(target.x + 14, 26, target.z + 12); sun.target.position.set(target.x, 0, target.z); sun.target.updateMatrixWorld();
+}
+function resize() { renderer.setSize(innerWidth, innerHeight, false); frame() }
+function frame() {
+  const w = innerWidth, h = innerHeight;
+  const aspect = w / h, needW = camV.w / zoom, needH = camV.h / zoom;
+  const vh = Math.max(needH, needW / aspect);
+  cam.left = -vh * aspect / 2; cam.right = vh * aspect / 2; cam.top = vh / 2; cam.bottom = -vh / 2;
+  cam.updateProjectionMatrix(); placeCam();
+}
+addEventListener("resize", resize); resize();
+
+/* --- Se déplacer : glisser = se promener, clic droit ou Maj + glisser = tourner, molette ou pincer = zoomer --- */
+let drag = null;
+const cv = renderer.domElement;
+const pan = { x: 0, z: 0 }, ptrs = new Map();
+const clampN = (v, a, b) => Math.min(b, Math.max(a, v));
+function applyTarget() { target.x = clampN(camV.x + pan.x, -16, 48); target.z = clampN(camV.z + pan.z, -11 + OFFS.hugo[1], 11); pan.x = target.x - camV.x; pan.z = target.z - camV.z }
+function panBy(dx, dy) {
+  const u = (cam.right - cam.left) / innerWidth, k = 1 / Math.sin(0.62);
+  pan.x += -Math.cos(az) * dx * u - Math.sin(az) * dy * u * k;
+  pan.z += Math.sin(az) * dx * u - Math.cos(az) * dy * u * k;
+  applyTarget(); placeCam();
+}
+function zoomBy(f) { zoom = clampN(zoom * f, 0.55, 3.6); frame() }
+cv.addEventListener("contextmenu", e => e.preventDefault());
+cv.addEventListener("pointerdown", e => {
+  ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); cv.setPointerCapture(e.pointerId);
+  if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; drag = { pinch: Math.hypot(a.x - b.x, a.y - b.y), zoom, moved: true }; return }
+  drag = { x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, az, moved: false, rotate: e.button === 2 || e.shiftKey };
+});
+cv.addEventListener("pointermove", e => {
+  if (!drag || !ptrs.has(e.pointerId)) return;
+  ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (drag.pinch) { if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; zoom = clampN(drag.zoom * Math.hypot(a.x - b.x, a.y - b.y) / drag.pinch, 0.55, 3.6); frame() } return }
+  if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 5) { drag.moved = true; cv.classList.add("drag") }
+  if (!drag.moved) return;
+  if (drag.rotate) { az = clampN(drag.az - (e.clientX - drag.x) * 0.005, 0.15, 1.42); placeCam() }
+  else panBy(e.clientX - drag.lx, e.clientY - drag.ly);
+  drag.lx = e.clientX; drag.ly = e.clientY;
+});
+cv.addEventListener("pointercancel", e => { ptrs.delete(e.pointerId); if (!ptrs.size) { drag = null; cv.classList.remove("drag") } });
+cv.addEventListener("pointerup", e => {
+  ptrs.delete(e.pointerId);
+  if (drag?.pinch) { if (!ptrs.size) drag = null; return }
+  const wasDrag = drag && drag.moved; drag = null; cv.classList.remove("drag");
+  if (wasDrag || e.button === 2) return;
+  const rc = new T.Raycaster(), p = new T.Vector2((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  rc.setFromCamera(p, cam);
+  let best = null;
+  BUREAUX.forEach(b => { const h = b.pick(rc); if (h && (!best || h.d < best.d)) best = h });
+  if (best) best.go();
+});
+// Trackpad : deux doigts = se promener, pincer = zoomer. Souris : molette = zoomer.
+cv.addEventListener("wheel", e => {
+  e.preventDefault();
+  const mouse = e.deltaMode === 1 || (e.deltaX === 0 && Math.abs(e.deltaY) >= 50 && Number.isInteger(e.deltaY));
+  if (e.ctrlKey || e.metaKey || mouse) zoomBy(Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015)));
+  else panBy(-e.deltaX, -e.deltaY);
+}, { passive: false });
+document.getElementById("zin").onclick = () => zoomBy(1.2);
+document.getElementById("zout").onclick = () => zoomBy(1 / 1.2);
+document.getElementById("recentre").onclick = () => setView(view);
+addEventListener("keydown", e => {
+  if (e.target.closest?.("input, textarea, select, button, [contenteditable]")) return;
+  const st = 40, k = { ArrowLeft: [st, 0], ArrowRight: [-st, 0], ArrowUp: [0, st], ArrowDown: [0, -st] }[e.key];
+  if (k) { e.preventDefault(); panBy(...k) }
+  else if (e.key === "+" || e.key === "=") zoomBy(1.2);
+  else if (e.key === "-") zoomBy(1 / 1.2);
+});
+
+
+/* --- Vues --- */
+function setView(v) {
+  if (!VIEWS[v]) return;
+  view = v; try { localStorage.setItem("bureau-vue2", v) } catch (e) {}
+  const to = viewFor(v);
+  setShadow(Math.max(camV.sh, to.sh));
+  camAnim = { from: { ...camV, x: target.x, z: target.z, az, zoom }, to, t: 0, dur: REDUCE ? 0.01 : 1.1 };
+  pan.x = pan.z = 0;
+  document.querySelectorAll("[data-view]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === v)));
+  ACTIVE?.renderHud();
+}
+function stepCam(dt) {
+  if (!camAnim) return;
+  camAnim.t += dt;
+  const k = Math.min(1, camAnim.t / camAnim.dur), e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2, { from, to } = camAnim;
+  camV.x = lerp(from.x, to.x, e); camV.z = lerp(from.z, to.z, e); camV.w = lerp(from.w, to.w, e); camV.h = lerp(from.h, to.h, e);
+  az = lerp(from.az, Math.PI / 4, e); zoom = lerp(from.zoom, innerWidth < 760 ? 1.25 : 1, e);
+  applyTarget(); frame();
+  if (k >= 1) { camAnim = null; camV.sh = to.sh; setShadow(to.sh) }
+}
+document.querySelectorAll("[data-view]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === view)));
+
+/* ================= Un bâtiment complet : open space + salle des clients, avec ses données ================= */
+function makeBureau(E, [OX, OZ]) {
+const B = { E, OX, OZ }, isActive = () => ACTIVE === B;
+const scene = new T.Group(); scene.position.set(OX, 0, OZ); WORLD.add(scene);   // tout le bâtiment est construit dans ce groupe
+const col = n => E.prefix + n;
+const fill = s => s.replace(/\{(\w+)\}/g, (m, k) => E[k] ?? m);
+
+const S = { localLive: {}, scribe: { text: "", busy: false, props: null, err: null, done: null }, tabs: {}, sheetErr: null, sheetAt: null, live: {}, ordres: [], journal: [], chef: null,
+  open: null, sel: new Set(), expanded: {}, db: null, toast: null };
+const allRows = () => Object.keys(S.tabs).sort().flatMap(t => S.tabs[t]);
+
+function lists(agentId) {
+  const rows = allRows(), t0 = today0();
+  const sub = r => [r.structure && r.structure !== r.nom ? r.structure : "", r.ville].filter(Boolean).join(" · ");
+  const item = (r, right) => ({ k: key(r), titre: r.nom, sub: sub(r), right });
+  switch (agentId) {
+    case "radar": {
+      const par = {};
+      rows.forEach(r => { par[r.onglet] = (par[r.onglet] || 0) + 1 });
+      const ajd = rows.filter(r => { const d = frDate(r.ajoute); return d && +d === +t0 });
+      return { aFaire: [], enCours: ajd.map(r => item(r, "ajouté aujourd'hui")),
+        fait: Object.keys(par).sort().reverse().map(s => ({ k: s, titre: `${s} · ${par[s]} contacts`, sub: "Onglet du Sheet maître", right: "" })) };
+    }
+    case "facteur":
+      return { aFaire: rows.filter(r => r.statut === "À envoyer" && isEmail(r)).map(r => item(r, r.onglet)),
+        enCours: rows.filter(r => r.statut === "Programmé" && isEmail(r)).map(r => item(r, r.envoye ? `part le ${r.envoye.slice(0, 5)}` : "programmé")),
+        fait: rows.filter(r => isEmail(r) && ["Envoyé", "Relancé", ...REPONSES].includes(r.statut)).map(r => item(r, r.envoye.slice(0, 5))) };
+    case "messager":
+      return { aFaire: rows.filter(r => r.statut === "À envoyer" && !isEmail(r)).map(r => item(r, r.canal)),
+        enCours: rows.filter(r => r.statut === "Programmé" && !isEmail(r)).map(r => item(r, r.canal)),
+        fait: rows.filter(r => !isEmail(r) && ["Envoyé", "Relancé", ...REPONSES].includes(r.statut)).map(r => item(r, r.canal)) };
+    case "echo": {
+      const due = r => { const d = frDate(r.relance); return d && d <= t0 };
+      return { aFaire: rows.filter(r => r.statut === "Envoyé" && isEmail(r) && due(r)).map(r => item(r, `dû le ${r.relance.slice(0, 5)}`)),
+        enCours: rows.filter(r => ["Envoyé", "Programmé"].includes(r.statut) && isEmail(r) && !due(r) && r.relance)
+          .sort((a, b) => frDate(a.relance) - frDate(b.relance)).map(r => item(r, `le ${r.relance.slice(0, 5)}`)),
+        fait: rows.filter(r => r.statut === "Relancé").map(r => item(r, "")), enCoursTitre: "À venir" };
+    }
+    case "scribe": {
+      const suivre = rows.filter(r => ["Répondu", "Démo prévue"].includes(r.statut)).map(r => item(r, r.statut));
+      return { aFaire: [], enCours: suivre, enCoursTitre: "À suivre",
+        fait: S.journal.filter(j => j.agent === "scribe").map((j, i) => ({ k: "j" + i, titre: j.texte, sub: "", right: ago(j.quand) })) };
+    }
+    case "allo":
+      return { aFaire: rows.filter(r => r.statut === "Répondu").map(r => item(r, r.onglet)),
+        enCours: rows.filter(r => r.statut === "Démo prévue").map(r => item(r, "démo")),
+        fait: rows.filter(r => ["Inscrit", "Pas intéressé", "Non"].includes(r.statut)).map(r => item(r, r.statut)) };
+  }
+}
+
+function agentState(a) {
+  const live = S.localLive[a.id] || S.live[a.id];
+  const fresh = live && live.etat === "au_travail" && Date.now() - new Date(live.maj_le).getTime() < FRESH_MS;
+  const attente = S.ordres.filter(o => o.agent === a.id && o.statut === "en_attente").length;
+  const ordreEnCours = S.ordres.find(o => o.agent === a.id && o.statut === "en_cours");
+  const L = S.sheetAt ? lists(a.id) : null;
+  const aFaire = L ? L.aFaire.length : 0;
+  const mode = fresh || ordreEnCours ? "live" : a.id === "scribe" ? "pause" : (aFaire || attente || !S.sheetAt) ? "busy" : "pause";
+  return { mode, live: fresh ? live : null, attente, aFaire, L, fait: L ? L.fait.length : 0,
+    tache: (fresh && live.tache) || (ordreEnCours && ordreEnCours.label) || "" };
+}
+
+
+function box(w, h, d, color, x, y, z, parent = scene, o) {
+  const m = new T.Mesh(new T.BoxGeometry(w, h, d), mat(color, o)); m.position.set(x, y, z);
+  m.castShadow = true; m.receiveShadow = true; parent.add(m); return m;
+}
+function cyl(rt, rb, h, color, x, y, z, parent = scene, seg = 20, o) {
+  const m = new T.Mesh(new T.CylinderGeometry(rt, rb, h, seg), mat(color, o)); m.position.set(x, y, z);
+  m.castShadow = true; m.receiveShadow = true; parent.add(m); return m;
+}
+function sph(r, color, x, y, z, parent = scene, o) {
+  const m = new T.Mesh(new T.SphereGeometry(r, 24, 16), mat(color, o)); m.position.set(x, y, z);
+  m.castShadow = true; parent.add(m); return m;
+}
+
+
+/* --- La pièce --- */
+const W = 14, D = 9, H = 5.2;
+box(W * 2 + 0.6, 0.4, D * 2 + 0.6, "#F6F4F0", 0, -0.2, 0);                       // sol clair
+box(W * 2 + 0.6, 0.12, D * 2 + 0.6, "#E2D2B8", 0, -0.44, 0);                     // tranche bois
+box(W * 2 + 0.6, H, 0.3, "#FFFFFF", 0, H / 2, -D - 0.15);                        // mur du fond
+box(0.3, H, D * 2 + 0.6, "#FBFBFC", -W - 0.15, H / 2, 0);                         // mur de gauche
+box(W * 2 + 0.6, 0.5, 0.34, "#003554", 0, 0.25, -D);                              // soubassement bleu nuit
+box(0.34, 0.5, D * 2 + 0.6, "#003554", -W, 0.25, 0);
+box(W * 2 + 0.6, 0.08, 0.36, "#00A6FB", 0, 0.54, -D); box(0.36, 0.08, D * 2 + 0.6, "#00A6FB", -W, 0.54, 0);
+// baies vitrées
+[-10.5, -6.5, -2.5, 1.5].forEach(x => {
+  box(2.6, 3.7, 0.08, "#CFE7F5", x, 2.45, -D + 0.02, scene, { roughness: 0.2, emissive: "#BFE3F7", emissiveIntensity: 0.35 });
+  box(2.8, 0.12, 0.18, "#003554", x, 4.36, -D + 0.08); box(2.8, 0.12, 0.18, "#003554", x, 0.56, -D + 0.08);
+  [-1.34, 0, 1.34].forEach(dx => box(0.1, 3.9, 0.18, "#003554", x + dx, 2.45, -D + 0.08));
+});
+[-0.5].forEach(z => {
+  box(0.08, 3.7, 2.6, "#CFE7F5", -W + 0.02, 2.45, z - 6, scene, { roughness: 0.2, emissive: "#BFE3F7", emissiveIntensity: 0.35 });
+  box(0.18, 0.12, 2.8, "#003554", -W + 0.08, 4.36, z - 6); box(0.18, 0.12, 2.8, "#003554", -W + 0.08, 0.56, z - 6);
+  [-1.34, 0, 1.34].forEach(dz => box(0.18, 3.9, 0.1, "#003554", -W + 0.08, 2.45, z - 6 + dz));
+});
+
+function canvasTex(w, h, draw) {
+  const c = document.createElement("canvas"); c.width = w; c.height = h;
+  const g = c.getContext("2d"); draw(g, w, h);
+  const t = new T.CanvasTexture(c); t.anisotropy = 4; t.userData = { c, g, draw }; return t;
+}
+// Logo au mur
+const logoTex = canvasTex(1024, 220, (g, w, h) => {
+  g.clearRect(0, 0, w, h);
+  g.fillStyle = "#003554"; roundRect(g, 10, 30, 160, 160, 34); g.fill();
+  g.fillStyle = "#00A6FB"; roundRect(g, 74, 76, 62, 68, 10); g.fill();
+  g.fillStyle = "#003554"; g.font = "800 132px Poppins, sans-serif"; g.textBaseline = "middle"; g.fillText("Trainwise", 200, 116);
+});
+const logo = new T.Mesh(new T.PlaneGeometry(6.4, 1.38), new T.MeshBasicMaterial({ map: logoTex, transparent: true }));
+logo.position.set(7.6, 3.6, -D + 0.02); scene.add(logo);
+const plaqueTex = canvasTex(1024, 128, (g, w, h) => {
+  g.clearRect(0, 0, w, h); g.fillStyle = "#00A6FB"; roundRect(g, 0, 8, w, 112, 56); g.fill();
+  g.fillStyle = "#FFFFFF"; g.font = "700 46px Poppins, sans-serif"; g.textBaseline = "middle"; g.textAlign = "center";
+  g.fillText(`Bureau ${E.de} · ${E.secteur}`.toUpperCase(), w / 2, 66);
+});
+const plaque = new T.Mesh(new T.PlaneGeometry(5.2, 0.65), new T.MeshBasicMaterial({ map: plaqueTex, transparent: true }));
+plaque.position.set(7.6, 2.45, -D + 0.03); scene.add(plaque);
+function roundRect(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath() }
+
+// Tableau des chiffres (mur de gauche)
+let kpiVals = null;
+const boardTex = canvasTex(900, 620, (g, w, h) => {
+  g.fillStyle = "#003554"; g.fillRect(0, 0, w, h); g.fillStyle = "#00A6FB"; g.fillRect(0, h - 14, w, 14);
+  g.fillStyle = "#7FD3FD"; g.font = "700 34px Poppins, sans-serif"; g.textBaseline = "top";
+  g.fillText("PROSPECTION · " + E.secteur.toUpperCase() + " · S" + isoWeek(), 48, 40);
+  const rows = kpiVals ? [[kpiVals[0], "contacts dans le Sheet"], [kpiVals[3], "emails envoyés"], [kpiVals[2], "programmés"], [kpiVals[4], "réponses reçues"]]
+    : [["…", "chargement du Sheet"]];
+  rows.forEach(([n, l], i) => {
+    const y = 120 + i * 118;
+    g.fillStyle = i === 3 ? "#7FD3FD" : "#FFFFFF"; g.font = "700 96px Poppins, sans-serif"; g.fillText(String(n), 48, y);
+    g.fillStyle = "#C9DCE8"; g.font = "500 34px Poppins, sans-serif"; g.fillText(l, 300, y + 34);
+  });
+});
+box(0.16, 3.0, 4.3, "#00243A", -W + 0.12, 2.6, 2.6);
+const board = new T.Mesh(new T.PlaneGeometry(4.0, 2.76), new T.MeshBasicMaterial({ map: boardTex }));
+board.rotation.y = Math.PI / 2; board.position.set(-W + 0.22, 2.6, 2.6); scene.add(board);
+function redrawBoard() { const t = boardTex.userData; t.draw(t.g, t.c.width, t.c.height); boardTex.needsUpdate = true }
+
+/* --- Arbres et plantes low-poly --- */
+function tree(x, z, s = 1) {
+  cyl(0.42 * s, 0.32 * s, 0.7 * s, "#FFFFFF", x, 0.35 * s, z);
+  cyl(0.07 * s, 0.09 * s, 1.2 * s, "#8A6A48", x, 1.1 * s, z, scene, 8);
+  [[0, 2.2, 0, 1], [0.45, 1.85, 0.2, 0.7], [-0.4, 1.95, -0.25, 0.72], [0.1, 2.75, -0.1, 0.62]].forEach(([dx, y, dz, r]) => {
+    const m = new T.Mesh(new T.IcosahedronGeometry(r * s, 1), mat("#3FAE49", { flatShading: true, roughness: 0.9 }));
+    m.position.set(x + dx * s, y * s, z + dz * s); m.castShadow = true; scene.add(m);
+  });
+}
+tree(-12.6, -7.6, 1.15); tree(12.6, -7.6, 1.1); tree(-12.4, 7.6, 1.0); tree(12.6, 7.8, 1.05); tree(-6.2, -0.4, 0.7);
+function bush(x, z) {
+  cyl(0.28, 0.22, 0.42, "#FFFFFF", x, 0.21, z);
+  const m = new T.Mesh(new T.IcosahedronGeometry(0.42, 1), mat("#4DBE57", { flatShading: true, roughness: 0.9 }));
+  m.position.set(x, 0.75, z); m.castShadow = true; scene.add(m);
+}
+bush(-2.3, -7.9); bush(2.3, -7.9); bush(13, 0.6); bush(-13, -3.6);
+
+/* --- Coin pause : canapé vert + table basse --- */
+const PAUSE = [[-1.6, 0.95], [-0.35, 0.95], [0.9, 0.95]];
+box(4.4, 0.5, 1.2, "#0B4A73", -0.35, 0.35, 0.75); box(4.4, 0.9, 0.35, "#003554", -0.35, 0.75, 0.2);
+box(0.4, 0.75, 1.2, "#003554", -2.55, 0.55, 0.75); box(0.4, 0.75, 1.2, "#003554", 1.85, 0.55, 0.75);
+box(0.8, 0.5, 0.18, "#7FD3FD", -1.6, 0.85, 0.42); box(0.8, 0.5, 0.18, "#00A6FB", 0.9, 0.85, 0.42);
+box(2.2, 0.08, 1.0, "#D9B98E", -0.35, 0.45, 2.6); cyl(0.05, 0.05, 0.42, "#B89468", -1.3, 0.21, 2.6, scene, 8); cyl(0.05, 0.05, 0.42, "#B89468", 0.6, 0.21, 2.6, scene, 8);
+cyl(0.1, 0.08, 0.18, "#FFFFFF", -0.6, 0.58, 2.5); cyl(0.1, 0.08, 0.18, "#00A6FB", -0.1, 0.58, 2.7);
+const rugPause = new T.Mesh(new T.CircleGeometry(3.4, 48), mat("#EFEBE4")); rugPause.rotation.x = -Math.PI / 2; rugPause.position.set(-0.35, 0.01, 1.7); rugPause.receiveShadow = true; scene.add(rugPause);
+
+/* --- Postes de travail --- */
+function lighten(hex, k) { const c = new T.Color(hex); c.lerp(new T.Color("#FFFFFF"), k); return "#" + c.getHexString() }
+const desks = {};
+AGENTS.forEach(a => {
+  const [x, z] = a.desk, g = new T.Group(); g.position.set(x, 0, z); scene.add(g);
+  const rug = new T.Mesh(new T.PlaneGeometry(3.7, 3.9), mat(lighten(a.color, 0.82))); rug.rotation.x = -Math.PI / 2; rug.position.set(0, 0.012, -0.35); rug.receiveShadow = true; g.add(rug);
+  box(2.6, 0.1, 1.15, "#E2B47C", 0, 0.92, 0, g);                         // plateau
+  [[-1.2, -0.48], [1.2, -0.48], [-1.2, 0.48], [1.2, 0.48]].forEach(([lx, lz]) => box(0.08, 0.88, 0.08, "#C4955E", lx, 0.44, lz, g));
+  box(1.15, 0.7, 0.07, "#0B2236", 0, 1.48, -0.18, g);                    // écran
+  const screen = box(1.05, 0.6, 0.01, a.color, 0, 1.48, -0.22, g, { emissive: a.color, emissiveIntensity: 0.6 });
+  box(0.1, 0.2, 0.1, "#0B2236", 0, 1.06, -0.18, g); box(0.4, 0.03, 0.25, "#0B2236", 0, 0.98, -0.18, g);
+  box(0.8, 0.03, 0.28, "#E9EDF1", 0, 0.985, -0.62, g);                  // clavier
+  cyl(0.08, 0.07, 0.16, "#FFFFFF", 1.0, 1.05, -0.3, g);                   // tasse
+  // chaise
+  const chair = new T.Group(); chair.position.set(0, 0, -1.25); g.add(chair);
+  box(0.75, 0.1, 0.7, "#003554", 0, 0.52, 0, chair); box(0.75, 0.8, 0.1, "#003554", 0, 0.98, -0.34, chair);
+  cyl(0.05, 0.05, 0.45, "#7D8793", 0, 0.25, 0, chair, 8); cyl(0.32, 0.32, 0.04, "#7D8793", 0, 0.03, 0, chair, 16);
+  // piles : à faire (gauche) et fait (droite)
+  const todo = new T.Group(); todo.position.set(-0.85, 0.97, 0.05); g.add(todo);
+  const done = new T.Group(); done.position.set(0.72, 0.97, 0.18); g.add(done);
+  box(0.5, 0.04, 0.4, "#9AA6B2", 0, 0, 0, done);
+  desks[a.id] = { g, screen, todo, done, seat: [x, z - 1.25] };
+});
+function setStacks(id, aFaire, fait) {
+  const d = desks[id];
+  if (d.last === aFaire + "/" + fait) return; d.last = aFaire + "/" + fait;
+  d.todo.clear(); d.done.children.slice(1).forEach(c => d.done.remove(c));
+  const nT = Math.min(aFaire, 24), nD = Math.min(Math.ceil(fait / 3), 14);
+  for (let i = 0; i < nT; i++) { const m = box(0.42, 0.028, 0.32, i % 2 ? "#FFF6E0" : "#FFE9B8", (Math.random() - .5) * .04, i * 0.03 + 0.015, (Math.random() - .5) * .04, d.todo); m.rotation.y = (Math.random() - .5) * .25 }
+  for (let i = 0; i < nD; i++) box(0.4, 0.025, 0.3, i % 2 ? "#FFFFFF" : "#E6F4FF", 0, i * 0.028 + 0.035, 0, d.done);
+}
+
+/* --- Stations --- */
+// Carte des zones (Radar) : panneau sur le mur de gauche
+box(0.12, 2.0, 3.0, "#FFFFFF", -W + 0.12, 2.4, -2.6);
+const mapTex = canvasTex(600, 400, (g, w, h) => {
+  g.fillStyle = "#EAF6FF"; g.fillRect(0, 0, w, h);
+  g.fillStyle = "#CFE7F5"; g.beginPath();
+  const pts = [[300, 30], [420, 70], [520, 150], [500, 260], [450, 360], [330, 380], [200, 350], [90, 280], [110, 170], [180, 90]];
+  g.moveTo(...pts[0]); pts.forEach(p => g.lineTo(...p)); g.closePath(); g.fill();
+  g.strokeStyle = "#8FC7EA"; g.lineWidth = 4; g.stroke();
+});
+const mapPlane = new T.Mesh(new T.PlaneGeometry(2.8, 1.85), new T.MeshBasicMaterial({ map: mapTex }));
+mapPlane.rotation.y = Math.PI / 2; mapPlane.position.set(-W + 0.2, 2.4, -2.6); scene.add(mapPlane);
+const pins = [];
+// Cabine (Allô)
+const booth = new T.Group(); booth.position.set(-7, 0, 6.8); scene.add(booth);
+const glass = { transparent: true, opacity: 0.45, roughness: 0.2 };
+box(1.6, 2.6, 0.12, "#10B981", 0, 1.3, 0.75, booth, glass); box(0.12, 2.6, 1.5, "#10B981", -0.8, 1.3, 0, booth, glass); box(0.12, 2.6, 1.5, "#10B981", 0.8, 1.3, 0, booth, glass);
+box(1.6, 0.6, 0.14, "#0E9F6E", 0, 0.3, 0.75, booth);
+box(1.72, 0.12, 1.62, "#0E9F6E", 0, 2.62, 0, booth); box(0.5, 0.35, 0.12, "#0B2236", 0, 1.45, 0.62, booth);
+const handset = box(0.1, 0.35, 0.1, "#0B2236", 0.32, 1.45, 0.58, booth);
+// Borne messages (Messager)
+const kiosk = new T.Group(); kiosk.position.set(3.2, 0, 6.6); scene.add(kiosk);
+box(0.6, 0.06, 0.6, "#E9EDF1", 0, 0.03, 0, kiosk); cyl(0.06, 0.06, 1.2, "#9AA6B2", 0, 0.6, 0, kiosk, 10);
+const kScreen = box(0.9, 1.3, 0.08, "#0B2236", 0, 1.75, 0, kiosk); box(0.8, 1.15, 0.01, "#7FD3FD", 0, 1.75, -0.045, kiosk, { emissive: "#7FD3FD", emissiveIntensity: 0.5 });
+// Classeur relances (Écho)
+const cab = new T.Group(); cab.position.set(12.8, 0, -1.6); scene.add(cab);
+const drawers = [];
+box(1.0, 1.8, 1.5, "#E9EDF1", 0, 0.9, 0, cab);
+[0.35, 0.9, 1.45].forEach(y => { const d = box(0.08, 0.45, 1.3, "#FC4C02", -0.52, y, 0, cab); drawers.push(d) });
+// Boîte d'envoi (Facteur)
+const mbox = new T.Group(); mbox.position.set(12.6, 0, 4.2); scene.add(mbox);
+cyl(0.06, 0.06, 0.9, "#7D8793", 0, 0.45, 0, mbox, 10);
+box(0.9, 0.9, 1.1, "#003554", 0, 1.3, 0, mbox); box(0.92, 0.12, 1.12, "#00A6FB", 0, 1.8, 0, mbox);
+box(0.04, 0.08, 0.6, "#0B1218", -0.46, 1.45, 0, mbox);
+
+// Écran du Sheet maître (Scribe)
+const sheetSt = new T.Group(); sheetSt.position.set(9.6, 0, 7.7); scene.add(sheetSt);
+box(0.7, 0.06, 0.5, "#E9EDF1", 0, 0.03, 0, sheetSt); cyl(0.06, 0.06, 1.3, "#9AA6B2", 0, 0.65, 0, sheetSt, 10);
+box(2.0, 1.3, 0.1, "#0B2236", 0, 1.95, 0, sheetSt);
+const cells = [];
+for (let r = 0; r < 5; r++) for (let c = 0; c < 6; c++) {
+  const m = box(0.27, 0.17, 0.01, r === 0 ? "#D4A24C" : "#FFFFFF", -0.78 + c * 0.312, 2.42 - r * 0.21, -0.06, sheetSt, { emissive: r === 0 ? "#D4A24C" : "#FFFFFF", emissiveIntensity: 0.25 });
+  if (r) cells.push(m);
+}
+const cellOn = mat("#10B981", { emissive: "#10B981", emissiveIntensity: 0.6 });
+
+/* ================= Robots ================= */
+const robots = {};
+function makeRobot(a) {
+  const root = new T.Group(), body = new T.Group(); root.add(body);
+  const legL = new T.Group(), legR = new T.Group(); legL.position.set(-0.13, 0.55, 0); legR.position.set(0.13, 0.55, 0);
+  [legL, legR].forEach(l => { cyl(0.09, 0.08, 0.5, "#003554", 0, -0.25, 0, l, 10); body.add(l) });
+  cyl(0.3, 0.34, 0.62, a.color, 0, 0.86, 0, body, 22);
+  sph(0.3, a.color, 0, 1.12, 0, body).scale.set(1, 0.45, 1);
+  const armL = new T.Group(), armR = new T.Group(); armL.position.set(-0.38, 1.08, 0); armR.position.set(0.38, 1.08, 0);
+  [armL, armR].forEach(g => { cyl(0.075, 0.07, 0.5, "#FFFFFF", 0, -0.24, 0, g, 10); sph(0.085, "#FFFFFF", 0, -0.5, 0, g); body.add(g) });
+  const head = new T.Group(); head.position.set(0, 1.55, 0); body.add(head);
+  sph(0.34, "#FFFFFF", 0, 0, 0, head, { roughness: 0.5 });
+  const visor = sph(0.3, "#003554", 0, 0.01, 0.12, head, { roughness: 0.3 }); visor.scale.set(0.95, 0.62, 0.78);
+  const eyeM = { emissive: "#7FD3FD", emissiveIntensity: 1 };
+  sph(0.05, "#7FD3FD", -0.1, 0.03, 0.36, head, eyeM); sph(0.05, "#7FD3FD", 0.1, 0.03, 0.36, head, eyeM);
+  cyl(0.02, 0.02, 0.18, "#C9D1D8", 0, 0.4, 0, head, 6); const bulb = sph(0.05, a.color, 0, 0.5, 0, head, { emissive: a.color, emissiveIntensity: 0.8 });
+  const ring = new T.Mesh(new T.RingGeometry(0.42, 0.54, 40), new T.MeshBasicMaterial({ color: "#A7B1BB", transparent: true, opacity: 0.9 }));
+  ring.rotation.x = -Math.PI / 2; ring.position.y = 0.02; root.add(ring);
+  const cup = cyl(0.07, 0.06, 0.13, "#FFFFFF", 0, -0.55, 0.06, armR); cup.visible = false;
+  root.traverse(o => { o.userData.agent = a.id });
+  scene.add(root);
+  return { a, root, body, legL, legR, armL, armR, head, bulb, ring, cup, pos: new T.Vector2(...desks[a.id].seat), face: 0,
+    q: [], cur: null, t: 0, mode: "busy", pose: "sit", rnd: Math.random() * 10 };
+}
+AGENTS.forEach(a => { robots[a.id] = makeRobot(a) });
+
+/* --- Déplacements --- */
+const SPEED = 2.1;
+function routeFrom(r, from, to, toSeat) {
+  const pts = [];
+  const seat = desks[r.a.id].seat, aisle = r.a.aisle;
+  if (Math.hypot(from[0] - seat[0], from[1] - seat[1]) < 0.3) { pts.push([from[0] + 2.25, from[1]]); if (aisle !== null) pts.push([from[0] + 2.25, aisle]) }
+  else if (from[1] < -3) pts.push([from[0], -2.4]);
+  if (toSeat) { if (aisle !== null) pts.push([to[0] + 2.25, aisle]); pts.push([to[0] + 2.25, to[1]]) }
+  pts.push(to);
+  return pts.map(p => ({ t: "walk", to: new T.Vector2(p[0], p[1]) }));
+}
+function plan(r) {
+  const seat = desks[r.a.id].seat, here = [r.pos.x, r.pos.y], q = [];
+  const atSeat = Math.hypot(here[0] - seat[0], here[1] - seat[1]) < 0.05;
+  if (REDUCE) { if (!atSeat) q.push(...routeFrom(r, here, seat, true)); q.push({ t: r.mode === "pause" ? "sip" : "sit", dur: 30, face: 0 }); r.q = q; return }
+  if (r.mode === "pause") {
+    const spot = PAUSE[AGENTS.indexOf(r.a) % 3];
+    const taken = Object.values(robots).some(o => o !== r && o.mode === "pause" && o.spot === spot);
+    const s = taken ? [spot[0] + (Math.random() - .5) * 2, 3.6] : spot;
+    r.spot = taken ? null : spot;
+    if (Math.hypot(here[0] - s[0], here[1] - s[1]) > 0.1) q.push(...routeFrom(r, here, s, false));
+    q.push({ t: taken ? "sip" : "lounge", dur: 9 + Math.random() * 8, face: taken ? Math.PI : 0 });
+  } else {
+    const fast = r.mode === "live";
+    if (!atSeat) q.push(...routeFrom(r, here, seat, true));
+    q.push({ t: "sit", dur: fast ? 3.5 + Math.random() * 2.5 : 6 + Math.random() * 6, face: 0 });
+    q.push(...routeFrom(r, seat, r.a.station.stand, false));
+    q.push({ t: "act", dur: fast ? 2.8 : 2.4, face: r.a.station.face, fx: r.a.fx });
+    q.push(...routeFrom(r, r.a.station.stand, seat, true));
+  }
+  r.q = q;
+}
+function setMode(r, mode) {
+  if (r.mode === mode) return;
+  r.mode = mode;
+  // termine le pas en cours, puis replanifie depuis là où il est
+  r.q = []; if (r.cur && r.cur.t !== "walk") r.cur = null;
+}
+function angLerp(a, b, k) { let d = b - a; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return a + d * k }
+
+/* --- Effets --- */
+const fxs = [];
+function spawnFx(kind, r) {
+  if (kind === "mail") {
+    const env = box(0.3, 0.2, 0.03, "#FFFFFF", 0, 0, 0); const from = new T.Vector3(r.pos.x + 0.4, 1.3, r.pos.y), to = new T.Vector3(12.14, 1.45, 4.2);
+    fxs.push({ dur: 0.9, t: 0, upd: k => { env.position.lerpVectors(from, to, k); env.position.y += Math.sin(k * Math.PI) * 0.5; env.rotation.y = Math.PI / 2 }, end: () => scene.remove(env) });
+  } else if (kind === "pin") {
+    const p = sph(0.06, ["#00A6FB", "#003554", "#FC4C02", "#10B981"][pins.length % 4], -W + 0.26, 2.0 + Math.random() * 0.9, -3.6 + Math.random() * 2.0);
+    pins.push(p); if (pins.length > 14) scene.remove(pins.shift());
+    p.scale.setScalar(0.01); fxs.push({ dur: 0.5, t: 0, upd: k => p.scale.setScalar(0.01 + k * (1 + Math.sin(k * Math.PI) * 0.6)) });
+  } else if (kind === "ring") {
+    const m = new T.Mesh(new T.RingGeometry(0.2, 0.26, 40), new T.MeshBasicMaterial({ color: "#10B981", transparent: true }));
+    m.position.set(-6.68, 1.9, 6.0); scene.add(m); handset.position.y = 1.75;
+    fxs.push({ dur: 1.4, t: 0, upd: k => { m.scale.setScalar(1 + k * 3); m.material.opacity = 1 - k; m.lookAt(cam.position) }, end: () => { scene.remove(m); handset.position.y = 1.45 } });
+  } else if (kind === "chat") {
+    const b = box(0.5, 0.3, 0.06, "#00A6FB", 3.2, 2.5, 6.4, scene, { emissive: "#00A6FB", emissiveIntensity: 0.3 });
+    fxs.push({ dur: 1.6, t: 0, upd: k => { b.position.y = 2.5 + k * 1.4; b.material.transparent = true; b.material.opacity = 1 - k * k }, end: () => { scene.remove(b); b.material.opacity = 1 } });
+  } else if (kind === "cells") {
+    const picks = [0, 1, 2].map(() => cells[Math.floor(Math.random() * cells.length)]);
+    const before = picks.map(c => c.material);
+    picks.forEach(c => c.material = cellOn);
+    fxs.push({ dur: 1.4, t: 0, upd: () => {}, end: () => picks.forEach((c, i) => c.material = before[i]) });
+  } else if (kind === "drawer") {
+    const d = drawers[Math.floor(Math.random() * 3)];
+    fxs.push({ dur: 1.6, t: 0, upd: k => { d.position.x = -0.52 - Math.sin(k * Math.PI) * 0.45 } });
+  }
+}
+
+/* --- Animation --- */
+function step(r, dt, time) {
+  if (!r.cur) { if (!r.q.length) plan(r); r.cur = r.q.shift(); r.t = 0; r.fxDone = false }
+  const c = r.cur; if (!c) return;
+  r.t += dt;
+  let pose = "stand";
+  if (c.t === "walk") {
+    const d = new T.Vector2().subVectors(c.to, r.pos), len = d.length();
+    if (len < 0.04) { r.pos.copy(c.to); r.cur = null } else {
+      const mv = Math.min(len, SPEED * dt); r.pos.addScaledVector(d.normalize(), mv);
+      r.face = angLerp(r.face, Math.atan2(d.x, d.y), Math.min(1, dt * 10));
+    }
+    pose = "walk";
+  } else {
+    r.face = angLerp(r.face, c.face, Math.min(1, dt * 8));
+    pose = c.t;
+    if (c.t === "act" && !r.fxDone && r.t > c.dur * 0.45) { spawnFx(c.fx, r); r.fxDone = true }
+    if (r.t >= c.dur) r.cur = null;
+  }
+  // pose
+  const ph = time * 9 + r.rnd, R = r.root;
+  R.position.set(r.pos.x, 0, r.pos.y); R.rotation.y = r.face;
+  let bodyY = 0, legX = 0, armL = 0, armR = 0, headTilt = 0;
+  r.cup.visible = false;
+  if (pose === "walk") { legX = Math.sin(ph) * 0.6; armL = -Math.sin(ph) * 0.5; armR = Math.sin(ph) * 0.5; bodyY = Math.abs(Math.cos(ph)) * 0.05 }
+  else if (pose === "sit") { bodyY = -0.06; legX = -1.45; const ty = r.mode === "live" ? 22 : 11; armL = -1.2 + Math.sin(time * ty + r.rnd) * 0.08; armR = -1.2 + Math.cos(time * ty + r.rnd) * 0.08; headTilt = 0.08 + Math.sin(time * 0.7 + r.rnd) * 0.05 }
+  else if (pose === "act") { armL = -1.5 + Math.sin(time * 6) * 0.15; armR = -1.7 + Math.cos(time * 6) * 0.15; headTilt = -0.05 }
+  else if (pose === "lounge") { bodyY = 0; legX = -1.4; armL = -0.2; armR = -0.9 - (Math.sin(time * 0.6 + r.rnd) > 0.6 ? 0.9 : 0); r.cup.visible = true; headTilt = -0.15 }
+  else if (pose === "sip") { armL = 0; armR = -0.9 - (Math.sin(time * 0.6 + r.rnd) > 0.6 ? 0.9 : 0); r.cup.visible = true; headTilt = Math.sin(time * 0.5 + r.rnd) * 0.1 }
+  r.body.position.y = bodyY; r.legL.rotation.x = legX; r.legR.rotation.x = pose === "walk" ? -legX : legX;
+  r.armL.rotation.x = armL; r.armR.rotation.x = armR; r.head.rotation.x = headTilt;
+  r.head.rotation.y = pose === "sip" || pose === "lounge" ? Math.sin(time * 0.4 + r.rnd) * 0.4 : 0;
+  r.bulb.material.emissiveIntensity = r.mode === "live" ? 0.6 + Math.sin(time * 6) * 0.5 : 0.4;
+  const dk = desks[r.a.id]; dk.screen.material.emissiveIntensity = r.mode === "pause" ? 0.12 : r.mode === "live" ? 0.55 + Math.sin(time * 3 + r.rnd) * 0.2 : 0.45;
+}
+
+
+function deskOwner(o) { for (const [id, d] of Object.entries(desks)) { let p = o; while (p) { if (p === d.g) return id; p = p.parent } } return null }
+
+/* --- Étiquettes HTML --- */
+const tagsEl = document.getElementById("tags");
+AGENTS.forEach(a => {
+  const t = document.createElement("div"); t.className = "tag"; t.style.setProperty("--c", a.color); t.dataset.agent = a.id;
+  t.innerHTML = `<span class="pip"></span><b>${esc(a.nom)}</b><span class="st"></span>`;
+  t.addEventListener("click", () => { setActive(B); openAgent(a.id) }); tagsEl.appendChild(t); robots[a.id].tag = t;
+  const z = document.createElement("div"); z.className = "zone"; z.style.setProperty("--c", a.color); if (a.ink) z.style.setProperty("--zi", a.ink); z.textContent = "Pôle " + a.pole;
+  tagsEl.appendChild(z); robots[a.id].zoneTag = z;
+  const s = document.createElement("div"); s.className = "zone soft"; s.textContent = a.station.label; tagsEl.appendChild(s); robots[a.id].stTag = s;
+});
+const pauseTag = document.createElement("div"); pauseTag.className = "zone soft"; pauseTag.textContent = "Coin pause"; tagsEl.appendChild(pauseTag);
+const STATION_POS = { radar: [-W + 0.3, 3.6, -2.6], allo: [-7, 2.9, 6.8], messager: [3.2, 2.6, 6.6], echo: [12.8, 2.0, -1.6], facteur: [12.6, 2.1, 4.2], scribe: [9.6, 3.0, 7.7] };
+const v3 = new T.Vector3();
+function place(el, x, y, z) {
+  v3.set(x + OX, y, z + OZ).project(cam);
+  el.style.transform = `translate(${(v3.x + 1) / 2 * innerWidth}px, ${(1 - v3.y) / 2 * innerHeight}px) translate(-50%, -100%)`;
+}
+function placeCentered(el, x, y, z) {
+  v3.set(x + OX, y, z + OZ).project(cam);
+  el.style.transform = `translate(${(v3.x + 1) / 2 * innerWidth}px, ${(1 - v3.y) / 2 * innerHeight}px) translate(-50%, -50%)`;
+}
+
+function updateTags() {
+  AGENTS.forEach(a => {
+    const r = robots[a.id], st = agentState(a), t = r.tag;
+    t.className = "tag " + st.mode + (st.attente && st.mode !== "live" ? " order" : "") + (S.open === a.id ? " sel" : "");
+    const txt = st.mode === "live" ? (st.tache || "Au travail") + (st.live?.progression ? " · " + st.live.progression : "")
+      : st.attente ? `${st.attente} ordre${st.attente > 1 ? "s" : ""} en attente`
+      : !S.sheetAt ? "…" : st.aFaire ? `${st.aFaire} à faire` : "En pause";
+    t.querySelector(".st").textContent = txt;
+    r.ring.material.color.set(st.mode === "live" ? "#10B981" : st.mode === "busy" ? "#F59E0B" : "#A7B1BB");
+    setMode(r, st.mode);
+    if (S.sheetAt) setStacks(a.id, st.aFaire, st.fait);
+  });
+}
+
+
+
+/* ================= Salle des clients ================= */
+const CX0 = 17.2, ZW = 7.2, ZG = 7.4;
+const ZONES = [
+  { id: "hall", nom: "Hall · à contacter", court: "À contacter", statuts: ["À envoyer", ""], color: "#8A95A0", col: 0, row: 0, prop: "accueil",
+    desc: "Les coachs trouvés par Radar, pas encore contactés. Facteur (email) et Messager (formulaire, Instagram) viennent les chercher ici." },
+  { id: "prog", nom: "Programmés", court: "Programmé", statuts: ["Programmé"], color: "#7FD3FD", ink: "#003554", col: 1, row: 0, prop: "agenda",
+    desc: "Leur premier email est programmé dans Zoho et part dans les prochains jours." },
+  { id: "envoye", nom: "Contactés", court: "Contacté", statuts: ["Envoyé"], color: "#00A6FB", col: 2, row: 0, prop: "boite",
+    desc: "Premier message parti, pas encore de réponse. Un « ! » orange au-dessus de la tête : la relance J+5 est due." },
+  { id: "relance", nom: "Relancés", court: "Relancé", statuts: ["Relancé"], color: "#FC4C02", col: 3, row: 0, prop: "horloge",
+    desc: "Relancés une fois, on attend leur réponse. Pas de deuxième relance." },
+  { id: "repondu", nom: "Ont répondu", court: "Répondu", statuts: ["Répondu"], color: "#10B981", col: 0, row: 1, prop: "tel",
+    desc: "Ils ont répondu : à toi de jouer. Allô peut te préparer l'appel." },
+  { id: "demo", nom: "Salle démo", court: "Démo", statuts: ["Démo prévue"], color: "#003554", col: 1, row: 1, prop: "ecran",
+    desc: "Appel ou démo calé. Après la démo, raconte-la au Scribe pour qu'il les fasse avancer." },
+  { id: "inscrit", nom: "Inscrits", court: "Inscrit", statuts: ["Inscrit"], color: "#D4A24C", ink: "#3D2A06", col: 2, row: 1, prop: "trophee",
+    desc: "Ils ont créé leur compte coach sur Trainwise." },
+  { id: "sortie", nom: "Sortie", court: "Refus", statuts: ["Pas intéressé", "Non"], color: "#A7B1BB", ink: "#051923", col: 3, row: 1, prop: "porte",
+    desc: "Pas intéressés pour l'instant. On ne les relance pas." },
+];
+ZONES.forEach(z => { z.x0 = CX0 + z.col * ZG; z.door = z.x0 + 6.15; z.cap = z.row ? 24 : 42; z.seats = Array(z.cap).fill(null); z.n = 0 });
+const ZBY = Object.fromEntries(ZONES.map(z => [z.id, z]));
+const PARCOURS = ["hall", "prog", "envoye", "relance", "repondu", "demo", "inscrit"];
+const zoneOf = st => ZONES.find(z => z.statuts.includes(st)) || ZONES[0];
+const relanceDue = r => { if (r.statut !== "Envoyé") return false; const d = frDate(r.relance); return !!d && d <= today0() };
+
+/* --- La pièce --- */
+const room2 = new T.Group(); scene.add(room2);
+box(32.9, 0.4, D * 2 + 0.6, "#F6F4F0", 30.75, -0.2, 0, room2);
+box(32.9, 0.12, D * 2 + 0.6, "#E2D2B8", 30.75, -0.44, 0, room2);
+box(32.9, H, 0.3, "#FFFFFF", 30.75, H / 2, -D - 0.15, room2);
+box(32.9, 0.5, 0.34, "#003554", 30.75, 0.25, -D, room2); box(32.9, 0.08, 0.36, "#00A6FB", 30.75, 0.54, -D, room2);
+const runner = new T.Mesh(new T.PlaneGeometry(32.4, 1.7), mat("#E9E2D6")); runner.rotation.x = -Math.PI / 2; runner.position.set(30.6, 0.011, 0); runner.receiveShadow = true; room2.add(runner);
+const signTex = canvasTex(480, 240, (g, w, h) => {
+  g.fillStyle = "#003554"; roundRect(g, 0, 0, w, h, 28); g.fill();
+  g.fillStyle = "#7FD3FD"; g.font = "700 36px Poppins, sans-serif"; g.textBaseline = "top"; g.fillText("SALLE DES", 40, 46);
+  g.fillStyle = "#FFFFFF"; g.font = "800 84px Poppins, sans-serif"; g.fillText("Clients", 36, 96);
+});
+const sign = new T.Mesh(new T.PlaneGeometry(2.4, 1.2), new T.MeshBasicMaterial({ map: signTex, transparent: true })); sign.position.set(15.7, 3.3, -D + 0.03); room2.add(sign);
+bush(15.6, -7.9); bush(15.6, 7.9);
+
+const glassM = { transparent: true, opacity: 0.32, roughness: 0.15 };
+function wallSeg(x1, z1, x2, z2, parent) {
+  const alongX = Math.abs(x2 - x1) > Math.abs(z2 - z1), len = alongX ? Math.abs(x2 - x1) : Math.abs(z2 - z1), cx = (x1 + x2) / 2, cz = (z1 + z2) / 2;
+  box(alongX ? len : 0.06, 0.9, alongX ? 0.06 : len, "#CFE7F5", cx, 0.45, cz, parent, glassM).castShadow = false;
+  box(alongX ? len : 0.1, 0.06, alongX ? 0.1 : len, "#FFFFFF", cx, 0.93, cz, parent);
+}
+const zoneGroups = [];
+let clockHand = null, demoScreen = null;
+function seatXZ(z, i) { const r = Math.floor(i / 6), c = i % 6, s = z.row ? 1 : -1; return [z.x0 + 0.7 + c * 0.95, s * (1.9 + r)] }
+
+ZONES.forEach(z => {
+  const s = z.row ? 1 : -1, g = new T.Group(); room2.add(g); zoneGroups.push(g);
+  const rug = new T.Mesh(new T.PlaneGeometry(ZW - 0.2, 7.8), mat(lighten(z.color, 0.86))); rug.rotation.x = -Math.PI / 2; rug.position.set(z.x0 + ZW / 2, 0.012, s * 5.0); rug.receiveShadow = true; g.add(rug);
+  wallSeg(z.x0, s, z.door - 0.65, s, g); wallSeg(z.door + 0.65, s, z.x0 + ZW, s, g);
+  wallSeg(z.x0 - 0.1, s, z.x0 - 0.1, s * 9, g);
+  for (let r = 0; r < z.cap / 6; r++) {
+    const zz = s * (1.9 + r);
+    box(5.45, 0.08, 0.42, "#E2B47C", z.x0 + 3.07, 0.44, zz - 0.04, g);
+    box(5.45, 0.46, 0.07, lighten(z.color, 0.2), z.x0 + 3.07, 0.72, zz - 0.28, g);
+    box(0.08, 0.4, 0.34, "#7D8793", z.x0 + 0.45, 0.2, zz - 0.04, g); box(0.08, 0.4, 0.34, "#7D8793", z.x0 + 5.7, 0.2, zz - 0.04, g);
+  }
+  // Décor de la salle
+  const p = new T.Group(); g.add(p);
+  if (z.row) p.position.set(z.x0 + 3.1, 0, 7.2); else p.position.set(z.x0 + 6.6, 0, -8.2);
+  switch (z.prop) {
+    case "accueil":
+      box(0.9, 1.0, 1.5, "#FFFFFF", 0, 0.5, 0, p); box(0.98, 0.06, 1.58, "#003554", 0, 1.03, 0, p); sph(0.09, "#D4A24C", 0.1, 1.12, 0.4, p); break;
+    case "agenda":
+      cyl(0.04, 0.04, 0.8, "#9AA6B2", 0, 0.4, 0, p, 8); box(0.08, 1.3, 1.3, "#FFFFFF", 0, 1.45, 0, p);
+      for (let i = 0; i < 9; i++) box(0.02, 0.3, 0.3, i % 4 ? "#E6F4FF" : "#7FD3FD", 0.05, 1.83 - Math.floor(i / 3) * 0.38, -0.38 + (i % 3) * 0.38, p); break;
+    case "boite":
+      cyl(0.06, 0.06, 0.9, "#7D8793", 0, 0.45, 0, p, 10); box(0.9, 0.9, 1.1, "#00A6FB", 0, 1.3, 0, p); box(0.92, 0.12, 1.12, "#003554", 0, 1.8, 0, p); box(0.04, 0.08, 0.6, "#0B1218", 0.46, 1.45, 0, p); break;
+    case "horloge": {
+      cyl(0.05, 0.05, 1.6, "#9AA6B2", 0, 0.8, 0, p, 8);
+      const disc = cyl(0.5, 0.5, 0.08, "#FFFFFF", 0, 2.05, 0, p, 32); disc.rotation.x = Math.PI / 2;
+      const ring = cyl(0.53, 0.53, 0.06, "#FC4C02", 0, 2.05, -0.02, p, 32); ring.rotation.x = Math.PI / 2;
+      clockHand = new T.Group(); clockHand.position.set(0, 2.05, 0.06); p.add(clockHand);
+      box(0.05, 0.36, 0.02, "#051923", 0, 0.16, 0, clockHand); box(0.05, 0.26, 0.02, "#051923", 0.1, 0.08, 0, clockHand).rotation.z = -1.2; break;
+    }
+    case "tel":
+      box(2.4, 0.08, 1.0, "#E2B47C", 0, 0.9, 0, p);
+      [[-1.1, -0.4], [1.1, -0.4], [-1.1, 0.4], [1.1, 0.4]].forEach(([x, zz]) => box(0.07, 0.86, 0.07, "#C4955E", x, 0.43, zz, p));
+      box(0.5, 0.14, 0.35, "#10B981", -0.3, 1.01, 0, p); box(0.5, 0.08, 0.12, "#0E9F6E", -0.3, 1.13, 0, p);
+      cyl(0.25, 0.2, 0.35, "#FFFFFF", 0.7, 1.12, 0, p); { const m = new T.Mesh(new T.IcosahedronGeometry(0.3, 1), mat("#4DBE57", { flatShading: true })); m.position.set(0.7, 1.5, 0); m.castShadow = true; p.add(m) } break;
+    case "ecran": {
+      const tex = canvasTex(640, 360, (gg, w, h) => {
+        gg.fillStyle = "#003554"; gg.fillRect(0, 0, w, h); gg.fillStyle = "#00A6FB"; gg.fillRect(0, h - 16, w, 16);
+        gg.fillStyle = "#FFFFFF"; roundRect(gg, 50, 120, 110, 110, 24); gg.fill(); gg.fillStyle = "#00A6FB"; roundRect(gg, 94, 152, 44, 48, 8); gg.fill();
+        gg.fillStyle = "#FFFFFF"; gg.font = "800 74px Poppins, sans-serif"; gg.textBaseline = "middle"; gg.fillText("Trainwise", 190, 160);
+        gg.fillStyle = "#7FD3FD"; gg.font = "600 36px Poppins, sans-serif"; gg.fillText("Démo coach", 192, 228);
+      });
+      z.tex = tex;
+      box(0.1, 1.2, 0.1, "#7D8793", -1.2, 0.6, 0, p); box(0.1, 1.2, 0.1, "#7D8793", 1.2, 0.6, 0, p);
+      box(3.3, 1.95, 0.1, "#0B2236", 0, 2.1, 0, p);
+      const f = new T.Mesh(new T.PlaneGeometry(3.1, 1.75), new T.MeshBasicMaterial({ map: tex })); f.position.set(0, 2.1, -0.06); f.rotation.y = Math.PI; p.add(f);
+      const b = new T.Mesh(new T.PlaneGeometry(3.1, 1.75), new T.MeshBasicMaterial({ map: tex })); b.position.set(0, 2.1, 0.06); p.add(b);
+      demoScreen = [f, b]; break;
+    }
+    case "trophee":
+      box(0.8, 0.8, 0.8, "#FFFFFF", 0, 0.4, 0, p); box(0.8, 0.5, 0.8, "#FFFFFF", -0.82, 0.25, 0, p); box(0.8, 0.35, 0.8, "#FFFFFF", 0.82, 0.175, 0, p);
+      box(0.82, 0.05, 0.82, "#D4A24C", 0, 0.82, 0, p);
+      cyl(0.08, 0.12, 0.12, "#D4A24C", 0, 0.9, 0, p, 12, { metalness: 0.5, roughness: 0.35 }); cyl(0.04, 0.04, 0.2, "#D4A24C", 0, 1.05, 0, p, 8, { metalness: 0.5, roughness: 0.35 });
+      cyl(0.24, 0.12, 0.34, "#D4A24C", 0, 1.32, 0, p, 18, { metalness: 0.5, roughness: 0.35 }); break;
+    case "porte": {
+      box(0.15, 2.4, 0.15, "#E9EDF1", -0.7, 1.2, 0.6, p); box(0.15, 2.4, 0.15, "#E9EDF1", 0.7, 1.2, 0.6, p); box(1.55, 0.15, 0.15, "#E9EDF1", 0, 2.4, 0.6, p);
+      const leaf = box(1.25, 2.25, 0.06, "#C9D1D8", 0, 1.13, 0, p); leaf.position.set(-0.05, 1.13, 1.15); leaf.rotation.y = -1.1;
+      box(0.7, 0.24, 0.06, "#10B981", 0, 2.72, 0.6, p, { emissive: "#10B981", emissiveIntensity: 0.6 }); break;
+    }
+  }
+  g.traverse(o => { o.userData.zone = z.id });
+});
+
+// Panneaux au mur pour les salles du fond
+ZONES.filter(z => !z.row).forEach(z => {
+  z.tex = canvasTex(640, 300, (g, w, h) => {
+    g.fillStyle = "#FFFFFF"; g.fillRect(0, 0, w, h); g.fillStyle = z.color; g.fillRect(0, 0, w, 18);
+    g.fillStyle = z.ink ? "#0077B6" : z.color; g.font = "700 34px Poppins, sans-serif"; g.textBaseline = "top"; g.fillText(z.nom.toUpperCase(), 36, 46);
+    g.fillStyle = "#003554"; g.font = "800 130px Poppins, sans-serif"; const n = S.sheetAt ? String(z.n) : "…"; g.fillText(n, 32, 94);
+    const nw = g.measureText(n).width;
+    g.fillStyle = "#5A6878"; g.font = "500 30px Poppins, sans-serif"; g.fillText(z.sub || "", 32 + nw + 26, 176);
+  });
+  box(5.5, 2.6, 0.08, "#E3E7EB", z.x0 + 3.6, 3.1, -D + 0.04, room2);
+  const pl = new T.Mesh(new T.PlaneGeometry(5.3, 2.48), new T.MeshBasicMaterial({ map: z.tex })); pl.position.set(z.x0 + 3.6, 3.1, -D + 0.09); room2.add(pl);
+});
+function redrawPanels(force) {
+  ZONES.filter(z => !z.row).forEach(z => {
+    const k = (S.sheetAt ? z.n : "-") + "/" + z.sub;
+    if (!force && z.lastPanel === k) return; z.lastPanel = k;
+    const t = z.tex.userData; t.draw(t.g, t.c.width, t.c.height); z.tex.needsUpdate = true;
+  });
+}
+
+/* --- Les coachs --- */
+const clients = {}, seenTabs = new Set(), clientsT0 = performance.now();
+const SKIN = ["#F2D2B6", "#E8B98F", "#C98E62", "#9B6844", "#6E4A2F"], HAIR = ["#2B1D14", "#5A3A22", "#8A5A2B", "#C9A26B", "#1B1B1B", "#8C8C8C"];
+function hash(s) { let h = 7; for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) | 0; return Math.abs(h) }
+function sportColor(sp) {
+  return /tri/i.test(sp) ? "#FC4C02" : /trail/i.test(sp) ? "#3FAE49" : /v[ée]lo|cycl/i.test(sp) ? "#F2C94C" : /nat|swim/i.test(sp) ? "#7FD3FD" : /course|run|marath|athl|route/i.test(sp) ? "#00A6FB" : "#8E7CC3";
+}
+function makeClient(cid, row) {
+  const h = hash(row.nom + row.structure), root = new T.Group(), body = new T.Group(); root.add(body);
+  const shirt = sportColor(row.specialite), skin = SKIN[h % 5], hair = HAIR[(h >> 3) % 6], pants = ["#2B3440", "#3B4A5A", "#4A3B2F"][(h >> 6) % 3];
+  const small = m => { m.castShadow = false; return m };
+  const legL = new T.Group(), legR = new T.Group(); legL.position.set(-0.1, 0.48, 0); legR.position.set(0.1, 0.48, 0);
+  [legL, legR].forEach(l => { cyl(0.075, 0.065, 0.44, pants, 0, -0.22, 0, l, 8); small(box(0.12, 0.07, 0.2, "#FFFFFF", 0, -0.45, 0.04, l)); body.add(l) });
+  cyl(0.2, 0.24, 0.5, shirt, 0, 0.74, 0, body, 14);
+  small(sph(0.2, shirt, 0, 0.98, 0, body)).scale.set(1, 0.4, 1);
+  const armL = new T.Group(), armR = new T.Group(); armL.position.set(-0.27, 0.95, 0); armR.position.set(0.27, 0.95, 0);
+  [armL, armR].forEach(g => { cyl(0.06, 0.055, 0.4, shirt, 0, -0.19, 0, g, 8); small(sph(0.065, skin, 0, -0.42, 0, g)); body.add(g) });
+  const phone = small(box(0.07, 0.13, 0.02, "#0B1218", 0, -0.47, 0.07, armR)); phone.visible = false;
+  const head = new T.Group(); head.position.set(0, 1.27, 0); body.add(head);
+  sph(0.21, skin, 0, 0, 0, head, { roughness: 0.6 });
+  const cap = new T.Mesh(new T.SphereGeometry(0.225, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.45), mat(hair)); cap.rotation.x = -0.35; head.add(cap);
+  small(sph(0.026, "#1B1B1B", -0.075, 0.0, 0.195, head)); small(sph(0.026, "#1B1B1B", 0.075, 0.0, 0.195, head));
+  root.traverse(o => { o.userData.client = cid });
+  root.visible = false; room2.add(root);
+  return { cid, row, root, body, legL, legR, armL, armR, head, phone, pos: new T.Vector2(14.6, 0), face: 0, q: [], cur: null, t: 0, rnd: Math.random() * 10, zone: null, seat: -1 };
+}
+function exitPts(z, i) { const [x, zz] = seatXZ(z, i), s = z.row ? 1 : -1; return [[x, zz + 0.5], [z.door, zz + 0.5], [z.door, s * 0.6], [z.door, 0]] }
+function routeC(c, z, i) {
+  const pts = c.zone && c.seat >= 0 && c.root.visible ? exitPts(c.zone, c.seat) : [[c.pos.x, 0]];
+  pts.push(...exitPts(z, i).reverse(), seatXZ(z, i));
+  return pts.map(p => ({ t: "walk", to: new T.Vector2(p[0], p[1]) }));
+}
+function seatNow(c) { const [x, zz] = seatXZ(c.zone, c.seat); c.pos.set(x, zz); c.face = 0; c.q = []; c.cur = null; c.root.visible = true }
+
+function syncClients() {
+  const rows = allRows(), alive = new Set(), now = performance.now();
+  rows.forEach(row => {
+    const cid = row.onglet + ":" + row.nom.toLowerCase(); alive.add(cid);
+    const z = zoneOf(row.statut), fresh = !clients[cid];
+    const c = clients[cid] || (clients[cid] = makeClient(cid, row));
+    c.row = row;
+    if (c.zone === z) return;
+    const wasVisible = c.root.visible && c.seat >= 0;
+    if (c.zone && c.seat >= 0) c.zone.seats[c.seat] = null;
+    const i = z.seats.indexOf(null);
+    const instant = REDUCE || (fresh && (!seenTabs.has(row.onglet) || now - clientsT0 < 6000)) || (!fresh && !wasVisible);
+    if (i < 0) { c.zone = z; c.seat = -1; c.root.visible = false; c.q = []; c.cur = null; return }
+    z.seats[i] = cid;
+    if (instant) { c.zone = z; c.seat = i; seatNow(c); return }
+    const q = routeC(c, z, i);                                   // la route part de l'ancienne place
+    c.zone = z; c.seat = i; c.root.visible = true; c.cur = null;
+    if (["repondu", "demo", "inscrit"].includes(z.id)) q.push({ t: "cheer", dur: 2, fx: true });
+    c.q = q;
+  });
+  rows.forEach(r => seenTabs.add(r.onglet));
+  Object.keys(clients).forEach(cid => {
+    if (alive.has(cid)) return;
+    const c = clients[cid]; if (c.seat >= 0) c.zone.seats[c.seat] = null;
+    room2.remove(c.root); if (c.tag) c.tag.remove(); delete clients[cid];
+  });
+  // les coachs restés debout faute de place prennent les places libérées
+  Object.values(clients).forEach(c => { if (c.seat < 0) { const i = c.zone.seats.indexOf(null); if (i >= 0) { c.seat = i; c.zone.seats[i] = c.cid; seatNow(c) } } });
+  const dues = rows.filter(relanceDue).length;
+  ZONES.forEach(z => {
+    z.n = Object.values(clients).filter(c => c.zone === z).length; z.over = Math.max(0, z.n - z.cap);
+    z.sub = z.id === "envoye" ? (dues ? `dont ${dues} relance${dues > 1 ? "s" : ""} due${dues > 1 ? "s" : ""}` : "en attente de réponse")
+      : z.over ? `${z.over} hors salle` : { hall: "à contacter", prog: "emails programmés", relance: "relancés une fois" }[z.id] || "";
+    z.tag.querySelector("span").textContent = z.n + (z.over ? ` · ${z.over} hors salle` : "");
+  });
+  redrawPanels(); updateClientDecor();
+}
+
+/* --- Bulles et étiquettes --- */
+function bubbleTex(bg, txt) {
+  return canvasTex(96, 96, (g, w, h) => {
+    g.clearRect(0, 0, w, h); g.fillStyle = bg; g.beginPath(); g.arc(48, 42, 34, 0, 7); g.fill();
+    g.beginPath(); g.moveTo(38, 70); g.lineTo(48, 90); g.lineTo(58, 70); g.fill();
+    g.fillStyle = "#FFFFFF"; g.font = "800 46px Poppins, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(txt, 48, txt === "…" ? 34 : 44);
+  });
+}
+const BUB = { due: new T.SpriteMaterial({ map: bubbleTex("#FC4C02", "!"), depthWrite: false }), rep: new T.SpriteMaterial({ map: bubbleTex("#10B981", "…"), depthWrite: false }) };
+function updateClientDecor() {
+  Object.values(clients).forEach(c => {
+    const kind = relanceDue(c.row) ? "due" : c.zone.id === "repondu" ? "rep" : null;
+    if (kind !== c.bubKind) {
+      if (c.bub) { c.root.remove(c.bub); c.bub = null }
+      if (kind) { c.bub = new T.Sprite(BUB[kind]); c.bub.scale.set(0.42, 0.42, 1); c.bub.position.y = 1.8; c.bub.userData.client = c.cid; c.root.add(c.bub) }
+      c.bubKind = kind;
+    }
+    const named = ["repondu", "demo", "inscrit"].includes(c.zone.id) && c.seat >= 0;
+    if (named && !c.tag) { const t = document.createElement("div"); t.className = "ctag"; t.dataset.client = c.cid; t.dataset.b = E.id; tagsEl.appendChild(t); c.tag = t }
+    if (!named && c.tag) { c.tag.remove(); c.tag = null }
+    if (c.tag) { c.tag.textContent = c.row.nom; c.tag.style.setProperty("--c", c.zone.color); c.tag.style.setProperty("--ci", c.zone.ink || "#fff") }
+  });
+}
+ZONES.forEach(z => {
+  const t = document.createElement("div"); t.className = "roomtag"; t.style.setProperty("--c", z.color); t.dataset.zone = z.id; t.dataset.b = E.id;
+  t.innerHTML = `<b>${esc(z.nom)}</b><span>…</span>`; tagsEl.appendChild(t); z.tag = t;
+});
+const hoverTag = document.createElement("div"); hoverTag.className = "ctag hov"; hoverTag.hidden = true; tagsEl.appendChild(hoverTag);
+const selRing = new T.Mesh(new T.RingGeometry(0.36, 0.48, 40), new T.MeshBasicMaterial({ color: "#00A6FB" })); selRing.rotation.x = -Math.PI / 2; selRing.visible = false; scene.add(selRing);
+const visibleClientRoots = () => Object.values(clients).filter(c => c.root.visible).map(c => c.root);
+let hoverAt = 0, hoverC = null;
+cv.addEventListener("pointermove", e => {
+  if (drag || e.pointerType === "touch") return;
+  const now = performance.now(); if (now - hoverAt < 90) return; hoverAt = now;
+  const rc = new T.Raycaster(); rc.setFromCamera(new T.Vector2((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), cam);
+  const cid = rc.intersectObjects(visibleClientRoots(), true)[0]?.object.userData.client;
+  hoverC = cid && !clients[cid].tag ? clients[cid] : null;
+  hoverTag.hidden = !hoverC; if (hoverC) hoverTag.textContent = `${hoverC.row.nom} · ${hoverC.row.statut || "À envoyer"}`;
+  B.hov = !!cid; cv.style.cursor = BUREAUX.some(b => b.hov) ? "pointer" : "";
+});
+
+/* --- Animation des coachs --- */
+const CSPEED = 1.8;
+function planC(c) {
+  if (REDUCE) { c.q = [{ t: "sit", dur: 60 }]; return }
+  const r = Math.random(), cheer = c.zone.id === "inscrit" ? 0.2 : 0.015;
+  c.q = [r < cheer ? { t: "cheer", dur: 1.6 } : r < cheer + 0.14 ? { t: "phone", dur: 3 + Math.random() * 4 }
+    : r < cheer + 0.2 ? { t: "stretch", dur: 1.8 } : { t: "sit", dur: 4 + Math.random() * 10 }];
+}
+function arriveFx(c) {
+  if (c.zone.id === "repondu") {
+    const m = new T.Mesh(new T.RingGeometry(0.3, 0.4, 40), new T.MeshBasicMaterial({ color: "#10B981", transparent: true }));
+    m.rotation.x = -Math.PI / 2; m.position.set(c.pos.x, 0.03, c.pos.y); scene.add(m);
+    fxs.push({ dur: 1.4, t: 0, upd: k => { m.scale.setScalar(1 + k * 3); m.material.opacity = 1 - k }, end: () => scene.remove(m) });
+    return;
+  }
+  const cols = ["#00A6FB", "#FC4C02", "#10B981", "#D4A24C", "#7FD3FD"], x = c.pos.x, z = c.pos.y;
+  for (let i = 0; i < 18; i++) {
+    const m = box(0.08, 0.02, 0.12, cols[i % 5], x, 2.2, z); m.castShadow = false;
+    const vx = (Math.random() - .5) * 1.8, vz = (Math.random() - .5) * 1.8, vy = 1 + Math.random() * 1.6, spin = 4 + Math.random() * 8;
+    fxs.push({ dur: 1.7, t: 0, upd: k => { const t = k * 1.7; m.position.set(x + vx * t, Math.max(0.02, 2.2 + vy * t - 2.4 * t * t), z + vz * t); m.rotation.set(spin * t, spin * t * .7, 0) }, end: () => scene.remove(m) });
+  }
+}
+function stepC(c, dt, time) {
+  if (!c.root.visible) return;
+  if (!c.cur) { if (!c.q.length) planC(c); c.cur = c.q.shift(); c.t = 0; if (c.cur?.fx) arriveFx(c) }
+  const k = c.cur; let pose = "sit";
+  if (k) {
+    c.t += dt;
+    if (k.t === "walk") {
+      const d = new T.Vector2().subVectors(k.to, c.pos), len = d.length();
+      if (len < 0.04) { c.pos.copy(k.to); c.cur = null } else { c.pos.addScaledVector(d.normalize(), Math.min(len, CSPEED * dt)); c.face = angLerp(c.face, Math.atan2(d.x, d.y), Math.min(1, dt * 10)) }
+      pose = "walk";
+    } else { c.face = angLerp(c.face, 0, Math.min(1, dt * 8)); pose = k.t; if (c.t >= k.dur) c.cur = null }
+  }
+  const R = c.root; R.position.set(c.pos.x, 0, c.pos.y); R.rotation.y = c.face;
+  let by = 0, lx = 0, al = 0, ar = 0, hx = 0, hy = 0; c.phone.visible = false;
+  const ph = time * 8 + c.rnd;
+  if (pose === "walk") { lx = Math.sin(ph) * 0.55; al = -Math.sin(ph) * 0.45; ar = -al; by = Math.abs(Math.cos(ph)) * 0.04 }
+  else if (pose === "sit") { by = -0.02; lx = -1.45; al = ar = -0.55; hy = Math.sin(time * 0.35 + c.rnd) * 0.4; hx = Math.sin(time * 0.23 + c.rnd) * 0.06 }
+  else if (pose === "phone") { by = -0.02; lx = -1.45; al = -0.55; ar = -1.25; hx = 0.38; c.phone.visible = true }
+  else if (pose === "stretch") { const s = Math.sin(Math.min(1, c.t / k.dur) * Math.PI); al = ar = -2.9 * s; hx = -0.2 * s }
+  else if (pose === "cheer") { by = Math.abs(Math.sin(time * 9 + c.rnd)) * 0.2; al = -2.7 + Math.sin(time * 14) * 0.2; ar = -2.7 - Math.sin(time * 14) * 0.2 }
+  c.body.position.y = by; c.legL.rotation.x = lx; c.legR.rotation.x = pose === "walk" ? -lx : lx;
+  c.armL.rotation.x = al; c.armR.rotation.x = ar; c.head.rotation.set(hx, hy, 0);
+  if (c.bub) c.bub.position.y = 1.8 + by + Math.sin(time * 3 + c.rnd) * 0.05;
+}
+function stepClients(dt, time) {
+  for (const c of Object.values(clients)) stepC(c, dt, time);
+  if (clockHand) clockHand.rotation.z = -time * 0.6;
+  const sel = S.open?.startsWith("c:") ? clients[S.open.slice(2)] : null;
+  selRing.visible = !!sel?.root.visible; if (sel) selRing.position.set(sel.pos.x, 0.03, sel.pos.y);
+}
+function placeClientTags() {
+  ZONES.forEach(z => { placeCentered(z.tag, z.x0 + 3.6, z.row ? 0.05 : 4.75, z.row ? 9.35 : -D + 0.1); z.tag.classList.toggle("sel", S.open === "z:" + z.id) });
+  for (const c of Object.values(clients)) if (c.tag) place(c.tag, c.pos.x, 2.3 + c.body.position.y, c.pos.y);
+  if (hoverC) place(hoverTag, hoverC.pos.x, 2.3, hoverC.pos.y);
+}
+
+
+document.fonts?.ready.then(() => { redrawPanels(true); const t = signTex.userData; t.draw(t.g, t.c.width, t.c.height); signTex.needsUpdate = true;
+  const d = ZBY.demo.tex.userData; d.draw(d.g, d.c.width, d.c.height); ZBY.demo.tex.needsUpdate = true });
+
+/* --- Fiches : un coach, une salle --- */
+function openCard(id) {
+  if (S.open !== id) { S.toast = null; S.expanded = {} }
+  S.open = id; renderDetail(); updateTags();
+}
+const initials = s => s.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join("").toUpperCase();
+const sameRow = r => t => t.onglet === r.onglet && t.nom === r.nom;
+function cardHead(init, eyebrow, title) {
+  return `<div class="d-head"><div class="avatar">${esc(init)}</div><div><div class="eyebrow">${esc(eyebrow)}</div><h2>${esc(title)}</h2></div>
+    <button class="x" id="close" aria-label="Fermer la fiche">×</button></div>`;
+}
+function linkify(v) {
+  if (/^https?:\/\//i.test(v)) return `<a href="${esc(v)}" target="_blank" rel="noopener">${esc(v.replace(/^https?:\/\/(www\.)?/i, ""))}</a>`;
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return `<a href="mailto:${esc(v)}">${esc(v)}</a>`;
+  return esc(v);
+}
+function zoneRight(z, r) {
+  if (z.id === "envoye") return relanceDue(r) ? "relance due" : r.relance ? "relance le " + r.relance.slice(0, 5) : "";
+  if (z.id === "prog") return r.envoye ? "part le " + r.envoye.slice(0, 5) : "";
+  if (z.id === "hall") return r.canal;
+  return r.onglet;
+}
+function renderCard() {
+  const dr = document.getElementById("detail"), scroll = dr.querySelector(".d-body")?.scrollTop ?? 0;
+  let html, z;
+  if (S.open.startsWith("z:")) {
+    z = ZBY[S.open.slice(2)];
+    if (!z) { S.open = null; dr.hidden = true; return }
+    const cs = Object.values(clients).filter(c => c.zone === z).sort((a, b) =>
+      z.id === "envoye" ? (relanceDue(b.row) - relanceDue(a.row)) || ((frDate(a.row.relance) || 0) - (frDate(b.row.relance) || 0))
+      : z.id === "prog" ? (frDate(a.row.envoye) || 0) - (frDate(b.row.envoye) || 0) : a.row.nom.localeCompare(b.row.nom));
+    const lim = S.expanded.zone ? cs.length : 30, dues = cs.filter(c => relanceDue(c.row)).length;
+    html = cardHead(String(cs.length), "Salle d'attente", z.nom) + `<div class="d-body">
+      <p class="mission">${esc(z.desc)}</p>
+      ${z.id === "envoye" && dues ? `<div class="now"><div class="l1"><b>${dues} relance${dues > 1 ? "s" : ""} due${dues > 1 ? "s" : ""}</b><span class="state">Écho peut s'en charger</span></div></div>` : ""}
+      <div><h3>Dans la salle · ${cs.length}</h3>${cs.length ? `<ul class="list">${cs.slice(0, lim).map(c => `<li><button class="row rowbtn" data-client="${esc(c.cid)}">
+        <span class="pip" style="background:${relanceDue(c.row) ? "#FC4C02" : sportColor(c.row.specialite)}"></span>
+        <span class="t"><b>${esc(c.row.nom)}</b><span>${esc([c.row.structure !== c.row.nom ? c.row.structure : "", c.row.ville].filter(Boolean).join(" · "))}</span></span>
+        <span class="r">${esc(zoneRight(z, c.row))}</span></button></li>`).join("")}</ul>
+        ${cs.length > lim ? `<button class="linkbtn" data-expand="zone">Voir les ${cs.length}</button>` : ""}` : `<p class="empty">Personne pour l'instant.</p>`}</div></div>`;
+  } else {
+    const c = clients[S.open.slice(2)];
+    if (!c) { S.open = null; dr.hidden = true; return }
+    const r = c.row, idx = PARCOURS.indexOf(c.zone.id), due = relanceDue(r); z = c.zone;
+    const etat = { hall: "Pas encore contacté", prog: r.envoye ? `Premier email programmé pour le ${r.envoye.slice(0, 5)}` : "Premier email programmé",
+      envoye: due ? `Relance due depuis le ${r.relance.slice(0, 5)}` : r.relance ? `Attend sa réponse · relance prévue le ${r.relance.slice(0, 5)}` : "Attend sa réponse",
+      relance: "Relancé, attend sa réponse", repondu: "A répondu : à toi de le rappeler", demo: "Démo prévue", inscrit: "Inscrit sur Trainwise", sortie: r.statut }[z.id];
+    const acts = [];
+    if (z.id === "hall") acts.push(isEmail(r) ? ["facteur", "programmer", "Envoyer le premier email"] : ["messager", "contacter", "Le contacter (formulaire, Instagram)"]);
+    if (z.id === "envoye" && isEmail(r)) acts.push(["echo", "relancer", "Relancer maintenant"]);
+    if (["repondu", "demo"].includes(z.id)) acts.push(["allo", "preparer_appel", "Préparer l'appel"]);
+    const lies = S.ordres.filter(o => o.cibles?.some(sameRow(r)));
+    const pending = lies.filter(o => o.statut === "en_attente" || o.statut === "en_cours");
+    const fiche = lies.find(o => o.agent === "allo" && o.action === "preparer_appel" && o.statut === "fait" && o.compte_rendu);
+    const infos = [["Structure", r.structure !== r.nom ? r.structure : ""], ["Ville", r.ville], ["Spécialité", r.specialite], ["Outil actuel", r.outil], ["Canal", r.canal],
+      ["Contact", r.contact], ["Instagram", r.instagram], ["Premier message", r.envoye], ["Relance", r.relance], ["Notes", r.notes], ["Sheet", `${r.onglet}, ligne ${r.ligne}`]].filter(v => v[1]);
+    html = cardHead(initials(r.nom), z.nom, r.nom) + `<div class="d-body">
+      <div class="now"><div class="l1"><b>${esc(etat)}</b>${due ? `<span class="chip wait">Relance due</span>` : ""}</div>
+        <ol class="track">${PARCOURS.map((p, i) => `<li class="${i < idx ? "past" : i === idx ? "on" : ""}">${esc(ZBY[p].court)}</li>`).join("")}${z.id === "sortie" ? `<li class="on">${esc(r.statut)}</li>` : ""}</ol></div>
+      <dl class="infos">${infos.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${k === "Contact" || k === "Instagram" ? linkify(v) : esc(v)}</dd>`).join("")}</dl>
+      <div class="compose"><h3 style="margin:0">Le faire avancer</h3>
+        <div class="btns">${acts.map(([ag, ac, lab], i) => `<button class="btn ${i === 0 ? "primary" : ""}" data-corder="${ag}:${ac}" ${!S.db || pending.some(o => o.agent === ag && o.action === ac) ? "disabled" : ""}>${esc(lab)}</button>`).join("")}
+          <button class="btn" data-scribe="1">Raconter au Scribe</button></div>
+        <p class="toast ${S.toast?.err ? "err" : ""}" id="toast">${esc(S.toast?.text || (pending.length ? `${pending.length} ordre${pending.length > 1 ? "s" : ""} en attente pour lui.` : ""))}</p></div>
+      ${fiche ? `<div><h3>Fiche d'appel · Allô</h3><p class="crbox">${esc(fiche.compte_rendu)}</p></div>` : ""}
+      ${lies.length ? `<div><h3>Ordres le concernant</h3><ul class="list">${lies.slice(0, 6).map(o => { const [cls, lab] = STATUT_CHIP[o.statut] || ["", o.statut];
+        return `<li class="order"><div class="l1"><b>${esc(BY_ID[o.agent]?.nom || o.agent)} · ${esc(o.label)}</b><span class="chip ${cls}">${esc(lab)}</span></div><p style="font-size:11.5px;color:var(--text3)">${esc(ago(o.cree_le))}</p></li>` }).join("")}</ul></div>` : ""}
+    </div>`;
+  }
+  dr.style.setProperty("--c", z.color); dr.style.setProperty("--ci", z.ink || "#fff");
+  dr.innerHTML = html; dr.hidden = false;
+  dr.querySelector(".d-body").scrollTop = scroll;
+}
+async function clientOrder(agentId, actionId) {
+  const c = clients[S.open?.slice(2)], a = BY_ID[agentId]; if (!c || !S.db) return;
+  const act = a.actions.find(x => x.id === actionId), r = c.row;
+  document.querySelectorAll("[data-corder]").forEach(b => b.disabled = true);
+  try {
+    await envoyerOrdre({ agent: agentId, action: actionId, label: act.label, consigne: "", cibles: [{ id: r.id }] }); loadSheet();
+    S.toast = { text: `Ordre transmis à ${a.nom}. Le chef de bureau s'en occupe.` }; renderDetail();
+  } catch (err) { S.toast = { text: `L'ordre n'est pas parti (${err.code || "erreur"}). Réessaie.`, err: true }; renderDetail() }
+}
+document.addEventListener("click", e => {
+  const own = el => el.closest("#detail") ? isActive() : el.dataset.b === E.id;
+  const cl = e.target.closest("[data-client]"); if (cl) { if (own(cl)) { setActive(B); openCard("c:" + cl.dataset.client) } return }
+  const zt = e.target.closest("[data-zone]"); if (zt && zt.classList.contains("roomtag")) { if (own(zt)) { setActive(B); openCard("z:" + zt.dataset.zone) } return }
+  if (!isActive()) return;
+  const co = e.target.closest("[data-corder]"); if (co && !co.disabled) { const [ag, ac] = co.dataset.corder.split(":"); clientOrder(ag, ac); return }
+  if (e.target.closest("[data-scribe]")) {
+    const c = clients[S.open?.slice(2)]; if (!c) return;
+    S.scribe.text = c.row.nom + " : "; openAgent("scribe");
+    const t = document.getElementById("scribeText"); if (t) { t.value = S.scribe.text; t.focus(); t.setSelectionRange(t.value.length, t.value.length) }
+    return;
+  }
+});
+
+
+/* --- Animation du bâtiment, appelée par la boucle commune --- */
+function tick(dt, time) {
+  Object.values(robots).forEach(r => step(r, dt, time));
+  stepClients(dt, time);
+  for (let i = fxs.length - 1; i >= 0; i--) { const f = fxs[i]; f.t += dt; const k = Math.min(1, f.t / f.dur); f.upd(k); if (k >= 1) { f.end && f.end(); fxs.splice(i, 1) } }
+}
+function placeTags() {
+  Object.values(robots).forEach(r => {
+    place(r.tag, r.pos.x, 2.55 + r.body.position.y, r.pos.y);
+    const [dx, dz] = r.a.desk; placeCentered(r.zoneTag, dx, 0.05, dz + 1.45);
+    placeCentered(r.stTag, ...STATION_POS[r.a.id]);
+  });
+  placeCentered(pauseTag, -3.4, 0.05, 2.6);
+  placeClientTags();
+}
+document.fonts?.ready.then(() => { [logoTex, plaqueTex].forEach(x => { const t = x.userData; t.draw(t.g, t.c.width, t.c.height); x.needsUpdate = true }); redrawBoard() });
+
+/* ================= Interface ================= */
+function renderHud() {
+  const rows = allRows(), n = st => rows.filter(r => st.includes(r.statut)).length;
+  if (S.sheetAt) syncClients();
+  kpiVals = S.sheetAt ? [rows.length, n(["À envoyer"]), n(["Programmé"]), n(["Envoyé", "Relancé", ...REPONSES]), n(REPONSES), n(["Démo prévue", "Inscrit"])] : null;
+  redrawBoard();
+  if (!isActive()) { updateTags(); return }
+  if (view === "agents" || view === "deux") {
+    const labels = ["Contacts", "À contacter", "Programmés", "Envoyés", "Réponses", "Démos"];
+    document.getElementById("kpis").innerHTML = labels.map((l, i) => `<div class="${i === 4 && kpiVals && kpiVals[4] ? "hot" : ""}"><b>${kpiVals ? kpiVals[i] : "–"}</b><span>${l}</span></div>`).join("");
+  } else {
+    const z = id => ZBY[id].n, enJeu = (z("repondu") + z("demo")) * 29;
+    const cv2 = S.sheetAt ? [[z("hall"), "À contacter"], [z("prog") + z("envoye") + z("relance"), "En attente"], [rows.filter(relanceDue).length, "Relances dues", 1],
+      [z("repondu"), "Réponses", 1], [z("demo"), "Démos", 1], [z("inscrit"), "Inscrits", 1], [enJeu + " €", "En jeu / mois", enJeu]] : null;
+    document.getElementById("kpis").innerHTML = (cv2 || [["–", "À contacter"], ["–", "En attente"], ["–", "Réponses"], ["–", "Démos"], ["–", "Inscrits"]])
+      .map(([v, l, hot]) => `<div class="${hot && parseInt(v) ? "hot" : ""}"><b>${esc(v)}</b><span>${l}</span></div>`).join("");
+  }
+  const tabs = Object.keys(S.tabs).sort();
+  document.getElementById("sub").textContent = S.sheetAt && view === "clients" ? `Salle des clients · ${rows.length} coachs dans le parcours · à jour ${ago(S.sheetAt)}`
+    : S.sheetAt ? `Secteur ${E.secteur} · S${isoWeek()} · ${tabs.join(", ") || "pas encore d'onglet"} · à jour ${ago(S.sheetAt)}`
+    : S.sheetErr ? `Secteur ${E.secteur} · serveur injoignable` : `Secteur ${E.secteur} · chargement…`;
+  renderChef(); renderFeed(); updateTags();
+}
+function renderChef() {
+  if (!isActive()) return;
+  const last = S.chef?.derniere_ronde, fresh = last && Date.now() - new Date(last).getTime() < FRESH_MS;
+  const attente = S.ordres.filter(o => o.statut === "en_attente").length;
+  document.getElementById("chef").innerHTML = `<span class="dot ${fresh ? "on" : attente ? "wait" : ""}"></span><span>${last ? `Chef de bureau : ronde ${esc(ago(last))}` : "Chef de bureau : pas encore passé"}${attente ? ` · ${attente} ordre${attente > 1 ? "s" : ""} en attente` : ""}</span>`;
+}
+function renderFeed() {
+  if (!isActive()) return;
+  const actifs = S.ordres.filter(o => o.statut === "en_attente" || o.statut === "en_cours");
+  document.getElementById("queueCount").textContent = actifs.length ? `${actifs.length} ordre${actifs.length > 1 ? "s" : ""} en cours` : "";
+  const items = [
+    ...actifs.map(o => ({ agent: o.agent, texte: `${o.label}${o.cibles?.length ? ` (${o.cibles.length})` : ""}`, right: o.statut === "en_cours" ? "en cours" : "en attente" })),
+    ...S.journal.slice(0, 6).map(j => ({ agent: j.agent, texte: j.texte, right: ago(j.quand) })),
+  ].slice(0, 6);
+  document.getElementById("feed").innerHTML = items.length ? items.map(it => {
+    const a = BY_ID[it.agent];
+    return `<li style="--c:${a ? a.color : "#A7B1BB"}"><span class="p"></span><span><span class="who">${esc(a ? a.nom : "Bureau")}</span> · ${esc(it.texte)}</span><time>${esc(it.right)}</time></li>`;
+  }).join("") : `<li class="e">Le fil se remplit dès qu'un agent travaille.</li>`;
+}
+
+function listHTML(items, selectable, kind) {
+  if (!items.length) return `<p class="empty">Rien ici pour l'instant.</p>`;
+  const lim = S.expanded[kind] ? items.length : 6;
+  return `<ul class="list">${items.slice(0, lim).map(it => selectable
+    ? `<li><label class="row"><input type="checkbox" data-k="${esc(it.k)}" ${S.sel.has(it.k) ? "checked" : ""}><span class="t"><b>${esc(it.titre)}</b><span>${esc(it.sub)}</span></span><span class="r">${esc(it.right)}</span></label></li>`
+    : `<li><div class="row"><span></span><span class="t"><b>${esc(it.titre)}</b><span>${esc(it.sub)}</span></span><span class="r">${esc(it.right)}</span></div></li>`).join("")}</ul>
+    ${items.length > lim ? `<button class="linkbtn" data-expand="${kind}">Voir les ${items.length}</button>` : ""}`;
+}
+const STATUT_CHIP = { en_attente: ["wait", "En attente"], en_cours: ["work", "En cours"], fait: ["ok", "Fait"], erreur: ["err", "Bloqué"] };
+
+function renderDetail() {
+  if (!isActive()) return;
+  const dr = document.getElementById("detail");
+  if (!S.open) { dr.hidden = true; return }
+  if (S.open.includes(":")) { renderCard(); return }
+  dr.style.removeProperty("--ci");
+  const a = BY_ID[S.open], st = agentState(a), L = st.L, selectable = a.actions.some(x => x.sel);
+  const keep = document.getElementById("consigne")?.value ?? "", scroll = dr.querySelector(".d-body")?.scrollTop ?? 0;
+  const prog = /(\d+)\s*\/\s*(\d+)/.exec(st.live?.progression || ""), pct = prog ? Math.round(100 * prog[1] / Math.max(1, prog[2])) : null;
+  const etape = st.mode === "live" ? (st.live?.etape || 0) : 0;
+  const ordres = S.ordres.filter(o => o.agent === a.id).slice(0, 10);
+  dr.style.setProperty("--c", a.color);
+  dr.innerHTML = `
+  <div class="d-head"><div class="avatar">${esc(a.init)}</div><div><div class="eyebrow">Pôle ${esc(a.pole)}</div><h2>${esc(a.nom)} · ${esc(a.role)}</h2></div>
+    <button class="x" id="close" aria-label="Fermer la fiche">×</button></div>
+  <div class="d-body">
+    <div class="now">
+      <div class="l1"><b>${st.mode === "live" ? esc(st.tache || "Au travail") : st.attente ? "Attend le chef de bureau" : st.aFaire ? "Attend un ordre" : "En pause"}</b>
+        <span class="state"><span class="dot ${st.mode === "live" ? "on" : st.mode === "busy" ? "wait" : ""}"></span>${st.mode === "live" ? "En direct" : st.mode === "busy" ? "À faire" : "Pause"}</span></div>
+      ${pct !== null ? `<div class="bar"><i style="width:${pct}%"></i></div><span class="state">${esc(st.live.progression)} · mis à jour ${esc(ago(st.live.maj_le))}</span>` : ""}
+      <span class="state">${L ? `${st.aFaire} à faire · ${L.enCours.length} ${esc((L.enCoursTitre || "en cours").toLowerCase())} · ${st.fait} fait${st.fait > 1 ? "s" : ""}` : "Chargement des contacts…"}</span>
+    </div>
+    <p class="mission">${esc(fill(a.mission))} <span style="color:var(--text3)">${esc(a.rythme)}.</span></p>
+    <div><h3>Sa routine</h3><ol class="steps">${a.steps.map((s, i) => `<li class="${etape === i + 1 ? "on" : ""}">${esc(fill(s))}</li>`).join("")}</ol></div>
+    ${a.id === "scribe" ? scribeHTML() : `<div class="compose">
+      <h3 style="margin:0"><label for="consigne">Donner un ordre</label></h3>
+      <textarea id="consigne" placeholder="${esc(a.actions[0].hint || "Ta consigne")}">${esc(keep)}</textarea>
+      ${selectable ? `<div class="sel-line" id="selLine"></div>` : ""}
+      <div class="btns">${a.actions.map((x, i) => `<button class="btn ${i === 0 ? "primary" : ""}" data-action="${x.id}">${esc(x.label)}</button>`).join("")}
+        <button class="btn" data-action="consigne">Consigne seule</button></div>
+      <p class="toast ${S.toast?.err ? "err" : ""}" id="toast">${esc(S.toast?.text || "")}</p>
+    </div>
+    <div><h3>Ses ordres</h3>${ordres.length ? `<ul class="list">${ordres.map(o => { const [cls, lab] = STATUT_CHIP[o.statut] || ["", o.statut];
+      return `<li class="order"><div class="l1"><b>${esc(o.label)}${o.cibles?.length ? ` · ${o.cibles.length}` : ""}</b><span class="chip ${cls}">${esc(lab)}</span></div>
+        ${o.consigne ? `<p>« ${esc(o.consigne)} »</p>` : ""}${o.compte_rendu ? `<p class="cr">${esc(o.compte_rendu)}</p>` : ""}
+        <p style="font-size:11.5px;color:var(--text3)">${esc(ago(o.cree_le))}${o.statut === "en_attente" ? ` · <button class="linkbtn danger" data-cancel="${esc(o._id)}">Annuler</button>` : ""}</p></li>` }).join("")}</ul>`
+      : `<p class="empty">Aucun ordre donné à ${esc(a.nom)} pour l'instant.</p>`}</div>`}
+    ${L ? `
+      ${!["radar", "scribe"].includes(a.id) ? `<div><h3><span>À faire · ${L.aFaire.length}</span>${selectable && L.aFaire.length ? `<button class="linkbtn" data-selall="1">${L.aFaire.every(i => S.sel.has(i.k)) ? "Tout désélectionner" : "Tout sélectionner"}</button>` : ""}</h3>${listHTML(L.aFaire, selectable, "aFaire")}</div>` : ""}
+      <div><h3>${esc(L.enCoursTitre || "En cours")} · ${L.enCours.length}</h3>${listHTML(L.enCours, selectable && a.id === "echo", "enCours")}</div>
+      <div><h3>${a.id === "scribe" ? "Ses dernières mises à jour" : "Fait"} · ${L.fait.length}</h3>${listHTML(L.fait, false, "fait")}</div>` : ""}
+  </div>`;
+  dr.hidden = false;
+  dr.querySelector(".d-body").scrollTop = scroll;
+  updateSelLine();
+  const st2 = document.getElementById("scribeText"); if (st2 && document.activeElement !== st2) st2.value = S.scribe.text;
+}
+
+/* ================= Le Scribe ================= */
+const STATUTS = ["À envoyer", "Programmé", "Envoyé", "Relancé", "Répondu", "Démo prévue", "Inscrit", "Pas intéressé", "Non"];
+const frToday = () => new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
+const frPlus = n => { const d = new Date(); d.setDate(d.getDate() + n); return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" }) };
+function scribeHTML() {
+  const sc = S.scribe, byKey = Object.fromEntries(allRows().map(r => [key(r), r]));
+  let out = `<div class="compose">
+    <h3 style="margin:0"><label for="scribeText">Raconte-lui ce que tu as fait</label></h3>
+    <textarea id="scribeText" placeholder="Ex. : J'ai appelé Sudrie, démo jeudi 18 h. J'ai écrit à Anthony Jaud et Julien Argouet sur Instagram. Thomas Pigois m'a dit non."></textarea>
+    <div class="btns"><button class="btn primary" id="scribeGo" ${sc.busy || !S.sheetAt ? "disabled" : ""}>Proposer les mises à jour</button></div>`;
+  if (sc.busy === "lit") out += `<p class="thinking"><i></i>Le Scribe cherche les coachs dans le Sheet…</p>`;
+  if (sc.busy === "ecrit") out += `<p class="thinking"><i></i>Le Scribe écrit dans le Sheet…</p>`;
+  if (sc.err) out += `<p class="toast err">${esc(sc.err)}</p>`;
+  if (sc.done) out += `<p class="toast">${esc(sc.done)}</p>`;
+  out += `</div>`;
+  if (sc.props) {
+    const ok = sc.props.maj.filter(m => byKey[m.k]);
+    out += `<div><h3>Ce qu'il propose · ${ok.length}</h3>`;
+    out += ok.length ? `<ul class="list">${ok.map(m => { const r = byKey[m.k];
+      return `<li><label class="maj"><input type="checkbox" data-maj="${esc(m.k)}" ${m.on ? "checked" : ""}><span><b>${esc(r.nom)}</b> <span class="arrow">${esc(r.statut || "sans statut")} →</span> <span class="new">${esc(m.statut || r.statut)}</span>${m.note ? `<p>Note : ${esc(m.note)}</p>` : ""}</span></label></li>` }).join("")}</ul>`
+      : `<p class="empty">Aucun coach du Sheet ne correspond.</p>`;
+    if (sc.props.doute) out += `<p class="empty" style="margin-top:6px">${esc(sc.props.doute)}</p>`;
+    if (ok.length) out += `<div class="btns" style="margin-top:8px"><button class="btn accent" id="scribeApply" ${sc.busy ? "disabled" : ""}>Mettre le Sheet à jour</button><button class="btn" id="scribeCancel">Annuler</button></div>`;
+    out += `</div>`;
+  }
+  return out;
+}
+function setLocalLive(id, data) {
+  if (data) S.localLive[id] = { etat: "au_travail", maj_le: new Date().toISOString(), ...data }; else delete S.localLive[id];
+  updateTags(); if (S.open) renderDetail();
+}
+
+async function scribePropose() {
+  const text = (document.getElementById("scribeText")?.value || "").trim();
+  S.scribe.text = text;
+  if (!text) { S.scribe.err = "Écris d'abord ce que tu as fait."; renderDetail(); return }
+  const sample = null;   // le Scribe passe par le chef de bureau (Claude côté serveur)
+  if (!sample) { await scribeOrder(text); return }
+  const table = allRows().map(r => [key(r), r.nom, r.structure !== r.nom ? r.structure : "", r.ville, r.statut, r.canal].join(" | ")).join("\n");
+  const prompt = `Tu tiens à jour un fichier de prospection de coachs sportifs. Voici les contacts, un par ligne, au format « id | nom | structure | ville | statut actuel | canal » :
+${table}
+
+Statuts autorisés, dans l'ordre du parcours : ${STATUTS.join(", ")}.
+Sens : « Envoyé » = premier message parti (email, formulaire ou Instagram) ; « Relancé » = relance partie ; « Répondu » = le coach a répondu sans suite décidée ; « Démo prévue » = appel ou démo calé ; « Inscrit » = a créé son compte ; « Pas intéressé » ou « Non » = refus.
+
+${E.prenom} raconte ce qu'il vient de faire :
+<<<
+${text}
+>>>
+
+Pour chaque coach dont il parle, retrouve son id (les noms peuvent être approximatifs, sans accent, ou réduits au prénom ou à la structure). Déduis le nouveau statut, et une note courte et factuelle si elle apporte une information (date de démo, objection, outil, nombre d'athlètes). Si le statut ne change pas, mets le statut actuel. N'invente rien. Si un coach cité est introuvable ou ambigu, ne le mets pas dans "maj" et explique-le en une phrase dans "doute".
+Réponds uniquement avec ce JSON : {"maj":[{"id":"S42:55","statut":"Démo prévue","note":"Démo jeudi 18 h"}],"doute":""}`;
+  S.scribe = { ...S.scribe, busy: "lit", err: null, done: null, props: null };
+  setLocalLive("scribe", { tache: "Lit ce que tu as fait", etape: 2 });
+  try {
+    const res = await sample.json(prompt, { modelTier: "default", cache: false });
+    const maj = (Array.isArray(res?.maj) ? res.maj : []).filter(m => m && typeof m.id === "string")
+      .map(m => ({ k: m.id, statut: STATUTS.includes(m.statut) ? m.statut : "", note: typeof m.note === "string" ? m.note.slice(0, 300) : "", on: true }))
+      .filter(m => m.statut || m.note);
+    S.scribe.props = { maj, doute: typeof res?.doute === "string" ? res.doute : "" };
+    S.scribe.busy = false;
+    setLocalLive("scribe", { tache: "Attend ta validation", etape: 3 });
+  } catch (e) {
+    S.scribe.busy = false;
+    S.scribe.err = { not_granted: "Tu n'as pas autorisé le Scribe à utiliser Claude sur cette page.", rate_limited: "Trop de demandes d'un coup. Réessaie dans un moment.",
+      invalid_json: "Le Scribe n'a pas compris. Reformule en citant les noms des coachs." }[e.code] || "Le Scribe n'a pas pu répondre. Réessaie.";
+    setLocalLive("scribe", null);
+  }
+}
+
+async function scribeOrder(text) {
+  if (!S.db) { S.scribe.err = "Ce n'est pas ton bureau : tu peux le regarder, pas y donner d'ordres."; renderDetail(); return }
+  try {
+    await envoyerOrdre({ agent: "scribe", action: "raconter", label: "Mise à jour des contacts", consigne: text, cibles: [] }); loadSheet();
+    S.scribe = { text: "", busy: false, props: null, err: null, done: "C'est noté : le chef de bureau met les contacts à jour." };
+  } catch (e) { S.scribe.err = `Pas transmis (${e.code || "erreur"}). Réessaie.` }
+  renderDetail();
+}
+async function scribeApply() {
+  const mcp = await use("mcp"); if (!mcp || !S.scribe.props) return;
+  const byKey = Object.fromEntries(allRows().map(r => [key(r), r]));
+  const todo = S.scribe.props.maj.filter(m => m.on && byKey[m.k]);
+  if (!todo.length) return;
+  S.scribe.busy = "ecrit"; S.scribe.err = null;
+  const okNames = [], failed = [];
+  for (let i = 0; i < todo.length; i++) {
+    const m = todo[i], r = byKey[m.k];
+    setLocalLive("scribe", { tache: "Met à jour " + r.nom, progression: `${i}/${todo.length}`, etape: 4 });
+    try {
+      const fresh = await mcp.callTool(SHEETS, "get_values", { spreadsheetId: SHEET_ID, range: `${r.onglet}!B${r.ligne}` }, { cache: false });
+      if ((fresh.payload?.values?.[0]?.[0] || "").trim() !== r.nom) { failed.push(r.nom + " (la ligne a bougé dans le Sheet)"); continue }
+      const write = (range, values) => mcp.callTool(SHEETS, "update_values", { spreadsheetId: SHEET_ID, range: `${r.onglet}!${range}`, values });
+      if (m.statut && m.statut !== r.statut) await write(`A${r.ligne}`, [[m.statut]]);
+      if (m.statut === "Envoyé" && !r.envoye) await write(`K${r.ligne}:L${r.ligne}`, [[frToday(), frPlus(5)]]);
+      if (m.note) await write(`M${r.ligne}`, [[(r.notes ? r.notes + " · " : "") + frToday().slice(0, 5) + " : " + m.note]]);
+      okNames.push(r.nom + (m.statut && m.statut !== r.statut ? " → " + m.statut : " : note ajoutée"));
+    } catch (e) {
+      failed.push(r.nom + (["approval_required", "not_in_manifest"].includes(e.code) ? " (autorise Google Sheets pour la page)" : ""));
+    }
+  }
+  setLocalLive("scribe", { tache: "Sheet à jour", progression: `${todo.length}/${todo.length}`, etape: 4 });
+  try { await mcp.invalidate(SHEETS) } catch (e) {}
+  if (S.db) {
+    const quand = new Date().toISOString();
+    for (const n of okNames.slice(0, 10)) { try { await S.db.collection(col("journal")).add({ agent: "scribe", texte: n, quand }) } catch (e) {} }
+  }
+  S.scribe = { text: "", busy: false, props: null, err: failed.length ? "Pas mis à jour : " + failed.join(", ") + "." : null,
+    done: okNames.length ? `${okNames.length} ligne${okNames.length > 1 ? "s" : ""} mise${okNames.length > 1 ? "s" : ""} à jour dans le Sheet.` : null };
+  renderDetail();
+  setTimeout(() => setLocalLive("scribe", null), 6000);
+}
+document.addEventListener("click", e => {
+  if (!isActive()) return;
+  if (e.target.id === "scribeGo") scribePropose();
+  else if (e.target.id === "scribeApply") scribeApply();
+  else if (e.target.id === "scribeCancel") { S.scribe.props = null; setLocalLive("scribe", null) }
+});
+document.addEventListener("input", e => { if (!isActive()) return; if (e.target.id === "scribeText") S.scribe.text = e.target.value });
+document.addEventListener("change", e => {
+  if (!isActive()) return;
+  if (e.target.matches("input[data-maj]")) { const m = S.scribe.props?.maj.find(x => x.k === e.target.dataset.maj); if (m) m.on = e.target.checked }
+});
+
+function updateSelLine() {
+  if (!isActive()) return;
+  const el = document.getElementById("selLine");
+  if (el) el.textContent = S.sel.size ? `${S.sel.size} contact${S.sel.size > 1 ? "s" : ""} sélectionné${S.sel.size > 1 ? "s" : ""}` : "Coche des contacts dans « À faire », ou écris une consigne libre.";
+  document.querySelectorAll("[data-action]").forEach(b => {
+    const act = BY_ID[S.open]?.actions.find(x => x.id === b.dataset.action);
+    const txt = document.getElementById("consigne")?.value.trim();
+    b.disabled = !S.db || (act ? act.sel && !S.sel.size : !txt);
+  });
+}
+function openAgent(id) {
+  if (S.open !== id) { S.sel.clear(); S.expanded = {}; S.toast = null; const c = document.getElementById("consigne"); if (c) c.value = "" }
+  S.open = id; renderDetail(); updateTags();
+}
+document.addEventListener("click", async e => {
+  if (!isActive()) return;
+  if (e.target.id === "close") { S.open = null; renderDetail(); updateTags(); return }
+  const ex = e.target.closest("[data-expand]"); if (ex) { S.expanded[ex.dataset.expand] = true; renderDetail(); return }
+  if (e.target.closest("[data-selall]")) { const items = lists(S.open).aFaire, all = items.every(i => S.sel.has(i.k)); items.forEach(i => all ? S.sel.delete(i.k) : S.sel.add(i.k)); renderDetail(); return }
+  const c = e.target.closest("[data-cancel]");
+  if (c && S.db) { try { await api("/ordres/" + c.dataset.cancel, { method: "DELETE" }); loadSheet() } catch (err) { flash("Annulation impossible (" + (err.code || "erreur") + ").", true) } return }
+  const b = e.target.closest("[data-action]"); if (b && !b.disabled) sendOrder(b.dataset.action);
+});
+document.addEventListener("change", e => { if (!isActive()) return; if (e.target.matches("input[data-k]")) { e.target.checked ? S.sel.add(e.target.dataset.k) : S.sel.delete(e.target.dataset.k); updateSelLine() } });
+document.addEventListener("input", e => { if (!isActive()) return; if (e.target.id === "consigne") updateSelLine() });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && S.open && isActive()) { S.open = null; renderDetail(); updateTags() } });
+function flash(text, err) { S.toast = { text, err }; if (!isActive()) return; const t = document.getElementById("toast"); if (t) { t.textContent = text; t.className = "toast" + (err ? " err" : "") } }
+
+async function sendOrder(actionId) {
+  const a = BY_ID[S.open]; if (!a || !S.db) return;
+  const act = a.actions.find(x => x.id === actionId), consigne = document.getElementById("consigne").value.trim();
+  const byKey = Object.fromEntries(allRows().map(r => [key(r), r]));
+  const cibles = [...S.sel].map(k => byKey[k]).filter(Boolean).map(r => ({ id: r.id }));
+  document.querySelectorAll("[data-action]").forEach(b => b.disabled = true);
+  try {
+    await envoyerOrdre({ agent: a.id, action: actionId, label: act ? act.label : "Consigne", cibles, consigne }); loadSheet();
+    S.sel.clear(); document.getElementById("consigne").value = "";
+    S.toast = { text: `Ordre transmis à ${a.nom}. Le chef de bureau s'en occupe.` }; renderDetail();
+  } catch (err) {
+    flash(`L'ordre n'est pas parti (${err.code || "erreur"}). Réessaie.`, true); updateSelLine();
+  }
+}
+
+/* ================= Données ================= */
+function sheetBanner(html) {
+  if (!isActive()) return;
+  const b = document.getElementById("sheetBanner"); b.innerHTML = html; b.hidden = false;
+}
+// Le bureau lit et écrit ses données sur le serveur du back-office (base de prospection).
+async function api(url, opts = {}) {
+  const res = await fetch("/bureau/api" + url, { credentials: "same-origin", headers: { "Content-Type": "application/json" }, ...opts });
+  if (res.status === 401) { location.href = "/login"; throw Object.assign(new Error("session"), { code: "session" }) }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw Object.assign(new Error(data.error || res.statusText), { code: data.error || String(res.status) });
+  return data;
+}
+const envoyerOrdre = data => api("/ordres", { method: "POST", body: JSON.stringify({ espace: E.id, ...data }) });
+async function loadSheet() {
+  try {
+    const d = await api(`/etat?espace=${E.id}`);
+    S.tabs = {}; d.contacts.forEach(c => (S.tabs[c.onglet] ||= []).push(c));
+    S.ordres = d.ordres; S.journal = d.journal; S.live = d.agents; S.chef = d.chef;
+    S.db = d.peutAgir || null;   // S.db vrai = on peut donner des ordres dans ce bureau
+    S.sheetAt = new Date().toISOString(); S.sheetErr = null;
+    if (isActive()) document.getElementById("sheetBanner").hidden = true;
+  } catch (e) {
+    if (e.code === "session") return;
+    S.sheetErr = e.code; sheetBanner("<b>Le serveur ne répond pas.</b> Nouvel essai dans quelques secondes.");
+  }
+  renderHud(); if (S.open) renderDetail();
+}
+setInterval(() => { if (!document.hidden) loadSheet() }, 15000);
+setInterval(() => { renderChef(); updateTags() }, 30000);
+
+/* --- Ce que la page commune demande au bâtiment --- */
+function pick(rc) {
+  const first = rc.intersectObjects([...Object.values(robots).map(r => r.root), ...visibleClientRoots()], true)[0];
+  if (first?.object.userData.client) { const cid = first.object.userData.client; return { d: first.distance, go: () => { setActive(B); openCard("c:" + cid) } } }
+  const hit = first || rc.intersectObjects(Object.values(desks).map(d => d.g), true)[0];
+  const id = hit && (hit.object.userData.agent || deskOwner(hit.object));
+  if (id) return { d: hit.distance, go: () => { setActive(B); openAgent(id) } };
+  const zh = rc.intersectObjects(zoneGroups, true)[0];
+  if (zh) { const z = zh.object.userData.zone; return { d: zh.distance + 1000, go: () => { setActive(B); openCard("z:" + z) } } }
+  return null;
+}
+function blur() { S.open = null; S.sel.clear(); S.toast = null; updateTags() }
+function refresh() {
+  document.getElementById("sheetBanner").hidden = true;
+  if (S.sheetErr) sheetBanner("<b>Le serveur ne répond pas.</b> Nouvel essai dans quelques secondes.");
+  renderHud(); renderDetail();
+}
+Object.assign(B, { tick, placeTags, pick, blur, refresh, renderHud, loadSheet });
+renderHud();
+loadSheet();
+return B;
+}
+
+
+/* --- L'allée entre les deux bâtiments --- */
+{
+  const zc = OFFS.hugo[1] / 2, gap = -OFFS.hugo[1] - (D0 * 2 + 0.6);
+  const lawn = new T.Mesh(new T.PlaneGeometry(61.6, gap), mat("#CFE8C4")); lawn.rotation.x = -Math.PI / 2; lawn.position.set(16.45, -0.01, zc); lawn.receiveShadow = true; WORLD.add(lawn);
+  const path = new T.Mesh(new T.PlaneGeometry(61.6, 1.6), mat("#E9E2D6")); path.rotation.x = -Math.PI / 2; path.position.set(16.45, 0.005, zc); path.receiveShadow = true; WORLD.add(path);
+  [[-11, zc - 2.2, 1.1], [0, zc + 2.4, 0.8], [11, zc - 2.3, 1.0], [24, zc + 2.3, 0.85], [37, zc - 2.2, 1.1], [45.5, zc + 2.2, 0.75]].forEach(([x, z, s]) => {
+    const trunk = new T.Mesh(new T.CylinderGeometry(0.08 * s, 0.1 * s, 1.4 * s, 8), mat("#8A6A48")); trunk.position.set(x, 0.7 * s, z); trunk.castShadow = true; WORLD.add(trunk);
+    [[0, 1.9, 0, 0.95], [0.4, 1.6, 0.2, 0.65], [-0.35, 1.7, -0.25, 0.68], [0.1, 2.45, -0.1, 0.58]].forEach(([dx, y, dz, r]) => {
+      const m = new T.Mesh(new T.IcosahedronGeometry(r * s, 1), mat("#3FAE49", { flatShading: true, roughness: 0.9 }));
+      m.position.set(x + dx * s, y * s, z + dz * s); m.castShadow = true; WORLD.add(m);
+    });
+  });
+}
+
+/* --- Bureau actif : celui dont les cartes (chiffres, fil, fiches) sont affichées --- */
+function renderEspace() {
+  document.getElementById("titre").textContent = "· les bureaux · " + ACTIVE.E.prenom + " au premier plan";
+  document.querySelectorAll("[data-espace]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.espace === ACTIVE.E.id)));
+}
+function setActive(b) {
+  if (ACTIVE === b) return;
+  const prev = ACTIVE; ACTIVE = b;
+  try { localStorage.setItem("bureau-espace", b.E.id) } catch (e) {}
+  if (prev) prev.blur();
+  renderEspace(); b.refresh();
+}
+function choisirBureau(id) {
+  const b = BUREAUX.find(x => x.E.id === id); if (!b) return;
+  setActive(b); setView(view === "deux" ? "agents" : view);
+}
+document.addEventListener("click", e => {
+  const vb = e.target.closest("[data-view]"); if (vb) setView(vb.dataset.view);
+  const eb = e.target.closest("[data-espace]"); if (eb) choisirBureau(eb.dataset.espace);
+});
+document.getElementById("feedToggle").onclick = () => document.getElementById("feedcard").classList.toggle("open");
+const reloadBtn = document.getElementById("reloadSheet");
+reloadBtn.onclick = async () => {
+  if (reloadBtn.classList.contains("spin")) return;
+  reloadBtn.classList.add("spin"); reloadBtn.disabled = true;
+  try { await Promise.all(BUREAUX.map(b => b.loadSheet(true))) } finally { reloadBtn.classList.remove("spin"); reloadBtn.disabled = false }
+};
+
+/* --- Boucle --- */
+const clock = new T.Clock();
+function loop() {
+  const dt = Math.min(clock.getDelta(), 0.05), time = clock.elapsedTime;
+  stepCam(dt);
+  BUREAUX.forEach(b => b.tick(dt, time));
+  renderer.render(scene, cam);
+  BUREAUX.forEach(b => b.placeTags());
+  requestAnimationFrame(loop);
+}
+
+BUREAUX.push(makeBureau(ESPACES.julien, OFFS.julien), makeBureau(ESPACES.hugo, OFFS.hugo));
+setActive(BUREAUX.find(b => b.E.id === ACTIVE_ID) || BUREAUX[0]);
+loop();
+// Qui est connecté : on ouvre son bureau, et l'admin garde un lien vers le back-office.
+fetch("/bureau/api/moi", { credentials: "same-origin" }).then(r => r.ok ? r.json() : null).then(moi => {
+  if (!moi) return;
+  const mien = BUREAUX.find(b => b.E.id === moi.espace); if (mien) setActive(mien);
+  document.getElementById("compte").innerHTML = `${esc(moi.prenom)}${moi.admin ? ' · <a href="/dashboard">Back-office</a>' : ""} · <a href="/logout">Déconnexion</a>`;
+}).catch(() => {});
+
+</script>
+
+</body></html>
