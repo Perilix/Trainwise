@@ -4,7 +4,7 @@ const { conn, ESPACES } = require('../../config/prospectionDb');
 
 const espace = { type: String, enum: Object.keys(ESPACES), required: true };
 
-const STATUTS = ['À envoyer', 'Programmé', 'Envoyé', 'Relancé', 'Répondu', 'Démo prévue', 'Inscrit', 'Pas intéressé', 'Non'];
+const STATUTS = ['À envoyer', 'Programmé', 'Envoyé', 'Relancé', 'Répondu', 'Démo prévue', 'Inscrit', 'Pas intéressé', 'Non', 'Injoignable'];
 const AGENTS = {
   radar: ['chercher'],
   facteur: ['programmer'],
@@ -48,7 +48,9 @@ const contactSchema = new mongoose.Schema({
   notes: String,
   source: String,
   semaine: String,
-  ajouteLe: Date
+  ajouteLe: Date,
+  relanceEnvoyeeLe: Date,
+  reponseLe: Date
 }, { timestamps: true });
 contactSchema.index({ espace: 1, onglet: 1, ligne: 1 }, { unique: true });
 
@@ -87,6 +89,19 @@ const agentEtatSchema = new mongoose.Schema({
 });
 agentEtatSchema.index({ espace: 1, agent: 1 }, { unique: true });
 
+// La boîte Zoho d'un bureau, connectée par son titulaire (OAuth). Le jeton de rafraîchissement est chiffré.
+const boiteSchema = new mongoose.Schema({
+  espace: { ...espace, unique: true },
+  email: String,
+  accountId: String,
+  accountsServer: String,
+  mailApi: String,
+  refreshToken: String,
+  dossiers: { inbox: String, sent: String },
+  dernierReleve: Date,
+  connecteeLe: Date
+});
+
 const rondeSchema = new mongoose.Schema({
   espace: { ...espace, unique: true },
   derniereRonde: Date
@@ -100,5 +115,6 @@ module.exports = {
   Ordre: conn.model('Ordre', ordreSchema),
   Journal: conn.model('Journal', journalSchema),
   AgentEtat: conn.model('AgentEtat', agentEtatSchema),
+  Boite: conn.model('Boite', boiteSchema),
   Ronde: conn.model('Ronde', rondeSchema)
 };

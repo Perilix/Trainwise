@@ -1,9 +1,12 @@
 const express = require('express');
 const path = require('path');
+const crypto = require('crypto');
 const router = express.Router();
 const { requireBureau } = require('../middleware/auth');
 const { ESPACES } = require('../config/prospectionDb');
-const { AGENTS, Contact, Ordre, Journal, AgentEtat, Ronde } = require('../models/prospection');
+const { AGENTS, Contact, Ordre, Journal, AgentEtat, Ronde, Boite } = require('../models/prospection');
+const zoho = require('../bureau/zoho');
+const chef = require('../bureau/chef');
 
 // Express 4 ne rattrape pas les erreurs des handlers async : on les passe à next().
 const a = fn => (req, res, next) => fn(req, res, next).catch(next);
@@ -34,15 +37,17 @@ router.get('/api/moi', requireBureau, (req, res) => {
 router.get('/api/etat', requireBureau, a(async (req, res) => {
   const { espace } = req.query;
   if (!ESPACES[espace]) return res.status(400).json({ error: 'Bureau inconnu' });
-  const [contacts, ordres, journal, agents, ronde] = await Promise.all([
+  const [contacts, ordres, journal, agents, ronde, boite] = await Promise.all([
     Contact.find({ espace }).sort({ onglet: 1, ligne: 1 }).lean(),
     Ordre.find({ espace }).sort({ creeLe: -1 }).limit(150).lean(),
     Journal.find({ espace }).sort({ quand: -1 }).limit(40).lean(),
     AgentEtat.find({ espace }).lean(),
-    Ronde.findOne({ espace }).lean()
+    Ronde.findOne({ espace }).lean(),
+    Boite.findOne({ espace }).select('email connecteeLe').lean()
   ]);
   res.json({
     peutAgir: peutAgir(req, espace),
+    boite: { connectee: !!boite, email: ESPACES[espace].email, zoho: zoho.configure() },
     contacts: contacts.map(versPage),
     ordres: ordres.map(o => ({
       _id: o._id.toString(), agent: o.agent, action: o.action, label: o.label, consigne: o.consigne || '',
@@ -68,6 +73,7 @@ router.post('/api/ordres', requireBureau, a(async (req, res) => {
     cibles: contacts.map(c => ({ contactId: c._id, onglet: c.onglet, ligne: c.ligne, nom: c.nom, structure: c.structure })),
     auteur: req.session.bureau.prenom
   });
+  chef.reveiller();
   res.status(201).json({ id: ordre._id.toString() });
 }));
 
@@ -78,6 +84,34 @@ router.delete('/api/ordres/:id', requireBureau, a(async (req, res) => {
   if (ordre.statut !== 'en_attente') return res.status(409).json({ error: 'Ordre déjà pris en charge' });
   await ordre.deleteOne();
   res.json({ ok: true });
+}));
+
+/* --- Connecter la boîte Zoho d'un bureau (chaque titulaire connecte la sienne) --- */
+const redirectUri = req => `${process.env.BUREAU_URL || `${req.get('x-forwarded-proto') || req.protocol}://${req.get('host')}`}/bureau/zoho/callback`;
+
+router.get('/zoho/connecter', requireBureau, (req, res) => {
+  const espace = String(req.query.espace || req.session.bureau.espace);
+  if (!ESPACES[espace] || !peutAgir(req, espace)) return res.status(403).send("Ce n'est pas ton bureau.");
+  if (!zoho.configure()) return res.status(503).send('Zoho n\'est pas encore configuré sur le serveur (ZOHO_CLIENT_ID).');
+  const state = crypto.randomBytes(16).toString('hex');
+  req.session.zoho = { state, espace };
+  res.redirect(zoho.urlAutorisation(redirectUri(req), state));
+});
+
+router.get('/zoho/callback', requireBureau, a(async (req, res) => {
+  const attendu = req.session.zoho;
+  delete req.session.zoho;
+  if (!attendu || req.query.state !== attendu.state) return res.redirect('/bureau?zoho=expire');
+  if (req.query.error || !req.query.code) return res.redirect('/bureau?zoho=refuse');
+  try {
+    await zoho.connecter({ code: String(req.query.code), accountsServer: String(req.query['accounts-server'] || ''),
+      redirectUri: redirectUri(req), espace: attendu.espace, emailAttendu: ESPACES[attendu.espace].email });
+  } catch (e) {
+    console.error('Connexion Zoho :', e.response?.data || e.message);
+    return res.redirect('/bureau?zoho=' + encodeURIComponent(e.visible ? e.message : 'echec'));
+  }
+  chef.reveiller();
+  res.redirect('/bureau?zoho=ok');
 }));
 
 module.exports = router;

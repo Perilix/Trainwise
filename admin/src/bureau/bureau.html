@@ -259,8 +259,8 @@ const AGENTS = [
     actions: [{ id: "chercher", label: "Lancer une recherche", sel: false, hint: "Ex. : 20 coachs trail autour de Lyon, emails seulement" }] },
   { id: "allo", nom: "Allô", role: "Réponses et appels", pole: "Appels", init: "A", color: "#10B981", desk: [-4.5, -5], aisle: -2.4,
     station: { label: "Cabine", stand: [-7, 5.2], face: 0 }, fx: "ring",
-    mission: "Relève la boîte {boite}, classe les réponses, prépare tes appels et tes démos (fiche coach, points à aborder) et met les statuts à jour.",
-    rythme: "Sur ordre",
+    mission: "Relève la boîte {boite} toutes les 10 minutes : quand un coach répond, il passe dans « Ont répondu », et une adresse en échec passe en Injoignable. Il prépare aussi tes fiches d'appel (bientôt).",
+    rythme: "Toutes les 10 minutes, ou quand tu cliques",
     steps: ["Relève la boîte {boite}", "Rattache la réponse au coach", "Prépare la fiche d'appel", "Met le statut à jour"],
     actions: [{ id: "relever", label: "Relever la boîte mail", sel: false, hint: "" },
       { id: "preparer_appel", label: "Préparer l'appel", sel: true, hint: "Ex. : appel jeudi 18 h, triathlon longue distance" }] },
@@ -272,14 +272,14 @@ const AGENTS = [
     actions: [{ id: "contacter", label: "Préparer les messages", sel: true, hint: "Ex. : formulaires seulement, pas Instagram" }] },
   { id: "echo", nom: "Écho", role: "Relances", pole: "Relances", init: "É", color: "#FC4C02", desk: [4.5, -5], aisle: -2.4,
     station: { label: "Classeur relances", stand: [11.4, -1.6], face: Math.PI / 2 }, fx: "drawer",
-    mission: "Relance une seule fois, 5 jours après le premier email, en réponse au même fil, avec le modèle « Relance (J+5) ».",
-    rythme: "Sur ordre",
+    mission: "Relance une seule fois, 5 jours après le premier email, en réponse au même fil, avec le modèle « Relance (J+5) ». En journée elle part tout de suite, sinon le lendemain à 8 h 30.",
+    rythme: "Dès que tu cliques",
     steps: ["Repère les relances dues (J+5)", "Retrouve le fil dans Zoho", "Répond avec la relance", "Passe la ligne en Relancé"],
     actions: [{ id: "relancer", label: "Relancer maintenant", sel: true, hint: "Ex. : ajoute le code FOULEE-DOREE-50" }] },
   { id: "facteur", nom: "Facteur", role: "Premiers emails", pole: "Envois", init: "F", color: "#003554", desk: [9, -5], aisle: -2.4,
     station: { label: "Boîte d'envoi", stand: [11.3, 4.2], face: Math.PI / 2 }, fx: "mail",
-    mission: "Programme les premiers emails dans Zoho depuis {email}, avec le modèle « Premier email ». 15 par jour au plus, un toutes les 20 minutes.",
-    rythme: "Sur ordre",
+    mission: "Programme les premiers mails depuis {email}, avec le modèle « Premier email » et ta signature : un toutes les 20 minutes, en semaine, à la suite de ceux déjà programmés.",
+    rythme: "Dès que tu cliques",
     steps: ["Prend un contact à faire", "Remplit le modèle Premier email", "Programme l'envoi dans Zoho", "Passe la ligne en Programmé"],
     actions: [{ id: "programmer", label: "Programmer les emails", sel: true, hint: "Ex. : commence demain 8 h, insiste sur le suivi muscu" }] },
   { id: "scribe", nom: "Scribe", role: "Tient le Sheet à jour", pole: "Suivi", init: "S", color: "#D4A24C", ink: "#3D2A06", desk: [6.2, 2.2], aisle: null,
@@ -901,7 +901,7 @@ const ZONES = [
     desc: "Appel ou démo calé. Après la démo, raconte-la au Scribe pour qu'il les fasse avancer." },
   { id: "inscrit", nom: "Inscrits", court: "Inscrit", statuts: ["Inscrit"], color: "#D4A24C", ink: "#3D2A06", col: 2, row: 1, prop: "trophee",
     desc: "Ils ont créé leur compte coach sur Trainwise." },
-  { id: "sortie", nom: "Sortie", court: "Refus", statuts: ["Pas intéressé", "Non"], color: "#A7B1BB", ink: "#051923", col: 3, row: 1, prop: "porte",
+  { id: "sortie", nom: "Sortie", court: "Refus", statuts: ["Pas intéressé", "Non", "Injoignable"], color: "#A7B1BB", ink: "#051923", col: 3, row: 1, prop: "porte",
     desc: "Pas intéressés pour l'instant. On ne les relance pas." },
 ];
 ZONES.forEach(z => { z.x0 = CX0 + z.col * ZG; z.door = z.x0 + 6.15; z.cap = z.row ? 24 : 42; z.seats = Array(z.cap).fill(null); z.n = 0 });
@@ -1382,6 +1382,9 @@ function renderDetail() {
       <span class="state">${L ? `${st.aFaire} à faire · ${L.enCours.length} ${esc((L.enCoursTitre || "en cours").toLowerCase())} · ${st.fait} fait${st.fait > 1 ? "s" : ""}` : "Chargement des contacts…"}</span>
     </div>
     <p class="mission">${esc(fill(a.mission))} <span style="color:var(--text3)">${esc(a.rythme)}.</span></p>
+    ${["facteur", "echo", "allo"].includes(a.id) && S.boite && !S.boite.connectee ? `<div class="now"><div class="l1"><b>La boîte ${esc(S.boite.email)} n'est pas connectée</b></div>
+      <span class="state">${!S.boite.zoho ? "Zoho n'est pas encore configuré sur le serveur." : S.db ? "Connecte-la une fois : ${esc(a.nom)} pourra alors envoyer et lire les mails de ce bureau." : `C'est à ${esc(E.prenom)} de la connecter, depuis son compte.`}</span>
+      ${S.boite.zoho && S.db ? `<div class="btns"><a class="btn primary" href="/bureau/zoho/connecter?espace=${E.id}" style="text-decoration:none">Connecter la boîte Zoho</a></div>` : ""}</div>` : ""}
     <div><h3>Sa routine</h3><ol class="steps">${a.steps.map((s, i) => `<li class="${etape === i + 1 ? "on" : ""}">${esc(fill(s))}</li>`).join("")}</ol></div>
     ${a.id === "scribe" ? scribeHTML() : `<div class="compose">
       <h3 style="margin:0"><label for="consigne">Donner un ordre</label></h3>
@@ -1593,7 +1596,7 @@ async function loadSheet() {
     S.tabs = {}; d.contacts.forEach(c => (S.tabs[c.onglet] ||= []).push(c));
     S.ordres = d.ordres; S.journal = d.journal; S.live = d.agents; S.chef = d.chef;
     S.db = d.peutAgir || null;   // S.db vrai = on peut donner des ordres dans ce bureau
-    S.sheetAt = new Date().toISOString(); S.sheetErr = null;
+    S.boite = d.boite; S.sheetAt = new Date().toISOString(); S.sheetErr = null;
     if (isActive()) document.getElementById("sheetBanner").hidden = true;
   } catch (e) {
     if (e.code === "session") return;
@@ -1685,6 +1688,13 @@ BUREAUX.push(makeBureau(ESPACES.julien, OFFS.julien), makeBureau(ESPACES.hugo, O
 setActive(BUREAUX.find(b => b.E.id === ACTIVE_ID) || BUREAUX[0]);
 loop();
 // Qui est connecté : on ouvre son bureau, et l'admin garde un lien vers le back-office.
+// Retour de Zoho après « Connecter la boîte Zoho ».
+{
+  const z = new URLSearchParams(location.search).get("zoho");
+  const msg = { ok: "<b>Boîte connectée.</b> Facteur, Écho et Allô peuvent travailler.", refuse: "<b>Connexion annulée</b> côté Zoho.",
+    expire: "<b>La connexion a expiré.</b> Recommence depuis la fiche de l'agent.", echec: "<b>La connexion à Zoho a échoué.</b> Réessaie dans un instant." }[z] || (z ? `<b>Boîte non connectée :</b> ${esc(z)}` : "");
+  if (msg) { const b = document.getElementById("sheetBanner"); b.innerHTML = msg; b.hidden = false; setTimeout(() => { b.hidden = true }, 9000); history.replaceState(null, "", "/bureau") }
+}
 fetch("/bureau/api/moi", { credentials: "same-origin" }).then(r => r.ok ? r.json() : null).then(moi => {
   if (!moi) return;
   const mien = BUREAUX.find(b => b.E.id === moi.espace); if (mien) setActive(mien);
