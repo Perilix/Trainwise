@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const router = express.Router();
 const { requireBureau } = require('../middleware/auth');
 const { ESPACES } = require('../config/prospectionDb');
-const { AGENTS, Contact, Ordre, Journal, AgentEtat, Ronde, Boite } = require('../models/prospection');
+const { AGENTS, STATUTS, Contact, Ordre, Journal, AgentEtat, Ronde, Boite } = require('../models/prospection');
 const zoho = require('../bureau/zoho');
 const chef = require('../bureau/chef');
 
@@ -84,6 +84,43 @@ router.delete('/api/ordres/:id', requireBureau, a(async (req, res) => {
   if (ordre.statut !== 'en_attente') return res.status(409).json({ error: 'Ordre déjà pris en charge' });
   await ordre.deleteOne();
   res.json({ ok: true });
+}));
+
+/* --- Contacts : le fichier de prospection en tableau, avec ses graphiques --- */
+router.get('/contacts', requireBureau, a(async (req, res) => {
+  const contacts = await Contact.find().sort({ ajouteLe: -1, onglet: -1, ligne: 1 }).lean();
+  res.render('prospects', {
+    contacts: contacts.map(c => ({ ...versPage(c), espace: c.espace, zone: c.zone || '', source: c.source || '', modifiable: peutAgir(req, c.espace) })),
+    statuts: STATUTS, espaces: ESPACES, bureauSeul: !req.session.bureau.admin
+  });
+}));
+
+router.post('/api/contacts/:id/statut', requireBureau, a(async (req, res) => {
+  const { statut } = req.body;
+  if (!STATUTS.includes(statut)) return res.status(400).json({ error: 'Statut inconnu' });
+  const c = await Contact.findById(req.params.id).catch(() => null);
+  if (!c) return res.status(404).json({ error: 'Contact introuvable' });
+  if (!peutAgir(req, c.espace)) return res.status(403).json({ error: "Ce n'est pas ton bureau." });
+  const avant = c.statut;
+  c.statut = statut;
+  if (statut === 'Envoyé' && !c.envoyeLe) c.envoyeLe = new Date();
+  c.notes = (c.notes ? `${c.notes} · ` : '') + `${frDate(new Date()).slice(0, 5)} : ${avant} → ${statut} (${req.session.bureau.prenom})`;
+  await c.save();
+  res.json({ ok: true, contact: versPage(c) });
+}));
+
+// Export du fichier au format CSV (point-virgule, pour Excel en français).
+router.get('/contacts.csv', requireBureau, a(async (req, res) => {
+  const contacts = await Contact.find().sort({ espace: 1, onglet: 1, ligne: 1 }).lean();
+  const cols = [['Bureau', c => ESPACES[c.espace].secteur], ['Onglet', c => c.onglet], ['Statut', c => c.statut], ['Nom', c => c.nom],
+    ['Structure', c => c.structure], ['Ville', c => c.ville], ['Zone', c => c.zone], ['Spécialité', c => c.specialite], ['Outil actuel', c => c.outil],
+    ['Canal', c => c.canal], ['Contact', c => c.contact], ['Instagram', c => c.instagram], ['Envoyé le', c => frDate(c.envoyeLe)],
+    ['Relance le', c => frDate(relance(c))], ['Notes', c => c.notes], ['Source', c => c.source], ['Ajouté le', c => frDate(c.ajouteLe)]];
+  const cellule = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const csv = [cols.map(([t]) => cellule(t)).join(';'), ...contacts.map(c => cols.map(([, f]) => cellule(f(c))).join(';'))].join('\r\n');
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="prospection-trainwise-${new Date().toISOString().slice(0, 10)}.csv"`);
+  res.send('\uFEFF' + csv);   // BOM : Excel reconnaît l'UTF-8 et les accents
 }));
 
 /* --- Connecter la boîte Zoho d'un bureau (chaque titulaire connecte la sienne) --- */
