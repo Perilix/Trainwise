@@ -18,6 +18,7 @@
       <div class="brand-sub">Back-office</div>
     </div>
     <nav class="sidebar-nav">
+      <% if (!locals.bureauSeul) { %>
       <span class="nav-section-label">Menu</span>
       <a href="/dashboard" class="nav-item <%= page === 'dashboard' ? 'active' : '' %>">
         <i class="fa-solid fa-chart-pie"></i> Dashboard
@@ -43,9 +44,16 @@
         <i class="fa-solid fa-wand-magic-sparkles"></i> Activité IA
       </a>
       <span class="nav-section-label" style="margin-top:8px;">Outils</span>
+      <% } else { %>
+      <span class="nav-section-label">Prospection</span>
+      <% } %>
       <a href="/bureau" class="nav-item">
         <i class="fa-solid fa-building"></i> Bureau prospection
       </a>
+      <a href="/bureau/contacts" class="nav-item <%= page === 'prospects' ? 'active' : '' %>">
+        <i class="fa-solid fa-address-book"></i> Contacts
+      </a>
+      <% if (!locals.bureauSeul) { %>
       <a href="/launch" class="nav-item <%= page === 'launch' ? 'active' : '' %>">
         <i class="fa-solid fa-rocket"></i> Plan de lancement
       </a>
@@ -61,6 +69,7 @@
       <a href="/feedbacks" class="nav-item <%= page === 'feedbacks' ? 'active' : '' %>">
         <i class="fa-solid fa-comment-dots"></i> Feedbacks bêta
       </a>
+      <% } %>
     </nav>
     <div class="sidebar-footer">
       <a href="/logout" class="btn-logout">

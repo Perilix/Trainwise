@@ -1,0 +1,163 @@
+<%- include('_header', { title: 'Contacts prospection', page: 'prospects', bureauSeul }) %>
+
+<style>
+  /* Couleurs des statuts : les mêmes que les salles du bureau 3D. */
+  .st { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 0.74rem; font-weight: 600; white-space: nowrap; }
+  .st-select { border: 0; border-radius: 999px; padding: 3px 8px; font-size: 0.74rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .chart-box { position: relative; height: 230px; }
+  .prospects td { vertical-align: top; font-size: 0.82rem; }
+  .prospects th { cursor: pointer; user-select: none; white-space: nowrap; }
+  .prospects th[data-tri]::after { content: " ↕"; color: #cbd5e1; font-size: 0.7rem; }
+  .prospects th.asc::after { content: " ↑"; color: var(--blue); }
+  .prospects th.desc::after { content: " ↓"; color: var(--blue); }
+  .note { max-width: 320px; color: var(--text-muted); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .bureau-pill { font-size: 0.72rem; color: var(--text-muted); white-space: nowrap; }
+</style>
+
+<div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+  <div>
+    <h1>Contacts prospection</h1>
+    <p>Tous les coachs démarchés par les deux bureaux, à jour en direct.</p>
+  </div>
+  <a href="/bureau/contacts.csv" class="btn btn-secondary"><i class="fa-solid fa-file-excel"></i> Exporter pour Excel</a>
+</div>
+
+<div class="filters">
+  <div class="search-wrap"><i class="fa-solid fa-magnifying-glass"></i><input id="q" class="search-input" placeholder="Nom, structure, ville, email, note…"></div>
+  <select id="fBureau" class="filter-select">
+    <option value="">Les deux bureaux</option>
+    <% Object.entries(espaces).forEach(([id, e]) => { %><option value="<%= id %>"><%= e.prenom %> · <%= e.secteur %></option><% }) %>
+  </select>
+  <select id="fStatut" class="filter-select"><option value="">Tous les statuts</option><% statuts.forEach(s => { %><option><%= s %></option><% }) %></select>
+  <select id="fCanal" class="filter-select"><option value="">Tous les canaux</option><option>Email</option><option>Formulaire</option><option>Instagram</option><option value="autre">Autre</option></select>
+  <select id="fOnglet" class="filter-select"><option value="">Toutes les semaines</option></select>
+  <span class="filters-count" id="compte"></span>
+</div>
+
+<div class="stats-grid" id="kpis"></div>
+
+<div class="charts">
+  <div class="card"><div class="card-header"><div class="card-title">Statuts</div></div><div class="card-body"><div class="chart-box"><canvas id="gStatuts"></canvas></div></div></div>
+  <div class="card"><div class="card-header"><div class="card-title">Canal de contact</div></div><div class="card-body"><div class="chart-box"><canvas id="gCanaux"></canvas></div></div></div>
+  <div class="card"><div class="card-header"><div class="card-title">Outil actuel des coachs</div></div><div class="card-body"><div class="chart-box"><canvas id="gOutils"></canvas></div></div></div>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table class="prospects">
+      <thead><tr>
+        <th data-tri="statut">Statut</th><th data-tri="nom">Coach</th><th data-tri="ville">Ville</th><th data-tri="canal">Canal</th>
+        <th data-tri="outil">Outil</th><th data-tri="envoye">Envoyé</th><th data-tri="relance">Relance</th><th>Notes</th><th data-tri="ajoute">Ajouté</th>
+      </tr></thead>
+      <tbody id="lignes"></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const CONTACTS = <%- JSON.stringify(contacts).replace(/</g, '\\u003c') %>;
+const STATUTS = <%- JSON.stringify(statuts) %>;
+const ESPACES = <%- JSON.stringify(espaces).replace(/</g, '\\u003c') %>;
+const COULEURS = { 'À envoyer': '#8A95A0', 'Programmé': '#7FD3FD', 'Envoyé': '#00A6FB', 'Relancé': '#FC4C02', 'Répondu': '#10B981',
+  'Démo prévue': '#003554', 'Inscrit': '#D4A24C', 'Pas intéressé': '#C3CAD2', 'Non': '#A7B1BB', 'Injoignable': '#64748B' };
+const ENCRE = { 'Programmé': '#003554', 'Pas intéressé': '#051923', 'Non': '#051923' };
+const PALETTE = ['#003554', '#00A6FB', '#7FD3FD', '#10B981', '#D4A24C', '#FC4C02', '#8B5CF6', '#A7B1BB'];
+const CONTACTES = ['Envoyé', 'Relancé', 'Répondu', 'Démo prévue', 'Inscrit', 'Pas intéressé', 'Non'];
+const REPONSES = ['Répondu', 'Démo prévue', 'Inscrit', 'Pas intéressé', 'Non'];
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const dateTri = s => { const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s || ''); return m ? `${m[3]}${m[2]}${m[1]}` : '' };
+const canalDe = c => /mail/i.test(c.canal) ? 'Email' : /instagram/i.test(c.canal) ? 'Instagram' : /formulaire|nolio|helloasso/i.test(c.canal) ? 'Formulaire' : 'Autre';
+const outilDe = c => { const o = String(c.outil || '').split(/ \(| \+|,| \//)[0].trim(); return !o || o.startsWith('?') ? 'Inconnu' : o };
+
+// Semaines présentes, de la plus récente à la plus ancienne.
+const fOnglet = document.getElementById('fOnglet');
+[...new Set(CONTACTS.map(c => c.onglet))].sort((a, b) => b.localeCompare(a, 'fr', { numeric: true })).forEach(o => fOnglet.add(new Option(o, o)));
+
+let tri = { col: 'ajoute', sens: -1 };
+const filtres = () => {
+  const q = document.getElementById('q').value.trim().toLowerCase(), b = document.getElementById('fBureau').value,
+    s = document.getElementById('fStatut').value, k = document.getElementById('fCanal').value, o = fOnglet.value;
+  return CONTACTS.filter(c => (!b || c.espace === b) && (!s || c.statut === s) && (!k || canalDe(c) === k) && (!o || c.onglet === o)
+    && (!q || [c.nom, c.structure, c.ville, c.contact, c.notes, c.specialite, c.outil].join(' ').toLowerCase().includes(q)));
+};
+const valeurTri = (c, col) => col === 'statut' ? STATUTS.indexOf(c.statut) : ['envoye', 'relance', 'ajoute'].includes(col) ? dateTri(c[col])
+  : col === 'canal' ? canalDe(c) : col === 'outil' ? outilDe(c) : String(c[col] || '').toLowerCase();
+
+function statutHtml(c) {
+  const style = `background:${COULEURS[c.statut]};color:${ENCRE[c.statut] || '#fff'}`;
+  if (!c.modifiable) return `<span class="st" style="${style}">${esc(c.statut)}</span>`;
+  return `<select class="st-select" data-id="${c.id}" style="${style}">${STATUTS.map(s => `<option ${s === c.statut ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select>`;
+}
+function lienContact(c) {
+  if (/@/.test(c.contact)) return `<a href="mailto:${esc(c.contact)}" class="table-link">${esc(c.contact)}</a>`;
+  if (/^https?:/.test(c.contact)) return `<a href="${esc(c.contact)}" target="_blank" rel="noopener" class="table-link">${esc(c.contact.replace(/^https?:\/\/(www\.)?/, '').slice(0, 40))}</a>`;
+  return esc(c.contact);
+}
+
+function rendre() {
+  const liste = filtres().sort((a, b) => { const x = valeurTri(a, tri.col), y = valeurTri(b, tri.col); return (x > y ? 1 : x < y ? -1 : 0) * tri.sens });
+  document.getElementById('compte').textContent = `${liste.length} contact${liste.length > 1 ? 's' : ''} sur ${CONTACTS.length}`;
+  document.getElementById('lignes').innerHTML = liste.map(c => `<tr>
+    <td>${statutHtml(c)}</td>
+    <td><div style="font-weight:600">${esc(c.nom)}</div>${c.structure && c.structure !== c.nom ? `<div class="text-small text-muted">${esc(c.structure)}</div>` : ''}<div class="text-small">${lienContact(c)}</div></td>
+    <td>${esc(c.ville)}<div class="bureau-pill">${esc(ESPACES[c.espace].prenom)} · ${esc(c.onglet)}</div></td>
+    <td>${esc(canalDe(c))}</td><td>${esc(c.outil || '')}</td><td>${esc(c.envoye)}</td><td>${esc(c.relance)}</td>
+    <td><div class="note" title="${esc(c.notes)}">${esc(c.notes)}</div></td><td>${esc(c.ajoute)}</td></tr>`).join('')
+    || `<tr><td colspan="9" class="text-muted" style="text-align:center;padding:24px">Aucun contact ne correspond.</td></tr>`;
+  document.querySelectorAll('th[data-tri]').forEach(th => th.className = th.dataset.tri === tri.col ? (tri.sens > 0 ? 'asc' : 'desc') : '');
+  stats(liste);
+}
+
+function kpi(label, valeur, sous, icone, couleur) {
+  return `<div class="stat-card"><div class="stat-card-top"><div class="stat-label">${label}</div><div class="stat-icon ${couleur}"><i class="fa-solid ${icone}"></i></div></div>
+    <div class="stat-value">${valeur}</div><div class="stat-sub">${sous}</div></div>`;
+}
+const pct = (n, d) => d ? `${Math.round(100 * n / d)} %` : '–';
+const graphes = {};
+function donut(id, compte, couleurs) {
+  const paires = Object.entries(compte).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
+  const data = { labels: paires.map(p => p[0]), datasets: [{ data: paires.map(p => p[1]), backgroundColor: paires.map((p, i) => couleurs?.[p[0]] || PALETTE[i % PALETTE.length]), borderWidth: 2, borderColor: '#fff' }] };
+  if (graphes[id]) { graphes[id].data = data; graphes[id].update(); return }
+  graphes[id] = new Chart(document.getElementById(id), { type: 'doughnut', data, options: { responsive: true, maintainAspectRatio: false, cutout: '62%',
+    plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { family: 'Inter', size: 11 }, color: '#475569' } },
+      tooltip: { callbacks: { label: c => ` ${c.label} : ${c.parsed} (${pct(c.parsed, c.dataset.data.reduce((a, b) => a + b, 0))})` } } } } });
+}
+function stats(liste) {
+  const n = s => liste.filter(c => s.includes(c.statut)).length;
+  const contactes = n(CONTACTES), reponses = n(REPONSES), demos = n(['Démo prévue', 'Inscrit']);
+  document.getElementById('kpis').innerHTML =
+    kpi('Contacts', liste.length, `${n(['À envoyer'])} à contacter`, 'fa-address-book', 'navy') +
+    kpi('Contactés', contactes, `${n(['Programmé'])} mail${n(['Programmé']) > 1 ? 's' : ''} programmé${n(['Programmé']) > 1 ? 's' : ''}`, 'fa-paper-plane', 'blue') +
+    kpi('Réponses', reponses, `${pct(reponses, contactes)} des contactés`, 'fa-reply', 'green') +
+    kpi('Démos', demos, `${pct(demos, contactes)} des contactés`, 'fa-video', 'purple') +
+    kpi('Inscrits', n(['Inscrit']), `${n(['Pas intéressé', 'Non'])} refus · ${n(['Injoignable'])} injoignable${n(['Injoignable']) > 1 ? 's' : ''}`, 'fa-trophy', 'orange');
+  const compter = f => liste.reduce((t, c) => (t[f(c)] = (t[f(c)] || 0) + 1, t), {});
+  donut('gStatuts', compter(c => c.statut), COULEURS);
+  donut('gCanaux', compter(canalDe), { Email: '#00A6FB', Formulaire: '#003554', Instagram: '#D4A24C', Autre: '#A7B1BB' });
+  const outils = compter(outilDe), top = Object.entries(outils).sort((a, b) => b[1] - a[1]);
+  donut('gOutils', Object.fromEntries([...top.slice(0, 6), ...(top.length > 6 ? [['Autres', top.slice(6).reduce((t, [, v]) => t + v, 0)]] : [])]), { Inconnu: '#E2E8F0' });
+}
+
+['q', 'fBureau', 'fStatut', 'fCanal', 'fOnglet'].forEach(id => document.getElementById(id).addEventListener('input', rendre));
+document.querySelectorAll('th[data-tri]').forEach(th => th.addEventListener('click', () => {
+  tri = { col: th.dataset.tri, sens: tri.col === th.dataset.tri ? -tri.sens : 1 }; rendre();
+}));
+// Changer un statut directement dans le tableau.
+document.getElementById('lignes').addEventListener('change', async e => {
+  const sel = e.target.closest('.st-select'); if (!sel) return;
+  const c = CONTACTS.find(x => x.id === sel.dataset.id), avant = c.statut;
+  sel.disabled = true;
+  try {
+    const r = await fetch(`/bureau/api/contacts/${c.id}/statut`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ statut: sel.value }) });
+    const d = await r.json(); if (!r.ok) throw new Error(d.error || r.statusText);
+    Object.assign(c, d.contact);
+  } catch (err) { c.statut = avant; alert(`Statut non modifié : ${err.message}`) }
+  rendre();
+});
+rendre();
+</script>
+
+<%- include('_footer') %>
