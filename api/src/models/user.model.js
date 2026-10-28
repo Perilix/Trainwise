@@ -51,6 +51,12 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'admin', 'coach'],
     default: 'user'
   },
+  // Demande de compte coach faite à l'inscription. Le rôle reste 'user' :
+  // c'est un admin qui passe le compte en coach après vérification.
+  coachRequestedAt: {
+    type: Date,
+    default: null
+  },
   // Code d'invitation pour les coachs
   coachInviteCode: {
     type: String,

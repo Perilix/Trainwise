@@ -34,12 +34,18 @@ router.get('/', requireAuth, async (req, res) => {
       { lastName: { $regex: search, $options: 'i' } }
     ];
   }
-  if (role) filter.role = role;
+  // « Demandes coach » : inscrits ayant choisi Coach, pas encore activés.
+  if (role === 'coach-request') {
+    filter.coachRequestedAt = { $ne: null };
+    filter.role = { $ne: 'coach' };
+  } else if (role) {
+    filter.role = role;
+  }
   if (subscription) filter.subscriptionStatus = subscription;
 
   const [users, total] = await Promise.all([
     User.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit)
-      .select('firstName lastName email role subscriptionStatus trainCoins createdAt hasCompletedOnboarding toursSeen strava'),
+      .select('firstName lastName email role coachRequestedAt subscriptionStatus trainCoins createdAt hasCompletedOnboarding toursSeen strava'),
     User.countDocuments(filter)
   ]);
 
