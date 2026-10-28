@@ -313,8 +313,12 @@ async function ronde() {
 function demarrer() {
   if (!zoho.configure()) process.stdout.write('Chef de bureau : ZOHO_CLIENT_ID absent, les agents mail restent en pause.\n');
   if (!ia.configure()) process.stdout.write('Chef de bureau : ANTHROPIC_API_KEY absent, Radar, Messager, Scribe et les fiches d\'appel restent en pause.\n');
-  // Un ordre resté « en cours » (redémarrage pendant l'exécution) repart.
-  Ordre.updateMany({ statut: 'en_cours', majLe: { $lt: new Date(Date.now() - 15 * MIN) } }, { statut: 'en_attente' }).catch(() => {});
+  // Au démarrage, aucun ordre ne peut être en cours : ceux qui l'étaient ont été coupés par un redémarrage
+  // (un déploiement Render, par exemple). On les clôt sans les relancer, pour ne jamais programmer un mail
+  // en double ni payer deux fois une recherche ; ce qui avait été fait reste dans le fichier.
+  Ordre.updateMany({ statut: 'en_cours' }, { statut: 'erreur', majLe: new Date(),
+    compteRendu: "Interrompu par un redémarrage du serveur. Ce qui avait déjà été fait est conservé ; relance l'ordre s'il reste du travail." }).catch(() => {});
+  AgentEtat.updateMany({ etat: 'au_travail' }, { etat: 'pause', tache: '', progression: '', etape: 0, majLe: new Date() }).catch(() => {});
   setInterval(ronde, 20000);
   ronde();
   process.stdout.write('Chef de bureau : en service.\n');
