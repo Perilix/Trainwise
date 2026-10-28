@@ -139,18 +139,48 @@ async function relancer(ordre, boite, avancer) {
 
 /* --- Allô : relève de la boîte, réponses et adresses en échec --- */
 const DEJA_CLASSE = ['Répondu', 'Démo prévue', 'Inscrit', 'Pas intéressé', 'Non', 'Injoignable'];
+const ATTEND_REPONSE = ['Programmé', 'Envoyé', 'Relancé'];
+// Allô relit les 14 derniers jours et mémorise les mails traités : rien n'est raté (même arrivé avant la
+// connexion de la boîte), rien n'est traité deux fois.
+const FENETRE = 14 * 864e5;
+const AUTOMATIQUE = /réponse automatique|message automatique|automatic reply|auto.?reply|out of office|absence|accusé de réception|bien été (prise en compte|reçu)|ne pas répondre|noreply|no-reply/i;
+const REBOND = /undeliver|non distribu|delivery status|échec de (la )?remise|returned to sender/i;
+const GENERIQUES = /^(gmail|googlemail|outlook|hotmail|live|msn|yahoo|icloud|me|orange|wanadoo|free|sfr|laposte|aol|gmx|protonmail|proton)\./;
+const adresse = v => (String(v || '').match(/[\w.+-]+@[\w-]+(\.[\w-]+)+/) || [''])[0].toLowerCase();
+const morceaux = email => { const [local, domaine = ''] = email.split('@'); return { local, domaine, nom: domaine.split('.')[0] } };
+
 async function relever(espace, boite) {
   const { inbox } = await zoho.dossiers(boite);
-  const depuis = +(boite.dernierReleve || 0);
-  const messages = await zoho.api(boite, 'get', '/messages/view', { params: { folderId: inbox, limit: 100 } }) || [];
-  const nouveaux = messages.filter(m => +m.receivedTime > depuis).sort((a, b) => a.receivedTime - b.receivedTime);
+  const traites = new Set(boite.traites || []);
+  const messages = await zoho.api(boite, 'get', '/messages/view', { params: { folderId: inbox, limit: 200 } }) || [];
+  const nouveaux = messages.filter(m => +m.receivedTime > Date.now() - FENETRE && !traites.has(String(m.messageId)))
+    .sort((a, b) => a.receivedTime - b.receivedTime);
   const contacts = await Contact.find({ espace, contact: /@/ }).lean();
   const parEmail = new Map(contacts.map(c => [c.contact.trim().toLowerCase(), c]));
-  const reponses = [], rebonds = [];
+
+  // Un coach peut répondre d'une autre adresse que celle du fichier : on le retrouve par le fil de
+  // discussion (sa réponse suit notre mail), puis par le nom de domaine (reding-running@outlook.fr ↔ contact@reding-running.fr).
+  let fils = null;
+  const retrouver = async m => {
+    const de = adresse(m.fromAddress);
+    if (parEmail.has(de)) return parEmail.get(de);
+    fils ||= new Map((await envoyes(boite)).filter(e => e.threadId).map(e => [String(e.threadId), adresse(e.a)]));
+    const parFil = m.threadId && parEmail.get(fils.get(String(m.threadId)));
+    if (parFil) return parFil;
+    const d = morceaux(de);
+    return contacts.find(c => {
+      const k = morceaux(c.contact.trim().toLowerCase());
+      if (GENERIQUES.test(k.domaine)) return false;
+      return (!GENERIQUES.test(d.domaine) && d.domaine === k.domaine) || (k.nom.length > 4 && d.local.replace(/[^a-z0-9]/g, '') === k.nom.replace(/[^a-z0-9]/g, ''));
+    }) || null;
+  };
+
+  const reponses = [], rebonds = [], automatiques = [];
   for (const m of nouveaux) {
-    const de = (String(m.fromAddress || '').match(/[\w.+-]+@[\w-]+\.[\w.-]+/) || [''])[0].toLowerCase();
-    const resume = String(m.summary || m.subject || '').replace(/\s+/g, ' ').trim();
-    if (/mailer-daemon|postmaster/.test(de) || /undeliver|non distribu|delivery status|échec de (la )?remise/i.test(m.subject || '')) {
+    traites.add(String(m.messageId));
+    const de = adresse(m.fromAddress), sujet = String(m.subject || '');
+    const resume = String(m.summary || sujet).replace(/\s+/g, ' ').trim();
+    if (/mailer-daemon|postmaster/.test(de) || REBOND.test(sujet)) {
       const cible = [...parEmail.keys()].find(e => resume.toLowerCase().includes(e));
       const c = cible && parEmail.get(cible);
       if (c && c.statut !== 'Injoignable') {
@@ -160,20 +190,28 @@ async function relever(espace, boite) {
       }
       continue;
     }
-    const c = parEmail.get(de);
+    const c = await retrouver(m);
     if (!c || DEJA_CLASSE.includes(c.statut)) continue;
+    if (AUTOMATIQUE.test(sujet) || AUTOMATIQUE.test(de)) {
+      // Une réponse automatique ne compte pas comme une réponse : on la note, le statut ne bouge pas.
+      if (!String(c.notes || '').includes('réponse automatique')) await Contact.updateOne({ _id: c._id }, { notes: ajouterNote(c, 'réponse automatique reçue') });
+      automatiques.push(c.nom);
+      continue;
+    }
+    if (!ATTEND_REPONSE.includes(c.statut) && c.statut !== 'À envoyer') continue;
+    const autreAdresse = de !== c.contact.trim().toLowerCase() ? ` (depuis ${de})` : '';
     await Contact.updateOne({ _id: c._id }, { statut: 'Répondu', reponseLe: new Date(+m.receivedTime),
-      notes: ajouterNote(c, `réponse reçue : « ${resume.slice(0, 160)} »`) });
+      notes: ajouterNote(c, `réponse reçue${autreAdresse} : « ${resume.slice(0, 160)} »`) });
     await journal(espace, 'allo', `${c.nom} a répondu`);
     reponses.push(c.nom);
   }
-  const plusRecent = Math.max(depuis, ...messages.map(m => +m.receivedTime || 0));
-  await Boite.updateOne({ espace }, { dernierReleve: new Date(plusRecent || Date.now()) });
-  return { reponses, rebonds, lus: nouveaux.length };
+  await Boite.updateOne({ espace }, { dernierReleve: new Date(), traites: [...traites].slice(-1000) });
+  return { reponses, rebonds, automatiques, lus: nouveaux.length };
 }
 const resumeReleve = r => [
   r.reponses.length ? `${pluriel(r.reponses.length, 'réponse')} : ${r.reponses.join(', ')}` : 'Aucune nouvelle réponse',
-  r.rebonds.length ? `${pluriel(r.rebonds.length, 'adresse')} en échec : ${r.rebonds.join(', ')}` : ''
+  r.rebonds.length ? `${pluriel(r.rebonds.length, 'adresse')} en échec : ${r.rebonds.join(', ')}` : '',
+  r.automatiques.length ? `${pluriel(r.automatiques.length, 'réponse automatique')} ignorée${r.automatiques.length > 1 ? 's' : ''} : ${r.automatiques.join(', ')}` : ''
 ].filter(Boolean).join('. ') + '.';
 
 function erreurZoho(e) {
@@ -284,4 +322,4 @@ function demarrer() {
 // Appelé quand un ordre arrive : il part tout de suite, sans attendre la prochaine ronde.
 const reveiller = () => setImmediate(ronde);
 
-module.exports = { demarrer, reveiller, creneaux, heureParis };
+module.exports = { demarrer, reveiller, relever, creneaux, heureParis };
