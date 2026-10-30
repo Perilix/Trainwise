@@ -215,7 +215,7 @@ async function scribe(ordre, avancer) {
         if (m.note) set.notes = (c.notes ? `${c.notes} · ` : '') + `${jourFr()} : ${m.note}`;
         if (!Object.keys(set).length) continue;
         await Contact.updateOne({ _id: c._id }, set);
-        faits.push(`${c.nom}${set.statut ? ` → ${set.statut}` : ' : note ajoutée'}`);
+        faits.push(`${c.nom}${set.statut ? ` → ${set.statut}` : ''}${m.note ? ` : « ${m.note} »` : ''}`);
       }
       return `${faits.length} coach(s) mis à jour.`;
     }
