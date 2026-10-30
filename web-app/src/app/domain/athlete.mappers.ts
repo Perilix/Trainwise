@@ -15,6 +15,7 @@ import type {
 import { addDays, daysBetween, isoWeek, startOfWeek } from '../core/dates';
 import { formatDayMonthYear, formatDayShort, formatMonthName, formatMonthShort, formatMonthYear, formatTime, paceToSeconds, parseDay, toIsoDay } from '../core/format';
 
+import { mapOtherActivity } from './other-sports';
 import { comparePhases } from './planned-vs-done';
 import { blocksToSegments, describeBlocks, estimateFromBlocks } from './run-blocks';
 import type {
@@ -27,6 +28,7 @@ import type {
   KmSplit,
   NotificationCategory,
   NotificationKind,
+  OtherActivity,
   PlannedSession,
   PlanningMonth,
   RunDetail,
@@ -52,6 +54,8 @@ export const SESSION_TYPE_LABELS: Record<string, string> = {
   core: 'Gainage',
   hiit: 'HIIT',
   other: 'Renforcement',
+  bike: 'Vélo',
+  swim: 'Natation',
 };
 
 const LEVEL_LABELS: Record<NonNullable<ApiUser['runningLevel']>, string> = {
@@ -318,6 +322,13 @@ export function buildPlanning(calendar: ApiCalendarData, now: Date, coachName?: 
   const activitiesByDay: Record<string, Activity[]> = {};
   [...calendar.runs.map(mapRun), ...calendar.strengthSessions.map(mapStrength)].forEach((activity) => (activitiesByDay[activity.date] ??= []).push(activity));
 
+  const others = (calendar.otherActivities ?? []).map(mapOtherActivity);
+  const othersByDay: Record<string, OtherActivity[]> = {};
+  others.forEach((other) => {
+    (othersByDay[other.date] ??= []).push(other);
+    markers[other.date] = 'done';
+  });
+
   calendar.competitions.forEach((competition) => {
     const day = dayOf(competition.date);
     markers[day] = 'competition';
@@ -332,9 +343,10 @@ export function buildPlanning(calendar: ApiCalendarData, now: Date, coachName?: 
     competitionPriority,
     sessionsByDay,
     activitiesByDay,
+    othersByDay,
     stats: {
       planned: planned.length,
-      done: calendar.runs.length + calendar.strengthSessions.length,
+      done: calendar.runs.length + calendar.strengthSessions.length + others.length,
       distanceKm: sum(calendar.runs.map((run) => run.distance ?? 0)),
     },
   };

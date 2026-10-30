@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output, signal } f
 
 import { formatDecimal, formatHoursMinutes } from '../core/format';
 import type { Activity, PlannedSession, WeekPlanDay } from '../domain/athlete.types';
+import { SPORT_LABELS, sessionDistance, sportIcon } from '../domain/other-sports';
 import { IconComponent } from './icon.component';
 import { WorkoutProfileComponent } from './workout-profile.component';
 
@@ -32,7 +33,7 @@ export type WeekPick = { kind: 'planned'; session: PlannedSession } | { kind: 'a
           @for (session of day.sessions; track session.id) {
             <div class="item" [class.coach]="session.plannedBy === 'coach'" [class.done]="session.status === 'done'" [class.on]="isOpen('planned', session.id)">
               <button type="button" class="item-head" (click)="toggle('planned', session.id)">
-                <span class="tile"><tw-icon [name]="session.sport === 'strength' ? 'dumbbell' : 'run'" [size]="14" [strokeWidth]="2" /></span>
+                <span class="tile"><tw-icon [name]="sportIcon(session.sport)" [size]="14" [strokeWidth]="2" /></span>
                 <span class="stack">
                   <span class="title truncate">{{ session.title }}</span>
                   <span class="meta truncate num">{{ sessionMeta(session) }}</span>
@@ -276,6 +277,8 @@ export class WeekPlanComponent {
     this.picked.update((current) => (current === key ? null : key));
   }
 
+  readonly sportIcon = sportIcon;
+
   dayNumber(iso: string) {
     return Number(iso.slice(8, 10));
   }
@@ -283,9 +286,9 @@ export class WeekPlanComponent {
   sessionMeta(session: PlannedSession) {
     if (session.sport === 'strength') return session.exercisesCount ? `${session.exercisesCount} exercices` : 'Renforcement';
     const parts: string[] = [];
-    if (session.distanceKm) parts.push(`${formatDecimal(session.distanceKm, session.distanceKm % 1 ? 1 : 0)} km`);
+    if (session.distanceKm) parts.push(sessionDistance(session.sport, session.distanceKm));
     if (session.durationMin) parts.push(`${session.durationMin} min`);
-    return parts.join(' · ') || 'Course';
+    return parts.join(' · ') || SPORT_LABELS[session.sport];
   }
 
   activityMeta(activity: Activity) {

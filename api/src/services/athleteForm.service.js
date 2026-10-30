@@ -733,7 +733,8 @@ async function computeAthleteForm(athleteId, { weeks = 8, now = new Date() } = {
   const [runs, strength, planned, competition, [activity]] = await Promise.all([
     Run.find({ user: athleteId, date: { $gte: from, $lte: now } }).select(RUN_FIELDS).lean(),
     StrengthSession.find({ user: athleteId, date: { $gte: from, $lte: now } }).select(STRENGTH_FIELDS).populate('exercises.exercise', 'name').lean(),
-    PlannedRun.find({ user: athleteId, date: { $gte: mondayOf(now), $lt: until } })
+    // Vélo et natation n'entrent pas encore dans la charge : leur calcul reste à faire.
+    PlannedRun.find({ user: athleteId, date: { $gte: mondayOf(now), $lt: until }, activityType: { $nin: ['bike', 'swim'] } })
       .select('date status activityType sessionType targetDistance targetDuration targetPace runBlocks strengthPlan.estimatedDuration')
       .lean(),
     Competition.findOne({ user: athleteId, status: 'upcoming', date: { $gte: now } }).sort({ priority: 1, date: 1 }).select('name date').lean(),

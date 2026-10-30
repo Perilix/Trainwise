@@ -612,7 +612,7 @@ export class CoachAthletePage {
     void this.router.navigate(['/coach/athletes', this.id(), 'planning']);
   }
 
-  openActivity(activityId: string, sport: 'running' | 'strength') {
+  openActivity(activityId: string, sport: string) {
     void this.router.navigate(['/coach/athletes', this.id(), sport === 'strength' ? 'muscu' : 'sortie', activityId]);
   }
 

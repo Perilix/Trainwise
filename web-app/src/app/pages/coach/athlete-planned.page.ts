@@ -8,6 +8,7 @@ import { ApiService } from '../../core/api.service';
 import { formatDayLong, formatDecimal, formatHoursMinutes, formatPace, toIsoDay } from '../../core/format';
 import { load } from '../../core/load';
 import { CoachService } from '../../data/coach.service';
+import { isOtherSport, plannedOtherStats } from '../../domain/other-sports';
 import { totals } from '../../domain/sessions';
 import { plannedToTemplatePayload } from '../../domain/templates';
 import { ApiError } from '../../core/api.service';
@@ -175,10 +176,13 @@ import { ToastService } from '../../core/toast.service';
             <section class="card card-pad">
               <span class="h2">Actions</span>
               <div class="stack gap mt">
-                <button class="btn btn-ghost btn-block" type="button" [disabled]="saving()" (click)="saveToLibrary()">
-                  <tw-icon name="folder" [size]="18" [strokeWidth]="2" />
-                  {{ savedToLibrary() ? 'Ajoutée à la bibliothèque' : 'Sauvegarder dans ma bibliothèque' }}
-                </button>
+                <!-- La bibliothèque ne connaît que la course et le renfo. -->
+                @if (data.sport === 'running' || data.sport === 'strength') {
+                  <button class="btn btn-ghost btn-block" type="button" [disabled]="saving()" (click)="saveToLibrary()">
+                    <tw-icon name="folder" [size]="18" [strokeWidth]="2" />
+                    {{ savedToLibrary() ? 'Ajoutée à la bibliothèque' : 'Sauvegarder dans ma bibliothèque' }}
+                  </button>
+                }
                 <button class="btn btn-ghost btn-block" type="button" (click)="duplicateNextWeek()">
                   <tw-icon name="copy" [size]="18" [strokeWidth]="2" />
                   Dupliquer la semaine suivante
@@ -436,6 +440,7 @@ export class CoachAthletePlannedPage {
   readonly keyStats = computed(() => {
     const data = this.session.data();
     if (!data) return [];
+    if (isOtherSport(data.sport)) return plannedOtherStats(data);
     if (data.sport === 'strength') {
       return [
         { label: 'Durée', value: data.durationMin ? formatHoursMinutes(data.durationMin * 60) : '—', unit: '' },

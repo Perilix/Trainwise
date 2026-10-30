@@ -13,8 +13,10 @@ import {
 } from '../../core/format';
 import { load } from '../../core/load';
 import { AthleteService } from '../../data/athlete.service';
-import type { Activity, PlannedSession } from '../../domain/athlete.types';
+import type { Activity, OtherActivity, OtherSportFamily, PlannedSession } from '../../domain/athlete.types';
+import { isOtherSport, otherActivityMeta, otherSportIcon, plannedOtherStats, sessionDistance, sportIcon } from '../../domain/other-sports';
 import { IconComponent } from '../../ui/icon.component';
+import { OtherActivityComponent } from '../../ui/other-activity.component';
 import { PageHeaderComponent } from '../../ui/page-header.component';
 import { StatComponent } from '../../ui/stat.component';
 import { StateViewComponent } from '../../ui/state-view.component';
@@ -26,6 +28,7 @@ type Cell = {
   isToday: boolean;
   sessions: PlannedSession[];
   activities: Activity[];
+  others: OtherActivity[];
   competition?: 'A' | 'B' | 'C';
 };
 
@@ -43,7 +46,7 @@ const LEGEND = [
   selector: 'tw-athlete-planning',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconComponent, PageHeaderComponent, StatComponent, StateViewComponent],
+  imports: [IconComponent, OtherActivityComponent, PageHeaderComponent, StatComponent, StateViewComponent],
   template: `
     <main class="page">
       <tw-page-header title="Planning">
@@ -95,7 +98,7 @@ const LEGEND = [
                       (click)="open(session.id); $event.stopPropagation()"
                     >
                       <span class="pill-head">
-                        <tw-icon [name]="session.sport === 'strength' ? 'dumbbell' : 'run'" [size]="12" [strokeWidth]="2" />
+                        <tw-icon [name]="sportIcon(session.sport)" [size]="12" [strokeWidth]="2" />
                         <span class="truncate">{{ session.title }}</span>
                       </span>
                       <span class="pill-meta truncate num">{{ shortMeta(session) }}</span>
@@ -107,6 +110,16 @@ const LEGEND = [
                         <tw-icon [name]="activity.sport === 'strength' ? 'dumbbell' : 'run'" [size]="12" [strokeWidth]="2" />
                         <span class="truncate">{{ activity.title }}</span>
                       </span>
+                    </button>
+                  }
+                  @for (other of cell.others; track other.id) {
+                    <!-- Pas de page de détail : le clic sélectionne le jour, le panneau montre l'activité. -->
+                    <button type="button" class="pill done">
+                      <span class="pill-head">
+                        <tw-icon [name]="otherIcon(other.family)" [size]="12" [strokeWidth]="2" />
+                        <span class="truncate">{{ other.title }}</span>
+                      </span>
+                      <span class="pill-meta truncate num">{{ otherMeta(other) }}</span>
                     </button>
                   }
                   @if (cell.competition) {
@@ -169,8 +182,11 @@ const LEGEND = [
                     <span class="small muted">{{ activityMeta(activity) }}</span>
                   </div>
                 }
-              } @else {
+              } @else if (!selectedOthers().length) {
                 <tw-state kind="empty" icon="calendar" message="Rien de prévu ce jour." />
+              }
+              @for (other of selectedOthers(); track other.id) {
+                <tw-other-activity class="other" [activity]="other" />
               }
             </section>
 
@@ -474,6 +490,10 @@ const LEGEND = [
         border-top: 1px solid var(--border);
       }
 
+      .other + .other {
+        border-top: 1px solid var(--border);
+      }
+
       .done-row {
         margin-top: 14px;
         cursor: pointer;
@@ -513,6 +533,7 @@ export class AthletePlanningPage {
         isToday: iso === this.today,
         sessions: data.sessionsByDay[iso] ?? [],
         activities: data.activitiesByDay[iso] ?? [],
+        others: data.othersByDay[iso] ?? [],
         competition: data.competitionPriority[iso],
       };
     }).slice(0, this.rowsNeeded(start));
@@ -529,10 +550,12 @@ export class AthletePlanningPage {
 
   readonly selectedSession = computed(() => this.planning.data()?.sessionsByDay[this.selected()]?.[0]);
   readonly selectedActivities = computed(() => this.planning.data()?.activitiesByDay[this.selected()] ?? []);
+  readonly selectedOthers = computed(() => this.planning.data()?.othersByDay[this.selected()] ?? []);
 
   readonly sessionStats = computed(() => {
     const session = this.selectedSession();
     if (!session) return [];
+    if (isOtherSport(session.sport)) return plannedOtherStats(session);
     if (session.sport === 'strength') {
       return [
         { label: 'Durée', value: session.durationMin ? formatHoursMinutes(session.durationMin * 60) : '—', unit: '' },
@@ -572,7 +595,7 @@ export class AthletePlanningPage {
 
   shortMeta(session: PlannedSession) {
     if (session.sport === 'strength') return session.exercisesCount ? `${session.exercisesCount} exercices` : 'Renforcement';
-    if (session.distanceKm) return `${formatDecimal(session.distanceKm, session.distanceKm % 1 ? 1 : 0)} km`;
+    if (session.distanceKm) return sessionDistance(session.sport, session.distanceKm);
     return session.durationMin ? `${session.durationMin} min` : '';
   }
 
@@ -580,6 +603,16 @@ export class AthletePlanningPage {
     const parts = [formatHoursMinutes(activity.durationSec)];
     if (activity.distanceKm) parts.unshift(`${formatDecimal(activity.distanceKm, 1)} km`);
     return parts.join(' · ');
+  }
+
+  readonly sportIcon = sportIcon;
+
+  otherIcon(family: OtherSportFamily) {
+    return otherSportIcon(family);
+  }
+
+  otherMeta(other: OtherActivity) {
+    return otherActivityMeta(other);
   }
 
   km(value: number) {

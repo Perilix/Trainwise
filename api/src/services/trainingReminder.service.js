@@ -11,7 +11,8 @@ const SESSION_TYPE_LABELS = {
   endurance: 'Endurance', fractionne: 'Fractionné', tempo: 'Tempo', recuperation: 'Récupération',
   sortie_longue: 'Sortie longue', cotes: 'Côtes', fartlek: 'Fartlek',
   upper_body: 'Renfo haut du corps', lower_body: 'Renfo bas du corps', full_body: 'Renfo corps complet',
-  push: 'Renfo poussée', pull: 'Renfo tirage', legs: 'Renfo jambes', core: 'Gainage', hiit: 'HIIT'
+  push: 'Renfo poussée', pull: 'Renfo tirage', legs: 'Renfo jambes', core: 'Gainage', hiit: 'HIIT',
+  bike: 'Vélo', swim: 'Natation'
 };
 
 const dayBounds = (date) => {

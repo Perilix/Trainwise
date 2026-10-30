@@ -78,6 +78,12 @@ button, textarea, input { font: inherit; color: inherit }
 .feed .who { font-weight: 600 }
 .feed time { color: var(--text3); font-size: 11px; white-space: nowrap }
 .feed li.e { display: block; color: var(--text3) }
+.feed li[data-client] { cursor: pointer }
+.feed li[data-client]:hover .who { text-decoration: underline }
+.notes { list-style: none; margin: 0; padding: 0 }
+.notes li { padding: 6px 0; border-top: 1px solid var(--border); font-size: 12.5px; line-height: 1.45 }
+.notes li:first-child { border-top: 0 }
+.notes time { display: block; color: var(--text3); font-size: 11px; font-weight: 600 }
 
 .tools { right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); padding: 8px 10px;
   display: flex; align-items: center; gap: 12px; font-size: 11.5px; color: var(--text2) }
@@ -1202,7 +1208,10 @@ function renderCard() {
     const pending = lies.filter(o => o.statut === "en_attente" || o.statut === "en_cours");
     const fiche = lies.find(o => o.agent === "allo" && o.action === "preparer_appel" && o.statut === "fait" && o.compte_rendu);
     const infos = [["Structure", r.structure !== r.nom ? r.structure : ""], ["Ville", r.ville], ["Spécialité", r.specialite], ["Outil actuel", r.outil], ["Canal", r.canal],
-      ["Contact", r.contact], ["Instagram", r.instagram], ["Premier message", r.envoye], ["Relance", r.relance], ["Notes", r.notes], ["Fichier", `${r.onglet}, ligne ${r.ligne}`]].filter(v => v[1]);
+      ["Contact", r.contact], ["Instagram", r.instagram], ["Premier message", r.envoye], ["Relance", r.relance], ["Fichier", `${r.onglet}, ligne ${r.ligne}`]].filter(v => v[1]);
+    // Notes cumulées « jj/mm : texte · jj/mm : texte », la plus récente en haut
+    const notes = (r.notes || "").split(/\s·\s(?=\d{2}\/\d{2}\s?:)/).filter(Boolean).reverse()
+      .map(n => { const m = /^(\d{2}\/\d{2})\s?:\s*([\s\S]*)$/.exec(n); return m ? [m[1], m[2]] : ["", n] });
     html = cardHead(initials(r.nom), z.nom, r.nom) + `<div class="d-body">
       <div class="now"><div class="l1"><b>${esc(etat)}</b>${due ? `<span class="chip wait">Relance due</span>` : ""}</div>
         <ol class="track">${PARCOURS.map((p, i) => `<li class="${i < idx ? "past" : i === idx ? "on" : ""}">${esc(ZBY[p].court)}</li>`).join("")}${z.id === "sortie" ? `<li class="on">${esc(r.statut)}</li>` : ""}</ol></div>
@@ -1211,6 +1220,7 @@ function renderCard() {
         <div class="btns">${acts.map(([ag, ac, lab], i) => `<button class="btn ${i === 0 ? "primary" : ""}" data-corder="${ag}:${ac}" ${!S.db || pending.some(o => o.agent === ag && o.action === ac) ? "disabled" : ""}>${esc(lab)}</button>`).join("")}
           <button class="btn" data-scribe="1">Raconter au Scribe</button></div>
         <p class="toast ${S.toast?.err ? "err" : ""}" id="toast">${esc(S.toast?.text || (pending.length ? `${pending.length} ordre${pending.length > 1 ? "s" : ""} en attente pour lui.` : ""))}</p></div>
+      ${notes.length ? `<div><h3>Notes · ${notes.length}</h3><ul class="notes">${notes.map(([d, t]) => `<li>${d ? `<time>${esc(d)}</time>` : ""}${esc(t)}</li>`).join("")}</ul></div>` : ""}
       ${fiche ? `<div><h3>Fiche d'appel · Allô</h3><p class="crbox">${esc(fiche.compte_rendu)}</p></div>` : ""}
       ${lies.length ? `<div><h3>Ordres le concernant</h3><ul class="list">${lies.slice(0, 6).map(o => { const [cls, lab] = STATUT_CHIP[o.statut] || ["", o.statut];
         return `<li class="order"><div class="l1"><b>${esc(BY_ID[o.agent]?.nom || o.agent)} · ${esc(o.label)}</b><span class="chip ${cls}">${esc(lab)}</span></div><p style="font-size:11.5px;color:var(--text3)">${esc(ago(o.cree_le))}</p></li>` }).join("")}</ul></div>` : ""}
@@ -1287,17 +1297,22 @@ function renderChef() {
   const attente = S.ordres.filter(o => o.statut === "en_attente").length;
   document.getElementById("chef").innerHTML = `<span class="dot ${fresh ? "on" : attente ? "wait" : ""}"></span><span>${last ? `Chef de bureau : ronde ${esc(ago(last))}` : "Chef de bureau : pas encore passé"}${attente ? ` · ${attente} ordre${attente > 1 ? "s" : ""} en attente` : ""}</span>`;
 }
+// Le coach cité en tête d'une ligne du fil, pour ouvrir sa fiche d'un clic
+function clientCite(texte) {
+  const t = (texte || "").toLowerCase();
+  return Object.values(clients).filter(c => t.startsWith(c.row.nom.toLowerCase())).sort((a, b) => b.row.nom.length - a.row.nom.length)[0]?.cid || null;
+}
 function renderFeed() {
   if (!isActive()) return;
   const actifs = S.ordres.filter(o => o.statut === "en_attente" || o.statut === "en_cours");
   document.getElementById("queueCount").textContent = actifs.length ? `${actifs.length} ordre${actifs.length > 1 ? "s" : ""} en cours` : "";
   const items = [
     ...actifs.map(o => ({ agent: o.agent, texte: `${o.label}${o.cibles?.length ? ` (${o.cibles.length})` : ""}`, right: o.statut === "en_cours" ? "en cours" : "en attente" })),
-    ...S.journal.slice(0, 6).map(j => ({ agent: j.agent, texte: j.texte, right: ago(j.quand) })),
+    ...S.journal.slice(0, 6).map(j => ({ agent: j.agent, texte: j.texte, right: ago(j.quand), client: clientCite(j.texte) })),
   ].slice(0, 6);
   document.getElementById("feed").innerHTML = items.length ? items.map(it => {
     const a = BY_ID[it.agent];
-    return `<li style="--c:${a ? a.color : "#A7B1BB"}"><span class="p"></span><span><span class="who">${esc(a ? a.nom : "Bureau")}</span> · ${esc(it.texte)}</span><time>${esc(it.right)}</time></li>`;
+    return `<li style="--c:${a ? a.color : "#A7B1BB"}"${it.client ? ` data-client="${esc(it.client)}" data-b="${esc(E.id)}" title="Ouvrir la fiche"` : ""}><span class="p"></span><span><span class="who">${esc(a ? a.nom : "Bureau")}</span> · ${esc(it.texte)}</span><time>${esc(it.right)}</time></li>`;
   }).join("") : `<li class="e">Le fil se remplit dès qu'un agent travaille.</li>`;
 }
 

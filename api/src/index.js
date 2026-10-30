@@ -153,14 +153,18 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/trainwise
     // Initialize Socket.io
     initializeSocket(httpServer);
 
-    // Jobs planifiés (relances de ré-engagement)
-    require('./jobs/reengagement.job').start();
+    // DISABLE_JOBS=true : un serveur local branché sur la base de prod ne doit pas
+    // renvoyer les rappels et relances que la prod envoie déjà.
+    if (process.env.DISABLE_JOBS !== 'true') {
+      // Jobs planifiés (relances de ré-engagement)
+      require('./jobs/reengagement.job').start();
 
-    // Jobs planifiés (séances manquées + alertes coach sur statut athlète)
-    require('./jobs/athleteAlert.job').start();
+      // Jobs planifiés (séances manquées + alertes coach sur statut athlète)
+      require('./jobs/athleteAlert.job').start();
 
-    // Jobs planifiés (séance du jour, ressenti à compléter, compétition qui approche)
-    require('./jobs/trainingReminder.job').start();
+      // Jobs planifiés (séance du jour, ressenti à compléter, compétition qui approche)
+      require('./jobs/trainingReminder.job').start();
+    }
 
     httpServer.listen(PORT);
   })

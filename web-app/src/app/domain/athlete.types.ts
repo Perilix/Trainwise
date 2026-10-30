@@ -2,7 +2,8 @@
 import type { PhaseComparison } from './planned-vs-done';
 import type { Segment } from './sessions';
 
-export type Sport = 'running' | 'strength';
+/** Vélo et natation se programment simplement : titre, consignes, distance, durée. */
+export type Sport = 'running' | 'strength' | 'bike' | 'swim';
 export type PlannedBy = 'coach' | 'athlete';
 export type SessionStatus = 'planned' | 'done' | 'skipped';
 
@@ -106,6 +107,27 @@ export type Activity = {
   polyline?: string | null;
 };
 
+/** Famille d'un autre sport : décide de l'icône et des chiffres affichés. */
+export type OtherSportFamily = 'bike' | 'swim' | 'mountain' | 'water' | 'other';
+
+/** Vélo, natation, ski… : une activité Strava qu'on montre sans la programmer. */
+export type OtherActivity = {
+  id: string;
+  date: string; // AAAA-MM-JJ
+  startTime?: string; // "08:12"
+  family: OtherSportFamily;
+  sportLabel: string; // « Vélo », « Natation »…
+  title: string;
+  description: string;
+  distanceKm?: number;
+  durationSec: number;
+  elevationGain?: number;
+  avgSpeedMs?: number;
+  avgHr?: number;
+  maxHr?: number;
+  avgWatts?: number;
+};
+
 export type WeekDay = {
   date: string;
   status: 'done' | 'planned' | 'rest';
@@ -151,6 +173,8 @@ export type PlanningMonth = {
   competitionPriority: Record<string, 'A' | 'B' | 'C'>;
   sessionsByDay: Record<string, PlannedSession[]>;
   activitiesByDay: Record<string, Activity[]>;
+  /** Les autres sports synchronisés depuis Strava, à part : ils n'ont pas de page de détail. */
+  othersByDay: Record<string, OtherActivity[]>;
   stats: { planned: number; done: number; distanceKm: number };
 };
 

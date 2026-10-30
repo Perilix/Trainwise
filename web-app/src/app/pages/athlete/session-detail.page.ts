@@ -6,6 +6,7 @@ import { formatDayLong, formatDecimal, formatHoursMinutes, formatPace } from '..
 import { load } from '../../core/load';
 import { FeelingScaleComponent } from '../../ui/expected-feeling.component';
 import { AthleteService } from '../../data/athlete.service';
+import { SPORT_LABELS, isOtherSport, plannedOtherStats } from '../../domain/other-sports';
 import { totals } from '../../domain/sessions';
 import { IconComponent } from '../../ui/icon.component';
 import { BlockListComponent } from '../../ui/block-list.component';
@@ -139,7 +140,7 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
             <section class="card card-pad">
               <span class="h2">Résumé</span>
               <div class="rows">
-                <div class="line"><span class="grow body muted">Discipline</span><span class="h3">{{ data.sport === 'strength' ? 'Renforcement' : 'Course' }}</span></div>
+                <div class="line"><span class="grow body muted">Discipline</span><span class="h3">{{ sportLabels[data.sport] }}</span></div>
                 <div class="line"><span class="grow body muted">Origine</span><span class="h3">{{ data.plannedBy === 'coach' ? 'Coach' : 'Toi' }}</span></div>
                 <div class="line"><span class="grow body muted">Date</span><span class="h3">{{ dayLabel() }}</span></div>
               </div>
@@ -341,9 +342,12 @@ export class SessionDetailPage {
     return data ? formatDayLong(data.date) : '';
   });
 
+  readonly sportLabels = SPORT_LABELS;
+
   readonly keyStats = computed(() => {
     const data = this.session.data();
     if (!data) return [];
+    if (isOtherSport(data.sport)) return plannedOtherStats(data);
     if (data.sport === 'strength') {
       return [
         { label: 'Durée', value: data.durationMin ? formatHoursMinutes(data.durationMin * 60) : '—', unit: '' },
