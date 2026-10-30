@@ -3,6 +3,7 @@ const CoachAthlete = require('../models/coachAthlete.model');
 const PlannedRun = require('../models/plannedRun.model');
 const Run = require('../models/run.model');
 const StrengthSession = require('../models/strengthSession.model');
+const OtherActivity = require('../models/otherActivity.model');
 const Competition = require('../models/competition.model');
 const crypto = require('crypto');
 const { createNotification } = require('./notification.controller');
@@ -219,7 +220,7 @@ exports.getAthleteCalendar = async (req, res) => {
     const startDate = ranged ? new Date(`${from}T00:00:00`) : new Date(y, m - 1, 1);
     const endDate = ranged ? new Date(`${to}T23:59:59`) : new Date(y, m, 0, 23, 59, 59);
 
-    const [runs, plannedRuns, strengthSessions, competitions] = await Promise.all([
+    const [runs, plannedRuns, strengthSessions, competitions, otherActivities] = await Promise.all([
       Run.find({
         user: athleteId,
         date: { $gte: startDate, $lte: endDate }
@@ -242,6 +243,10 @@ exports.getAthleteCalendar = async (req, res) => {
       Competition.find({
         user: athleteId,
         date: { $gte: startDate, $lte: endDate }
+      }).sort({ date: 1 }),
+      OtherActivity.find({
+        user: athleteId,
+        date: { $gte: startDate, $lte: endDate }
       }).sort({ date: 1 })
     ]);
 
@@ -249,6 +254,7 @@ exports.getAthleteCalendar = async (req, res) => {
       runs,
       plannedRuns,
       strengthSessions,
+      otherActivities,
       competitions,
       month: m,
       year: y

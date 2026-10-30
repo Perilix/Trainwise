@@ -522,6 +522,11 @@ select.input {
   min-width: 0;
 }
 
+/* Une fenêtre ouverte (toutes posent un .scrim) fige la page derrière elle. */
+body:has(.scrim) {
+  overflow: hidden;
+}
+
 .scroll-y {
   overflow-y: auto;
   scrollbar-width: thin;

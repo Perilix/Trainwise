@@ -2,6 +2,8 @@ const axios = require('axios');
 const User = require('../models/user.model');
 const Run = require('../models/run.model');
 const StrengthSession = require('../models/strengthSession.model');
+const OtherActivity = require('../models/otherActivity.model');
+const PlannedRun = require('../models/plannedRun.model');
 const { createNotification } = require('./notification.controller');
 const { findPlannedMatches } = require('../services/planningAutoComplete');
 const { athleteHasCoach } = require('../services/coachRelation.service');
@@ -128,6 +130,17 @@ const STRAVA_RUN_TYPES = ['Run', 'TrailRun', 'VirtualRun'];
 
 // Types Strava considérés comme de la muscu / strength
 const STRAVA_STRENGTH_TYPES = ['WeightTraining', 'Crossfit', 'Workout', 'Yoga', 'Pilates', 'Elliptical', 'StairStepper', 'Rowing', 'HighIntensityIntervalTraining', 'Hiit'];
+
+// Tous les autres sports (vélo, natation, ski…) : simple miroir dans le planning
+const isOtherSportType = (type) => Boolean(type) && !STRAVA_RUN_TYPES.includes(type) && !STRAVA_STRENGTH_TYPES.includes(type);
+
+// Parmi les autres sports, ceux qu'un coach peut programmer : sport_type Strava → activityType.
+const STRAVA_BIKE_TYPES = ['Ride', 'VirtualRide', 'MountainBikeRide', 'GravelRide', 'EBikeRide', 'EMountainBikeRide', 'Velomobile', 'Handcycle'];
+const plannableSport = (type) => {
+  if (STRAVA_BIKE_TYPES.includes(type)) return 'bike';
+  if (type === 'Swim') return 'swim';
+  return null;
+};
 
 // Helper: Mapper le type Strava vers nos types de séance muscu
 const mapStravaStrengthType = (stravaType) => {
@@ -582,6 +595,82 @@ const importStrengthActivity = async (userId, activity, accessToken, prefetchedD
   return { status: 'imported', session, plannedCandidate: strengthCandidates[0] || null };
 };
 
+// ── Import / mise à jour d'une activité d'un autre sport (vélo, natation…) ──
+// La description n'existe que dans le détail de l'activité : sans détail fourni,
+// on le demande à Strava. Une limite de débit (429) remonte à l'appelant.
+const upsertOtherActivity = async (userId, activity, accessToken, prefetchedDetail = null) => {
+  const existing = await OtherActivity.exists({ user: userId, stravaActivityId: activity.id });
+  if (existing && !prefetchedDetail) return { status: 'skipped' };
+
+  let detail = prefetchedDetail;
+  if (!detail) {
+    try {
+      const detailResponse = await axios.get(`${STRAVA_API_URL}/activities/${activity.id}`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      detail = detailResponse.data;
+    } catch (e) {
+      if (e.response?.status === 429) throw e;
+      console.error(`Failed to fetch details for activity ${activity.id}`);
+      detail = activity;
+    }
+  }
+
+  const activityDoc = await OtherActivity.findOneAndUpdate(
+    { user: userId, stravaActivityId: activity.id },
+    {
+      sportType: getActivityType(detail),
+      name: detail.name,
+      description: detail.description || '',
+      date: new Date(detail.start_date),
+      startDateLocal: detail.start_date_local || null,
+      movingTime: detail.moving_time ?? null,
+      elapsedTime: detail.elapsed_time ?? null,
+      distance: detail.distance ? Math.round(detail.distance / 1000 * 100) / 100 : null,
+      elevationGain: detail.total_elevation_gain || null,
+      averageSpeed: detail.average_speed || null,
+      averageHeartRate: detail.average_heartrate || null,
+      maxHeartRate: detail.max_heartrate || null,
+      averageWatts: detail.average_watts || null,
+      calories: detail.calories || null
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+
+  await linkPlannedOtherSport(userId, activityDoc);
+  return { status: existing ? 'updated' : 'imported', activity: activityDoc };
+};
+
+// Une sortie vélo ou natation réalise la séance du même sport prévue ce jour-là.
+// Le jour se lit à l'heure locale de l'athlète, comme dans le calendrier.
+const linkPlannedOtherSport = async (userId, activityDoc) => {
+  const sport = plannableSport(activityDoc.sportType);
+  if (!sport) return;
+  if (await PlannedRun.exists({ user: userId, linkedOtherActivity: activityDoc._id })) return;
+
+  const day = activityDoc.startDateLocal ? activityDoc.startDateLocal.slice(0, 10) : activityDoc.date.toISOString().slice(0, 10);
+  const planned = await PlannedRun.findOne({
+    user: userId,
+    activityType: sport,
+    date: { $gte: new Date(`${day}T00:00:00.000Z`), $lte: new Date(`${day}T23:59:59.999Z`) },
+    linkedOtherActivity: null,
+    $or: [{ status: 'planned' }, { status: 'skipped', autoSkipped: true }]
+  }).sort({ date: 1 });
+  if (!planned) return;
+
+  planned.status = 'completed';
+  planned.autoSkipped = false;
+  planned.linkedOtherActivity = activityDoc._id;
+  await planned.save();
+};
+
+// L'activité disparaît (supprimée sur Strava, ou sport corrigé) : la séance redevient à faire.
+const unlinkPlannedOtherSport = (userId, activityId) =>
+  PlannedRun.updateMany(
+    { user: userId, linkedOtherActivity: activityId },
+    { $set: { status: 'planned', linkedOtherActivity: null } }
+  );
+
 // ── Mise à jour d'un Run existant depuis le détail Strava (resync + webhook update) ──
 const applyRunUpdateFromStrava = async (run, activity) => {
   let notes = activity.name;
@@ -652,6 +741,9 @@ exports.getAuthUrl = async (req, res) => {
 // pour les sorties suivantes.
 const INITIAL_IMPORT_MAX_PAGES = 3;
 const INITIAL_IMPORT_PAGE_SIZE = 50;
+// Les autres sports coûtent un appel chacun (la description est dans le détail) :
+// on ne rattrape que les dernières semaines pour ménager la limite Strava.
+const OTHER_SPORTS_BACKFILL_DAYS = 42;
 
 const setInitialImport = (userId, patch) =>
   User.findByIdAndUpdate(userId, Object.entries(patch).reduce((acc, [key, value]) => {
@@ -670,6 +762,7 @@ const runInitialImport = async (userId) => {
     const user = await User.findById(userId).select('+strava.accessToken +strava.refreshToken');
     const fullUser = await User.findById(userId);
     const accessToken = await refreshTokenIfNeeded(user);
+    const otherSportsSince = Date.now() - OTHER_SPORTS_BACKFILL_DAYS * 86400000;
 
     for (let page = 1; page <= INITIAL_IMPORT_MAX_PAGES && !rateLimited; page++) {
       const { data } = await axios.get(`${STRAVA_API_URL}/athlete/activities`, {
@@ -683,6 +776,22 @@ const runInitialImport = async (userId) => {
         const type = getActivityType(activity);
         const isRun = STRAVA_RUN_TYPES.includes(type);
         const isStrength = STRAVA_STRENGTH_TYPES.includes(type);
+
+        if (isOtherSportType(type)) {
+          if (new Date(activity.start_date).getTime() < otherSportsSince) continue;
+          try {
+            const result = await upsertOtherActivity(userId, activity, accessToken);
+            if (result.status === 'skipped') skipped++;
+            else imported++;
+          } catch (e) {
+            if (e.response?.status === 429) {
+              rateLimited = true;
+              break;
+            }
+            console.error(`[Strava] import initial, activité ${activity.id}:`, e.message);
+          }
+          continue;
+        }
         if (!isRun && !isStrength) continue;
 
         try {
@@ -836,11 +945,9 @@ exports.syncActivities = async (req, res) => {
     const strengthActivities = response.data.filter(a =>
       STRAVA_STRENGTH_TYPES.includes(getActivityType(a))
     );
+    const otherActivities = response.data.filter(a => isOtherSportType(getActivityType(a)));
     const unrecognized = response.data
-      .filter(a =>
-        !STRAVA_RUN_TYPES.includes(getActivityType(a)) &&
-        !STRAVA_STRENGTH_TYPES.includes(getActivityType(a))
-      )
+      .filter(a => !getActivityType(a))
       .map(a => ({ id: a.id, name: a.name, type: getActivityType(a) }));
 
     // --- Importer les courses ---
@@ -890,12 +997,37 @@ exports.syncActivities = async (req, res) => {
       });
     }
 
-    const totalImported = imported.length + importedStrength.length;
-    const totalSkipped = skipped.length + skippedStrength.length;
+    // --- Importer les autres sports (vélo, natation…) ---
+    const importedOther = [];
+    let skippedOther = 0;
+
+    for (const activity of otherActivities) {
+      try {
+        const result = await upsertOtherActivity(req.user._id, activity, accessToken);
+        if (result.status === 'skipped') {
+          skippedOther++;
+          continue;
+        }
+        importedOther.push({
+          id: result.activity._id,
+          stravaId: activity.id,
+          name: activity.name,
+          sportType: result.activity.sportType,
+          date: result.activity.date
+        });
+      } catch (e) {
+        // Limite Strava atteinte : le reste attendra la prochaine synchro.
+        if (e.response?.status === 429) break;
+        console.error(`[Strava] sync, activité ${activity.id}:`, e.message);
+      }
+    }
+
+    const totalSkipped = skipped.length + skippedStrength.length + skippedOther;
     res.json({
-      message: `${imported.length} course(s) et ${importedStrength.length} séance(s) muscu importée(s), ${totalSkipped} déjà présente(s). L'analyse IA est en cours...`,
+      message: `${imported.length} course(s), ${importedStrength.length} séance(s) muscu et ${importedOther.length} autre(s) activité(s) importée(s), ${totalSkipped} déjà présente(s). L'analyse IA est en cours...`,
       imported,
       importedStrength,
+      importedOther,
       skipped,
       skippedStrength,
       unrecognized
@@ -1111,7 +1243,11 @@ const processWebhookEvent = async (event) => {
   if (aspect_type === 'delete') {
     const run = await Run.findOneAndDelete({ user: user._id, stravaActivityId: object_id });
     if (!run) {
-      await StrengthSession.findOneAndDelete({ user: user._id, stravaActivityId: object_id });
+      const session = await StrengthSession.findOneAndDelete({ user: user._id, stravaActivityId: object_id });
+      if (!session) {
+        const other = await OtherActivity.findOneAndDelete({ user: user._id, stravaActivityId: object_id });
+        if (other) await unlinkPlannedOtherSport(user._id, other._id);
+      }
     }
     return;
   }
@@ -1131,6 +1267,12 @@ const processWebhookEvent = async (event) => {
   }
 
   const activityType = getActivityType(detail);
+
+  // Sport corrigé sur Strava (un vélo qui était en fait une course) : l'ancien miroir disparaît.
+  if (!isOtherSportType(activityType)) {
+    const other = await OtherActivity.findOneAndDelete({ user: user._id, stravaActivityId: object_id });
+    if (other) await unlinkPlannedOtherSport(user._id, other._id);
+  }
 
   if (STRAVA_RUN_TYPES.includes(activityType)) {
     const existing = await Run.findOne({ user: user._id, stravaActivityId: object_id });
@@ -1186,6 +1328,9 @@ const processWebhookEvent = async (event) => {
         actionUrl: '/dashboard'
       });
     }
+  } else if (isOtherSportType(activityType)) {
+    // Création comme modification : on recopie le détail (titre, description, chiffres).
+    await upsertOtherActivity(user._id, detail, accessToken, detail);
   }
 };
 

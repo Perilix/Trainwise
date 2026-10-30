@@ -604,6 +604,7 @@ exports.deleteAccount = async (req, res) => {
     const Run            = require('../models/run.model');
     const PlannedRun     = require('../models/plannedRun.model');
     const StrengthSession = require('../models/strengthSession.model');
+    const OtherActivity  = require('../models/otherActivity.model');
     const Conversation   = require('../models/conversation.model');
     const Message        = require('../models/message.model');
     const Notification   = require('../models/notification.model');
@@ -619,6 +620,7 @@ exports.deleteAccount = async (req, res) => {
       Run.deleteMany({ user: userId }),
       PlannedRun.deleteMany({ user: userId }),
       StrengthSession.deleteMany({ user: userId }),
+      OtherActivity.deleteMany({ user: userId }),
       Notification.deleteMany({ $or: [{ user: userId }, { sender: userId }] }),
       Friendship.deleteMany({ $or: [{ requester: userId }, { recipient: userId }] }),
       CoachAthlete.deleteMany({ $or: [{ coach: userId }, { athlete: userId }] }),

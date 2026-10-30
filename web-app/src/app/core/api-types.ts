@@ -130,7 +130,7 @@ export type ApiUserRef = {
 export type ApiPlannedRun = {
   _id: string;
   date: string;
-  activityType: 'running' | 'strength';
+  activityType: 'running' | 'strength' | 'bike' | 'swim';
   sessionType: string;
   targetDistance: number | null; // km
   targetDuration: number | null; // min
@@ -339,10 +339,31 @@ export type ApiCompetition = {
   status: 'upcoming' | 'completed' | 'cancelled';
 };
 
+/** Activité Strava d'un autre sport (vélo, natation…), recopiée telle quelle. */
+export type ApiOtherActivity = {
+  _id: string;
+  stravaActivityId: number;
+  sportType: string; // sport_type Strava : Ride, Swim, GravelRide…
+  name?: string;
+  description?: string;
+  date: string;
+  startDateLocal: string | null;
+  movingTime: number | null; // s
+  elapsedTime: number | null; // s
+  distance: number | null; // km
+  elevationGain: number | null; // m
+  averageSpeed: number | null; // m/s
+  averageHeartRate: number | null;
+  maxHeartRate: number | null;
+  averageWatts: number | null;
+};
+
 export type ApiCalendarData = {
   runs: ApiRun[];
   plannedRuns: ApiPlannedRun[];
   strengthSessions: ApiStrengthSession[];
+  /** Absent tant que l'API déployée ne les renvoie pas. */
+  otherActivities?: ApiOtherActivity[];
   competitions: ApiCompetition[];
   month: number; // 1 à 12
   year: number;

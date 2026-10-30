@@ -84,7 +84,7 @@ export function mapPlannedDetail(raw: ApiPlannedRunDetail, vma?: number, coachNa
       { label: 'Corps de séance', text: raw.mainWorkout?.trim() ?? '' },
       { label: 'Retour au calme', text: raw.cooldown?.trim() ?? '' },
     ].filter((item) => item.text),
-    strength: running ? undefined : mapStrengthPlan(raw.strengthPlan),
+    strength: raw.activityType === 'strength' ? mapStrengthPlan(raw.strengthPlan) : undefined,
     linkedRunId,
   };
 }

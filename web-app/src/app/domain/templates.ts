@@ -146,7 +146,8 @@ export function plannedToTemplatePayload(planned: ApiPlannedRunDetail, name: str
   return {
     name,
     description: planned.description,
-    sport: planned.activityType,
+    // La bibliothèque ne connaît que la course et le renfo (le bouton est masqué pour le reste).
+    sport: planned.activityType === 'strength' ? 'strength' : 'running',
     sessionType: planned.sessionType,
     targetDistance: planned.targetDistance,
     targetDuration: planned.targetDuration,

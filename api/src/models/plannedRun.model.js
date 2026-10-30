@@ -42,10 +42,12 @@ const plannedRunSchema = new mongoose.Schema({
     type: Date,
     required: true
   },
-  // Type d'activité : running (défaut pour backward compat) ou strength
+  // Type d'activité : running (défaut pour backward compat), strength, ou
+  // bike / swim — programmés simplement (titre, consignes, distance, durée)
+  // et rapprochés de l'activité Strava du jour (OtherActivity).
   activityType: {
     type: String,
-    enum: ['running', 'strength'],
+    enum: ['running', 'strength', 'bike', 'swim'],
     default: 'running'
   },
   sessionType: {
@@ -54,7 +56,9 @@ const plannedRunSchema = new mongoose.Schema({
       // Running types
       'endurance', 'fractionne', 'tempo', 'recuperation', 'sortie_longue', 'cotes', 'fartlek',
       // Strength types
-      'upper_body', 'lower_body', 'full_body', 'push', 'pull', 'legs', 'core', 'hiit'
+      'upper_body', 'lower_body', 'full_body', 'push', 'pull', 'legs', 'core', 'hiit',
+      // Vélo et natation : un seul type chacun pour l'instant
+      'bike', 'swim'
     ],
     required: true
   },
@@ -182,6 +186,12 @@ const plannedRunSchema = new mongoose.Schema({
   linkedStrengthSession: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'StrengthSession',
+    default: null
+  },
+  // Vélo / natation : l'activité Strava qui a réalisé la séance
+  linkedOtherActivity: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'OtherActivity',
     default: null
   },
   weekNumber: {
