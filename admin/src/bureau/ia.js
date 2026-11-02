@@ -70,7 +70,8 @@ const web = (recherches, lectures) => [
 /* --- Radar : chercher des coachs dans le secteur du bureau --- */
 
 const ZONES = {
-  julien: ['Bordeaux et Gironde', 'Landes et Pays basque', 'Charente-Maritime et Charente', 'Dordogne et Lot-et-Garonne', 'Poitou (Vienne, Deux-Sèvres) et Limousin'],
+  // Gironde retirée le 02/11/2026 : presque plus de contacts avec email public, le Radar y épuisait son quota.
+  julien: ['Toulouse et Haute-Garonne', 'Charente-Maritime et Charente', 'Dordogne et Lot-et-Garonne', 'Pau et Béarn', 'Landes et Pays basque', 'Poitiers et Limoges', 'Nantes, Vendée et Angers'],
   hugo: ['Strasbourg et Bas-Rhin', 'Colmar, Mulhouse et Haut-Rhin', 'Moselle (Metz) et Vosges', 'Territoire de Belfort, Montbéliard et Nancy']
 };
 const SYSTEME_RADAR = `Tu cherches des coachs d'endurance français pour Trainwise, une app de suivi d'entraînement pour coachs et athlètes (planning, bibliothèque de séances, messagerie, synchro Strava, suivi muscu, forme des athlètes).
@@ -120,7 +121,7 @@ async function radar(ordre, avancer) {
     await avancer(ajoutes.length, voulu, 2, `Cherche des coachs (${secteur})`);
     bilan = await boucle({
       modele: MODELES.recherche, system: SYSTEME_RADAR, outils: [...web(25, 15), OUTIL_ENREGISTRER],
-      contenu: `Secteur ${secteur}. Zones, dans l'ordre (passe à la suivante quand une zone ne donne plus de contacts avec email) :\n${ZONES[espace].map((z, i) => `${i + 1}. ${z}`).join('\n')}\n\nConsigne : ${ordre.consigne || 'aucune'}\nNombre de nouveaux coachs à trouver : ${cible}\n\nListe d'exclusion (déjà dans le fichier) :\n${existants.map(c => [c.nom, c.contact].filter(Boolean).join(' | ')).join('\n')}`,
+      contenu: `Bureau ${secteur}, zones à couvrir, dans l'ordre (passe à la suivante quand une zone ne donne plus de contacts avec email) :\n${ZONES[espace].map((z, i) => `${i + 1}. ${z}`).join('\n')}\n\nConsigne : ${ordre.consigne || 'aucune'}\nNombre de nouveaux coachs à trouver : ${cible}\n\nListe d'exclusion (déjà dans le fichier) :\n${existants.map(c => [c.nom, c.contact].filter(Boolean).join(' | ')).join('\n')}`,
       executer: async (nom, entree) => {
         if (nom !== 'enregistrer_coachs') throw new Error(`Outil inconnu : ${nom}`);
         const dernier = await Contact.findOne({ espace, onglet }).sort({ ligne: -1 }).select('ligne').lean();

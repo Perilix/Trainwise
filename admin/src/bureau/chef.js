@@ -301,7 +301,7 @@ async function rechercheDuLundi() {
     const r = await Ronde.findOneAndUpdate({ espace, rechercheSemaine: { $ne: semaine } }, { rechercheSemaine: semaine }, { upsert: false });
     if (!r) continue;
     await Ordre.create({ espace, agent: 'radar', action: 'chercher', label: 'Recherche du lundi', auteur: 'Chef de bureau',
-      consigne: `Recherche hebdomadaire : ${RECHERCHE_LUNDI} nouveaux coachs dans le secteur ${ESPACES[espace].secteur}.` });
+      consigne: `Recherche hebdomadaire : ${RECHERCHE_LUNDI} nouveaux coachs dans les zones du bureau.` });
   }
 }
 
