@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { StyleSheet, View, type GestureResponderEvent } from 'react-native';
+import { StyleSheet, View, type GestureResponderEvent, type ViewInstance } from 'react-native';
 
 import { useTheme } from '@/theme/theme-provider';
 import { radius } from '@/theme/tokens';
@@ -22,7 +22,7 @@ export function FeelingSlider({ value, onChange, labels = ['Épuisant', 'Excelle
   const { colors } = useTheme();
   const percent = ((value - 1) / 9) * 100;
 
-  const track = useRef<View>(null);
+  const track = useRef<ViewInstance>(null);
   // Position et largeur de la piste à l'écran : c'est ce qui convertit un doigt en note.
   const geometry = useRef({ x: 0, width: 0 });
   const measure = () => track.current?.measureInWindow((x, _y, width) => (geometry.current = { x, width }));

@@ -15,7 +15,9 @@ import type {
 import { addDays, daysBetween, isoWeek, startOfWeek } from '@/lib/dates';
 import { formatDayMonthYear, formatDayShort, formatMonthName, formatMonthShort, formatMonthYear, formatTime, paceToSeconds, parseDay, toIsoDay } from '@/lib/format';
 
+import { mapOtherActivity } from './other-sports';
 import { blocksToSegments, describeBlocks, estimateFromBlocks } from './run-blocks';
+import { sportTotals, type EnduranceSport } from './sport-blocks';
 import type {
   Activity,
   AthleteHome,
@@ -26,6 +28,7 @@ import type {
   KmSplit,
   NotificationCategory,
   NotificationKind,
+  OtherActivity,
   PlannedSession,
   PlanningMonth,
   RunDetail,
@@ -50,6 +53,8 @@ export const SESSION_TYPE_LABELS: Record<string, string> = {
   core: 'Gainage',
   hiit: 'HIIT',
   other: 'Renforcement',
+  bike: 'Vélo',
+  swim: 'Natation',
 };
 
 const LEVEL_LABELS: Record<NonNullable<ApiUser['runningLevel']>, string> = {
@@ -84,7 +89,7 @@ export function mapPlanned(planned: ApiPlannedRun, coachName?: string, vma?: num
   const byCoach = planned.generatedBy === 'coach';
   // Le coach construit sa séance bloc par bloc et laisse souvent les totaux vides :
   // sans cette estimation, l'athlète voit « — » en distance, durée et allure.
-  const estimated = planned.activityType === 'running' ? estimateFromBlocks(planned.runBlocks, vma) : {};
+  const estimated = planned.activityType === 'running' ? estimateFromBlocks(planned.runBlocks, vma) : estimateSport(planned);
   return {
     id: planned._id,
     date: dayOf(planned.date),
@@ -100,6 +105,15 @@ export function mapPlanned(planned: ApiPlannedRun, coachName?: string, vma?: num
     status: planned.status === 'completed' ? 'done' : planned.status,
     expectedFeeling: planned.expectedFeeling ?? undefined,
   };
+}
+
+const isEnduranceSport = (sport: string): sport is EnduranceSport => sport === 'bike' || sport === 'swim';
+
+/** Vélo / natation construits en blocs : durée et distance déduites quand le coach ne les a pas saisies. */
+function estimateSport(planned: ApiPlannedRun): { distanceKm?: number; durationMin?: number; paceSecPerKm?: number } {
+  if (!isEnduranceSport(planned.activityType) || !planned.sportBlocks?.length) return {};
+  const { seconds, meters } = sportTotals(planned.sportBlocks, planned.activityType, planned.reference);
+  return { distanceKm: meters ? meters / 1000 : undefined, durationMin: seconds ? Math.round(seconds / 60) : undefined };
 }
 
 export function mapRun(run: ApiRun): Activity {
@@ -268,6 +282,13 @@ export function buildPlanning(calendar: ApiCalendarData, now: Date, coachName?: 
   const activitiesByDay: Record<string, Activity[]> = {};
   [...calendar.runs.map(mapRun), ...calendar.strengthSessions.map(mapStrength)].forEach((activity) => (activitiesByDay[activity.date] ??= []).push(activity));
 
+  const others = (calendar.otherActivities ?? []).map(mapOtherActivity);
+  const othersByDay: Record<string, OtherActivity[]> = {};
+  others.forEach((other) => {
+    (othersByDay[other.date] ??= []).push(other);
+    markers[other.date] = 'done';
+  });
+
   calendar.competitions.forEach((competition) => {
     const day = dayOf(competition.date);
     markers[day] = 'competition';
@@ -282,9 +303,10 @@ export function buildPlanning(calendar: ApiCalendarData, now: Date, coachName?: 
     competitionPriority,
     sessionsByDay,
     activitiesByDay,
+    othersByDay,
     stats: {
       planned: planned.length,
-      done: calendar.runs.length + calendar.strengthSessions.length,
+      done: calendar.runs.length + calendar.strengthSessions.length + others.length,
       distanceKm: sum(calendar.runs.map((run) => run.distance ?? 0)),
     },
   };

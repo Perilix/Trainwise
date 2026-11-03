@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react';
-import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View, type ScrollViewInstance } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar, avatarToneFor, Icon, IconButton, TAB_BAR_HEIGHT, TAB_BAR_MARGIN, Text } from '@/components/ui';
+import { sportIcon } from '@/features/athlete/other-sports';
 import type { ChatMessage, CitedSession } from '@/features/athlete/types';
 import { useTheme } from '@/theme/theme-provider';
 import { radius } from '@/theme/tokens';
@@ -40,7 +41,7 @@ export function ChatThread({ chat, offlineLabel, headerRight, onBack, peerRole =
   const [draft, setDraft] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [sendFailure, setSendFailure] = useState<string | null>(null);
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   const insets = useSafeAreaInsets();
   // Clavier ouvert : la barre de saisie colle au clavier, sans la marge de la barre d'accueil.
   const [keyboardUp, setKeyboardUp] = useState(false);
@@ -234,7 +235,7 @@ function SessionCard({ session, onPress, children }: { session: CitedSession; on
       style={({ pressed }) => [styles.sessionCard, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && { backgroundColor: colors.subtle }]}>
       <View style={styles.sessionHeader}>
         <View style={[styles.sessionTile, { backgroundColor: running ? colors.accentSoft : colors.subtle }]}>
-          <Icon name={running ? 'route' : 'dumbbell'} size={18} color={running ? colors.accentInk : colors.primary} />
+          <Icon name={session.sport ? sportIcon(session.sport) : 'route'} size={18} color={running ? colors.accentInk : colors.primary} />
         </View>
         <View style={styles.flex}>
           <Text variant="h3" numberOfLines={2}>

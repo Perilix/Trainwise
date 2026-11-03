@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { BackBar, Button, FeelingSlider, Field, FormError, Screen, StateView, Text } from '@/components/ui';
+import { isOtherSport } from '@/features/athlete/other-sports';
 import { useAthleteActions, usePlannedSession } from '@/features/athlete/queries';
 import { PlannedSessionBody } from '@/features/sessions/planned-session-body';
 import { emitAppEvent } from '@/lib/app-events';
@@ -47,6 +48,7 @@ export default function PlannedSessionScreen() {
   };
 
   const running = session.sport === 'running';
+  const other = isOtherSport(session.sport);
   const linkedRunId = session.linkedRunId;
 
   // Enregistrer la sortie plutôt que cocher la séance : l'API rattache la séance prévue
@@ -96,6 +98,9 @@ export default function PlannedSessionScreen() {
           <Button label="Passer" variant="secondary" disabled={busy} onPress={() => act(() => skipSession(session.id))} style={styles.flex} />
           {running ? (
             <Button label="Séance faite" icon="check" disabled={busy} onPress={() => setDetailing(true)} style={styles.flex} />
+          ) : other ? (
+            // Vélo, natation : la sortie Strava valide d'elle-même ; sans montre, une simple coche.
+            <Button label="Marquer faite" icon="check" disabled={busy} onPress={() => act(() => completeSession(session.id))} style={styles.flex} />
           ) : (
             <Button label="Commencer" icon="dumbbell" disabled={busy} onPress={() => router.push({ pathname: '/muscu/[id]', params: { id: session.id } })} style={styles.flex} />
           )}

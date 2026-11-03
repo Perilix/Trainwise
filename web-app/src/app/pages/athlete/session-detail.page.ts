@@ -14,6 +14,7 @@ import { IntensityLegendComponent } from '../../ui/intensity-legend.component';
 import { StateViewComponent } from '../../ui/state-view.component';
 import { StrengthPlanComponent } from '../../ui/strength-plan.component';
 import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
+import { formatMeters } from '../../domain/sport-blocks';
 
 /** Séance planifiée ouverte par l'athlète : carte navy de mise en avant, puis le déroulé (DA §6.8). */
 @Component({
@@ -94,10 +95,12 @@ import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
                 <div class="profile">
                   <tw-workout-profile [segments]="data.segments" [width]="700" [height]="72" />
                 </div>
-                <tw-intensity-legend />
+                <tw-intensity-legend [sport]="data.sport" />
                 <div class="profile-totals">
                   <span class="small muted">Durée estimée {{ estimated().duration }}</span>
-                  <span class="small muted">Distance estimée {{ estimated().distance }}</span>
+                  @if (estimated().distance) {
+                    <span class="small muted">Distance estimée {{ estimated().distance }}</span>
+                  }
                 </div>
               </section>
             }
@@ -364,7 +367,10 @@ export class SessionDetailPage {
   readonly estimated = computed(() => {
     const segments = this.session.data()?.segments ?? [];
     const total = totals(segments);
-    return { duration: formatHoursMinutes(total.sec), distance: `${formatDecimal(total.dist / 1000, 1)} km` };
+    const sport = this.session.data()?.sport;
+    // Vélo : on programme en durée ; natation : un volume en mètres.
+    const distance = sport === 'bike' ? '' : sport === 'swim' ? formatMeters(total.dist) : `${formatDecimal(total.dist / 1000, 1)} km`;
+    return { duration: formatHoursMinutes(total.sec), distance };
   });
 
   duration(seconds: number) {

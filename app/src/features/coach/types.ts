@@ -15,7 +15,7 @@ export type CoachAthleteRow = {
   subtitle: string;
 };
 
-export type CoachAthleteLite = { id: string; name: string; initials: string; vma?: number };
+export type CoachAthleteLite = { id: string; name: string; initials: string; vma?: number; ftp?: number; css?: number };
 
 /** Groupe d'athlètes du coach : une étiquette, pas un dossier. */
 export type CoachGroup = {
@@ -55,7 +55,7 @@ export type AthleteFiche = {
   weeklyVolume: number;
   baselineWeeklyVolume: number;
   weeks: (AthleteStatus | null)[]; // 8 dernières semaines, la plus ancienne en premier
-  physical: { heightCm?: number; weightKg?: number; vma?: number; fcMax?: number };
+  physical: { heightCm?: number; weightKg?: number; vma?: number; fcMax?: number; ftp?: number; css?: number };
   running: { level?: string; frequency?: number; injuries?: string };
   competition?: { name: string; dateLabel: string; priority: 'A' | 'B' | 'C'; goal?: string };
   strength: { goal?: string; type?: string; frequency?: number };

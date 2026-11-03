@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 
 import { Avatar, BRAND, Button, Card, Chip, GlassSurface, Icon, IconButton, Screen, Section, SectionHeader, StateView, Text } from '@/components/ui';
+import { isOtherSport, otherSessionMeta, sessionDistance } from '@/features/athlete/other-sports';
 import { activityHref } from '@/features/athlete/activity-link';
 import { AthleteAppBar } from '@/features/athlete/athlete-app-bar';
 import { PlannedMatchPrompt } from '@/features/athlete/planned-match-prompt';
@@ -120,8 +121,9 @@ function StreakBadge({ weeks }: { weeks: number }) {
 function TodayCard({ session, onOpen }: { session: PlannedSession; onOpen: () => void }) {
   const { colors } = useTheme();
   const faded = 'rgba(255, 255, 255, 0.7)';
+  const distance = session.distanceKm ? sessionDistance(session.sport, session.distanceKm) : null;
   const stats = [
-    { label: 'Distance', value: session.distanceKm ? formatDecimal(session.distanceKm, 0) : '—', unit: 'km' },
+    { label: 'Distance', value: distance?.value ?? '—', unit: distance?.unit ?? 'km' },
     { label: 'Durée', value: session.durationMin ? formatHoursMinutes(session.durationMin * 60) : '—', unit: '' },
     { label: 'Allure', value: session.paceSecPerKm ? formatPace(session.paceSecPerKm) : '—', unit: '/km' },
   ];
@@ -236,8 +238,9 @@ function StatTile({ value, label }: { value: string; label: string }) {
 
 function UpcomingRow({ session, first, onPress }: { session: PlannedSession; first: boolean; onPress: () => void }) {
   const { colors } = useTheme();
-  const meta =
-    session.sport === 'running'
+  const meta = isOtherSport(session.sport)
+    ? [otherSessionMeta(session)]
+    : session.sport === 'running'
       ? [session.distanceKm ? `${formatDecimal(session.distanceKm, 0)} km` : null, session.paceSecPerKm ? `${formatPace(session.paceSecPerKm)} /km` : null]
       : [session.durationMin ? `${session.durationMin} min` : null, session.exercisesCount ? `${session.exercisesCount} exercices` : null];
 

@@ -23,7 +23,7 @@ exports.getAthletes = async (req, res) => {
     const relationships = (await CoachAthlete.find({
       coach: req.user._id,
       status: 'accepted'
-    }).populate('athlete', 'firstName lastName email profilePicture runningLevel vma'))
+    }).populate('athlete', 'firstName lastName email profilePicture runningLevel vma ftp css'))
       .filter(rel => rel.athlete);
 
     // Récupérer la prochaine compétition de chaque athlète en une seule requête
@@ -58,6 +58,8 @@ exports.getAthletes = async (req, res) => {
         profilePicture: rel.athlete.profilePicture,
         runningLevel: rel.athlete.runningLevel,
         vma: rel.athlete.vma,
+        ftp: rel.athlete.ftp,
+        css: rel.athlete.css,
         nextCompetition: nextCompetitionByAthlete[rel.athlete._id.toString()] || null,
         joinedAt: rel.respondedAt,
         packageType: rel.packageType,
@@ -425,6 +427,7 @@ exports.getAthletePlannedSession = async (req, res) => {
     if (!relationship) return res.status(403).json({ error: 'Accès refusé' });
 
     const plannedRun = await PlannedRun.findOne({ _id: planId, user: athleteId })
+      .populate('linkedOtherActivity')
       .populate('strengthPlan.exercises.exercise', 'name primaryMuscle equipment')
       .populate('strengthPlan.circuit.exercises.exercise', 'name primaryMuscle equipment')
       .populate('strengthPlan.superset.pairs.a.exercise', 'name primaryMuscle equipment')
@@ -878,7 +881,7 @@ exports.getSubscriptionRequests = async (req, res) => {
     const requests = await CoachAthlete.find({
       coach: req.user._id,
       status: 'requested'
-    }).populate('athlete', 'firstName lastName email profilePicture runningLevel vma')
+    }).populate('athlete', 'firstName lastName email profilePicture runningLevel vma ftp css')
       .sort({ invitedAt: -1 });
 
     res.json(requests.filter(r => r.athlete));
@@ -984,6 +987,41 @@ exports.getAthleteCompetitions = async (req, res) => {
 
     const competitions = await Competition.find(query).sort({ date: 1 });
     res.json(competitions);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Modifier les références d'un athlète : FTP (vélo, watts) et CSS (natation, s / 100 m).
+// null efface la valeur ; un champ absent n'est pas touché.
+exports.updateAthleteReferences = async (req, res) => {
+  try {
+    const { athleteId } = req.params;
+
+    const relationship = await CoachAthlete.findOne({
+      coach: req.user._id,
+      athlete: athleteId,
+      status: 'accepted'
+    });
+    if (!relationship) return res.status(403).json({ error: 'Accès refusé' });
+
+    const updates = {};
+    const { ftp, css } = req.body;
+    if (ftp !== undefined) {
+      if (ftp !== null && (typeof ftp !== 'number' || ftp < 50 || ftp > 600)) {
+        return res.status(400).json({ error: 'FTP invalide (50-600 W)' });
+      }
+      updates.ftp = ftp === null ? null : Math.round(ftp);
+    }
+    if (css !== undefined) {
+      if (css !== null && (typeof css !== 'number' || css < 50 || css > 300)) {
+        return res.status(400).json({ error: 'CSS invalide (0:50 à 5:00 / 100 m)' });
+      }
+      updates.css = css === null ? null : Math.round(css);
+    }
+
+    const athlete = await User.findByIdAndUpdate(athleteId, updates, { new: true, select: 'ftp css' });
+    res.json({ ftp: athlete.ftp, css: athlete.css });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

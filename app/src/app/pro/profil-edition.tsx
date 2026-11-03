@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View, type TextInputInstance } from 'react-native';
 
 import { BackBar, Button, Card, ChoicePill, Field, FormError, Screen, Section, Text } from '@/components/ui';
 import { useBringIntoView } from '@/components/ui/keyboard-scroll';
@@ -17,7 +17,7 @@ const toggle = (list: string[], value: string) => (list.includes(value) ? list.f
 export default function CoachProfileEditScreen() {
   const router = useRouter();
   const { colors } = useTheme();
-  const areaRef = useRef<TextInput>(null);
+  const areaRef = useRef<TextInputInstance>(null);
   const bringIntoView = useBringIntoView();
   const { user } = useSession();
   const { updateProfile } = useCoachActions();

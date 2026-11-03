@@ -1,10 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
+import { ApiError } from '../../core/api.service';
 import { formatDecimal } from '../../core/format';
 import { load } from '../../core/load';
 import { CoachService } from '../../data/coach.service';
 import { ATHLETE_STATUS_STYLE } from '../../domain/coach.status';
+import { formatSwimPace, parseSwimPace } from '../../domain/sport-blocks';
 import { AvatarComponent } from '../../ui/avatar.component';
 import { IconComponent } from '../../ui/icon.component';
 import { StateViewComponent } from '../../ui/state-view.component';
@@ -175,7 +177,42 @@ const TRENDS: Record<'improving' | 'declining' | 'stable', { label: string; icon
                   </div>
                 </div>
                 <div class="spec"><span class="caption muted">FCmax</span><span class="h3">{{ data.physical.fcMax ? data.physical.fcMax + ' bpm' : '—' }}</span></div>
+                <div class="spec">
+                  <span class="caption muted">FTP vélo</span>
+                  <div class="vma">
+                    @if (editingRef() === 'ftp') {
+                      <input class="vma-input num" inputmode="numeric" placeholder="250" [value]="refDraft()" (input)="refDraft.set(value($event))" (keyup.enter)="saveRef()" />
+                      <button class="icon-btn" type="button" (click)="saveRef()" aria-label="Enregistrer la FTP">
+                        <tw-icon name="check" [size]="16" [strokeWidth]="2" />
+                      </button>
+                    } @else {
+                      <span class="h3">{{ data.physical.ftp ? data.physical.ftp + ' W' : '—' }}</span>
+                      <button class="icon-btn" type="button" (click)="startRef('ftp', data.physical.ftp)" aria-label="Modifier la FTP">
+                        <tw-icon name="edit" [size]="16" />
+                      </button>
+                    }
+                  </div>
+                </div>
+                <div class="spec">
+                  <span class="caption muted">CSS natation</span>
+                  <div class="vma">
+                    @if (editingRef() === 'css') {
+                      <input class="vma-input num" placeholder="1'45" [value]="refDraft()" (input)="refDraft.set(value($event))" (keyup.enter)="saveRef()" />
+                      <button class="icon-btn" type="button" (click)="saveRef()" aria-label="Enregistrer la CSS">
+                        <tw-icon name="check" [size]="16" [strokeWidth]="2" />
+                      </button>
+                    } @else {
+                      <span class="h3">{{ data.physical.css ? swimPace(data.physical.css) + ' /100 m' : '—' }}</span>
+                      <button class="icon-btn" type="button" (click)="startRef('css', data.physical.css)" aria-label="Modifier la CSS">
+                        <tw-icon name="edit" [size]="16" />
+                      </button>
+                    }
+                  </div>
+                </div>
               </div>
+              @if (refError()) {
+                <p class="small ref-err">{{ refError() }}</p>
+              }
             </section>
 
             <section class="card card-pad">
@@ -457,6 +494,11 @@ const TRENDS: Record<'improving' | 'declining' | 'stable', { label: string; icon
         gap: 6px;
       }
 
+      .ref-err {
+        color: var(--danger);
+        margin-top: 10px;
+      }
+
       .vma-input {
         width: 70px;
         height: 32px;
@@ -571,6 +613,11 @@ export class CoachAthletePage {
   readonly editingVma = signal(false);
   readonly vmaDraft = signal('');
 
+  /** FTP (watts) ou CSS (allure seuil en natation) en cours de saisie. */
+  readonly editingRef = signal<'ftp' | 'css' | null>(null);
+  readonly refDraft = signal('');
+  readonly refError = signal('');
+
   readonly trend = computed(() => TRENDS[this.fiche.data()?.trend ?? 'stable']);
 
   statusColor(status: 'green' | 'orange' | 'red') {
@@ -605,6 +652,35 @@ export class CoachAthletePage {
         this.editingVma.set(false);
         this.fiche.reload(true);
       },
+    });
+  }
+
+  swimPace(seconds: number) {
+    return formatSwimPace(seconds);
+  }
+
+  startRef(kind: 'ftp' | 'css', current?: number) {
+    this.refError.set('');
+    this.refDraft.set(current ? (kind === 'css' ? formatSwimPace(current) : String(current)) : '');
+    this.editingRef.set(kind);
+  }
+
+  saveRef() {
+    const kind = this.editingRef();
+    if (!kind) return;
+    const draft = this.refDraft().trim();
+    const parsed = !draft ? null : kind === 'css' ? (parseSwimPace(draft) ?? NaN) : Number(draft.replace(',', '.'));
+    if (parsed !== null && !Number.isFinite(parsed)) {
+      this.refError.set(kind === 'css' ? 'Allure attendue au format 1\'45.' : 'FTP attendue en watts, par exemple 250.');
+      return;
+    }
+    this.coach.updateAthleteReferences(this.id(), { [kind]: parsed }).subscribe({
+      next: () => {
+        this.editingRef.set(null);
+        this.refError.set('');
+        this.fiche.reload(true);
+      },
+      error: (err: unknown) => this.refError.set(err instanceof ApiError ? err.message : 'Enregistrement impossible.'),
     });
   }
 

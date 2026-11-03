@@ -72,6 +72,7 @@ exports.getPlannedRunById = async (req, res) => {
       _id: req.params.id,
       user: req.user._id
     }).populate('linkedRun')
+      .populate('linkedOtherActivity')
       .populate('strengthPlan.exercises.exercise', 'name slug imageUrl primaryMuscle')
       .populate('strengthPlan.circuit.exercises.exercise', 'name slug imageUrl primaryMuscle')
       .populate('strengthPlan.superset.pairs.a.exercise', 'name slug imageUrl primaryMuscle')

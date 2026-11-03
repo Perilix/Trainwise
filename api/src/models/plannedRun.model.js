@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { sportBlockSchema } = require('./sportBlock.schema');
 
 // Champs d'une étape running (réutilisés pour les blocs de 1er niveau ET les
 // enfants d'un bloc « Répéter » multi-étapes via `children`).
@@ -159,6 +160,16 @@ const plannedRunSchema = new mongoose.Schema({
     // Si non vide, le bloc est un groupe : ces étapes sont répétées `repetitions` fois.
     children: { type: [runBlockStepFields], default: undefined }
   }],
+
+  // Vélo / natation : blocs structurés (intensité relative, voir sportBlock.schema.js)
+  sportBlocks: { type: [sportBlockSchema], default: undefined },
+  pool: { type: String, enum: ['25', '50', 'open', null], default: null },
+  // Références de l'athlète figées à l'assignation : les watts et les allures affichés
+  // ne bougent pas si sa FTP ou sa CSS change après coup.
+  reference: {
+    ftp: { type: Number, default: null }, // watts
+    css: { type: Number, default: null }  // secondes / 100 m
+  },
 
   // Référence vers le template d'origine (si la séance a été créée depuis la bibliothèque)
   templateRef: {

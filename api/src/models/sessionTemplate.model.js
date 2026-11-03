@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { ZONE_KEYS } = require('../constants/paceZones');
+const { sportBlockSchema } = require('./sportBlock.schema');
 
 const paceConfigSchema = new mongoose.Schema({
   mode: {
@@ -97,14 +98,16 @@ const sessionTemplateSchema = new mongoose.Schema({
   description: { type: String, trim: true },
   sport: {
     type: String,
-    enum: ['running', 'strength'],
+    enum: ['running', 'strength', 'bike', 'swim'],
     required: true
   },
   sessionType: {
     type: String,
     enum: [
       'endurance', 'fractionne', 'tempo', 'recuperation', 'sortie_longue', 'cotes', 'fartlek',
-      'upper_body', 'lower_body', 'full_body', 'push', 'pull', 'legs', 'core', 'hiit'
+      'upper_body', 'lower_body', 'full_body', 'push', 'pull', 'legs', 'core', 'hiit',
+      // Vélo et natation : un seul type chacun, le nom de la séance dit le reste
+      'bike', 'swim'
     ],
     required: true
   },
@@ -123,6 +126,10 @@ const sessionTemplateSchema = new mongoose.Schema({
   cooldown: { type: String, trim: true },
 
   runBlocks: { type: [templateRunBlockSchema], default: [] },
+  // Vélo / natation : blocs en % FTP ou % CSS, résolus pour chaque athlète à l'affichage.
+  sportBlocks: { type: [sportBlockSchema], default: [] },
+  // Natation : bassin de 25 m, 50 m ou eau libre.
+  pool: { type: String, enum: ['25', '50', 'open', null], default: null },
   strengthPlan: { type: strengthPlanSchema, default: null },
 
   coach: {

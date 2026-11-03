@@ -20,13 +20,14 @@ type Props = {
 // Ligne de séance type : nom, résumé et profil d'intensité.
 export function TemplateItem({ row, divided, profileWidth, action, onPress }: Props) {
   const { colors } = useTheme();
-  const running = row.sport === 'running';
+  const tinted = row.sport !== 'strength';
+  const icon = ({ running: 'route', strength: 'dumbbell', bike: 'bike', swim: 'swim' } as const)[row.sport];
 
   const content = (
     <>
       <View style={styles.top}>
-        <View style={[styles.tile, { backgroundColor: running ? colors.accentSoft : colors.subtle }]}>
-          <Icon name={running ? 'route' : 'dumbbell'} size={18} color={running ? colors.accentInk : colors.primary} />
+        <View style={[styles.tile, { backgroundColor: tinted ? colors.accentSoft : colors.subtle }]}>
+          <Icon name={icon} size={18} color={tinted ? colors.accentInk : colors.primary} />
         </View>
         <View style={styles.text}>
           <Text variant="h3" numberOfLines={1}>

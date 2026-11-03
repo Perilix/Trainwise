@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react';
-import { Platform, StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
+import { Platform, StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle, type TextInputInstance } from 'react-native';
 
 import { useTheme } from '@/theme/theme-provider';
 import { radius } from '@/theme/tokens';
@@ -19,7 +19,7 @@ type Props = TextInputProps & {
 export function Field({ label, icon, trailing, containerStyle, style, onFocus, onBlur, ...input }: Props) {
   const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<TextInputInstance>(null);
   const bringIntoView = useBringIntoView();
 
   return (

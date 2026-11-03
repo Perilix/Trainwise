@@ -1,5 +1,5 @@
 import { createContext, useContext, useRef, type RefObject } from 'react';
-import { findNodeHandle, type ScrollView, type TextInput } from 'react-native';
+import { findNodeHandle, type ScrollViewInstance, type TextInputInstance } from 'react-native';
 
 /**
  * La zone de défilement de l'écran courant.
@@ -8,7 +8,7 @@ import { findNodeHandle, type ScrollView, type TextInput } from 'react-native';
  * champ que l'on vient de toucher. Les champs s'annoncent donc à leur écran,
  * qui les amène au-dessus du clavier.
  */
-const ScrollContext = createContext<RefObject<ScrollView | null> | null>(null);
+const ScrollContext = createContext<RefObject<ScrollViewInstance | null> | null>(null);
 
 export const KeyboardScrollProvider = ScrollContext.Provider;
 
@@ -19,10 +19,10 @@ const BREATHING_ROOM = 24;
 export function useBringIntoView() {
   const scroll = useContext(ScrollContext);
 
-  return (input: TextInput | null) => {
+  return (input: TextInputInstance | null) => {
     if (!scroll?.current || !input) return;
     const node = findNodeHandle(input);
-    if (node === null) return;
+    if (node == null) return;
     // API de la zone de défilement : elle connaît la position du clavier.
     const responder = scroll.current as unknown as {
       scrollResponderScrollNativeHandleToKeyboard?: (node: number, offset: number, preventNegative: boolean) => void;
@@ -33,5 +33,5 @@ export function useBringIntoView() {
 
 /** Référence de zone de défilement, à poser sur la `ScrollView` d'un écran. */
 export function useScrollRef() {
-  return useRef<ScrollView | null>(null);
+  return useRef<ScrollViewInstance | null>(null);
 }

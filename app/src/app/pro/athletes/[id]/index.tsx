@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Avatar, avatarToneFor, BackBar, Button, Card, Chip, Field, FormError, Icon, IconButton, Screen, Section, Stat, StateView, Text } from '@/components/ui';
+import { formatSwimPace, parseSwimPace } from '@/features/athlete/sport-blocks';
 import { useAthleteFiche, useCoachActions } from '@/features/coach/queries';
 import { ATHLETE_STATUS_STYLE } from '@/features/coach/status';
 import type { AthleteFiche } from '@/features/coach/types';
@@ -19,13 +20,18 @@ export default function AthleteFicheScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { data: fiche, loading, error, refetch } = useAthleteFiche(id);
-  const { updateAthleteVma, removeAthlete } = useCoachActions();
+  const { updateAthleteVma, updateAthleteReferences, removeAthlete } = useCoachActions();
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [removeError, setRemoveError] = useState<string | null>(null);
   const [vmaDraft, setVmaDraft] = useState<string | null>(null);
   const [vmaError, setVmaError] = useState<string | null>(null);
   const [savingVma, setSavingVma] = useState(false);
+  // FTP (vélo, watts) ou CSS (natation, allure seuil) en cours de saisie.
+  const [refEditing, setRefEditing] = useState<'ftp' | 'css' | null>(null);
+  const [refDraft, setRefDraft] = useState('');
+  const [refError, setRefError] = useState<string | null>(null);
+  const [savingRef, setSavingRef] = useState(false);
 
   if (!fiche) {
     return (
@@ -69,6 +75,34 @@ export default function AthleteFicheScreen() {
     } catch (reason) {
       setRemoveError(reason instanceof Error ? reason.message : 'Retrait impossible.');
       setRemoving(false);
+    }
+  };
+
+  const startRef = (kind: 'ftp' | 'css') => {
+    setRefError(null);
+    setRefDraft(kind === 'ftp' ? (physical.ftp ? String(physical.ftp) : '') : physical.css ? formatSwimPace(physical.css) : '');
+    setRefEditing(kind);
+  };
+
+  const saveRef = async () => {
+    if (!refEditing) return;
+    const draft = refDraft.trim();
+    const value = !draft ? null : refEditing === 'css' ? (parseSwimPace(draft) ?? NaN) : (parseDecimal(draft) ?? NaN);
+    if (value !== null && (!Number.isFinite(value) || (refEditing === 'ftp' ? value < 50 || value > 600 : value < 50 || value > 300))) {
+      setRefError(refEditing === 'ftp' ? 'La FTP doit être comprise entre 50 et 600 W.' : 'Allure attendue au format 1’45 (entre 0’50 et 5’00).');
+      return;
+    }
+    setSavingRef(true);
+    setRefError(null);
+    try {
+      await updateAthleteReferences(fiche.id, { [refEditing]: value });
+      setRefEditing(null);
+      emitAppEvent('athletes:changed');
+      refetch();
+    } catch (reason) {
+      setRefError(reason instanceof Error ? reason.message : 'Modification impossible.');
+    } finally {
+      setSavingRef(false);
     }
   };
 
@@ -175,7 +209,39 @@ export default function AthleteFicheScreen() {
               </View>
             </View>
             <Fact label="FCmax" value={physical.fcMax ? `${physical.fcMax} bpm` : '—'} />
+            <View style={styles.half}>
+              <Text variant="caption">FTP vélo</Text>
+              <View style={styles.inline}>
+                <Text variant="h3" tabular>
+                  {physical.ftp ? `${physical.ftp} W` : 'Non définie'}
+                </Text>
+                {refEditing === null ? <IconButton icon="pen" size={32} color={colors.accentInk} accessibilityLabel="Modifier la FTP" onPress={() => startRef('ftp')} /> : null}
+              </View>
+            </View>
+            <View style={styles.half}>
+              <Text variant="caption">CSS natation</Text>
+              <View style={styles.inline}>
+                <Text variant="h3" tabular>
+                  {physical.css ? `${formatSwimPace(physical.css)} /100 m` : 'Non définie'}
+                </Text>
+                {refEditing === null ? <IconButton icon="pen" size={32} color={colors.accentInk} accessibilityLabel="Modifier la CSS" onPress={() => startRef('css')} /> : null}
+              </View>
+            </View>
           </View>
+          {refEditing !== null ? (
+            <View style={[styles.vmaEditor, { borderTopColor: colors.border }]}>
+              {refEditing === 'ftp' ? (
+                <Field label="FTP (watts)" keyboardType="number-pad" placeholder="250" value={refDraft} onChangeText={setRefDraft} autoFocus />
+              ) : (
+                <Field label="CSS (allure seuil /100 m)" keyboardType="numbers-and-punctuation" placeholder="1'45" value={refDraft} onChangeText={setRefDraft} autoFocus />
+              )}
+              <FormError message={refError} />
+              <View style={styles.actions}>
+                <Button label="Annuler" variant="secondary" onPress={() => setRefEditing(null)} style={styles.flex} />
+                <Button label={savingRef ? 'Enregistrement…' : 'Enregistrer'} disabled={savingRef} onPress={saveRef} style={styles.flex} />
+              </View>
+            </View>
+          ) : null}
           {vmaDraft !== null ? (
             <View style={[styles.vmaEditor, { borderTopColor: colors.border }]}>
               <Field label="VMA (km/h)" keyboardType="decimal-pad" placeholder="17,0" value={vmaDraft} onChangeText={setVmaDraft} autoFocus />

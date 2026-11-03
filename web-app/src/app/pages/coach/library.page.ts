@@ -2,12 +2,24 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } 
 import { Router } from '@angular/router';
 
 import { ApiError } from '../../core/api.service';
-import type { ApiSessionTemplate } from '../../core/api-types';
+import type { ApiSessionTemplate, ApiSportReference, ApiSportStep } from '../../core/api-types';
 import { formatDayLong, formatDecimal, formatHoursMinutes, formatPace, toIsoDay } from '../../core/format';
 import { load } from '../../core/load';
 import { CoachService } from '../../data/coach.service';
 import { SESSION_TYPE_LABELS } from '../../domain/athlete.mappers';
 import { paceFor, totals } from '../../domain/sessions';
+import type { RunStepView } from '../../domain/athlete.types';
+import { formatDuration } from '../../domain/sessions';
+import {
+  POOL_LABELS,
+  formatMeters,
+  formatSwimPace,
+  relativeIntensity,
+  resolvedTarget,
+  sessionEquipment,
+  sportTotals,
+  targetLabel,
+} from '../../domain/sport-blocks';
 import { groupTemplates, mainPercent, templateCopyPayload, templateToDetail } from '../../domain/templates';
 import { AvatarComponent } from '../../ui/avatar.component';
 import { IconComponent } from '../../ui/icon.component';
@@ -73,7 +85,7 @@ import { ToastService } from '../../core/toast.service';
                 <button type="button" class="item" [class.on]="row.id === selectedId()" (click)="selectedId.set(row.id)">
                   <div class="item-head">
                     <span class="tile" [class.strength]="row.sport === 'strength'">
-                      <tw-icon [name]="row.sport === 'strength' ? 'dumbbell' : 'run'" [size]="18" />
+                      <tw-icon [name]="sportIcon(row.sport)" [size]="18" />
                     </span>
                     <div class="stack grow">
                       <span class="h3 truncate">{{ row.name }}</span>
@@ -99,10 +111,14 @@ import { ToastService } from '../../core/toast.service';
                   <div class="stack min">
                     <div class="tags">
                       <span class="chip chip-accent">
-                        <tw-icon [name]="template.sport === 'strength' ? 'dumbbell' : 'run'" [size]="13" [strokeWidth]="2" />
-                        {{ template.sport === 'strength' ? 'Muscu' : 'Course' }}
+                        <tw-icon [name]="sportIcon(template.sport)" [size]="13" [strokeWidth]="2" />
+                        {{ sportLabel(template.sport) }}
                       </span>
-                      <span class="chip">{{ typeLabel(template.sessionType) }}</span>
+                      @if (template.sport === 'swim' && template.pool) {
+                        <span class="chip">Bassin {{ poolLabel(template.pool) }}</span>
+                      } @else if (template.sport !== 'bike' && template.sport !== 'swim') {
+                        <span class="chip">{{ typeLabel(template.sessionType) }}</span>
+                      }
                       <span class="caption muted">{{ usageLabel(template) }}</span>
                     </div>
                     <h2 class="h1">{{ template.name }}</h2>
@@ -132,13 +148,20 @@ import { ToastService } from '../../core/toast.service';
 
                 <div class="summary">
                   <div class="summary-stats">
-                    <div class="stat"><span class="caption muted">Distance</span><span class="value num">{{ detail().distance }}</span></div>
+                    @if (template.sport !== 'bike') {
+                      <div class="stat"><span class="caption muted">{{ template.sport === 'swim' ? 'Volume' : 'Distance' }}</span><span class="value num">{{ detail().distance }}</span></div>
+                    }
                     <div class="stat"><span class="caption muted">Durée</span><span class="value num">{{ detail().duration }}</span></div>
+                    @if (detail().gear) {
+                      <div class="stat"><span class="caption muted">Matériel</span><span class="value">{{ detail().gear }}</span></div>
+                    }
                     @if (detail().main) {
                       <div class="stat"><span class="caption muted">Répétitions</span><span class="value">{{ detail().main }}</span></div>
                     }
                   </div>
-                  @if (referenceVma()) {
+                  @if (template.sport === 'bike' || template.sport === 'swim') {
+                    <span class="caption muted">{{ referenceCaption(template.sport) }}</span>
+                  } @else if (referenceVma()) {
                     <span class="caption muted">Aperçu pour VMA {{ dec(referenceVma()!) }}</span>
                   }
                 </div>
@@ -147,7 +170,7 @@ import { ToastService } from '../../core/toast.service';
                   <div class="profile">
                     <tw-workout-profile [segments]="detail().segments" [width]="700" [height]="72" />
                   </div>
-                  <tw-intensity-legend />
+                  <tw-intensity-legend [sport]="template.sport" />
                 }
               </div>
 
@@ -168,7 +191,7 @@ import { ToastService } from '../../core/toast.service';
                             <span class="swatch" [style.background]="shade(step.pct)"></span>
                             <div class="stack">
                               <span class="h3">{{ step.label }}</span>
-                              <span class="small muted">{{ step.paceLabel || step.note || '' }}</span>
+                              <span class="small muted">{{ stepDetail(step) }}</span>
                             </div>
                           </div>
                         }
@@ -183,6 +206,31 @@ import { ToastService } from '../../core/toast.service';
                       </div>
                     }
                   </div>
+                </div>
+              }
+
+              @if ((template.sport === 'bike' || template.sport === 'swim') && enduranceTargets().length) {
+                <div class="card card-pad">
+                  <div class="spread">
+                    <span class="h2">{{ template.sport === 'bike' ? 'Puissances individualisées' : 'Allures individualisées' }}</span>
+                    <span class="caption muted">{{ enduranceStepLabel() }} · {{ template.sport === 'bike' ? 'depuis la FTP' : 'depuis la CSS' }}</span>
+                  </div>
+                  <div class="paces">
+                    <span class="overline muted-3">Athlète</span>
+                    <span class="overline muted-3">{{ template.sport === 'bike' ? 'FTP' : 'CSS' }}</span>
+                    <span class="overline muted-3">{{ template.sport === 'bike' ? 'Puissance' : 'Allure' }}</span>
+                    <span class="overline muted-3">{{ template.sport === 'bike' ? 'Récup' : 'Départ' }}</span>
+                    @for (row of enduranceTargets(); track row.id) {
+                      <span class="cell who">
+                        <tw-avatar [initials]="row.initials" tone="accent" [size]="26" />
+                        <span class="truncate">{{ row.name }}</span>
+                      </span>
+                      <span class="cell num" [class.muted]="!row.known">{{ row.reference }}</span>
+                      <span class="cell num">{{ row.value }}</span>
+                      <span class="cell num muted">{{ row.recovery }}</span>
+                    }
+                  </div>
+                  <span class="caption muted mt-sm">La FTP et la CSS se renseignent sur la fiche de chaque athlète.</span>
                 </div>
               }
 
@@ -649,12 +697,14 @@ export class CoachLibraryPage {
     { value: 'all', label: 'Tous' },
     { value: 'running', label: 'Course' },
     { value: 'strength', label: 'Muscu' },
+    { value: 'bike', label: 'Vélo' },
+    { value: 'swim', label: 'Natation' },
   ] as const;
 
   readonly templates = load(() => this.coach.templates$());
   readonly athletes = load(() => this.coach.athletes$());
 
-  readonly sport = signal<'all' | 'running' | 'strength'>('all');
+  readonly sport = signal<'all' | ApiSessionTemplate['sport']>('all');
   readonly search = signal('');
   readonly selectedId = signal<string | null>(null);
 
@@ -705,9 +755,28 @@ export class CoachLibraryPage {
 
   readonly selected = computed(() => this.matching().find((template) => template._id === this.selectedId()) ?? null);
 
+  /** FTP et CSS d'aperçu : celles du premier athlète qui les a renseignées. */
+  readonly sportReference = computed<ApiSportReference>(() => {
+    const athletes = this.athletes.data() ?? [];
+    return { ftp: athletes.find((athlete) => athlete.ftp)?.ftp ?? null, css: athletes.find((athlete) => athlete.css)?.css ?? null };
+  });
+
   readonly detail = computed(() => {
     const template = this.selected();
-    if (!template) return { distance: '—', duration: '—', main: '', segments: [], blocks: [] };
+    if (!template) return { distance: '—', duration: '—', main: '', gear: '', segments: [], blocks: [] };
+    if (template.sport === 'bike' || template.sport === 'swim') {
+      const reference = this.sportReference();
+      const view = templateToDetail(template, reference);
+      const estimate = sportTotals(template.sportBlocks, template.sport, reference);
+      return {
+        distance: estimate.meters ? formatMeters(estimate.meters) : '—',
+        duration: estimate.seconds ? `≈ ${formatHoursMinutes(estimate.seconds)}` : '—',
+        main: '',
+        gear: sessionEquipment(template.sportBlocks).join(', '),
+        segments: view.segments,
+        blocks: view.blocks,
+      };
+    }
     const view = templateToDetail(template);
     const total = totals(view.segments);
     const km = template.targetDistance ?? (total.dist ? total.dist / 1000 : undefined);
@@ -716,6 +785,7 @@ export class CoachLibraryPage {
       distance: km ? `≈ ${formatDecimal(km, 1)} km` : '—',
       duration: minutes ? `≈ ${formatHoursMinutes(minutes * 60)}` : '—',
       main: mainPercent(template)?.label ?? '',
+      gear: '',
       segments: view.segments,
       blocks: view.blocks,
     };
@@ -724,6 +794,64 @@ export class CoachLibraryPage {
   readonly percentInfo = computed(() => {
     const template = this.selected();
     return template ? mainPercent(template) : undefined;
+  });
+
+  /** Étape la plus intense du corps de séance, chiffrée pour chaque athlète. */
+  private readonly enduranceMain = computed(() => {
+    const template = this.selected();
+    if (!template || (template.sport !== 'bike' && template.sport !== 'swim')) return null;
+    const sport = template.sport;
+    let best: ApiSportStep | null = null;
+    let bestValue = -1;
+    for (const block of template.sportBlocks ?? []) {
+      if (block.role !== 'main') continue;
+      for (const step of block.children?.length ? block.children : [block]) {
+        const value = relativeIntensity(step, sport) ?? 0;
+        if (value > bestValue) {
+          best = step;
+          bestValue = value;
+        }
+      }
+    }
+    return best ? { step: best, sport } : null;
+  });
+
+  readonly enduranceStepLabel = computed(() => {
+    const main = this.enduranceMain();
+    if (!main) return '';
+    const { step, sport } = main;
+    const volume = sport === 'bike' ? (step.duration ? formatDuration(step.duration) : '') : step.distance ? formatMeters(step.distance) : '';
+    return [volume, targetLabel(step)].filter(Boolean).join(' à ');
+  });
+
+  readonly enduranceTargets = computed(() => {
+    const main = this.enduranceMain();
+    if (!main) return [];
+    const { step, sport } = main;
+    return (this.athletes.data() ?? []).map((athlete) => {
+      const known = sport === 'bike' ? athlete.ftp : athlete.css;
+      const reference = sport === 'bike' ? { ftp: known } : { css: known };
+      const recovery = !known
+        ? '—'
+        : sport === 'bike'
+          ? step.recoveryIntensity
+            ? `${Math.round((known * step.recoveryIntensity) / 100)} W`
+            : '—'
+          : step.recoveryMode === 'sendoff' && step.recoverySeconds
+            ? formatSwimPace(step.recoverySeconds)
+            : step.recoveryMode === 'rest' && step.recoverySeconds
+              ? `${step.recoverySeconds} s de repos`
+              : '—';
+      return {
+        id: athlete.id,
+        initials: athlete.initials,
+        name: athlete.name,
+        known: Boolean(known),
+        reference: known ? (sport === 'bike' ? `${known} W` : `${formatSwimPace(known)} /100 m`) : sport === 'bike' ? 'FTP manquante' : 'CSS manquante',
+        value: known ? (resolvedTarget(step, reference) ?? targetLabel(step) ?? '—') : '—',
+        recovery,
+      };
+    });
   });
 
   readonly referenceVma = computed(() => this.athletes.data()?.find((athlete) => athlete.vma)?.vma);
@@ -756,6 +884,28 @@ export class CoachLibraryPage {
     });
   }
 
+  sportIcon(sport: ApiSessionTemplate['sport']) {
+    return { running: 'run', strength: 'dumbbell', bike: 'bike', swim: 'swim' }[sport];
+  }
+
+  sportLabel(sport: ApiSessionTemplate['sport']) {
+    return { running: 'Course', strength: 'Muscu', bike: 'Vélo', swim: 'Natation' }[sport];
+  }
+
+  poolLabel(pool: string) {
+    return POOL_LABELS[pool] ?? pool;
+  }
+
+  referenceCaption(sport: 'bike' | 'swim') {
+    const reference = this.sportReference();
+    if (sport === 'bike') return reference.ftp ? `Aperçu pour FTP ${reference.ftp} W` : 'Cibles en % FTP';
+    return reference.css ? `Aperçu pour CSS ${formatSwimPace(reference.css)} /100 m` : 'Cibles en % CSS';
+  }
+
+  stepDetail(step: RunStepView) {
+    return [step.paceLabel, step.recoveryLabel, step.note].filter(Boolean).join(' · ');
+  }
+
   typeLabel(sessionType: string) {
     return SESSION_TYPE_LABELS[sessionType] ?? sessionType;
   }
@@ -778,12 +928,18 @@ export class CoachLibraryPage {
     return formatDecimal(value, 1);
   }
 
+  /** Le bouton ouvre l'éditeur du sport filtré. */
   newTemplate() {
-    void this.router.navigate(['/coach/bibliotheque/editeur']);
+    void this.router.navigate(['/coach/bibliotheque', this.editorPath(this.sport())]);
   }
 
   edit(id: string) {
-    void this.router.navigate(['/coach/bibliotheque/editeur', id]);
+    const template = this.templates.data()?.find((item) => item._id === id);
+    void this.router.navigate(['/coach/bibliotheque', this.editorPath(template?.sport ?? 'running'), id]);
+  }
+
+  private editorPath(sport: 'all' | ApiSessionTemplate['sport']) {
+    return { all: 'editeur', running: 'editeur', strength: 'muscu', bike: 'velo', swim: 'natation' }[sport];
   }
 
   duplicate(template: ApiSessionTemplate) {

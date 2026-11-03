@@ -30,7 +30,7 @@ const byName = (list: ApiExercise[]) => [...list].sort((a, b) => a.name.localeCo
 export function useExerciseLibrary() {
   return useSessionQuery(
     'exercises:library',
-    async () => byName(await api<ApiExercise[]>('/api/exercises', { query: { limit: 500 } })),
+    async () => byName(await api<ApiExercise[]>('/api/exercises', { query: { limit: 1000 } })),
     () => byName(sampleExercises),
   );
 }

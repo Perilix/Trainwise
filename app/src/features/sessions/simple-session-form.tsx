@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View, type TextInputInstance } from 'react-native';
 
 import { Button, Card, ChoicePill, Field, FormError, Section, Segmented, Text } from '@/components/ui';
 import { useBringIntoView } from '@/components/ui/keyboard-scroll';
@@ -30,6 +30,8 @@ export const SESSION_TYPES: Record<Sport, readonly (readonly [string, string])[]
     ['core', 'Gainage'],
     ['hiit', 'HIIT'],
   ],
+  bike: [['bike', 'Vélo']],
+  swim: [['swim', 'Natation']],
 };
 
 const PACE_PATTERN = /^\d{1,2}:[0-5]\d$/;
@@ -46,7 +48,7 @@ type Props = {
 /** Séance simple (type, objectifs, consignes), sans blocs : ajout par l'athlète ou le coach. */
 export function SimpleSessionForm({ date, submitLabel, withExpectedFeeling, onSubmit }: Props) {
   const { colors } = useTheme();
-  const areaRef = useRef<TextInput>(null);
+  const areaRef = useRef<TextInputInstance>(null);
   const bringIntoView = useBringIntoView();
   const [activity, setActivity] = useState<Sport>('running');
   const [sessionType, setSessionType] = useState('endurance');

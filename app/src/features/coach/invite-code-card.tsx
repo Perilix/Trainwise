@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Share, StyleSheet, TextInput, View } from 'react-native';
+import { Share, StyleSheet, TextInput, View, type TextInputInstance } from 'react-native';
 
 import { Button, Card, Chip, Icon, Text } from '@/components/ui';
 import { useBringIntoView } from '@/components/ui/keyboard-scroll';
@@ -24,7 +24,7 @@ type Availability = { code: string; available: boolean; error?: string };
  */
 export function InviteCodeCard({ code, onChanged }: Props) {
   const { colors } = useTheme();
-  const areaRef = useRef<TextInput>(null);
+  const areaRef = useRef<TextInputInstance>(null);
   const bringIntoView = useBringIntoView();
   const { generateInviteCode, checkInviteCode, setInviteCode } = useCoachActions();
 

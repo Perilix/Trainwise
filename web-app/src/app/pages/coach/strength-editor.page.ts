@@ -3,10 +3,13 @@ import { Location } from '@angular/common';
 import { Router } from '@angular/router';
 import { of } from 'rxjs';
 
+import { ApiError } from '../../core/api.service';
 import type { ApiExercise, ApiExerciseRef, ApiSessionTemplate } from '../../core/api-types';
+import { AuthService } from '../../core/auth.service';
 import { load } from '../../core/load';
 import { CoachService } from '../../data/coach.service';
 import { SESSION_TYPE_LABELS } from '../../domain/athlete.mappers';
+import { isMine } from '../../domain/exercises';
 import { MUSCLE_LABELS } from '../../domain/session-detail';
 import {
   emptyStrengthPlan,
@@ -281,11 +284,25 @@ const STRENGTH_TYPES = ['upper_body', 'lower_body', 'full_body', 'push', 'pull',
                     <span class="h3 truncate">{{ exercise.name }}</span>
                     <span class="caption muted">{{ muscleLabel(exercise.primaryMuscle) }}</span>
                   </span>
+                  @if (mine(exercise)) {
+                    <span class="chip chip-accent">Perso</span>
+                  }
                 </button>
               } @empty {
-                <tw-state kind="empty" icon="dumbbell" message="Aucun exercice." />
+                @if (!canCreate()) {
+                  <tw-state kind="empty" icon="dumbbell" message="Aucun exercice." />
+                }
               }
             </div>
+            @if (canCreate()) {
+              <button type="button" class="create" [disabled]="creating()" (click)="createAndChoose()">
+                <tw-icon name="plus" [size]="16" [strokeWidth]="2" />
+                {{ creating() ? 'Création…' : 'Créer « ' + exerciseSearch().trim() + ' » dans mes exercices' }}
+              </button>
+              @if (createError()) {
+                <p class="small create-err">{{ createError() }}</p>
+              }
+            }
           </div>
         </div>
       }
@@ -645,11 +662,36 @@ const STRENGTH_TYPES = ['upper_body', 'lower_body', 'full_body', 'push', 'pull',
       .pick:hover {
         background: var(--bg);
       }
+
+      .create {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        height: 42px;
+        margin-top: 10px;
+        border-radius: var(--r-md);
+        border: 1px dashed var(--border-strong);
+        color: var(--accent-ink);
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .create:hover {
+        background: var(--accent-soft);
+      }
+
+      .create-err {
+        color: var(--danger);
+        margin-top: 8px;
+      }
     `,
   ],
 })
 export class CoachStrengthEditorPage {
   private readonly coach = inject(CoachService);
+  private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly location = inject(Location);
 
@@ -682,8 +724,20 @@ export class CoachStrengthEditorPage {
   readonly pickable = computed(() => {
     const term = this.exerciseSearch().trim().toLowerCase();
     const all = this.exercises.data() ?? [];
-    return (term ? all.filter((exercise) => exercise.name.toLowerCase().includes(term)) : all).slice(0, 60);
+    const found = term ? all.filter((exercise) => exercise.name.toLowerCase().includes(term)) : all;
+    // Les exercices du coach d'abord : ce sont ceux qu'il a créés pour ses séances.
+    return [...found].sort((a, b) => Number(this.mine(b)) - Number(this.mine(a))).slice(0, 60);
   });
+
+  /** Le nom tapé ne correspond à aucun exercice : le coach peut le créer sur place. */
+  readonly canCreate = computed(() => {
+    const term = this.exerciseSearch().trim().toLowerCase();
+    if (term.length < 3 || !this.exercises.data()) return false;
+    return !(this.exercises.data() ?? []).some((exercise) => exercise.name.trim().toLowerCase() === term);
+  });
+
+  readonly creating = signal(false);
+  readonly createError = signal('');
 
   constructor() {
     effect(() => {
@@ -785,7 +839,30 @@ export class CoachStrengthEditorPage {
 
   // ---- Choix d'exercice ----
 
+  mine(exercise: ApiExercise) {
+    return isMine(exercise, this.auth.user()?.id);
+  }
+
+  createAndChoose() {
+    const name = this.exerciseSearch().trim();
+    if (!name) return;
+    this.creating.set(true);
+    this.createError.set('');
+    this.coach.createExercise({ name, equipment: 'other' }).subscribe({
+      next: (exercise) => {
+        this.creating.set(false);
+        this.exercises.set([...(this.exercises.data() ?? []), exercise]);
+        this.choose(exercise);
+      },
+      error: (err: unknown) => {
+        this.creating.set(false);
+        this.createError.set(err instanceof ApiError ? err.message : 'Création impossible.');
+      },
+    });
+  }
+
   openPicker(slot: ExerciseSlot, pairKey?: string, side?: 'a' | 'b') {
+    this.createError.set('');
     this.exerciseSearch.set('');
     this.picker.set({ slot, pairKey, side });
   }

@@ -3,8 +3,9 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { BackBar, Button, Card, Chip, Icon, Screen, Section, SectionHeader, Stat, Text } from '@/components/ui';
+import { isOtherSport, otherActivityMeta, otherSessionMeta, otherSportIcon, SPORT_LABELS, sportIcon } from '@/features/athlete/other-sports';
 import { SESSION_STATUS_CHIP } from '@/features/athlete/session-status';
-import type { Activity, PlannedSession } from '@/features/athlete/types';
+import type { Activity, OtherActivity, PlannedSession } from '@/features/athlete/types';
 import { useAthletePlanning } from '@/features/coach/queries';
 import { MonthCalendar } from '@/features/planning/month-calendar';
 import { onAppEvent } from '@/lib/app-events';
@@ -36,6 +37,7 @@ export default function CoachAthletePlanningScreen() {
 
   const sessions = data?.sessionsByDay[selected] ?? [];
   const activities = data?.activitiesByDay[selected] ?? [];
+  const others = data?.othersByDay[selected] ?? [];
   const firstName = name?.split(' ')[0];
 
   return (
@@ -65,9 +67,9 @@ export default function CoachAthletePlanningScreen() {
                 <Text variant="h2">{formatDayLong(selected)}</Text>
                 {selected === today ? <Text variant="small">Aujourd’hui</Text> : null}
               </View>
-              <Button label="Ajouter" icon="plus" size="sm" onPress={() => router.push({ pathname: '/pro/athletes/[id]/ajouter', params: { id, date: selected } })} />
+              <Button label="Ajouter" icon="plus" size="sm" onPress={() => router.push({ pathname: '/pro/athletes/[id]/ajouter', params: { id, date: selected, name: firstName } })} />
             </View>
-            {sessions.length || activities.length ? (
+            {sessions.length || activities.length || others.length ? (
               <View style={styles.list}>
                 {sessions.map((session) => (
                   <SessionItem key={session.id} session={session} onPress={() => router.push({ pathname: '/pro/athletes/[id]/seance/[planId]', params: { id, planId: session.id } })} />
@@ -82,6 +84,9 @@ export default function CoachAthletePlanningScreen() {
                         : router.push({ pathname: '/pro/athletes/[id]/muscu/[sessionId]', params: { id, sessionId: activity.id } })
                     }
                   />
+                ))}
+                {others.map((other) => (
+                  <OtherItem key={other.id} activity={other} />
                 ))}
               </View>
             ) : (
@@ -110,7 +115,9 @@ function SessionItem({ session, onPress }: { session: PlannedSession; onPress: (
   const byCoach = session.plannedBy === 'coach';
   const status = SESSION_STATUS_CHIP[session.status];
   const meta =
-    session.sport === 'running'
+    isOtherSport(session.sport)
+      ? [otherSessionMeta(session)]
+      : session.sport === 'running'
       ? [
           session.distanceKm ? `${formatDecimal(session.distanceKm, session.distanceKm % 1 ? 1 : 0)} km` : null,
           session.durationMin ? formatHoursMinutes(session.durationMin * 60) : null,
@@ -125,6 +132,7 @@ function SessionItem({ session, onPress }: { session: PlannedSession; onPress: (
           <View style={styles.chips}>
             <Chip label={byCoach ? 'Par vous' : 'Par l’athlète'} tone={byCoach ? 'violet' : 'neutral'} icon={byCoach ? 'user' : 'pen'} />
             <Chip label={status.label} tone={status.tone} icon={status.icon} />
+            {isOtherSport(session.sport) ? <Chip label={SPORT_LABELS[session.sport]} tone="accent" icon={sportIcon(session.sport)} /> : null}
           </View>
           <Text variant="h3" style={styles.itemTitle}>
             {session.title}
@@ -171,6 +179,34 @@ function ActivityItem({ activity, onPress }: { activity: Activity; onPress: () =
   );
 }
 
+/** Vélo, natation… importé de Strava : pas de page de détail, la carte suffit. */
+function OtherItem({ activity }: { activity: OtherActivity }) {
+  const { colors } = useTheme();
+  return (
+    <Card accessibilityLabel={`${activity.title}, ${activity.sportLabel}, importée de Strava`}>
+      <View style={styles.itemRow}>
+        <View style={[styles.tile, { backgroundColor: colors.accentSoft }]}>
+          <Icon name={otherSportIcon(activity.family)} size={20} color={colors.accentInk} />
+        </View>
+        <View style={styles.flex}>
+          <Text variant="h3" numberOfLines={1}>
+            {activity.title}
+          </Text>
+          <Text variant="small" tabular numberOfLines={1}>
+            {otherActivityMeta(activity) || activity.sportLabel}
+          </Text>
+        </View>
+        <Chip label="Strava" tone="strava" badge />
+      </View>
+      {activity.description ? (
+        <Text variant="body2" style={styles.otherDesc}>
+          {activity.description}
+        </Text>
+      ) : null}
+    </Card>
+  );
+}
+
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   tight: { paddingBottom: 16 },
@@ -182,4 +218,5 @@ const styles = StyleSheet.create({
   tile: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   activityEnd: { alignItems: 'flex-end', gap: 4 },
   monthStats: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  otherDesc: { marginTop: 10 },
 });

@@ -2,7 +2,9 @@
 import type { ApiPlanExercise, ApiPlannedRunDetail } from '@/lib/api-types';
 
 import { mapPlanned } from './mappers';
+import { mapOtherActivity } from './other-sports';
 import { blocksToSegments, describeBlocks } from './run-blocks';
+import { describeSportBlocks, sportSegments, type EnduranceSport } from './sport-blocks';
 import type { ExerciseBlockRef, PlanExercise, PlannedSessionDetail, StrengthPlanView } from './types';
 
 export const MUSCLE_LABELS: Record<string, string> = {
@@ -71,20 +73,27 @@ export function mapPlannedDetail(raw: ApiPlannedRunDetail, vma?: number, coachNa
   // Les totaux manquants sont estimés depuis les blocs par `mapPlanned`.
   const base = mapPlanned(raw, coachName, vma);
   const running = raw.activityType === 'running';
-  const segments = running ? blocksToSegments(raw.runBlocks ?? [], vma) : [];
+  const endurance = (raw.activityType === 'bike' || raw.activityType === 'swim') && Boolean(raw.sportBlocks?.length);
+  const sport = raw.activityType as EnduranceSport;
+  const segments = running
+    ? blocksToSegments(raw.runBlocks ?? [], vma)
+    : endurance
+      ? sportSegments(raw.sportBlocks ?? [], sport, raw.reference)
+      : [];
   const linkedRunId = typeof raw.linkedRun === 'string' ? raw.linkedRun : (raw.linkedRun?._id ?? undefined);
 
   return {
     ...base,
     sessionType: raw.sessionType,
-    blocks: running ? describeBlocks(raw.runBlocks ?? [], vma) : [],
+    blocks: running ? describeBlocks(raw.runBlocks ?? [], vma) : endurance ? describeSportBlocks(raw.sportBlocks ?? [], sport, raw.reference) : [],
     segments,
     textPlan: [
       { label: 'Échauffement', text: raw.warmup?.trim() ?? '' },
       { label: 'Corps de séance', text: raw.mainWorkout?.trim() ?? '' },
       { label: 'Retour au calme', text: raw.cooldown?.trim() ?? '' },
     ].filter((item) => item.text),
-    strength: running ? undefined : mapStrengthPlan(raw.strengthPlan),
+    strength: raw.activityType === 'strength' ? mapStrengthPlan(raw.strengthPlan) : undefined,
     linkedRunId,
+    linkedOther: raw.linkedOtherActivity && typeof raw.linkedOtherActivity === 'object' ? mapOtherActivity(raw.linkedOtherActivity) : undefined,
   };
 }

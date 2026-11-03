@@ -36,6 +36,7 @@ import type {
   RunsPeriod,
   WeekPlanDay,
 } from './athlete.types';
+import { sportSegments, sportTotals, type EnduranceSport } from './sport-blocks';
 
 export const SESSION_TYPE_LABELS: Record<string, string> = {
   endurance: 'Endurance',
@@ -90,7 +91,7 @@ export function mapPlanned(planned: ApiPlannedRun, coachName?: string, vma?: num
   const byCoach = planned.generatedBy === 'coach';
   // Le coach construit sa séance bloc par bloc et laisse souvent les totaux vides :
   // sans cette estimation, l'athlète voit « — » en distance, durée et allure.
-  const estimated = planned.activityType === 'running' ? estimateFromBlocks(planned.runBlocks, vma) : {};
+  const estimated = planned.activityType === 'running' ? estimateFromBlocks(planned.runBlocks, vma) : estimateSport(planned);
   return {
     id: planned._id,
     date: dayOf(planned.date),
@@ -105,8 +106,22 @@ export function mapPlanned(planned: ApiPlannedRun, coachName?: string, vma?: num
     coachName: byCoach ? coachName : undefined,
     status: planned.status === 'completed' ? 'done' : planned.status,
     expectedFeeling: planned.expectedFeeling ?? undefined,
-    segments: planned.activityType === 'running' ? blocksToSegments(planned.runBlocks ?? [], vma) : [],
+    segments:
+      planned.activityType === 'running'
+        ? blocksToSegments(planned.runBlocks ?? [], vma)
+        : isEnduranceSport(planned.activityType)
+          ? sportSegments(planned.sportBlocks ?? [], planned.activityType, planned.reference)
+          : [],
   };
+}
+
+const isEnduranceSport = (sport: string): sport is EnduranceSport => sport === 'bike' || sport === 'swim';
+
+/** Vélo / natation construits en blocs : durée et distance déduites quand le coach ne les a pas saisies. */
+function estimateSport(planned: ApiPlannedRun): { distanceKm?: number; durationMin?: number; paceSecPerKm?: number } {
+  if (!isEnduranceSport(planned.activityType) || !planned.sportBlocks?.length) return {};
+  const { seconds, meters } = sportTotals(planned.sportBlocks, planned.activityType, planned.reference);
+  return { distanceKm: meters ? meters / 1000 : undefined, durationMin: seconds ? Math.round(seconds / 60) : undefined };
 }
 
 export function mapRun(run: ApiRun): Activity {
