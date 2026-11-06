@@ -45,6 +45,12 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/auth/forgot-password.page').then((m) => m.ForgotPasswordPage),
   },
 
+  // Arrivée depuis le back-office (« Se connecter en tant que »), sans garde : elle remplace la session en cours.
+  {
+    path: 'impersonate',
+    loadComponent: () => import('./pages/auth/impersonate.page').then((m) => m.ImpersonatePage),
+  },
+
   // ---- Application connectée ----
   {
     path: '',
