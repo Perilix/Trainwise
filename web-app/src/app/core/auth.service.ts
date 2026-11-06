@@ -59,6 +59,19 @@ export class AuthService {
     });
   }
 
+  /** Jeton émis par le back-office : remplace la session courante. Renvoie faux si le jeton est refusé. */
+  async impersonate(token: string): Promise<boolean> {
+    try {
+      localStorage.setItem(TOKEN_KEY, token);
+    } catch {
+      return false;
+    }
+    this._user.set(null);
+    this.api.invalidate();
+    await this.restore();
+    return !!this._user();
+  }
+
   login(email: string, password: string): Observable<AuthResponse> {
     return this.api.post<AuthResponse>('/api/auth/login', { email, password }).pipe(tap((res) => this.accept(res)));
   }
