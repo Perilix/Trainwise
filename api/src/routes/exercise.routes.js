@@ -75,6 +75,7 @@ router.use(protect);
  */
 router.get('/', exerciseController.getExercises);
 router.post('/', coachOnly, exerciseController.createExercise);
+router.post('/import', coachOnly, exerciseController.importExercises);
 
 /**
  * @swagger

@@ -14,7 +14,6 @@ type Props = TextProps & {
 export function Text({ variant = 'body', color, tabular, style, ...rest }: Props) {
   const { colors } = useTheme();
   const spec = textVariants[variant];
-  const themed: TextStyle = { color: colors[color ?? spec.color] };
-  if (tabular) themed.fontVariant = ['tabular-nums'];
+  const themed: TextStyle = { color: colors[color ?? spec.color], ...(tabular ? { fontVariant: ['tabular-nums'] } : null) };
   return <NativeText {...rest} style={[spec.style, themed, style]} />;
 }

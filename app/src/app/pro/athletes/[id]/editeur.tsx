@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View, type TextInputInstance } from 'react-native';
 
 import { BackBar, Button, Card, ChoicePill, FormError, Screen, Section, StateView, Text, useToast } from '@/components/ui';
 import { useBringIntoView } from '@/components/ui/keyboard-scroll';
@@ -22,7 +22,7 @@ export default function CoachSessionEditorScreen() {
   const { id, planId, date: dateParam, sport: sportParam } = useLocalSearchParams<{ id: string; planId?: string; date?: string; sport?: string }>();
   const router = useRouter();
   const { colors } = useTheme();
-  const areaRef = useRef<TextInput>(null);
+  const areaRef = useRef<TextInputInstance>(null);
   const bringIntoView = useBringIntoView();
   const { data: raw, loading, error, refetch } = useCoachPlannedRaw(id, planId);
   const { data: fiche } = useAthleteFiche(id);

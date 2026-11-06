@@ -14,6 +14,8 @@ import type {
   ApiAlertRulesState,
   ApiCalendarData,
   ApiCoachAthlete,
+  ApiExercise,
+  ApiExerciseInput,
   ApiCoachAthleteDetail,
   ApiCoachBilling,
   ApiCoachGroup,
@@ -397,6 +399,35 @@ export function useCoachActions() {
       if (!live) return;
       await api(athletePath(athleteId), { method: 'DELETE' });
       invalidateApiCache();
+    },
+    /** FTP en watts, CSS en secondes / 100 m ; null efface la valeur. */
+    async updateAthleteReferences(athleteId: string, body: { ftp?: number | null; css?: number | null }) {
+      if (!live) return;
+      await api(`${athletePath(athleteId)}/references`, { method: 'PATCH', body });
+      invalidateApiCache();
+    },
+    async createExercise(body: ApiExerciseInput) {
+      if (!live) return { _id: `demo-${Date.now()}`, name: body.name, primaryMuscle: body.primaryMuscle, equipment: body.equipment, createdBy: user?.id ?? null } as ApiExercise;
+      const exercise = await api<ApiExercise>('/api/exercises', { method: 'POST', body });
+      invalidateApiCache();
+      return exercise;
+    },
+    async updateExercise(id: string, body: ApiExerciseInput) {
+      if (!live) return;
+      await api(`/api/exercises/${encodeURIComponent(id)}`, { method: 'PUT', body });
+      invalidateApiCache();
+    },
+    async deleteExercise(id: string) {
+      if (!live) return;
+      await api(`/api/exercises/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      invalidateApiCache();
+    },
+    /** Les noms déjà présents chez le coach sont ignorés par le serveur. */
+    async importExercises(exercises: ApiExerciseInput[]) {
+      if (!live) return { created: exercises.length, skipped: 0 };
+      const result = await api<{ created: number; skipped: number }>('/api/exercises/import', { method: 'POST', body: { exercises } });
+      invalidateApiCache();
+      return result;
     },
     async updateAthleteVma(athleteId: string, vma: number) {
       if (!live) return;

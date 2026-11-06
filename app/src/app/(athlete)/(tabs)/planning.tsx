@@ -4,10 +4,11 @@ import { StyleSheet, View } from 'react-native';
 
 import { Button, Card, Chip, Icon, Screen, Section, SectionHeader, Stat, Text } from '@/components/ui';
 import { activityHref } from '@/features/athlete/activity-link';
+import { isOtherSport, otherActivityMeta, otherSportIcon, sessionDistance, SPORT_LABELS, sportIcon } from '@/features/athlete/other-sports';
 import { AthleteAppBar } from '@/features/athlete/athlete-app-bar';
 import { useAthleteActions, usePlanningMonth } from '@/features/athlete/queries';
 import { SESSION_STATUS_CHIP } from '@/features/athlete/session-status';
-import type { Activity, PlannedSession } from '@/features/athlete/types';
+import type { Activity, OtherActivity, PlannedSession } from '@/features/athlete/types';
 import { MonthCalendar } from '@/features/planning/month-calendar';
 import { emitAppEvent, onAppEvent } from '@/lib/app-events';
 import { formatClock, formatDayLong, formatDecimal, formatHoursMinutes, formatPace, toIsoDay } from '@/lib/format';
@@ -44,6 +45,8 @@ export default function PlanningScreen() {
   const sessions = data?.sessionsByDay[selected] ?? [];
   // Séances réalisées du jour (saisies ou importées de Strava) : elles ne sont pas des séances planifiées.
   const activities = data?.activitiesByDay[selected] ?? [];
+  // Vélo, natation… venus de Strava : pas de page de détail, la carte suffit.
+  const others = data?.othersByDay[selected] ?? [];
 
   return (
     <Screen tabs>
@@ -79,7 +82,7 @@ export default function PlanningScreen() {
               </View>
               <Button label="Ajouter" variant="secondary" size="sm" icon="plus" onPress={() => router.push({ pathname: '/seance/nouvelle', params: { date: selected } })} />
             </View>
-            {sessions.length || activities.length ? (
+            {sessions.length || activities.length || others.length ? (
               <View style={styles.sessionList}>
                 {sessions.map((session) => (
                   <SessionCard
@@ -95,6 +98,9 @@ export default function PlanningScreen() {
                     activity={activity}
                     onPress={() => router.push(activityHref(activity))}
                   />
+                ))}
+                {others.map((other) => (
+                  <OtherActivityCard key={other.id} activity={other} />
                 ))}
               </View>
             ) : (
@@ -126,6 +132,7 @@ function SessionCard({ session, onSkip, onOpen }: { session: PlannedSession; onS
       <View style={styles.chips}>
         <Chip label={byCoach ? `Planifiée par ${session.coachName ?? 'ton coach'}` : 'Ajoutée par toi'} tone={byCoach ? 'violet' : 'neutral'} icon={byCoach ? 'user' : 'pen'} />
         <Chip label={status.label} tone={status.tone} icon={status.icon} />
+        {isOtherSport(session.sport) ? <Chip label={SPORT_LABELS[session.sport]} tone="accent" icon={sportIcon(session.sport)} /> : null}
       </View>
       <View style={styles.sessionTitle}>
         <Text variant="h2" style={{ fontSize: 17 }}>
@@ -134,7 +141,7 @@ function SessionCard({ session, onSkip, onOpen }: { session: PlannedSession; onS
         {session.description ? <Text variant="body2">{session.description}</Text> : null}
       </View>
       <View style={styles.sessionStats}>
-        {session.distanceKm ? <Stat label="Distance" value={formatDecimal(session.distanceKm, session.distanceKm % 1 ? 1 : 0)} unit="km" style={styles.flex} /> : null}
+        {session.distanceKm ? <Stat label="Distance" {...sessionDistance(session.sport, session.distanceKm)} style={styles.flex} /> : null}
         {session.durationMin ? <Stat label="Durée" value={formatHoursMinutes(session.durationMin * 60)} style={styles.flex} /> : null}
         {session.paceSecPerKm ? <Stat label="Allure" value={formatPace(session.paceSecPerKm)} unit="/km" style={styles.flex} /> : null}
         {session.exercisesCount ? <Stat label="Exercices" value={String(session.exercisesCount)} style={styles.flex} /> : null}
@@ -174,6 +181,29 @@ function ActivityCard({ activity, onPress }: { activity: Activity; onPress?: () 
           </Text>
         </View>
         {activity.fromStrava ? <Chip label="Strava" tone="strava" badge /> : <Chip label="Réalisée" tone="success" badge />}
+      </View>
+    </Card>
+  );
+}
+
+/** Vélo, natation… importé de Strava : même carte qu'une sortie, sans page de détail. */
+function OtherActivityCard({ activity }: { activity: OtherActivity }) {
+  const { colors } = useTheme();
+  return (
+    <Card accessibilityLabel={`${activity.title}, ${activity.sportLabel}, importée de Strava`}>
+      <View style={styles.activityRow}>
+        <View style={[styles.activityTile, { backgroundColor: colors.accentSoft }]}>
+          <Icon name={otherSportIcon(activity.family)} size={19} color={colors.accentInk} strokeWidth={1.9} />
+        </View>
+        <View style={styles.flex}>
+          <Text variant="h3" numberOfLines={1}>
+            {activity.title}
+          </Text>
+          <Text variant="small" tabular numberOfLines={1}>
+            {otherActivityMeta(activity) || activity.sportLabel}
+          </Text>
+        </View>
+        <Chip label="Strava" tone="strava" badge />
       </View>
     </Card>
   );

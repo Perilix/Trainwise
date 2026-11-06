@@ -31,6 +31,7 @@ import {
   type EditableBlock,
   type EditableStep,
 } from './run-blocks-model';
+import { StepActions } from './step-actions';
 
 type Props = {
   blocks: EditableBlock[];
@@ -240,7 +241,7 @@ export function RunBlocksEditor({ blocks, onChange, vma, realized }: Props) {
       ) : null}
 
       <View style={styles.list}>
-        {blocks.map((block) => {
+        {blocks.map((block, blockIndex) => {
           const group = isGroup(block);
           const open = expanded === block.key;
           const isMain = block.role === 'main';
@@ -278,16 +279,16 @@ export function RunBlocksEditor({ blocks, onChange, vma, realized }: Props) {
                     })
                   )}
 
-                  <View style={styles.blockActions}>
-                    {isMain ? (
-                      <>
-                        <Button label="Monter" variant="ghost" size="sm" onPress={() => move(block.key, -1)} />
-                        <Button label="Descendre" variant="ghost" size="sm" onPress={() => move(block.key, 1)} />
-                      </>
-                    ) : null}
-                    <View style={styles.flex} />
-                    <Button label={group ? 'Supprimer le bloc' : 'Supprimer'} variant="danger" size="sm" icon="x" onPress={() => remove(block.key)} />
-                  </View>
+                  {/* Échauffement et retour au calme restent à leur place : seules les étapes principales se déplacent. */}
+                  <StepActions
+                    subject={group ? 'le bloc' : 'l’étape'}
+                    onDelete={() => remove(block.key)}
+                    onValidate={() => setExpanded(null)}
+                    onUp={isMain ? () => move(block.key, -1) : undefined}
+                    onDown={isMain ? () => move(block.key, 1) : undefined}
+                    canUp={blocks[blockIndex - 1]?.role === 'main'}
+                    canDown={blocks[blockIndex + 1]?.role === 'main'}
+                  />
                 </View>
               ) : null}
 
@@ -310,7 +311,7 @@ export function RunBlocksEditor({ blocks, onChange, vma, realized }: Props) {
                         {childOpen ? (
                           <View style={styles.childBody}>
                             {renderStepFields(child, (next) => updateChild(block.key, child.key, () => next), { meters: true, repeatable: false, recovery: true })}
-                            <Button label="Retirer l’étape" variant="danger" size="sm" icon="x" onPress={() => removeChild(block.key, child.key)} style={styles.alignEnd} />
+                            <StepActions subject="l’étape" onDelete={() => removeChild(block.key, child.key)} onValidate={() => setExpanded(null)} />
                           </View>
                         ) : null}
                       </View>

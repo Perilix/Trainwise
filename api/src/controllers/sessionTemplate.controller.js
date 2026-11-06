@@ -225,6 +225,7 @@ exports.createTemplateFromPlanning = async (req, res) => {
     };
 
     const runBlocks = (planned.runBlocks || []).map(toTemplateBlock);
+    const endurance = planned.activityType === 'bike' || planned.activityType === 'swim';
 
     const template = await SessionTemplate.create({
       name: name.trim(),
@@ -238,6 +239,8 @@ exports.createTemplateFromPlanning = async (req, res) => {
       cooldown: planned.cooldown,
       runBlocks: planned.activityType === 'running' ? runBlocks : [],
       strengthPlan: planned.activityType === 'strength' ? planned.strengthPlan : null,
+      sportBlocks: endurance ? (planned.sportBlocks || []) : [],
+      pool: planned.activityType === 'swim' ? planned.pool : null,
       coach: req.user._id
     });
 
@@ -269,6 +272,7 @@ exports.assignTemplate = async (req, res) => {
       return res.status(403).json({ error: 'Accès refusé' });
     }
 
+    const endurance = template.sport === 'bike' || template.sport === 'swim';
     const athleteIds = [...new Set(assignments.map(a => a.athleteId))];
     const relationships = await CoachAthlete.find({
       coach: req.user._id,
@@ -278,7 +282,7 @@ exports.assignTemplate = async (req, res) => {
     const validAthleteIds = new Set(relationships.map(r => r.athlete.toString()));
 
     const athletes = await User.find({ _id: { $in: athleteIds } })
-      .select('firstName lastName vma')
+      .select('firstName lastName vma ftp css')
       .lean();
     const athleteMap = new Map(athletes.map(a => [a._id.toString(), a]));
 
@@ -368,6 +372,12 @@ exports.assignTemplate = async (req, res) => {
         cooldown: template.cooldown,
         runBlocks: template.sport === 'running' ? runBlocks : [],
         strengthPlan: template.sport === 'strength' ? template.strengthPlan : undefined,
+        // Vélo / natation : les blocs restent en % ; on fige la FTP ou la CSS du jour.
+        ...(endurance ? {
+          sportBlocks: template.sportBlocks || [],
+          pool: template.sport === 'swim' ? template.pool : null,
+          reference: { ftp: athlete.ftp || null, css: athlete.css || null }
+        } : {}),
         templateRef: template._id,
         generatedBy: 'coach',
         createdBy: req.user._id

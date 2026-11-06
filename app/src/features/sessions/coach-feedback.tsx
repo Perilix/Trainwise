@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View, type TextInputInstance } from 'react-native';
 
 import { Button, Card, FormError, Text } from '@/components/ui';
 import { useBringIntoView } from '@/components/ui/keyboard-scroll';
@@ -26,7 +26,7 @@ type Props = {
  */
 export function CoachFeedbackCard({ feedback, editable }: Props) {
   const { colors } = useTheme();
-  const areaRef = useRef<TextInput>(null);
+  const areaRef = useRef<TextInputInstance>(null);
   const bringIntoView = useBringIntoView();
   const { setSessionFeedback } = useCoachActions();
 

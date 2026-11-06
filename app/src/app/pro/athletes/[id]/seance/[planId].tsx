@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { BackBar, Button, Field, FormError, Screen, StateView, Text, useToast } from '@/components/ui';
+import { isOtherSport, otherSessionMeta } from '@/features/athlete/other-sports';
 import type { PlannedSessionDetail } from '@/features/athlete/types';
 import { useShareSession } from '@/features/chat/share-session';
 import { useCoachActions, useCoachPlannedSession } from '@/features/coach/queries';
@@ -44,6 +45,7 @@ export default function CoachPlannedSessionScreen() {
   // Par défaut, la même séance une semaine plus tard.
   const target = targetDate ?? toIsoDay(addDays(parseDay(session.date), 7));
   const done = session.status === 'done';
+  const other = isOtherSport(session.sport);
 
   const changeMode = (next: Mode) => {
     setMode(next);
@@ -168,19 +170,22 @@ export default function CoachPlannedSessionScreen() {
           </Text>
         ) : null}
         <FormError message={actionError} />
-        {done ? <Button label="Voir le réalisé" icon="chart" fullWidth onPress={openDone} /> : null}
-        <Button
-          label="Modifier la séance"
-          icon="pen"
-          variant={done ? 'secondary' : 'primary'}
-          fullWidth
-          onPress={() => router.push({ pathname: '/pro/athletes/[id]/editeur', params: { id, planId: session.id } })}
-        />
+        {/* Vélo, natation : le réalisé est la carte Strava du corps, et l'éditeur de blocs ne les connaît pas. */}
+        {done && !other ? <Button label="Voir le réalisé" icon="chart" fullWidth onPress={openDone} /> : null}
+        {!other ? (
+          <Button
+            label="Modifier la séance"
+            icon="pen"
+            variant={done ? 'secondary' : 'primary'}
+            fullWidth
+            onPress={() => router.push({ pathname: '/pro/athletes/[id]/editeur', params: { id, planId: session.id } })}
+          />
+        ) : null}
         <View style={styles.actions}>
           <Button label={busy ? 'Envoi…' : 'Envoyer'} variant="secondary" size="sm" icon="message" disabled={busy} onPress={share} style={styles.flex} />
           <Button label="Dupliquer" variant="secondary" size="sm" icon="copy" onPress={() => changeMode('duplicate')} style={styles.flex} />
         </View>
-        <Button label="Enregistrer dans ma bibliothèque" variant="secondary" size="sm" icon="folder" fullWidth onPress={() => changeMode('template')} />
+        {!other ? <Button label="Enregistrer dans ma bibliothèque" variant="secondary" size="sm" icon="folder" fullWidth onPress={() => changeMode('template')} /> : null}
         <Button label="Supprimer du planning" variant="danger" size="sm" icon="x" fullWidth onPress={() => changeMode('delete')} />
       </View>
     );
@@ -189,13 +194,14 @@ export default function CoachPlannedSessionScreen() {
   return (
     <Screen footer={footer}>
       <BackBar />
-      <PlannedSessionBody session={session} plannedByLabel={session.plannedBy === 'coach' ? 'Planifiée par vous' : 'Ajoutée par l’athlète'} />
+      <PlannedSessionBody session={session} plannedByLabel={session.plannedBy === 'coach' ? 'Planifiée par vous' : 'Ajoutée par l’athlète'} stravaTitle="Sortie Strava" />
     </Screen>
   );
 }
 
 // Résumé court affiché dans la carte du message.
 function sessionMeta(session: PlannedSessionDetail) {
+  if (isOtherSport(session.sport)) return otherSessionMeta(session);
   return session.sport === 'running'
     ? [session.distanceKm ? `${formatDecimal(session.distanceKm)} km` : null, session.durationMin ? formatHoursMinutes(session.durationMin * 60) : null].filter(Boolean).join(' · ')
     : [session.exercisesCount ? `${session.exercisesCount} exercices` : null, session.durationMin ? formatHoursMinutes(session.durationMin * 60) : null].filter(Boolean).join(' · ');

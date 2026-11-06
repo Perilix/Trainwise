@@ -19,6 +19,7 @@ import { StateViewComponent } from '../../ui/state-view.component';
 import { StrengthPlanComponent } from '../../ui/strength-plan.component';
 import { WorkoutProfileComponent } from '../../ui/workout-profile.component';
 import { ToastService } from '../../core/toast.service';
+import { formatMeters } from '../../domain/sport-blocks';
 
 /** Séance planifiée d'un athlète, vue coach : le détail, plus les actions sur la séance. */
 @Component({
@@ -127,10 +128,12 @@ import { ToastService } from '../../core/toast.service';
                 <div class="profile">
                   <tw-workout-profile [segments]="data.segments" [width]="700" [height]="72" />
                 </div>
-                <tw-intensity-legend />
+                <tw-intensity-legend [sport]="data.sport" />
                 <div class="profile-totals">
                   <span class="small muted">Durée estimée {{ estimate().duration }}</span>
-                  <span class="small muted">Distance estimée {{ estimate().distance }}</span>
+                  @if (estimate().distance) {
+                    <span class="small muted">Distance estimée {{ estimate().distance }}</span>
+                  }
                 </div>
               </section>
             }
@@ -176,8 +179,8 @@ import { ToastService } from '../../core/toast.service';
             <section class="card card-pad">
               <span class="h2">Actions</span>
               <div class="stack gap mt">
-                <!-- La bibliothèque ne connaît que la course et le renfo. -->
-                @if (data.sport === 'running' || data.sport === 'strength') {
+                <!-- Vélo et natation : seulement une séance construite en blocs. -->
+                @if (data.sport === 'running' || data.sport === 'strength' || data.blocks.length) {
                   <button class="btn btn-ghost btn-block" type="button" [disabled]="saving()" (click)="saveToLibrary()">
                     <tw-icon name="folder" [size]="18" [strokeWidth]="2" />
                     {{ savedToLibrary() ? 'Ajoutée à la bibliothèque' : 'Sauvegarder dans ma bibliothèque' }}
@@ -456,7 +459,10 @@ export class CoachAthletePlannedPage {
 
   readonly estimate = computed(() => {
     const total = totals(this.session.data()?.segments ?? []);
-    return { duration: formatHoursMinutes(total.sec), distance: `${formatDecimal(total.dist / 1000, 1)} km` };
+    const sport = this.session.data()?.sport;
+    // Vélo : on programme en durée ; natation : un volume en mètres.
+    const distance = sport === 'bike' ? '' : sport === 'swim' ? formatMeters(total.dist) : `${formatDecimal(total.dist / 1000, 1)} km`;
+    return { duration: formatHoursMinutes(total.sec), distance };
   });
 
   readonly editing = signal(false);

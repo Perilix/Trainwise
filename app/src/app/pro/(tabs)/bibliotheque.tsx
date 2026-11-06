@@ -2,14 +2,21 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
-import { Button, Card, Field, Screen, Section, Segmented, StateView, Text } from '@/components/ui';
-import type { Sport } from '@/features/athlete/types';
+import { Button, Card, ChoicePill, Field, Screen, Section, StateView, Text } from '@/components/ui';
 import { TemplateItem } from '@/features/coach/template-item';
-import { useTemplates } from '@/features/coach/templates';
+import { useTemplates, type TemplateRow } from '@/features/coach/templates';
 import { MainAppBar } from '@/features/shell/main-app-bar';
 import { layout } from '@/theme/tokens';
 
-type SportFilter = 'all' | Sport;
+type SportFilter = 'all' | TemplateRow['sport'];
+
+const FILTERS: { value: SportFilter; label: string }[] = [
+  { value: 'all', label: 'Toutes' },
+  { value: 'running', label: 'Course' },
+  { value: 'strength', label: 'Muscu' },
+  { value: 'bike', label: 'Vélo' },
+  { value: 'swim', label: 'Natation' },
+];
 
 export default function LibraryScreen() {
   const router = useRouter();
@@ -37,18 +44,16 @@ export default function LibraryScreen() {
           <Button label="Nouvelle" icon="plus" size="sm" onPress={() => router.push('/pro/seance-type/editeur')} />
         </View>
         <Text variant="body2">Vos séances types, prêtes à planifier.</Text>
+        <Button label="Mes exercices de muscu" variant="ghost" size="sm" icon="dumbbell" onPress={() => router.push('/pro/exercices')} style={styles.exercises} />
       </Section>
 
       <Section style={styles.filters}>
-        <Segmented<SportFilter>
-          options={[
-            { value: 'all', label: 'Toutes' },
-            { value: 'running', label: 'Course' },
-            { value: 'strength', label: 'Muscu' },
-          ]}
-          value={sport}
-          onChange={setSport}
-        />
+        {/* Cinq sports : des pastilles qui passent à la ligne plutôt qu'un sélecteur écrasé. */}
+        <View accessibilityRole="radiogroup" style={styles.pills}>
+          {FILTERS.map((option) => (
+            <ChoicePill key={option.value} role="radio" label={option.label} selected={sport === option.value} onPress={() => setSport(option.value)} />
+          ))}
+        </View>
         <Field icon="search" placeholder="Rechercher une séance" accessibilityLabel="Rechercher une séance" value={search} onChangeText={setSearch} />
       </Section>
 
@@ -95,4 +100,6 @@ const styles = StyleSheet.create({
   group: { paddingBottom: 16 },
   groupLabel: { marginBottom: 8 },
   list: { paddingHorizontal: 16 },
+  pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  exercises: { alignSelf: 'flex-start', marginTop: 8 },
 });

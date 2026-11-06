@@ -66,15 +66,18 @@ const exerciseSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Générer le slug avant de sauvegarder
+// Générer le slug avant de sauvegarder. Le slug est unique dans toute la base : un
+// exercice créé par un coach (privé ou partagé) prend un suffixe tiré de son id, pour
+// que deux coachs (ou un coach et le catalogue) puissent avoir chacun leur « Step-up lesté ».
 exerciseSchema.pre('save', function() {
   if (this.isModified('name') || !this.slug) {
-    this.slug = this.name
+    const base = this.name
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '') // Enlever les accents
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
+    this.slug = this.createdBy ? `${base}-${this._id.toString().slice(-6)}` : base;
   }
 });
 

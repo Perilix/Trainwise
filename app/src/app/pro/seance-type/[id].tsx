@@ -6,7 +6,10 @@ import { Avatar, avatarToneFor, BackBar, Button, Card, Chip, FormError, Screen, 
 import { SESSION_TYPE_LABELS } from '@/features/athlete/mappers';
 import { useCoachActions, useCoachAthleteList } from '@/features/coach/queries';
 import { mainPercent, templateCopyPayload, templateToDetail, useTemplate } from '@/features/coach/templates';
+import { POOL_LABELS, formatMeters, formatSwimPace, relativeIntensity, resolvedTarget, targetLabel } from '@/features/athlete/sport-blocks';
 import { PlannedSessionBody } from '@/features/sessions/planned-session-body';
+import type { ApiSessionTemplate, ApiSportStep } from '@/lib/api-types';
+import { formatDuration } from '@/lib/sessions';
 import { paceFromPercent } from '@/features/sessions/run-blocks-model';
 import { emitAppEvent, onAppEvent } from '@/lib/app-events';
 import { formatDayShort, formatDecimal, toIsoDay } from '@/lib/format';
@@ -38,6 +41,11 @@ export default function TemplateDetailScreen() {
 
   const running = template.sport === 'running';
   const main = running ? mainPercent(template) : undefined;
+  const endurance = template.sport === 'bike' || template.sport === 'swim' ? template.sport : null;
+  const enduranceMain = endurance ? hardestStep(template) : null;
+  // Aperçu chiffré avec la FTP / CSS du premier athlète qui l'a renseignée.
+  const reference = { ftp: athletes?.find((athlete) => athlete.ftp)?.ftp ?? null, css: athletes?.find((athlete) => athlete.css)?.css ?? null };
+  const sportChip = SPORT_CHIPS[template.sport];
   const lastUsed = template.lastUsedAt ? formatDayShort(toIsoDay(new Date(template.lastUsedAt))).split(' ').slice(1).join(' ') : null;
   const usage = template.usageCount ? `Utilisée ${template.usageCount} fois${lastUsed ? ` · dernière le ${lastUsed}` : ''}` : 'Pas encore planifiée';
 
@@ -100,7 +108,7 @@ export default function TemplateDetailScreen() {
       <BackBar />
 
       <PlannedSessionBody
-        session={templateToDetail(template)}
+        session={templateToDetail(template, endurance ? reference : null)}
         plannedByLabel=""
         hideHeader
         hero={{
@@ -108,12 +116,49 @@ export default function TemplateDetailScreen() {
           overline: usage,
           chips: (
             <>
-              <Chip label={running ? 'Course' : 'Muscu'} tone={running ? 'accent' : 'neutral'} icon={running ? 'route' : 'dumbbell'} />
-              <Chip label={SESSION_TYPE_LABELS[template.sessionType] ?? template.sessionType} />
+              <Chip label={sportChip.label} tone={template.sport === 'strength' ? 'neutral' : 'accent'} icon={sportChip.icon} />
+              {endurance === 'swim' && template.pool ? <Chip label={`Bassin ${POOL_LABELS[template.pool]}`} /> : null}
+              {endurance ? null : <Chip label={SESSION_TYPE_LABELS[template.sessionType] ?? template.sessionType} />}
             </>
           ),
         }}
       />
+
+      {endurance && enduranceMain && athletes?.length ? (
+        <Section>
+          <Card>
+            <Text variant="sectionTitle">{endurance === 'bike' ? 'Puissances individualisées' : 'Allures individualisées'}</Text>
+            <Text variant="small" style={styles.hint}>
+              {[endurance === 'bike' ? (enduranceMain.duration ? formatDuration(enduranceMain.duration) : null) : enduranceMain.distance ? formatMeters(enduranceMain.distance) : null, targetLabel(enduranceMain)]
+                .filter(Boolean)
+                .join(' à ')}
+              , selon la {endurance === 'bike' ? 'FTP' : 'CSS'} de chaque athlète.
+            </Text>
+            {athletes.map((athlete, index) => {
+              const known = endurance === 'bike' ? athlete.ftp : athlete.css;
+              const value = known ? resolvedTarget(enduranceMain, endurance === 'bike' ? { ftp: known } : { css: known }) : null;
+              return (
+                <View key={athlete.id} style={[styles.athlete, index > 0 && { borderTopWidth: 1, borderTopColor: colors.border }]}>
+                  <Avatar initials={athlete.initials} size={32} tone={avatarToneFor(athlete.id)} />
+                  <View style={styles.flex}>
+                    <Text variant="h3">{athlete.name}</Text>
+                    <Text variant="caption" color={known ? 'text2' : 'warningInk'}>
+                      {known ? (endurance === 'bike' ? `FTP ${known} W` : `CSS ${formatSwimPace(known)} /100 m`) : endurance === 'bike' ? 'FTP manquante' : 'CSS manquante'}
+                    </Text>
+                  </View>
+                  {value ? (
+                    <Text variant="h3" tabular>
+                      {value}
+                    </Text>
+                  ) : (
+                    <Chip label="À saisir" tone="warning" icon="warning" />
+                  )}
+                </View>
+              );
+            })}
+          </Card>
+        </Section>
+      ) : null}
 
       {main && athletes?.length ? (
         <Section>
@@ -148,6 +193,31 @@ export default function TemplateDetailScreen() {
       ) : null}
     </Screen>
   );
+}
+
+const SPORT_CHIPS = {
+  running: { label: 'Course', icon: 'route' },
+  strength: { label: 'Muscu', icon: 'dumbbell' },
+  bike: { label: 'Vélo', icon: 'bike' },
+  swim: { label: 'Natation', icon: 'swim' },
+} as const;
+
+/** Étape la plus intense du corps de séance : celle qu'on chiffre pour chaque athlète. */
+function hardestStep(template: ApiSessionTemplate): ApiSportStep | null {
+  const sport = template.sport === 'bike' ? 'bike' : 'swim';
+  let best: ApiSportStep | null = null;
+  let bestValue = -1;
+  for (const block of template.sportBlocks ?? []) {
+    if (block.role !== 'main') continue;
+    for (const step of block.children?.length ? block.children : [block]) {
+      const value = relativeIntensity(step, sport) ?? 0;
+      if (value > bestValue) {
+        best = step;
+        bestValue = value;
+      }
+    }
+  }
+  return best;
 }
 
 const styles = StyleSheet.create({

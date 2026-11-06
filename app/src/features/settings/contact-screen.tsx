@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Platform, StyleSheet, TextInput, View } from 'react-native';
+import { Platform, StyleSheet, TextInput, View, type TextInputInstance } from 'react-native';
 
 import { BackBar, Button, Card, ChoicePill, Field, FormError, Screen, Section, Text } from '@/components/ui';
 import { useBringIntoView } from '@/components/ui/keyboard-scroll';
@@ -31,7 +31,7 @@ export function ContactScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { user } = useSession();
-  const areaRef = useRef<TextInput>(null);
+  const areaRef = useRef<TextInputInstance>(null);
   const bringIntoView = useBringIntoView();
 
   const [name, setName] = useState(() => `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim());

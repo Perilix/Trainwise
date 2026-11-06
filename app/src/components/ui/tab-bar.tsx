@@ -22,7 +22,7 @@ export const TAB_BAR_HEIGHT = 66;
 export const TAB_BAR_MARGIN = 16;
 
 // Barre flottante en verre posée sur le fond de la page ; onglet actif en pastille `subtle`, jamais en bleu.
-export function TabBar({ state, navigation, items }: Props) {
+export function TabBar({ state, emitter, navigateToTab, items }: Props) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -38,8 +38,9 @@ export function TabBar({ state, navigation, items }: Props) {
         const tint = focused ? colors.ink : colors.text3;
 
         const onPress = () => {
-          const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-          if (!focused && !event.defaultPrevented) navigation.navigate(route.name, route.params);
+          // expo-router 58 ne passe plus `navigation` à la barre : on émet l'événement puis on change d'onglet par sa clé.
+          const event = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+          if (!focused && !event.defaultPrevented) navigateToTab(route.key);
         };
 
         return (

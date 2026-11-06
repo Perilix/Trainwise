@@ -89,16 +89,19 @@ const RUNNING_TYPES = ['endurance', 'fractionne', 'tempo', 'sortie_longue', 'rec
                 <div class="segmented">
                   <button type="button" class="seg" [class.on]="sport() === 'running'" (click)="sport.set('running')">Course</button>
                   <button type="button" class="seg" [class.on]="sport() === 'strength'" (click)="sport.set('strength')">Muscu</button>
+                  <button type="button" class="seg" (click)="openEndurance('bike')">Vélo</button>
+                  <button type="button" class="seg" (click)="openEndurance('swim')">Natation</button>
                 </div>
               </div>
-              <div class="field">
-                <label for="type">Type de séance</label>
-                <select id="type" class="input" [value]="sessionType()" (change)="sessionType.set(value($event))">
-                  @for (option of typeOptions(); track option) {
-                    <option [value]="option">{{ label(option) }}</option>
-                  }
-                </select>
-              </div>
+            </div>
+            <!-- Sous le sport : sur la même ligne, ses quatre boutons étaient écrasés. -->
+            <div class="field mt type-field">
+              <label for="type">Type de séance</label>
+              <select id="type" class="input" [value]="sessionType()" (change)="sessionType.set(value($event))">
+                @for (option of typeOptions(); track option) {
+                  <option [value]="option">{{ label(option) }}</option>
+                }
+              </select>
             </div>
             <div class="field mt">
               <label for="desc">Description</label>
@@ -430,9 +433,13 @@ const RUNNING_TYPES = ['endurance', 'fractionne', 'tempo', 'sortie_longue', 'rec
         min-width: 0;
       }
 
+      .type-field {
+        max-width: 320px;
+      }
+
       .info-grid {
         display: grid;
-        grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
         gap: 12px;
         margin-top: 14px;
       }
@@ -806,6 +813,11 @@ export class CoachSessionEditorPage {
     effect(() => {
       const template = this.existing.data();
       if (!template) return;
+      // Vélo et natation ont leur propre éditeur.
+      if (template.sport === 'bike' || template.sport === 'swim') {
+        void this.router.navigate(['/coach/bibliotheque', template.sport === 'bike' ? 'velo' : 'natation', template._id], { replaceUrl: true });
+        return;
+      }
       this.name.set(template.name);
       this.description.set(template.description ?? '');
       this.expectedFeeling.set(template.expectedFeeling ?? null);
@@ -1001,6 +1013,10 @@ export class CoachSessionEditorPage {
           this.error.set("La séance n'a pas pu être enregistrée.");
         },
       });
+  }
+
+  openEndurance(sport: 'bike' | 'swim') {
+    void this.router.navigate(['/coach/bibliotheque', sport === 'bike' ? 'velo' : 'natation'], { replaceUrl: true });
   }
 
   openStrengthEditor() {

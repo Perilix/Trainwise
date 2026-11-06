@@ -139,6 +139,20 @@ const userSchema = new mongoose.Schema({
     max: 30,
     default: null
   },
+  // Vélo : puissance seuil fonctionnelle, en watts
+  ftp: {
+    type: Number,
+    min: 50,
+    max: 600,
+    default: null
+  },
+  // Natation : allure seuil (Critical Swim Speed), en secondes pour 100 m
+  css: {
+    type: Number,
+    min: 50,
+    max: 300,
+    default: null
+  },
   fcmax: {
     type: Number,
     min: 100,

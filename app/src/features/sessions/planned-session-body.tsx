@@ -3,6 +3,7 @@ import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 
 import { BRAND, Card, Chip, Icon, Section, Stat, Text, WorkoutProfile } from '@/components/ui';
+import { isOtherSport, otherActivityStats, sessionDistance, SPORT_LABELS, sportIcon } from '@/features/athlete/other-sports';
 import { SESSION_STATUS_CHIP } from '@/features/athlete/session-status';
 import { FeelingScale } from '@/features/sessions/expected-feeling';
 import type { PlanExercise, PlannedSessionDetail, RunBlockView, StrengthPlanView } from '@/features/athlete/types';
@@ -19,10 +20,12 @@ type Props = {
   hideHeader?: boolean;
   /** Séance type : titre et sur-titre de la carte de mise en avant, à la place de la date. */
   hero?: { title: string; overline: string; chips?: ReactNode };
+  /** Titre de la carte de la sortie Strava qui a validé la séance (vélo, natation). */
+  stravaTitle?: string;
 };
 
 /** Contenu d'une séance planifiée : en-tête, objectifs, consignes, déroulé ou plan de musculation. */
-export function PlannedSessionBody({ session, plannedByLabel, hideHeader, hero }: Props) {
+export function PlannedSessionBody({ session, plannedByLabel, hideHeader, hero, stravaTitle = 'Ta sortie Strava' }: Props) {
   const { width } = useWindowDimensions();
   const running = session.sport === 'running';
   const byCoach = session.plannedBy === 'coach';
@@ -48,6 +51,7 @@ export function PlannedSessionBody({ session, plannedByLabel, hideHeader, hero }
           <SessionHero session={session} running={running}>
             <Chip label={plannedByLabel} tone={byCoach ? 'violet' : 'neutral'} icon={byCoach ? 'user' : 'pen'} />
             <Chip label={status.label} tone={status.tone} icon={status.icon} />
+            {isOtherSport(session.sport) ? <Chip label={SPORT_LABELS[session.sport]} tone="accent" icon={sportIcon(session.sport)} /> : null}
           </SessionHero>
         </Section>
       )}
@@ -107,6 +111,27 @@ export function PlannedSessionBody({ session, plannedByLabel, hideHeader, hero }
       ) : null}
 
       {session.strength ? <StrengthPlanCards plan={session.strength} /> : null}
+
+      {session.linkedOther ? (
+        <Section style={styles.tight}>
+          <Card>
+            <View style={styles.cardHeader}>
+              <Text variant="sectionTitle">{stravaTitle}</Text>
+              <Chip label="Strava" tone="strava" badge />
+            </View>
+            <View style={styles.otherStats}>
+              {otherActivityStats(session.linkedOther).map((stat) => (
+                <Stat key={stat.label} label={stat.label} value={stat.value} unit={stat.unit} style={styles.flex} />
+              ))}
+            </View>
+            {session.linkedOther.description ? (
+              <Text variant="body2" style={styles.otherDesc}>
+                {session.linkedOther.description}
+              </Text>
+            ) : null}
+          </Card>
+        </Section>
+      ) : null}
     </>
   );
 }
@@ -136,7 +161,13 @@ function SessionHero({ session, running, children, overline, title }: { session:
 function SessionStats({ session, running, onBrand }: { session: PlannedSessionDetail; running: boolean; onBrand?: boolean }) {
   const { colors } = useTheme();
   const tint = onBrand ? { label: 'rgba(255, 255, 255, 0.55)', value: colors.onBrand } : undefined;
-  const items = running
+  const distance = session.distanceKm ? sessionDistance(session.sport, session.distanceKm) : null;
+  const items = isOtherSport(session.sport)
+    ? [
+        { label: 'Distance', value: distance?.value ?? '—', unit: distance?.unit },
+        { label: 'Durée', value: session.durationMin ? formatHoursMinutes(session.durationMin * 60) : '—', unit: undefined },
+      ]
+    : running
     ? [
         { label: 'Distance', value: session.distanceKm ? formatDecimal(session.distanceKm, session.distanceKm % 1 ? 1 : 0) : '—', unit: 'km' },
         { label: 'Durée', value: session.durationMin ? formatHoursMinutes(session.durationMin * 60) : '—', unit: undefined },
@@ -295,6 +326,8 @@ const styles = StyleSheet.create({
   tight: { paddingBottom: 12 },
   stats: { flexDirection: 'row', gap: 8 },
   paragraph: { marginTop: 6 },
+  otherStats: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  otherDesc: { marginTop: 12 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' },
   profile: { marginTop: 14, marginBottom: 6 },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },

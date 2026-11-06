@@ -9,6 +9,7 @@ import type {
   ApiCoachStats,
   ApiCompetition,
   ApiExercise,
+  ApiExerciseInput,
   ApiPendingInvitation,
   ApiPlannedRunDetail,
   ApiRun,
@@ -151,9 +152,35 @@ export class CoachService {
   }
 
   exercises$(query?: { search?: string; muscleGroup?: string }) {
-    return this.api.get<ApiExercise[] | { exercises: ApiExercise[] }>('/api/exercises', query).pipe(
+    return this.api.get<ApiExercise[] | { exercises: ApiExercise[] }>('/api/exercises', { limit: 1000, ...query }).pipe(
       map((response) => (Array.isArray(response) ? response : (response.exercises ?? []))),
     );
+  }
+
+  // ---------- Exercices perso ----------
+
+  createExercise(body: ApiExerciseInput) {
+    return this.api.post<ApiExercise>('/api/exercises', body).pipe(this.refresh());
+  }
+
+  updateExercise(id: string, body: ApiExerciseInput) {
+    return this.api.put<ApiExercise>(`/api/exercises/${encodeURIComponent(id)}`, body).pipe(this.refresh());
+  }
+
+  deleteExercise(id: string) {
+    return this.api.delete(`/api/exercises/${encodeURIComponent(id)}`).pipe(this.refresh());
+  }
+
+  importExercises(exercises: ApiExerciseInput[]) {
+    return this.api
+      .post<{ created: number; skipped: number }>('/api/exercises/import', { exercises })
+      .pipe(this.refresh());
+  }
+
+  uploadExerciseImage(file: File) {
+    const form = new FormData();
+    form.append('image', file);
+    return this.api.post<{ url: string }>('/api/exercises/upload-image', form);
   }
 
   searchUsers$(term: string) {
@@ -188,6 +215,11 @@ export class CoachService {
 
   removeAthlete(athleteId: string) {
     return this.api.delete(`/api/coach/athletes/${encodeURIComponent(athleteId)}`).pipe(this.refresh());
+  }
+
+  /** FTP en watts, CSS en secondes / 100 m ; null efface la valeur. */
+  updateAthleteReferences(athleteId: string, body: { ftp?: number | null; css?: number | null }) {
+    return this.api.patch(`/api/coach/athletes/${encodeURIComponent(athleteId)}/references`, body).pipe(this.refresh());
   }
 
   updateAthleteVma(athleteId: string, vma: number) {

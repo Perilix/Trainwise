@@ -2,6 +2,7 @@ import { BlurView } from 'expo-blur';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button, Chip, Icon, Text } from '@/components/ui';
+import { isOtherSport, otherSessionMeta, sportIcon } from '@/features/athlete/other-sports';
 import type { PlannedSession } from '@/features/athlete/types';
 import { useTheme } from '@/theme/theme-provider';
 import { radius } from '@/theme/tokens';
@@ -17,7 +18,9 @@ type Props = {
 };
 
 export const citedMeta = (session: PlannedSession) =>
-  (session.sport === 'running'
+  (isOtherSport(session.sport)
+    ? [otherSessionMeta(session)]
+    : session.sport === 'running'
     ? [session.distanceKm ? `${formatDecimal(session.distanceKm)} km` : null, session.durationMin ? formatHoursMinutes(session.durationMin * 60) : null, session.paceSecPerKm ? `${formatPace(session.paceSecPerKm)} /km` : null]
     : [session.exercisesCount ? `${session.exercisesCount} exercices` : null, session.durationMin ? formatHoursMinutes(session.durationMin * 60) : null]
   )
@@ -62,7 +65,7 @@ export function CiteSessionModal({ athleteId, visible, onClose, onPick }: Props)
                   onPress={() => onPick(session)}
                   style={({ pressed }) => [styles.row, { borderColor: colors.border }, pressed && { backgroundColor: colors.subtle }]}>
                   <View style={[styles.tile, { backgroundColor: session.sport === 'strength' ? colors.subtle : colors.accentSoft }]}>
-                    <Icon name={session.sport === 'strength' ? 'dumbbell' : 'route'} size={18} color={session.sport === 'strength' ? colors.primary : colors.accentInk} />
+                    <Icon name={sportIcon(session.sport)} size={18} color={session.sport === 'strength' ? colors.primary : colors.accentInk} />
                   </View>
                   <View style={styles.flex}>
                     <Text variant="h3" numberOfLines={1}>

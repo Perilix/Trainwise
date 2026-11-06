@@ -156,6 +156,30 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/coach/session-editor.page').then((m) => m.CoachSessionEditorPage),
       },
       {
+        path: 'coach/bibliotheque/velo',
+        canActivate: [coachGuard],
+        data: { sport: 'bike' },
+        loadComponent: () => import('./pages/coach/endurance-editor.page').then((m) => m.CoachEnduranceEditorPage),
+      },
+      {
+        path: 'coach/bibliotheque/velo/:id',
+        canActivate: [coachGuard],
+        data: { sport: 'bike' },
+        loadComponent: () => import('./pages/coach/endurance-editor.page').then((m) => m.CoachEnduranceEditorPage),
+      },
+      {
+        path: 'coach/bibliotheque/natation',
+        canActivate: [coachGuard],
+        data: { sport: 'swim' },
+        loadComponent: () => import('./pages/coach/endurance-editor.page').then((m) => m.CoachEnduranceEditorPage),
+      },
+      {
+        path: 'coach/bibliotheque/natation/:id',
+        canActivate: [coachGuard],
+        data: { sport: 'swim' },
+        loadComponent: () => import('./pages/coach/endurance-editor.page').then((m) => m.CoachEnduranceEditorPage),
+      },
+      {
         path: 'coach/bibliotheque/muscu',
         canActivate: [coachGuard],
         loadComponent: () => import('./pages/coach/strength-editor.page').then((m) => m.CoachStrengthEditorPage),

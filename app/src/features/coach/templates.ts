@@ -14,19 +14,21 @@ import type {
   ApiRunBlock,
   ApiRunBlockStep,
   ApiSessionTemplate,
+  ApiSportReference,
   ApiTemplateRunBlock,
   ApiTemplateRunBlockStep,
 } from '@/lib/api-types';
 import { formatDecimal, formatHoursMinutes } from '@/lib/format';
 import { PACE_ZONES } from '@/lib/pace-zones';
 import { totals, type Segment } from '@/lib/sessions';
+import { formatMeters, sportSegments, sportTotals } from '@/features/athlete/sport-blocks';
 
 import { sampleTemplates } from './sample-data';
 
 export type TemplateRow = {
   id: string;
   name: string;
-  sport: 'running' | 'strength';
+  sport: ApiSessionTemplate['sport'];
   meta: string;
   segments: Segment[];
 };
@@ -37,7 +39,8 @@ export type TemplateGroup = { label: string; templates: TemplateRow[] };
 export type TemplatePayload = Pick<
   ApiSessionTemplate,
   'name' | 'description' | 'sport' | 'sessionType' | 'targetDistance' | 'targetDuration' | 'expectedFeeling' | 'runBlocks' | 'strengthPlan'
->;
+> &
+  Partial<Pick<ApiSessionTemplate, 'sportBlocks' | 'pool'>>;
 
 // Ordre d'affichage des familles de séances de course ; la muscu vient en dernier.
 const RUNNING_ORDER = ['fractionne', 'tempo', 'sortie_longue', 'endurance', 'cotes', 'fartlek', 'recuperation'];
@@ -107,7 +110,8 @@ export function mainPercent(template: ApiSessionTemplate): { percent: number; la
   return undefined;
 }
 
-export function templateToDetail(template: ApiSessionTemplate): PlannedSessionDetail {
+/** `reference` : FTP / CSS d'aperçu, pour chiffrer une séance de vélo ou de natation. */
+export function templateToDetail(template: ApiSessionTemplate, reference?: ApiSportReference | null): PlannedSessionDetail {
   return mapPlannedDetail({
     _id: template._id,
     date: new Date().toISOString(),
@@ -124,6 +128,9 @@ export function templateToDetail(template: ApiSessionTemplate): PlannedSessionDe
     createdBy: null,
     runBlocks: templateRunBlocks(template.runBlocks ?? []),
     strengthPlan: template.strengthPlan ?? undefined,
+    sportBlocks: template.sportBlocks ?? [],
+    pool: template.pool ?? null,
+    reference: reference ?? null,
   });
 }
 
@@ -150,10 +157,24 @@ function toTemplateStepFromPlanned(step: ApiRunBlockStep): ApiTemplateRunBlockSt
 export function plannedToTemplatePayload(planned: ApiPlannedRunDetail, name: string): TemplatePayload {
   const running = planned.activityType === 'running';
   const plan = planned.strengthPlan;
+  if (planned.activityType === 'bike' || planned.activityType === 'swim') {
+    return {
+      name,
+      description: planned.description,
+      sport: planned.activityType,
+      sessionType: planned.activityType,
+      targetDistance: planned.targetDistance,
+      targetDuration: planned.targetDuration,
+      runBlocks: [],
+      strengthPlan: null,
+      sportBlocks: planned.sportBlocks ?? [],
+      pool: planned.pool ?? null,
+    };
+  }
   return {
     name,
     description: planned.description,
-    sport: planned.activityType,
+    sport: planned.activityType === 'strength' ? 'strength' : 'running',
     sessionType: planned.sessionType,
     targetDistance: planned.targetDistance,
     targetDuration: planned.targetDuration,
@@ -183,6 +204,9 @@ export function templateCopyPayload(template: ApiSessionTemplate): TemplatePaylo
     targetDistance: template.targetDistance,
     targetDuration: template.targetDuration,
     runBlocks: template.runBlocks ?? [],
+    sportBlocks: template.sportBlocks ?? [],
+    pool: template.pool ?? null,
+    expectedFeeling: template.expectedFeeling ?? null,
     strengthPlan: plan
       ? {
           ...plan,
@@ -194,7 +218,19 @@ export function templateCopyPayload(template: ApiSessionTemplate): TemplatePaylo
   };
 }
 
+function mapEnduranceRow(template: ApiSessionTemplate & { sport: 'bike' | 'swim' }): TemplateRow {
+  const blocks = template.sportBlocks ?? [];
+  const segments = sportSegments(blocks, template.sport);
+  const estimate = sportTotals(blocks, template.sport);
+  const minutes = template.targetDuration ?? (estimate.seconds ? estimate.seconds / 60 : undefined);
+  const meters = template.sport === 'swim' ? estimate.meters || (template.targetDistance ? template.targetDistance * 1000 : 0) : 0;
+  const parts = [meters ? formatMeters(meters) : null, minutes ? `≈ ${formatHoursMinutes(minutes * 60)}` : null];
+  if (template.usageCount) parts.push(`${template.usageCount}× utilisée`);
+  return { id: template._id, name: template.name, sport: template.sport, meta: parts.filter(Boolean).join(' · '), segments };
+}
+
 function mapTemplateRow(template: ApiSessionTemplate): TemplateRow {
+  if (template.sport === 'bike' || template.sport === 'swim') return mapEnduranceRow(template as ApiSessionTemplate & { sport: 'bike' | 'swim' });
   const running = template.sport === 'running';
   const segments = running ? blocksToSegments(templateRunBlocks(template.runBlocks ?? [])) : [];
   const total = totals(segments);
@@ -213,13 +249,18 @@ function mapTemplateRow(template: ApiSessionTemplate): TemplateRow {
   return { id: template._id, name: template.name, sport: template.sport, meta: parts.filter(Boolean).join(' · '), segments };
 }
 
+const SPORT_GROUPS: Partial<Record<ApiSessionTemplate['sport'], string>> = { strength: 'Muscu', bike: 'Vélo', swim: 'Natation' };
+
 export function groupTemplates(templates: ApiSessionTemplate[]): TemplateGroup[] {
-  const rank = (template: ApiSessionTemplate) => (template.sport === 'strength' ? RUNNING_ORDER.length : Math.max(0, RUNNING_ORDER.indexOf(template.sessionType)));
+  // Course par type, puis la muscu, le vélo et la natation.
+  const tail = ['strength', 'bike', 'swim'];
+  const rank = (template: ApiSessionTemplate) =>
+    tail.includes(template.sport) ? RUNNING_ORDER.length + tail.indexOf(template.sport) : Math.max(0, RUNNING_ORDER.indexOf(template.sessionType));
   const groups = new Map<string, TemplateRow[]>();
   [...templates]
     .sort((a, b) => rank(a) - rank(b))
     .forEach((template) => {
-      const label = template.sport === 'strength' ? 'Muscu' : (SESSION_TYPE_LABELS[template.sessionType] ?? 'Course');
+      const label = SPORT_GROUPS[template.sport] ?? SESSION_TYPE_LABELS[template.sessionType] ?? 'Course';
       groups.set(label, [...(groups.get(label) ?? []), mapTemplateRow(template)]);
     });
   return [...groups].map(([label, rows]) => ({ label, templates: rows }));

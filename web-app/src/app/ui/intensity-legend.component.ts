@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 
 import { ThemeService } from '../core/theme.service';
 import { INTENSITY_LEVELS } from '../domain/sessions';
+import { INTENSITY_LEGENDS } from '../domain/sport-blocks';
 
 const RAMP = {
   light: ['#CDEBFB', '#8FD2F8', '#3DB4F5', '#0A8ED6', '#05608F'],
@@ -52,7 +53,15 @@ const RANGES = ['< 68 %', '68 – 78 %', '78 – 84 %', '84 – 95 %', '≥ 95 %
 export class IntensityLegendComponent {
   private readonly theme = inject(ThemeService);
 
-  readonly levels = computed(() =>
-    INTENSITY_LEVELS.map((label, index) => ({ label, range: RANGES[index], color: RAMP[this.theme.resolved()][index] })),
-  );
+  /** Vélo et natation ont leurs propres paliers (% FTP, % CSS). */
+  readonly sport = input<string>('running');
+
+  readonly levels = computed(() => {
+    const sport = this.sport();
+    const ramp = RAMP[this.theme.resolved()];
+    if (sport === 'bike' || sport === 'swim') {
+      return INTENSITY_LEGENDS[sport].map((level, index) => ({ ...level, color: ramp[index] }));
+    }
+    return INTENSITY_LEVELS.map((label, index) => ({ label, range: RANGES[index], color: ramp[index] }));
+  });
 }

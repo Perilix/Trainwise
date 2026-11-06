@@ -165,6 +165,7 @@ router.delete('/athletes/:athleteId', coachController.removeAthlete);
  *         description: Server error
  */
 router.patch('/athletes/:athleteId/vma', coachController.updateAthleteVma);
+router.patch('/athletes/:athleteId/references', coachController.updateAthleteReferences);
 
 /**
  * @swagger

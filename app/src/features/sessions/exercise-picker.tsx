@@ -1,23 +1,16 @@
 import { useState } from 'react';
 import { FlatList, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { BackBar, ChoicePill, Field, Icon, Screen, StateView, Text } from '@/components/ui';
+import { BackBar, Button, Chip, ChoicePill, Field, FormError, Icon, Screen, StateView, Text } from '@/components/ui';
 import { MUSCLE_LABELS } from '@/features/athlete/session-detail';
+import { useSession } from '@/features/auth/session';
+import { useCoachActions } from '@/features/coach/queries';
 import type { ApiExercise } from '@/lib/api-types';
 import { useTheme } from '@/theme/theme-provider';
 import { layout, radius } from '@/theme/tokens';
 
+import { EQUIPMENT_LABELS, isMine } from './exercise-library';
 import { filterExercises, MUSCLE_FILTERS, useExerciseLibrary } from './exercises';
-
-const EQUIPMENT_LABELS: Record<string, string> = {
-  barbell: 'Barre',
-  dumbbell: 'Haltères',
-  kettlebell: 'Kettlebell',
-  machine: 'Machine',
-  cable: 'Poulie',
-  bodyweight: 'Poids du corps',
-  resistance_band: 'Élastique',
-};
 
 type Props = {
   visible: boolean;
@@ -32,7 +25,30 @@ export function ExercisePicker({ visible, title, onClose, onPick }: Props) {
   const { data, loading, error, refetch } = useExerciseLibrary();
   const [search, setSearch] = useState('');
   const [muscle, setMuscle] = useState<string | null>(null);
-  const list = data ? filterExercises(data, search, muscle) : [];
+  const { user } = useSession();
+  const { createExercise } = useCoachActions();
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const mine = (exercise: ApiExercise) => isMine(exercise, user?.id);
+  // Les exercices du coach d'abord : ce sont ceux qu'il a créés pour ses séances.
+  const list = data ? [...filterExercises(data, search, muscle)].sort((a, b) => Number(mine(b)) - Number(mine(a))) : [];
+  const typed = search.trim();
+  // Le nom tapé n'existe pas : le coach peut le créer sur place.
+  const canCreate = Boolean(data) && typed.length >= 3 && !(data ?? []).some((exercise) => exercise.name.trim().toLowerCase() === typed.toLowerCase());
+
+  const createAndPick = async () => {
+    setCreating(true);
+    setCreateError(null);
+    try {
+      const exercise = await createExercise({ name: typed, equipment: 'other' });
+      refetch();
+      onPick(exercise);
+    } catch (reason) {
+      setCreateError(reason instanceof Error ? reason.message : 'Création impossible.');
+    } finally {
+      setCreating(false);
+    }
+  };
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle={Platform.OS === 'ios' ? 'pageSheet' : 'fullScreen'} onRequestClose={onClose}>
@@ -57,10 +73,20 @@ export function ExercisePicker({ visible, title, onClose, onPick }: Props) {
             keyExtractor={(exercise) => exercise._id}
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={styles.list}
+            ListHeaderComponent={
+              canCreate ? (
+                <View style={styles.create}>
+                  <Button label={creating ? 'Création…' : `Créer « ${typed} » dans mes exercices`} variant="secondary" icon="plus" fullWidth disabled={creating} onPress={createAndPick} />
+                  <FormError message={createError} />
+                </View>
+              ) : undefined
+            }
             ListEmptyComponent={
-              <Text variant="body2" style={styles.empty}>
-                {data.length ? 'Aucun exercice ne correspond.' : 'La bibliothèque d’exercices est vide.'}
-              </Text>
+              canCreate ? undefined : (
+                <Text variant="body2" style={styles.empty}>
+                  {data.length ? 'Aucun exercice ne correspond.' : 'La bibliothèque d’exercices est vide.'}
+                </Text>
+              )
             }
             renderItem={({ item, index }) => (
               <Pressable
@@ -77,6 +103,7 @@ export function ExercisePicker({ visible, title, onClose, onPick }: Props) {
                     {[item.primaryMuscle ? MUSCLE_LABELS[item.primaryMuscle] : null, item.equipment ? EQUIPMENT_LABELS[item.equipment] : null].filter(Boolean).join(' · ')}
                   </Text>
                 </View>
+                {mine(item) ? <Chip label="Perso" tone="accent" /> : null}
                 <Icon name="plus" size={18} color={colors.text3} />
               </Pressable>
             )}
@@ -97,4 +124,5 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, borderRadius: radius.sm },
   tile: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   empty: { paddingVertical: 24, textAlign: 'center' },
+  create: { gap: 8, paddingBottom: 12 },
 });

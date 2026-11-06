@@ -1,7 +1,8 @@
 // Modèles de vue de la partie athlète : ce que les écrans affichent, indépendamment du format de l'API.
 import type { Segment } from '@/lib/sessions';
 
-export type Sport = 'running' | 'strength';
+/** Vélo et natation se programment simplement : titre, consignes, distance, durée. */
+export type Sport = 'running' | 'strength' | 'bike' | 'swim';
 export type PlannedBy = 'coach' | 'athlete';
 export type SessionStatus = 'planned' | 'done' | 'skipped';
 
@@ -27,6 +28,7 @@ export type NewPlannedSession = {
   date: string; // AAAA-MM-JJ
   activityType: Sport;
   sessionType: string;
+  title?: string;
   targetDistance?: number;
   targetDuration?: number;
   targetPace?: string;
@@ -86,6 +88,8 @@ export type PlannedSessionDetail = PlannedSession & {
   textPlan: { label: string; text: string }[];
   strength?: StrengthPlanView;
   linkedRunId?: string;
+  /** Vélo, natation : la sortie Strava qui a validé la séance. */
+  linkedOther?: OtherActivity;
 };
 
 export type Activity = {
@@ -103,6 +107,26 @@ export type Activity = {
   fromStrava: boolean;
   /** Tracé encodé, absent pour une séance sans GPS. */
   polyline?: string | null;
+};
+
+/** Famille d'un autre sport : décide de l'icône et des chiffres affichés. */
+export type OtherSportFamily = 'bike' | 'swim' | 'mountain' | 'water' | 'other';
+
+/** Vélo, natation, ski… : une activité Strava montrée telle quelle, sans page de détail. */
+export type OtherActivity = {
+  id: string;
+  date: string; // AAAA-MM-JJ
+  startTime?: string; // "08:12"
+  family: OtherSportFamily;
+  sportLabel: string; // « Vélo », « Natation »…
+  title: string;
+  description: string;
+  distanceKm?: number;
+  durationSec: number;
+  elevationGain?: number;
+  avgSpeedMs?: number;
+  avgHr?: number;
+  avgWatts?: number;
 };
 
 export type WeekDay = {
@@ -142,6 +166,8 @@ export type PlanningMonth = {
   competitionPriority: Record<string, 'A' | 'B' | 'C'>;
   sessionsByDay: Record<string, PlannedSession[]>;
   activitiesByDay: Record<string, Activity[]>;
+  /** Les autres sports synchronisés depuis Strava (vélo, natation…). */
+  othersByDay: Record<string, OtherActivity[]>;
   stats: { planned: number; done: number; distanceKm: number };
 };
 

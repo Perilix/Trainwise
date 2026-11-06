@@ -147,7 +147,7 @@ export function buildAthleteFiche(detail: ApiCoachAthleteDetail, competitions: A
     weeklyVolume: detail.weeklyVolume,
     baselineWeeklyVolume: detail.baselineWeeklyVolume,
     weeks: weeklyStatuses(detail, now),
-    physical: { heightCm: detail.height, weightKg: detail.weight, vma: detail.vma, fcMax: detail.fcmax },
+    physical: { heightCm: detail.height, weightKg: detail.weight, vma: detail.vma, fcMax: detail.fcmax, ftp: detail.ftp ?? undefined, css: detail.css ?? undefined },
     running: { level: detail.runningLevel ? (LEVEL_LABELS[detail.runningLevel] ?? detail.runningLevel) : undefined, frequency: detail.weeklyFrequency, injuries: detail.injuries?.trim() || undefined },
     competition: next
       ? { name: next.name, dateLabel: formatDayShort(toIsoDay(new Date(next.date))), priority: next.priority, goal: next.targetTime ?? undefined }
@@ -167,7 +167,7 @@ export function buildAthleteFiche(detail: ApiCoachAthleteDetail, competitions: A
 
 export function mapAthleteList(athletes: ApiCoachAthlete[]): CoachAthleteLite[] {
   return athletes
-    .map((athlete) => ({ id: athlete._id, name: fullName(athlete), initials: initialsOf(athlete.firstName, athlete.lastName), vma: athlete.vma ?? undefined }))
+    .map((athlete) => ({ id: athlete._id, name: fullName(athlete), initials: initialsOf(athlete.firstName, athlete.lastName), vma: athlete.vma ?? undefined, ftp: athlete.ftp ?? undefined, css: athlete.css ?? undefined }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 

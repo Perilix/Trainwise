@@ -11,6 +11,8 @@ export type ApiUser = {
   runningLevel?: 'debutant' | 'intermediaire' | 'confirme' | 'expert';
   weeklyFrequency?: number;
   vma?: number;
+  ftp?: number | null;
+  css?: number | null;
   fcmax?: number;
   height?: number;
   weight?: number;
@@ -60,6 +62,8 @@ export type ApiCoachAthlete = ApiStatusData & {
   email: string;
   runningLevel?: string;
   vma?: number | null;
+  ftp?: number | null;
+  css?: number | null;
   nextCompetition: ApiCompetition | null;
   joinedAt: string | null;
   packageType?: ApiPackageType;
@@ -89,6 +93,8 @@ export type ApiCoachAthleteDetail = ApiStatusData & {
   height?: number;
   weight?: number;
   vma?: number;
+  ftp?: number | null;
+  css?: number | null;
   fcmax?: number;
   strengthFrequency?: number;
   strengthGoal?: string;
@@ -175,7 +181,7 @@ export type ApiUserRef = {
 export type ApiPlannedRun = {
   _id: string;
   date: string;
-  activityType: 'running' | 'strength';
+  activityType: 'running' | 'strength' | 'bike' | 'swim';
   sessionType: string;
   targetDistance: number | null; // km
   targetDuration: number | null; // min
@@ -197,6 +203,9 @@ export type ApiPlannedRun = {
   // Le calendrier renvoie les séances entières : les blocs servent à estimer
   // distance, durée et allure quand le coach n'a pas rempli les totaux.
   runBlocks?: ApiRunBlock[];
+  sportBlocks?: ApiSportBlock[];
+  reference?: ApiSportReference | null;
+  pool?: '25' | '50' | 'open' | null;
 };
 
 export type ApiRunBlockStep = {
@@ -240,7 +249,28 @@ export type ApiPlanExercise = {
 };
 
 /** Exercice de la bibliothèque (GET /api/exercises). */
-export type ApiExercise = ApiExerciseRef & { muscleGroups?: string[]; equipment?: string; isPublic?: boolean };
+export type ApiExercise = ApiExerciseRef & {
+  muscleGroups?: string[];
+  equipment?: string;
+  isPublic?: boolean;
+  /** Renseigné pour un exercice perso : l'id du coach qui l'a créé. Absent pour le catalogue. */
+  createdBy?: string | null;
+  instructions?: string;
+  videoUrl?: string;
+};
+
+/** Ce qu'un coach saisit pour créer ou modifier un de ses exercices. */
+export type ApiExerciseInput = {
+  name: string;
+  primaryMuscle?: string;
+  muscleGroups?: string[];
+  equipment?: string;
+  instructions?: string;
+  videoUrl?: string;
+  imageUrl?: string;
+  /** Partagé avec tous les coachs ; privé (false) par défaut. */
+  isPublic?: boolean;
+};
 
 export type ApiStrengthPlan = {
   exercises?: ApiPlanExercise[];
@@ -250,12 +280,42 @@ export type ApiStrengthPlan = {
 };
 
 /** Séance planifiée détaillée (GET /api/planning/:id, exercices peuplés). */
+/** Étape d'une séance de vélo ou de natation (voir api/src/models/sportBlock.schema.js). */
+export type ApiSportStep = {
+  role: 'warmup' | 'main' | 'cooldown';
+  label?: string;
+  duration?: number | null; // secondes (vélo)
+  distance?: number | null; // mètres (natation)
+  intensityMode?: 'ftp' | 'watts' | 'hr' | 'rpe' | 'css' | 'pace' | null;
+  intensityLow?: number | null;
+  intensityHigh?: number | null;
+  ramp?: boolean;
+  cadence?: string;
+  position?: '' | 'assis' | 'danseuse';
+  stroke?: string;
+  equipment?: string[];
+  repetitions?: number;
+  description?: string;
+  recoveryMode?: 'duration' | 'rest' | 'sendoff' | null;
+  recoverySeconds?: number | null;
+  recoveryIntensity?: number | null; // vélo : % FTP
+  recoveryDescription?: string;
+  order?: number;
+};
+
+export type ApiSportBlock = ApiSportStep & { children?: ApiSportStep[] };
+
+/** FTP (watts) et CSS (s / 100 m) de l'athlète, figées à l'assignation de la séance. */
+export type ApiSportReference = { ftp?: number | null; css?: number | null };
+
 export type ApiPlannedRunDetail = Omit<ApiPlannedRun, 'strengthPlan'> & {
   warmup?: string;
   mainWorkout?: string;
   cooldown?: string;
   runBlocks?: ApiRunBlock[];
   linkedRun?: string | { _id: string } | null;
+  /** Vélo, natation : la sortie Strava qui a validé la séance (peuplée par l'API). */
+  linkedOtherActivity?: ApiOtherActivity | string | null;
   strengthPlan?: ApiStrengthPlan;
 };
 
@@ -270,13 +330,15 @@ export type ApiSessionTemplate = {
   _id: string;
   name: string;
   description?: string;
-  sport: 'running' | 'strength';
+  sport: 'running' | 'strength' | 'bike' | 'swim';
   sessionType: string;
   targetDistance: number | null;
   targetDuration: number | null;
   /** Difficulté attendue, sur 10 : ce que l'athlète devrait ressentir. */
   expectedFeeling?: number | null;
   runBlocks: ApiTemplateRunBlock[];
+  sportBlocks?: ApiSportBlock[];
+  pool?: '25' | '50' | 'open' | null;
   strengthPlan: ApiPlannedRunDetail['strengthPlan'] | null;
   usageCount: number;
   lastUsedAt: string | null;
@@ -384,10 +446,31 @@ export type ApiCompetition = {
   status: 'upcoming' | 'completed' | 'cancelled';
 };
 
+/** Activité Strava d'un autre sport (vélo, natation…), recopiée telle quelle. */
+export type ApiOtherActivity = {
+  _id: string;
+  stravaActivityId: number;
+  sportType: string; // sport_type Strava : Ride, Swim, GravelRide…
+  name?: string;
+  description?: string;
+  date: string;
+  startDateLocal: string | null;
+  movingTime: number | null; // s
+  elapsedTime: number | null; // s
+  distance: number | null; // km
+  elevationGain: number | null; // m
+  averageSpeed: number | null; // m/s
+  averageHeartRate: number | null;
+  maxHeartRate: number | null;
+  averageWatts: number | null;
+};
+
 export type ApiCalendarData = {
   runs: ApiRun[];
   plannedRuns: ApiPlannedRun[];
   strengthSessions: ApiStrengthSession[];
+  /** Absent tant que l'API déployée ne les renvoie pas. */
+  otherActivities?: ApiOtherActivity[];
   competitions: ApiCompetition[];
   month: number; // 1 à 12
   year: number;
@@ -425,7 +508,7 @@ export type ApiConversation = {
 export type ApiSessionRef = {
   kind: 'planned' | 'run' | 'strength';
   id: string;
-  sport?: 'running' | 'strength';
+  sport?: 'running' | 'strength' | 'bike' | 'swim';
   title?: string;
   date?: string;
   meta?: string;
