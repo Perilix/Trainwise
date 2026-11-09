@@ -12,10 +12,10 @@ const ia = require('./ia');
 const TZ = 'Europe/Paris';
 const MIN = 60000;
 const PAS = 20 * MIN;
-// Fenêtres d'envoi, heure de Paris. Premiers mails : en semaine (boîte d'Hugo neuve : 15 par jour, 8 h → 12 h 40).
+// Fenêtres d'envoi, heure de Paris. Premiers mails : en semaine, dès 7 h pour Julien (boîte d'Hugo neuve : 15 par jour, 8 h → 12 h 40).
 // Relances de Julien : tous les jours de 7 h à 20 h. Facteur et Écho partagent le même calendrier, un mail toutes les 20 min.
 const FENETRES = {
-  premier: { julien: { debut: 8 * 60, fin: 18 * 60 + 20, weekend: false }, hugo: { debut: 8 * 60, fin: 12 * 60 + 40, weekend: false } },
+  premier: { julien: { debut: 7 * 60, fin: 18 * 60 + 20, weekend: false }, hugo: { debut: 8 * 60, fin: 12 * 60 + 40, weekend: false } },
   relance: { julien: { debut: 7 * 60, fin: 20 * 60, weekend: true }, hugo: { debut: 8 * 60, fin: 12 * 60 + 40, weekend: false } }
 };
 const RELEVE = 10 * MIN;
