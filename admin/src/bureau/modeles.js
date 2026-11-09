@@ -36,8 +36,28 @@ function signature(espace) {
 }
 const corps = contenu => `<div style="font-family: &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 14px; line-height: 21px; color: rgb(5, 25, 35)">${contenu}</div>`;
 
+// Bureau de Julien, à partir des envois du 10 nov. 2026 : un mail court qui renvoie vers la vidéo de démo.
+// Les contacts écrits avant gardent la relance de l'ancien mail (offre -50 %), cohérente avec leur fil.
+const DEMO = 'https://www.trainwise-app.com/demo';
+const SUJET_DEMO = 'Vos athlètes, leurs progrès, un seul endroit';
+const BASCULE_DEMO = new Date('2026-11-10T00:00:00+01:00');
+const formatDemo = (espace, c) => espace === 'julien' && (!c.envoyeLe || new Date(c.envoyeLe) >= BASCULE_DEMO);
+
 function premierMail(espace, c) {
   const e = ESPACES[espace], p = prenom(c);
+  if (espace === 'julien') {
+    return {
+      sujet: SUJET_DEMO,
+      html: corps([
+        P(p ? `Bonjour ${esc(p)},` : 'Bonjour,'),
+        P(`Vous êtes coach et vous suivez vos athlètes entre des fichiers Excel, des messages et des notes un peu partout ? C'est exactement pour ça que j'ai développé <b>Trainwise</b> : toute votre activité de coach au même endroit (planning, séances, progrès de chaque athlète, échanges).`),
+        P(`👉 Aperçu en vidéo : ${lien(DEMO, 'www.trainwise-app.com/demo')}`),
+        P(`Si ça vous parle, répondez simplement à ce mail : je vous montre l'app en 15 minutes.`),
+        P('Belle journée,'),
+        signature(espace)
+      ].join(''))
+    };
+  }
   return {
     sujet: SUJET,
     html: corps([
@@ -55,6 +75,14 @@ function premierMail(espace, c) {
 
 function relance(espace, c) {
   const p = prenom(c);
+  if (formatDemo(espace, c)) {
+    return corps([
+      P(p ? `Bonjour ${esc(p)},` : 'Bonjour,'),
+      P(`Je me permets une petite relance, au cas où mon message se serait perdu. La démo de Trainwise tient en une vidéo : ${lien(DEMO, 'www.trainwise-app.com/demo')}`),
+      P(`Si vous avez 15 minutes, je vous montre l'app. Sinon, pas de souci, je ne vous relancerai plus.`),
+      signature(espace)
+    ].join(''));
+  }
   return corps([
     P(p ? `Bonjour ${esc(p)},` : 'Bonjour,'),
     P(`Je me permets une petite relance, au cas où mon message se serait perdu. Je garde une place pour vous parmi les coachs du lancement, avec -50 % pendant deux mois sur le plan Coach (code <b>FOULEE-DOREE-50</b>).`),
