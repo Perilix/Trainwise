@@ -27,6 +27,11 @@ export const routes: Routes = [
     path: 'contact',
     loadComponent: () => import('./pages/public/contact.page').then((m) => m.ContactPage),
   },
+  // Lien des mails de prospection : la vidéo de présentation et le contact.
+  {
+    path: 'demo',
+    loadComponent: () => import('./pages/public/demo.page').then((m) => m.DemoPage),
+  },
 
   // ---- Écrans publics ----
   {
