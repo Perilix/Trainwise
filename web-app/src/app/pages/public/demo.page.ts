@@ -14,7 +14,7 @@ const JULIEN_EMAIL = 'julien@trainwise-app.com';
   imports: [PublicShellComponent, RouterLink],
   template: `
     <tw-public-shell
-      title="Trainwise en une minute"
+      title="Trainwise en vidéo"
       lead="Plus de fichiers Excel ni de messages éparpillés : toute votre activité de coach au même endroit."
     >
       <div class="demo">
@@ -43,17 +43,16 @@ const JULIEN_EMAIL = 'julien@trainwise-app.com';
   `,
   styles: [
     `
+      /* La démo est filmée en 16:9 (desktop coach + iPhone athlète) : la vidéo prend toute la largeur. */
       .demo {
         display: grid;
-        grid-template-columns: 300px 1fr;
-        gap: 32px;
-        align-items: start;
+        gap: 28px;
         margin-top: 24px;
       }
 
       .film {
         width: 100%;
-        aspect-ratio: 9 / 16;
+        aspect-ratio: 16 / 9;
         border-radius: 16px;
         background: #f6f4f0;
         border: 1px solid var(--border);
@@ -79,17 +78,6 @@ const JULIEN_EMAIL = 'julien@trainwise-app.com';
         color: var(--on-primary) !important;
       }
 
-      @media (max-width: 640px) {
-        .demo {
-          grid-template-columns: 1fr;
-        }
-
-        .film {
-          max-width: 320px;
-          margin: 0 auto;
-          display: block;
-        }
-      }
     `,
   ],
 })
