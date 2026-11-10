@@ -18,8 +18,8 @@ const JULIEN_EMAIL = 'julien@trainwise-app.com';
       lead="Plus de fichiers Excel ni de messages éparpillés : toute votre activité de coach au même endroit."
     >
       <div class="demo">
-        <video class="film" controls playsinline preload="metadata" poster="/demo/affiche.jpg">
-          <source src="/demo/trainwise.mp4" type="video/mp4" />
+        <video class="film" controls playsinline preload="metadata" poster="/medias/affiche.jpg">
+          <source src="/medias/trainwise.mp4" type="video/mp4" />
         </video>
 
         <div class="side">
