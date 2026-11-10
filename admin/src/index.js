@@ -17,6 +17,7 @@ const feedbacksRoutes = require('./routes/feedbacks.routes');
 const contactRoutes = require('./routes/contact.routes');
 const launchRoutes = require('./routes/launch.routes');
 const bureauRoutes = require('./routes/bureau.routes');
+const demandeDemoRoutes = require('./routes/demande-demo.routes');
 const chefDeBureau = require('./bureau/chef');
 
 const app = express();
@@ -24,6 +25,8 @@ const PORT = process.env.PORT || 4000;
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+// Render passe par un proxy : l'IP du visiteur (pour les limites de requêtes) est dans X-Forwarded-For.
+app.set('trust proxy', 1);
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -48,6 +51,8 @@ app.use('/feedbacks', feedbacksRoutes);
 app.use('/contact', contactRoutes);
 app.use('/launch', launchRoutes);
 app.use('/bureau', bureauRoutes);
+// Public, sans session : le formulaire de la page www.trainwise-app.com/demo.
+app.use('/public/demande-demo', demandeDemoRoutes);
 
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/trainwise')
   .then(() => {
