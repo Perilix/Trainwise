@@ -5,7 +5,7 @@ import { environment } from '../../../environments/environment';
 import { PublicShellComponent } from './public-shell.component';
 
 /** L'adresse de Julien : la démo est le lien des mails de prospection, la réponse doit lui arriver directement. */
-const JULIEN_EMAIL = 'julien@trainwise-app.com';
+const JULIEN_EMAIL = 'contact@trainwise-app.com';
 /** La demande part dans la base de prospection, via le back-office. */
 const DEMANDE_DEMO = `${environment.adminUrl}/public/demande-demo`;
 
@@ -92,7 +92,7 @@ const ATHLETES = ['1 à 5', '6 à 15', '16 à 40', 'Plus de 40'] as const;
               <a class="btn btn-ghost" routerLink="/inscription">Créer mon compte coach</a>
             </div>
           }
-          <p class="caption muted">Ou écrivez directement à Julien, le fondateur : <a [href]="'mailto:' + contact">{{ contact }}</a></p>
+          <p class="caption muted">Ou écrivez nous directement : <a [href]="'mailto:' + contact">{{ contact }}</a></p>
         </div>
       </div>
     </tw-public-shell>
