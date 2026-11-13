@@ -50,6 +50,7 @@ function ThemedNavigation() {
   if (status === 'loading') return null;
   const signedIn = status === 'signedIn' || status === 'demo';
   const coach = signedIn && isCoach(user);
+  const home = !signedIn ? '/login' : coach ? '/pro' : '/';
 
   return (
     <NavigationThemeProvider
@@ -60,13 +61,13 @@ function ThemedNavigation() {
       }}>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
-        <Stack.Protected guard={signedIn && !coach}>
+        <Stack.Protected guard={signedIn && !coach} redirectTo={home}>
           <Stack.Screen name="(athlete)" />
         </Stack.Protected>
-        <Stack.Protected guard={coach}>
+        <Stack.Protected guard={coach} redirectTo={home}>
           <Stack.Screen name="pro" />
         </Stack.Protected>
-        <Stack.Protected guard={!signedIn}>
+        <Stack.Protected guard={!signedIn} redirectTo={home}>
           <Stack.Screen name="(auth)" />
         </Stack.Protected>
         <Stack.Screen name="design-system" />
